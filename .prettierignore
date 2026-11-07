@@ -1,6 +1,7 @@
 .agents/skills/
 .next/
 build/
+contracts/generated/
 coverage/
 next-env.d.ts
 node_modules/

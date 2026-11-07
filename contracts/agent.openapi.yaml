@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: Stealth Node Agent API
+  version: 0.1.0
+paths:
+  /v1/health:
+    get:
+      operationId: getHealth
+      summary: Check whether the Node Agent is healthy
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Node Agent is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Health:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
