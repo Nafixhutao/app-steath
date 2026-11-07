@@ -1,17 +1,30 @@
 "use client";
 
-import { Sidebar } from "../../components/sidebar";
-import { defaultOrganization, defaultUser } from "../../components/identity";
+import Link from "next/link";
+import { useActiveOrganization } from "@/lib/auth-client";
 
 export default function DashboardPage() {
+  const { data: organization } = useActiveOrganization();
+
   return (
-    <div className="console-layout flex min-h-dvh overflow-x-hidden bg-[#121014] text-[#edecf1] max-[1023px]:block">
-      <Sidebar organization={defaultOrganization} user={defaultUser} />
-      <main id="dashboard-content" className="console-main user-console-main ml-1 my-2 mr-2 min-w-0 flex-1 overflow-auto rounded-[14px] border border-[#2A272E] bg-[#1A181D] px-10 py-6 shadow-none max-[1023px]:ml-0 max-[1023px]:mt-[67px] max-[1023px]:mr-2 max-[1023px]:mb-2 max-[1023px]:min-h-[calc(100dvh-75px)]">
-        <a className="skip-link" href="#dashboard-content">
-          Skip to content
-        </a>
-      </main>
+    <div className="dashboard-content">
+      <div className="dashboard-page-heading">
+        <div>
+          <h1>Overview</h1>
+          <p>Manage hosting resources for {organization?.name ?? "your Organization"}.</p>
+        </div>
+      </div>
+
+      <section className="dashboard-section" aria-labelledby="resources-heading">
+        <div className="dashboard-section-heading">
+          <h2 id="resources-heading">Resources</h2>
+          <Link href="/dashboard/projects">View Projects</Link>
+        </div>
+        <div className="dashboard-empty-state">
+          <h3>No resources yet</h3>
+          <p>Create a Project to deploy a Service or provision a PostgreSQL Database.</p>
+        </div>
+      </section>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   AnimatePresence,
   motion,
@@ -11,6 +11,7 @@ import {
   type Transition,
 } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { authClient, signOut, useListOrganizations, useSession } from "@/lib/auth-client";
 import {
   defaultOrganization,
   defaultUser,
@@ -61,26 +62,28 @@ type IconName =
   | "sun"
   | "moon"
   | "monitor"
-  | "x";
+  | "x"
+  | "projects"
+  | "services"
+  | "databases"
+  | "domains";
 
 type Theme = "light" | "dark" | "system";
 
-const primaryItems: Array<{ label: string; icon: IconName; accent?: boolean }> = [
-  { label: "Triage", icon: "inbox" },
-  { label: "Reviews", icon: "review" },
-  { label: "Agent", icon: "code", accent: true },
-  { label: "Security", icon: "shield" },
-  { label: "Analytics", icon: "chart" },
-  { label: "Automations", icon: "zap" },
-  { label: "Slack Bot", icon: "slack" },
+const primaryItems: Array<{ label: string; icon: IconName; href: string }> = [
+  { label: "Overview", icon: "chart", href: "/dashboard" },
+  { label: "Projects", icon: "projects", href: "/dashboard/projects" },
+  { label: "Services", icon: "services", href: "/dashboard/services" },
+  { label: "Databases", icon: "databases", href: "/dashboard/databases" },
+  { label: "Domains", icon: "domains", href: "/dashboard/domains" },
 ];
 
-const secondaryItems: Array<{ label: string; icon: IconName }> = [
-  { label: "Scopes", icon: "face" },
-  { label: "Organization settings", icon: "settings" },
+const secondaryItems: Array<{ label: string; icon: IconName; href: string }> = [
+  { label: "Members", icon: "face", href: "/dashboard/members" },
+  { label: "Organization settings", icon: "settings", href: "/dashboard/settings" },
 ];
 
-const searchItems = ["Go to Projects", "Go to Agent", "Status page", "Log out"];
+const searchItems = ["Go to Projects", "Go to Services", "Go to Databases", "Log out"];
 
 const sidebarMorphTransition: Transition = {
   type: "spring",
@@ -125,6 +128,10 @@ const iconMap: Record<Exclude<IconName, "slack">, LucideIcon> = {
   moon: Moon,
   monitor: Monitor,
   x: X,
+  projects: ChartPie,
+  services: Zap,
+  databases: ShieldCheck,
+  domains: ExternalLink,
 };
 
 function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
@@ -215,6 +222,7 @@ function MobileSidebarSheet({
 function NavRow({
   label,
   icon,
+  href,
   active,
   collapsed,
   accent,
@@ -223,6 +231,7 @@ function NavRow({
 }: {
   label: string;
   icon: IconName;
+  href: string;
   active: boolean;
   collapsed: boolean;
   accent?: boolean;
@@ -230,8 +239,8 @@ function NavRow({
   mobile?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <Link
+      href={href}
       className={`sidebar-row ${active ? "is-active" : ""} ${collapsed ? "is-collapsed" : ""} ${mobile ? "is-mobile" : ""}`}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
@@ -242,7 +251,7 @@ function NavRow({
       {!collapsed && accent ? (
         <Gift size={16} strokeWidth={1.7} className="agent-gift" aria-hidden="true" />
       ) : null}
-    </button>
+    </Link>
   );
 }
 
@@ -335,6 +344,9 @@ export function Sidebar({
   user?: UserIdentity;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const { data: organizations, isPending: organizationsPending } = useListOrganizations();
   const reduceMotion = useReducedMotion() ?? false;
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -342,6 +354,74 @@ export function Sidebar({
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("dark");
+  const [organizationSwitcherOpen, setOrganizationSwitcherOpen] = useState(false);
+  const [createOrganizationOpen, setCreateOrganizationOpen] = useState(false);
+  const [organizationName, setOrganizationName] = useState("");
+  const [organizationError, setOrganizationError] = useState("");
+  const [organizationBusy, setOrganizationBusy] = useState(false);
+
+  const activeOrganizationId = session?.session.activeOrganizationId;
+  const activeOrganization = organizations?.find((item) => item.id === activeOrganizationId);
+  const sidebarOrganization: OrganizationIdentity = activeOrganization
+    ? {
+        name: activeOrganization.name,
+        plan: organization.plan,
+        description: organization.description,
+      }
+    : organization;
+
+  const closeOrganizationSwitcher = () => {
+    setOrganizationSwitcherOpen(false);
+    setCreateOrganizationOpen(false);
+    setOrganizationError("");
+  };
+
+  const switchOrganization = async (organizationId: string) => {
+    setOrganizationBusy(true);
+    setOrganizationError("");
+    const result = await authClient.organization.setActive({ organizationId });
+    setOrganizationBusy(false);
+    if (result.error) {
+      setOrganizationError(result.error.message ?? "Could not switch Organization.");
+      return;
+    }
+    setOrganizationSwitcherOpen(false);
+    setCreateOrganizationOpen(false);
+    setOrganizationError("");
+    router.refresh();
+  };
+
+  const createOrganization = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const name = organizationName.trim();
+    const slug = name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    if (!name || !slug) {
+      setOrganizationError("Enter an Organization name using letters or numbers.");
+      return;
+    }
+
+    setOrganizationBusy(true);
+    setOrganizationError("");
+    const result = await authClient.organization.create({
+      name,
+      slug: `${slug}-${crypto.randomUUID().slice(0, 8)}`,
+    });
+    setOrganizationBusy(false);
+    if (result.error) {
+      setOrganizationError(result.error.message ?? "Could not create Organization.");
+      return;
+    }
+    setOrganizationName("");
+    setOrganizationSwitcherOpen(false);
+    setCreateOrganizationOpen(false);
+    setOrganizationError("");
+    router.refresh();
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -375,6 +455,7 @@ export function Sidebar({
 
   const choose = (label: string) => {
     setMobileOpen(false);
+    closeOrganizationSwitcher();
     if (label === "Organization settings") setProfileOpen(false);
   };
 
@@ -385,10 +466,17 @@ export function Sidebar({
           <button
             type="button"
             className="org-switcher"
-            onClick={() => choose("Organization settings")}
+            onClick={() => {
+              setOrganizationSwitcherOpen((value) => !value);
+              setCreateOrganizationOpen(false);
+              setOrganizationError("");
+            }}
             aria-label="Switch organization"
+            aria-expanded={organizationSwitcherOpen}
+            aria-haspopup="dialog"
+            disabled={organizationsPending || organizationBusy}
           >
-            <Identity organization={organization} />
+            <Identity organization={sidebarOrganization} />
           </button>
         ) : null}
         {mobile ? (
@@ -414,6 +502,73 @@ export function Sidebar({
             <PanelToggleIcon collapsed={collapsed} />
           </button>
         )}
+        {organizationSwitcherOpen && (!collapsed || mobile) ? (
+          <div
+            className="organization-switcher-menu"
+            role="dialog"
+            aria-label="Organization switcher"
+          >
+            <p className="search-section-label">Your Organizations</p>
+            {organizations?.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="organization-switcher-option"
+                aria-pressed={item.id === activeOrganizationId}
+                onClick={() => void switchOrganization(item.id)}
+                disabled={organizationBusy}
+              >
+                <span className="identity-initial" aria-hidden="true">
+                  {getInitials(item.name)}
+                </span>
+                <span className="organization-switcher-name">{item.name}</span>
+                {item.id === activeOrganizationId ? <small>Active</small> : null}
+              </button>
+            ))}
+            {organizationError ? (
+              <p className="organization-switcher-error" role="alert">
+                {organizationError}
+              </p>
+            ) : null}
+            {createOrganizationOpen ? (
+              <form className="organization-switcher-create" onSubmit={createOrganization}>
+                <label htmlFor={mobile ? "mobile-new-organization" : "new-organization"}>
+                  Organization name
+                </label>
+                <input
+                  id={mobile ? "mobile-new-organization" : "new-organization"}
+                  value={organizationName}
+                  onChange={(event) => setOrganizationName(event.target.value)}
+                  maxLength={80}
+                  required
+                />
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setCreateOrganizationOpen(false)}
+                    disabled={organizationBusy}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={organizationBusy}>
+                    {organizationBusy ? "Creating..." : "Create"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                type="button"
+                className="organization-switcher-add"
+                onClick={() => {
+                  setOrganizationError("");
+                  setCreateOrganizationOpen(true);
+                }}
+              >
+                <span aria-hidden="true">+</span> Create Organization
+              </button>
+            )}
+          </div>
+        ) : null}
       </header>
       <button
         type="button"
@@ -437,7 +592,9 @@ export function Sidebar({
             {...item}
             collapsed={collapsed && !mobile}
             mobile={mobile}
-            active={false}
+            active={
+              item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href)
+            }
             onClick={() => choose(item.label)}
           />
         ))}
@@ -452,7 +609,7 @@ export function Sidebar({
               {...item}
               collapsed={collapsed && !mobile}
               mobile={mobile}
-              active={false}
+              active={pathname.startsWith(item.href)}
               onClick={() => choose(item.label)}
             />
           ))}
@@ -504,7 +661,14 @@ export function Sidebar({
                 <Icon name="external" size={15} />
                 Refer and Earn
               </button>
-              <button type="button" className="profile-menu-row logout-row">
+              <button
+                type="button"
+                className="profile-menu-row logout-row"
+                onClick={async () => {
+                  await signOut();
+                  router.replace("/");
+                }}
+              >
                 <Icon name="logout" size={15} />
                 Log out
               </button>
@@ -590,7 +754,15 @@ export function Sidebar({
             <strong title={user.name}>{user.name}</strong>
             <small>{user.role}</small>
             <div className="sidebar-divider" />
-            <button type="button">Log out</button>
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut();
+                router.replace("/");
+              }}
+            >
+              Log out
+            </button>
           </div>
         ) : null}
       </div>
@@ -627,7 +799,12 @@ export function Sidebar({
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         onSelect={(label) => {
-          if (label === "Go to Projects") router.push("/dashboard");
+          if (label === "Go to Projects") router.push("/dashboard/projects");
+          if (label === "Go to Services") router.push("/dashboard/services");
+          if (label === "Go to Databases") router.push("/dashboard/databases");
+          if (label === "Log out") {
+            void signOut().then(() => router.replace("/"));
+          }
         }}
       />
     </>
