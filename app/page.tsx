@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { FormEvent, useState } from "react";
+import { signIn, signUp } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 function GoogleMark() {
   return (
@@ -71,23 +73,77 @@ function CheckMark() {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(true);
   const [notice, setNotice] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const requestedReturnTo = new URLSearchParams(window.location.search).get("returnTo");
+    const returnTo =
+      requestedReturnTo?.startsWith("/") && !requestedReturnTo.startsWith("//")
+        ? requestedReturnTo
+        : "/dashboard";
+
     if (!email || !password) {
       setNotice("Enter your email and password to continue.");
       return;
     }
-    setNotice(
-      rememberEmail
-        ? "Demo mode: your email would be remembered on this device."
-        : "Demo mode: sign-in is ready to connect to your API.",
-    );
+
+    if (isSignUp && !username) {
+      setNotice("Username is required for sign up.");
+      return;
+    }
+
+    setIsLoading(true);
+    setNotice("");
+
+    try {
+      if (isSignUp) {
+        // Sign up new user
+        const result = await signUp.email({
+          email,
+          password,
+          name: username,
+          username,
+          callbackURL: "/dashboard",
+        });
+
+        if (result.error) {
+          setNotice(result.error.message || "Sign up failed. Please try again.");
+        } else {
+          setNotice("Account created! Redirecting to dashboard...");
+          router.push(returnTo);
+        }
+      } else {
+        // Sign in existing user
+        const result = await signIn.email({
+          email,
+          password,
+          rememberMe: rememberEmail,
+          callbackURL: "/dashboard",
+        });
+
+        if (result.error) {
+          setNotice(result.error.message || "Invalid credentials. Please try again.");
+        } else {
+          setNotice("Signed in successfully! Redirecting...");
+          router.push(returnTo);
+        }
+      }
+    } catch (error) {
+      console.error("Auth error:", error);
+      setNotice("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -101,13 +157,14 @@ export default function Home() {
           <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority />
         </div>
 
-        <h1>Sign in to Stealth</h1>
+        <h1>{isSignUp ? "Create Account" : "Sign in to Stealth"}</h1>
 
         <div className="provider-grid">
           <button
             type="button"
             className="secondary-button"
-            onClick={() => setNotice("Google sign-in is ready to connect.")}
+            onClick={() => setNotice("Google sign-in coming soon.")}
+            disabled
           >
             <GoogleMark />
             Google
@@ -115,7 +172,8 @@ export default function Home() {
           <button
             type="button"
             className="secondary-button"
-            onClick={() => setNotice("GitHub sign-in is ready to connect.")}
+            onClick={() => setNotice("GitHub sign-in coming soon.")}
+            disabled
           >
             <GitHubMark />
             GitHub
@@ -125,7 +183,8 @@ export default function Home() {
         <button
           type="button"
           className="secondary-button sso-button"
-          onClick={() => setNotice("SSO is ready to connect.")}
+          onClick={() => setNotice("SSO coming soon.")}
+          disabled
         >
           <LockMark />
           Continue with SSO
@@ -142,6 +201,21 @@ export default function Home() {
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
+          {isSignUp && (
+            <>
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </>
+          )}
+
           <label htmlFor="email">Email</label>
           <input
             id="email"
@@ -150,6 +224,7 @@ export default function Home() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
+            disabled={isLoading}
           />
 
           <label className="password-label" htmlFor="password">
@@ -159,10 +234,11 @@ export default function Home() {
             <input
               id="password"
               type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
+              autoComplete={isSignUp ? "new-password" : "current-password"}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
+              disabled={isLoading}
             />
             <button
               type="button"
@@ -170,46 +246,60 @@ export default function Home() {
               onClick={() => setShowPassword((visible) => !visible)}
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-pressed={showPassword}
+              disabled={isLoading}
             >
               <EyeMark hidden={showPassword} />
             </button>
           </div>
 
-          <label className="remember-row">
-            <input
-              className="sr-only"
-              type="checkbox"
-              checked={rememberEmail}
-              onChange={(event) => setRememberEmail(event.target.checked)}
-            />
-            <span className="checkbox-mark" aria-hidden="true">
-              {rememberEmail ? <CheckMark /> : null}
-            </span>
-            Save email and login method on this device
-          </label>
+          {!isSignUp && (
+            <label className="remember-row">
+              <input
+                className="sr-only"
+                type="checkbox"
+                checked={rememberEmail}
+                onChange={(event) => setRememberEmail(event.target.checked)}
+                disabled={isLoading}
+              />
+              <span className="checkbox-mark" aria-hidden="true">
+                {rememberEmail ? <CheckMark /> : null}
+              </span>
+              Save email and login method on this device
+            </label>
+          )}
 
-          <button type="submit" className="submit-button">
-            Sign in
+          <button type="submit" className="submit-button" disabled={isLoading}>
+            {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Sign in"}
           </button>
         </form>
 
         <p className="support-copy">
-          Don&apos;t have an account?{" "}
-          <a href="#signup" onClick={(event) => event.preventDefault()}>
-            Sign up
+          {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+          <a
+            href="#toggle"
+            onClick={(event) => {
+              event.preventDefault();
+              setIsSignUp(!isSignUp);
+              setNotice("");
+              setUsername("");
+            }}
+          >
+            {isSignUp ? "Sign in" : "Sign up"}
           </a>
         </p>
-        <p className="support-copy compact">
-          Forgot your{" "}
-          <a href="#email" onClick={(event) => event.preventDefault()}>
-            email
-          </a>{" "}
-          or{" "}
-          <a href="#password" onClick={(event) => event.preventDefault()}>
-            password
-          </a>
-          ?
-        </p>
+        {!isSignUp && (
+          <p className="support-copy compact">
+            Forgot your{" "}
+            <a href="#email" onClick={(event) => event.preventDefault()}>
+              email
+            </a>{" "}
+            or{" "}
+            <a href="#password" onClick={(event) => event.preventDefault()}>
+              password
+            </a>
+            ?
+          </p>
+        )}
 
         <p className="legal-copy">
           By continuing, I agree to Stealth&apos;s{" "}

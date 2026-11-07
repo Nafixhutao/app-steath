@@ -3,18 +3,35 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
-import { useSession } from "@/lib/auth-client";
+import { OrganizationOnboarding } from "@/components/organization-onboarding";
+import { authClient, useListOrganizations, useSession } from "@/lib/auth-client";
 import { defaultOrganization } from "@/components/identity";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const { data: organizations, isPending: organizationsPending } = useListOrganizations();
+  const activeOrganizationId = session?.session.activeOrganizationId;
+  const needsOrganization = !organizationsPending && (organizations?.length ?? 0) === 0;
+  const needsActiveOrganization =
+    !organizationsPending && !needsOrganization && !!session && !activeOrganizationId;
 
   useEffect(() => {
     if (!isPending && !session) router.replace("/");
   }, [isPending, router, session]);
 
-  if (isPending) {
+  useEffect(() => {
+    // Leaving or deleting an Organization clears the active id. Fall back to a
+    // remaining membership instead of rendering the dashboard without context.
+    if (!needsActiveOrganization) return;
+    const fallback = organizations?.[0];
+    if (!fallback) return;
+    void authClient.organization.setActive({ organizationId: fallback.id }).then((result) => {
+      if (!result.error) router.refresh();
+    });
+  }, [needsActiveOrganization, organizations, router]);
+
+  if (isPending || organizationsPending) {
     return (
       <div className="dashboard-loading" role="status">
         Loading your workspace...
@@ -30,7 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         user={{ name: session.user.name || session.user.email, role: "Member" }}
       />
       <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1">
-        {children}
+        {needsOrganization ? <OrganizationOnboarding /> : children}
       </main>
     </div>
   );
