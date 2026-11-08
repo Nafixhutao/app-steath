@@ -1204,6 +1204,128 @@ a:hover {
 .dashboard-back-link a {
   color: #b5a8ff;
 }
+.service-list {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.service-card {
+  padding: 18px;
+  border: 1px solid #2b2b30;
+  border-radius: 8px;
+  background: #17171a;
+}
+.service-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.service-card-head h3 {
+  margin: 0 0 6px;
+  color: #f4f4f5;
+  font-size: 15px;
+  font-weight: 600;
+}
+.service-card-head h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+.service-card-head h3 a:hover {
+  color: #b5a8ff;
+}
+.service-url {
+  color: #b5a8ff;
+  font-size: 12px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.service-url:hover {
+  text-decoration: underline;
+}
+.service-meta {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+}
+.service-meta > div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+}
+.service-meta dt {
+  color: #8a8791;
+  font-size: 12px;
+}
+.service-meta dd {
+  margin: 0;
+  color: #d6d3da;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.service-danger-row {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #29262e;
+}
+.service-danger-row label {
+  display: grid;
+  flex: 1;
+  gap: 7px;
+  color: #c8c4cd;
+  font-size: 12px;
+}
+.service-danger-row input,
+.service-form input {
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid #403c45;
+  border-radius: 7px;
+  outline: none;
+  background: #19171c;
+  color: #edecf1;
+  font: inherit;
+}
+.service-danger-row input:focus,
+.service-form input:focus {
+  border-color: #8a78e8;
+  box-shadow: 0 0 0 3px rgb(138 120 232 / 16%);
+}
+.service-form {
+  margin-top: 22px;
+}
+.service-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 0;
+}
+.service-form-grid label {
+  display: grid;
+  gap: 7px;
+  color: #c8c4cd;
+  font-size: 12px;
+}
+@media (max-width: 760px) {
+  .service-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .service-meta > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .service-danger-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
 .project-card-mark {
   display: inline-flex;
   width: 32px;

@@ -7,4 +7,6 @@ export const QUOTAS = {
   servicesPerProject: 2,
   servicesPerOrganization: 5,
   databasesPerProject: 1,
+  cpuPerService: 0.5,
+  memoryMbPerService: 512,
 } as const;

@@ -23,6 +23,7 @@ type ProjectRow = {
   id: string;
   name: string;
   slug: string;
+  serviceCount: string | number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -74,12 +75,12 @@ function normalizeSlug(value: unknown, fallbackName: string): string {
 }
 
 /**
- * Resource counts per Project. Services and Databases arrive in later tickets;
- * until their tables exist a Project always holds zero resources, so the
- * summary reports the truth instead of guessing.
+ * Resource counts per Project. Databases arrive in a later ticket, so their
+ * count stays zero until that table exists; the Service count is read from the
+ * real table so the Project summary never guesses.
  */
 function summarize(row: ProjectRow): ProjectSummary {
-  const serviceCount = 0;
+  const serviceCount = Number(row.serviceCount ?? 0);
   const databaseCount = 0;
 
   return {
@@ -90,10 +91,13 @@ function summarize(row: ProjectRow): ProjectSummary {
   };
 }
 
+const PROJECT_SELECT = `SELECT p."id", p."name", p."slug", p."createdAt", p."updatedAt",
+  (SELECT count(*) FROM "service" s WHERE s."projectId" = p."id") AS "serviceCount"
+  FROM "project" p`;
+
 export async function listProjects(organizationId: string): Promise<ProjectSummary[]> {
   const result = await pool.query<ProjectRow>(
-    `SELECT "id", "name", "slug", "createdAt", "updatedAt"
-     FROM "project" WHERE "organizationId" = $1 ORDER BY "createdAt", "id"`,
+    `${PROJECT_SELECT} WHERE p."organizationId" = $1 ORDER BY p."createdAt", p."id"`,
     [organizationId],
   );
 
@@ -105,8 +109,7 @@ export async function getProject(
   projectId: string,
 ): Promise<ProjectSummary> {
   const result = await pool.query<ProjectRow>(
-    `SELECT "id", "name", "slug", "createdAt", "updatedAt"
-     FROM "project" WHERE "organizationId" = $1 AND "id" = $2`,
+    `${PROJECT_SELECT} WHERE p."organizationId" = $1 AND p."id" = $2`,
     [organizationId, projectId],
   );
 
@@ -160,7 +163,7 @@ export async function createProject(input: {
     const inserted = await client.query<ProjectRow>(
       `INSERT INTO "project" ("id", "organizationId", "name", "slug")
        VALUES (gen_random_uuid()::text, $1, $2, $3)
-       RETURNING "id", "name", "slug", "createdAt", "updatedAt"`,
+       RETURNING "id", "name", "slug", 0 AS "serviceCount", "createdAt", "updatedAt"`,
       [input.organizationId, name, slug],
     );
 
@@ -201,7 +204,9 @@ export async function updateProject(input: {
   const result = await pool.query<ProjectRow>(
     `UPDATE "project" SET "name" = $1, "slug" = $2
      WHERE "organizationId" = $3 AND "id" = $4
-     RETURNING "id", "name", "slug", "createdAt", "updatedAt"`,
+     RETURNING "id", "name", "slug",
+       (SELECT count(*) FROM "service" s WHERE s."projectId" = "project"."id") AS "serviceCount",
+       "createdAt", "updatedAt"`,
     [name, slug, input.organizationId, input.projectId],
   );
 

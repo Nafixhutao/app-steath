@@ -10,6 +10,7 @@ import {
   updateProject,
   type ProjectSummary,
 } from "@/lib/projects-client";
+import { ServicesPanel } from "./services-panel";
 
 function getError(error: unknown) {
   return error instanceof Error ? error.message : "The request could not be completed.";
@@ -45,6 +46,19 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   useEffect(() => {
     void Promise.resolve().then(load);
   }, [load]);
+
+  /**
+   * Refreshes only the Project summary so Service counts stay accurate after a
+   * Service is created or deleted, without resetting the edit form.
+   */
+  const refreshSummary = useCallback(async () => {
+    try {
+      setProject(await getProject(projectId));
+    } catch {
+      // The Service panel already reports its own errors; a stale summary is
+      // harmless compared with replacing the page with an error state.
+    }
+  }, [projectId]);
 
   async function rename(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,14 +166,13 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             <span>Databases</span>
           </div>
         </div>
-        <div className="dashboard-empty-state">
-          <h3>No resources yet</h3>
-          <p>
-            Services and Databases for this Project are added in the next steps of the platform
-            build.
-          </p>
-        </div>
       </section>
+
+      <ServicesPanel
+        projectId={project.id}
+        canManage={canManage}
+        onChanged={() => void refreshSummary()}
+      />
 
       {canManage ? (
         <section className="dashboard-section" aria-labelledby="settings-heading">
