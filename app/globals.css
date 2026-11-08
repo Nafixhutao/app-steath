@@ -1834,6 +1834,22 @@ a:hover {
   font-size: 14px;
 }
 
+/*
+ * The dashboard layout always renders its children so Next.js can validate them
+ * for instant navigation, which means the loading and onboarding states cover
+ * the console instead of replacing it.
+ */
+.dashboard-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow-y: auto;
+  background: #121014;
+}
+.dashboard-gate .dashboard-loading {
+  min-height: 100%;
+}
+
 .dashboard-content {
   min-height: 100dvh;
   padding: 36px clamp(20px, 4vw, 56px) 64px;
