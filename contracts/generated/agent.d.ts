@@ -21,6 +21,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/node": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read node info and capacity */
+        get: operations["getNode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/builds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a Build for a Deployment
+         * @description Clones the repository at the requested branch and builds the Dockerfile
+         *     with BuildKit. Calling this again with the same `buildId` returns the
+         *     existing Build instead of starting a second one.
+         */
+        post: operations["startBuild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/builds/{buildId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Build status */
+        get: operations["getBuild"];
+        put?: never;
+        post?: never;
+        /**
+         * Cancel a running Build
+         * @description Cancelling a finished Build returns its final status unchanged.
+         */
+        delete: operations["cancelBuild"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/builds/{buildId}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Build logs
+         * @description Streams newline-delimited `BuildLogEvent` JSON objects, one per line, and
+         *     closes when the Build finishes. `after` replays the log from a sequence
+         *     number so a reconnecting Control Plane never loses or duplicates lines.
+         */
+        get: operations["streamBuildLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -29,12 +111,51 @@ export interface components {
             /** @enum {string} */
             status: "ok";
         };
+        NodeInfo: {
+            name?: string;
+            /** @enum {string} */
+            status: "ok";
+            dockerVersion: string;
+            buildkitAvailable: boolean;
+            cpuCount?: number;
+            memoryMb?: number;
+        };
+        BuildRequest: {
+            /** @description Deployment id; makes Build creation idempotent. */
+            buildId: string;
+            repoUrl: string;
+            branch: string;
+            dockerfilePath: string;
+            imageTag: string;
+        };
+        Build: {
+            buildId: string;
+            /** @enum {string} */
+            status: "running" | "succeeded" | "failed" | "cancelled";
+            imageRef?: string;
+            commitSha?: string;
+            error?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+        };
+        BuildLogEvent: {
+            sequence: number;
+            message: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         Error: {
             error: string;
+            code?: string;
         };
     };
     responses: never;
-    parameters: never;
+    parameters: {
+        /** @description Deployment id that owns the Build. */
+        BuildId: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -61,6 +182,203 @@ export interface operations {
             };
             /** @description Missing or invalid token */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Node info */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeInfo"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startBuild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuildRequest"];
+            };
+        };
+        responses: {
+            /** @description Build accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Build"];
+                };
+            };
+            /** @description Invalid Build request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getBuild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deployment id that owns the Build. */
+                buildId: components["parameters"]["BuildId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Build status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Build"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unknown Build */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    cancelBuild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deployment id that owns the Build. */
+                buildId: components["parameters"]["BuildId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Build cancelled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Build"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unknown Build */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    streamBuildLogs: {
+        parameters: {
+            query?: {
+                /** @description Return events with a sequence greater than this value. */
+                after?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Deployment id that owns the Build. */
+                buildId: components["parameters"]["BuildId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newline-delimited Build log events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/x-ndjson": components["schemas"]["BuildLogEvent"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unknown Build */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

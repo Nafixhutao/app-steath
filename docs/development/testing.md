@@ -33,6 +33,9 @@ npm run test:go
 | `npm run contract:check`    | Regenerate the contract and fail if generated files changed                  |
 | `npm run contract:breaking` | Fail on incompatible contract changes against `CONTRACT_BASE_REF`            |
 | `npm run ci`                | Typecheck plus the full test suite                                           |
+| `npm run worker`            | Run the Deployment worker                                                    |
+| `npm run agent:run`         | Run the Go Node Agent locally                                                |
+| `npm run agent:build`       | Build the Node Agent binary into `dist/`                                     |
 
 ## Contract
 
@@ -49,6 +52,21 @@ CI regenerates the contract and fails on drift. Pull requests also run `contract
 
 ## Docker and Caddy
 
-Docker is needed for the PostgreSQL test database and, later, for Node Agent integration tests. Node Agent tests use the real Docker engine through the Go seam.
+Docker is needed for the PostgreSQL test database and for the Node Agent integration tests. Node Agent tests use the real Docker engine through the Go seam, so `docker version` must succeed before `npm run test:go`. Build tests skip themselves when Docker is unreachable instead of failing.
 
-Caddy is not needed for ticket 01 tests. From the routing tickets onward it runs as a Docker Compose service in front of the Control Plane, and route changes are asserted through the Node Agent seam. When Caddy is unavailable in CI, route behaviour is tested at the Node Agent seam and the full Caddy smoke test runs in staging.
+The Build tests in `agent/internal/build/docker_test.go` copy `test/fixtures/hello-docker` into a throwaway Git repository, so they prove the agent clones a real repository and builds with BuildKit. They cover a successful Build, a broken Dockerfile, a missing Dockerfile, and an unknown branch.
+
+Caddy is not needed for the Build tests. From the routing tickets onward it runs as a Docker Compose service in front of the Control Plane, and route changes are asserted through the Node Agent seam. When Caddy is unavailable in CI, route behaviour is tested at the Node Agent seam and the full Caddy smoke test runs in staging.
+
+## Deployment worker and Node Agent
+
+The Control Plane and the worker are separate processes. The worker claims Build Jobs with `FOR UPDATE SKIP LOCKED` and processes one at a time, which gives the spec's Build concurrency of one per node.
+
+```
+npm run worker        # Control Plane side
+npm run agent:run     # Node Agent side
+```
+
+Both need `AGENT_TOKEN`. The worker also needs `AGENT_BASE_URL` pointing at the agent, and the agent needs `CONTROL_PLANE_URL` to send heartbeats to `/api/nodes/heartbeat`. A node that has not heartbeated for 90 seconds is reported unhealthy and blocks new Deployments.
+
+The Control Plane API tests in `tests/api/deployments.test.ts` use a fake Node Agent over HTTP, so they exercise the Deployment state machine (`queued → building → deploying`, and `failed` on a Build error) without Docker.

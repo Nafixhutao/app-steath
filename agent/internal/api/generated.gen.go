@@ -6,28 +6,104 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/oapi-codegen/runtime"
 )
 
-// Defines values for HealthStatus.
+// Defines values for BuildStatus.
 const (
-	Ok HealthStatus = "ok"
+	Cancelled BuildStatus = "cancelled"
+	Failed    BuildStatus = "failed"
+	Running   BuildStatus = "running"
+	Succeeded BuildStatus = "succeeded"
 )
 
-// Valid indicates whether the value is a known member of the HealthStatus enum.
-func (e HealthStatus) Valid() bool {
+// Valid indicates whether the value is a known member of the BuildStatus enum.
+func (e BuildStatus) Valid() bool {
 	switch e {
-	case Ok:
+	case Cancelled:
+		return true
+	case Failed:
+		return true
+	case Running:
+		return true
+	case Succeeded:
 		return true
 	default:
 		return false
 	}
 }
 
+// Defines values for HealthStatus.
+const (
+	HealthStatusOk HealthStatus = "ok"
+)
+
+// Valid indicates whether the value is a known member of the HealthStatus enum.
+func (e HealthStatus) Valid() bool {
+	switch e {
+	case HealthStatusOk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NodeInfoStatus.
+const (
+	NodeInfoStatusOk NodeInfoStatus = "ok"
+)
+
+// Valid indicates whether the value is a known member of the NodeInfoStatus enum.
+func (e NodeInfoStatus) Valid() bool {
+	switch e {
+	case NodeInfoStatusOk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Build defines model for Build.
+type Build struct {
+	BuildId    string      `json:"buildId"`
+	CommitSha  *string     `json:"commitSha,omitempty"`
+	Error      *string     `json:"error,omitempty"`
+	FinishedAt *time.Time  `json:"finishedAt,omitempty"`
+	ImageRef   *string     `json:"imageRef,omitempty"`
+	StartedAt  *time.Time  `json:"startedAt,omitempty"`
+	Status     BuildStatus `json:"status"`
+}
+
+// BuildStatus defines model for Build.Status.
+type BuildStatus string
+
+// BuildLogEvent defines model for BuildLogEvent.
+type BuildLogEvent struct {
+	Message   string     `json:"message"`
+	Sequence  int        `json:"sequence"`
+	Timestamp *time.Time `json:"timestamp,omitempty"`
+}
+
+// BuildRequest defines model for BuildRequest.
+type BuildRequest struct {
+	Branch string `json:"branch"`
+
+	// BuildId Deployment id; makes Build creation idempotent.
+	BuildId        string `json:"buildId"`
+	DockerfilePath string `json:"dockerfilePath"`
+	ImageTag       string `json:"imageTag"`
+	RepoUrl        string `json:"repoUrl"`
+}
+
 // Error defines model for Error.
 type Error struct {
-	Error string `json:"error"`
+	Code  *string `json:"code,omitempty"`
+	Error string  `json:"error"`
 }
 
 // Health defines model for Health.
@@ -38,11 +114,51 @@ type Health struct {
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
 
+// NodeInfo defines model for NodeInfo.
+type NodeInfo struct {
+	BuildkitAvailable bool           `json:"buildkitAvailable"`
+	CpuCount          *int           `json:"cpuCount,omitempty"`
+	DockerVersion     string         `json:"dockerVersion"`
+	MemoryMb          *int           `json:"memoryMb,omitempty"`
+	Name              *string        `json:"name,omitempty"`
+	Status            NodeInfoStatus `json:"status"`
+}
+
+// NodeInfoStatus defines model for NodeInfo.Status.
+type NodeInfoStatus string
+
+// BuildId defines model for BuildId.
+type BuildId = string
+
+// StreamBuildLogsParams defines parameters for StreamBuildLogs.
+type StreamBuildLogsParams struct {
+	// After Return events with a sequence greater than this value.
+	After *int `form:"after,omitempty" json:"after,omitempty"`
+}
+
+// StartBuildJSONRequestBody defines body for StartBuild for application/json ContentType.
+type StartBuildJSONRequestBody = BuildRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// StartBuild Start a Build for a Deployment
+	// (POST /v1/builds)
+	StartBuild(w http.ResponseWriter, r *http.Request)
+	// CancelBuild Cancel a running Build
+	// (DELETE /v1/builds/{buildId})
+	CancelBuild(w http.ResponseWriter, r *http.Request, buildId BuildId)
+	// GetBuild Read Build status
+	// (GET /v1/builds/{buildId})
+	GetBuild(w http.ResponseWriter, r *http.Request, buildId BuildId)
+	// StreamBuildLogs Stream Build logs
+	// (GET /v1/builds/{buildId}/logs)
+	StreamBuildLogs(w http.ResponseWriter, r *http.Request, buildId BuildId, params StreamBuildLogsParams)
 	// GetHealth Check whether the Node Agent is healthy
 	// (GET /v1/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// GetNode Read node info and capacity
+	// (GET /v1/node)
+	GetNode(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -54,11 +170,133 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// StartBuild operation middleware
+func (siw *ServerInterfaceWrapper) StartBuild(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StartBuild(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelBuild operation middleware
+func (siw *ServerInterfaceWrapper) CancelBuild(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "buildId" -------------
+	var buildId BuildId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "buildId", r.PathValue("buildId"), &buildId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "buildId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelBuild(w, r, buildId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBuild operation middleware
+func (siw *ServerInterfaceWrapper) GetBuild(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "buildId" -------------
+	var buildId BuildId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "buildId", r.PathValue("buildId"), &buildId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "buildId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBuild(w, r, buildId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StreamBuildLogs operation middleware
+func (siw *ServerInterfaceWrapper) StreamBuildLogs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "buildId" -------------
+	var buildId BuildId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "buildId", r.PathValue("buildId"), &buildId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "buildId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params StreamBuildLogsParams
+
+	// ------------- Optional query parameter "after" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "after", r.URL.Query(), &params.After, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "after"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StreamBuildLogs(w, r, buildId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNode operation middleware
+func (siw *ServerInterfaceWrapper) GetNode(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNode(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -189,6 +427,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/health", wrapper.GetHealth)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/node", wrapper.GetNode)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/builds", wrapper.StartBuild)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.CancelBuild)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.GetBuild)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}/logs", wrapper.StreamBuildLogs)
 
 	return m
 }

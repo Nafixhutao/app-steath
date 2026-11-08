@@ -1273,8 +1273,7 @@ a:hover {
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid #29262e;
-}
-.service-danger-row label {
+}.service-danger-row label {
   display: grid;
   flex: 1;
   gap: 7px;
@@ -1292,6 +1291,85 @@ a:hover {
   background: #19171c;
   color: #edecf1;
   font: inherit;
+}
+.deployment-node {
+  margin: 0 0 12px;
+  color: #9e99a4;
+  font-size: 12px;
+}
+.deployment-node.is-healthy {
+  color: #7bd8a4;
+}
+.deployment-node.is-unhealthy,
+.deployment-node.is-unknown {
+  color: #f0b366;
+}
+.deployment-error {
+  display: block;
+  margin-top: 6px;
+  color: #ffb9c2;
+  font-size: 11px;
+}
+.role-label.is-building,
+.role-label.is-queued,
+.role-label.is-deploying {
+  border-color: #4d4380;
+  color: #c0b6ff;
+}
+.role-label.is-running {
+  border-color: #1f6b45;
+  color: #7bd8a4;
+}
+.role-label.is-failed {
+  border-color: #713a44;
+  color: #ffb9c2;
+}
+.role-label.is-cancelled {
+  border-color: #5c5142;
+  color: #d8c8a8;
+}
+.dashboard-link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #b5a8ff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.dashboard-link-button:hover {
+  text-decoration: underline;
+}
+.deployment-log {
+  margin-top: 16px;
+  border: 1px solid #2d2a32;
+  border-radius: 9px;
+  background: #131116;
+}
+.deployment-log-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #2d2a32;
+}
+.deployment-log-head h3 {
+  margin: 0;
+  color: #d6d3da;
+  font-size: 12px;
+  font-weight: 600;
+}
+.deployment-log pre {
+  max-height: 320px;
+  margin: 0;
+  padding: 12px 14px;
+  overflow: auto;
+  color: #c8c4cd;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .service-danger-row input:focus,
 .service-form input:focus {

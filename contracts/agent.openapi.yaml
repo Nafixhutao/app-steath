@@ -1,7 +1,12 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.1.0
+  version: 0.2.0
+  description: |
+    Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
+    only caller: it authenticates with a bearer token, starts Builds, and reads
+    the Build status and log stream. Operations that receive a Deployment
+    identifier are idempotent, so a retried request never starts a second Build.
 paths:
   /v1/health:
     get:
@@ -22,11 +27,166 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/node:
+    get:
+      operationId: getNode
+      summary: Read node info and capacity
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Node info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodeInfo"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/builds:
+    post:
+      operationId: startBuild
+      summary: Start a Build for a Deployment
+      description: |
+        Clones the repository at the requested branch and builds the Dockerfile
+        with BuildKit. Calling this again with the same `buildId` returns the
+        existing Build instead of starting a second one.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuildRequest"
+      responses:
+        "202":
+          description: Build accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Build"
+        "400":
+          description: Invalid Build request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/builds/{buildId}:
+    get:
+      operationId: getBuild
+      summary: Read Build status
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BuildId"
+      responses:
+        "200":
+          description: Build status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Build"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: cancelBuild
+      summary: Cancel a running Build
+      description: Cancelling a finished Build returns its final status unchanged.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BuildId"
+      responses:
+        "200":
+          description: Build cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Build"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/builds/{buildId}/logs:
+    get:
+      operationId: streamBuildLogs
+      summary: Stream Build logs
+      description: |
+        Streams newline-delimited `BuildLogEvent` JSON objects, one per line, and
+        closes when the Build finishes. `after` replays the log from a sequence
+        number so a reconnecting Control Plane never loses or duplicates lines.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BuildId"
+        - name: after
+          in: query
+          required: false
+          description: Return events with a sequence greater than this value.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Newline-delimited Build log events
+          content:
+            application/x-ndjson:
+              schema:
+                $ref: "#/components/schemas/BuildLogEvent"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
+  parameters:
+    BuildId:
+      name: buildId
+      in: path
+      required: true
+      description: Deployment id that owns the Build.
+      schema:
+        type: string
   schemas:
     Health:
       type: object
@@ -37,10 +197,93 @@ components:
           type: string
           enum:
             - ok
+    NodeInfo:
+      type: object
+      required:
+        - status
+        - dockerVersion
+        - buildkitAvailable
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - ok
+        dockerVersion:
+          type: string
+        buildkitAvailable:
+          type: boolean
+        cpuCount:
+          type: integer
+        memoryMb:
+          type: integer
+    BuildRequest:
+      type: object
+      required:
+        - buildId
+        - repoUrl
+        - branch
+        - dockerfilePath
+        - imageTag
+      properties:
+        buildId:
+          type: string
+          description: Deployment id; makes Build creation idempotent.
+        repoUrl:
+          type: string
+        branch:
+          type: string
+        dockerfilePath:
+          type: string
+        imageTag:
+          type: string
+    Build:
+      type: object
+      required:
+        - buildId
+        - status
+      properties:
+        buildId:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - succeeded
+            - failed
+            - cancelled
+        imageRef:
+          type: string
+        commitSha:
+          type: string
+        error:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+    BuildLogEvent:
+      type: object
+      required:
+        - sequence
+        - message
+      properties:
+        sequence:
+          type: integer
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
     Error:
       type: object
       required:
         - error
       properties:
         error:
+          type: string
+        code:
           type: string

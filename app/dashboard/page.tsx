@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useActiveOrganization } from "@/lib/auth-client";
+import { listNodes, type NodeSummary } from "@/lib/deployments-client";
 import { listProjects, type ProjectSummary } from "@/lib/projects-client";
 
 export default function DashboardPage() {
   const { data: organization } = useActiveOrganization();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [nodes, setNodes] = useState<NodeSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const organizationId = organization?.id;
@@ -15,7 +17,9 @@ export default function DashboardPage() {
   const refresh = useCallback(async () => {
     if (!organizationId) return;
     try {
-      setProjects(await listProjects());
+      const [projectList, nodeList] = await Promise.all([listProjects(), listNodes()]);
+      setProjects(projectList);
+      setNodes(nodeList);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not load Projects.");
@@ -28,6 +32,9 @@ export default function DashboardPage() {
     void Promise.resolve().then(refresh);
   }, [refresh]);
 
+  const node = nodes[0];
+  const nodeHealthy = node?.status === "healthy";
+
   return (
     <div className="dashboard-content">
       <div className="dashboard-page-heading">
@@ -35,11 +42,22 @@ export default function DashboardPage() {
           <h1>Overview</h1>
           <p>Manage hosting resources for {organization?.name ?? "your Organization"}.</p>
         </div>
+        {node ? (
+          <span className={`role-label is-${nodeHealthy ? "running" : "failed"}`}>
+            Node {nodeHealthy ? "Healthy" : "Unavailable"}
+          </span>
+        ) : null}
       </div>
 
       {error ? (
         <p className="dashboard-alert is-error" role="alert">
           {error}
+        </p>
+      ) : null}
+
+      {node && !nodeHealthy ? (
+        <p className="dashboard-alert is-error" role="status">
+          The Node Agent is not reporting in, so new Deployments are blocked until it recovers.
         </p>
       ) : null}
 

@@ -23,6 +23,9 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f postgres",
+    "worker": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON worker/index.mts",
+    "agent:run": "cd agent && go run ./cmd/agent",
+    "agent:build": "cd agent && go build -o ../dist/agent ./cmd/agent",
     "auth:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-auth-schema.mts",
     "db:migrate": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/migrate.mts",
     "auth:migrate": "npm run db:migrate"

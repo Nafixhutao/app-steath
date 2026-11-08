@@ -11,6 +11,7 @@ import {
   serviceStatusLabel,
   type ServiceSummary,
 } from "@/lib/services-client";
+import { DeploymentsPanel } from "./deployments-panel";
 
 function getError(error: unknown) {
   return error instanceof Error ? error.message : "The request could not be completed.";
@@ -26,6 +27,8 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Members are read-only for resources but may still trigger a Deployment.
+  const canDeploy = Boolean(activeMember?.role);
 
   const load = useCallback(async () => {
     try {
@@ -155,6 +158,8 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
           </div>
         </dl>
       </section>
+
+      <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} />
 
       {canManage ? (
         <section

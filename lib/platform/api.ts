@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/platform/api-error";
 import { TenantAccessError } from "@/lib/platform/tenant";
 
 /**
@@ -5,17 +6,7 @@ import { TenantAccessError } from "@/lib/platform/tenant";
  * failures carry `{ error: { code, message, details? } }`, as defined in the
  * platform spec, so every resource endpoint behaves the same way.
  */
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly code: string,
-    message: string,
-    public readonly details?: Record<string, unknown>,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
+export { ApiError };
 
 export function apiData(data: unknown, status = 200): Response {
   return Response.json({ data }, { status });
