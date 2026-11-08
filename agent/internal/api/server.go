@@ -69,6 +69,7 @@ func (s server) StartBuild(w http.ResponseWriter, r *http.Request) {
 		Branch:         request.Branch,
 		DockerfilePath: request.DockerfilePath,
 		ImageTag:       request.ImageTag,
+		CommitSHA:      deref(request.CommitSha),
 	})
 	if errors.Is(err, build.ErrInvalidRequest) {
 		writeError(w, http.StatusBadRequest, "invalid_build_request", err.Error())

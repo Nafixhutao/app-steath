@@ -85,6 +85,9 @@ type Manager struct {
 	// locks serialises the operations for one Service, so a Stop racing a Deploy
 	// cannot leave a container running with no route.
 	locks map[string]*sync.Mutex
+	// cleanupStatePath is where the last Build-cache prune is recorded, so the
+	// weekly prune survives an agent restart. Empty disables the prune.
+	cleanupStatePath string
 }
 
 // NewManager returns a Manager that runs containers with docker and routes them
@@ -105,6 +108,13 @@ func NewManager(docker Docker, router Router) *Manager {
 // separate call so the Manager stays usable with only Docker and a Router.
 func (m *Manager) SetNetworkAttacher(networks NetworkAttacher) {
 	m.networks = networks
+}
+
+// SetCleanupStatePath records where the last Build-cache prune is remembered.
+// Without it the weekly prune is skipped, which keeps the Manager usable in tests
+// and on a read-only node.
+func (m *Manager) SetCleanupStatePath(path string) {
+	m.cleanupStatePath = path
 }
 
 // Deploy runs a built image as a candidate container, waits for it to become

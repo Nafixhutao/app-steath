@@ -4,6 +4,7 @@ import {
   streamBuildLogs,
   type AgentBuild,
   type AgentClient,
+  type AgentDeploymentAbort,
 } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { nodeConfig, requireHealthyNode } from "./nodes.ts";
@@ -12,6 +13,13 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export const BUILD_JOB_TYPE = "build";
 export const MAX_BUILD_ATTEMPTS = 3;
+
+/**
+ * How long Build and runtime logs are kept. The spec fixes this at seven days:
+ * long enough to investigate a fresh problem, short enough that the disk does
+ * not fill up.
+ */
+export const LOG_RETENTION_DAYS = 7;
 
 export type DeploymentStatus =
   | "queued"
@@ -135,11 +143,16 @@ export async function getDeployment(
  * Creates a Deployment in `queued` and a Build Job in one transaction, so a
  * Deployment can never exist without the Job that will process it. The Service
  * row is locked to make the "one active Deployment" rule hold under concurrency.
+ *
+ * `commitSha` pins the Build to an exact commit, which is what a redeploy uses so
+ * it rebuilds the same code as the Deployment it replaces. An empty value means
+ * "the tip of the branch".
  */
 export async function triggerDeployment(input: {
   organizationId: string;
   serviceId: string;
   userId: string;
+  commitSha?: string | null;
 }): Promise<{ deployment: DeploymentSummary; service: { id: string; name: string } }> {
   // Block new Deployments while no Node Agent is heartbeating, so the Job never
   // sits queued with no worker able to build it.
@@ -188,11 +201,16 @@ export async function triggerDeployment(input: {
       );
     }
 
+    // A redeploy records the pinned commit immediately, so the history shows the
+    // commit being rebuilt while the Build is still queued. The Build then
+    // replaces it with the resolved full SHA once it has checked it out.
+    const pinnedCommit = input.commitSha?.trim() ? input.commitSha.trim() : null;
+
     const deployment = await client.query<DeploymentRow>(
-      `INSERT INTO "deployment" ("id", "serviceId", "status", "createdBy")
-       VALUES (gen_random_uuid()::text, $1, 'queued', $2)
+      `INSERT INTO "deployment" ("id", "serviceId", "status", "commitSha", "createdBy")
+       VALUES (gen_random_uuid()::text, $1, 'queued', $2, $3)
        RETURNING ${DEPLOYMENT_COLUMNS}`,
-      [input.serviceId, input.userId],
+      [input.serviceId, pinnedCommit, input.userId],
     );
 
     await client.query(
@@ -367,10 +385,11 @@ export async function markDeploymentBuilt(input: {
 export async function runDeployment(
   deploymentId: string,
   options: { client?: AgentClient } = {},
-): Promise<{ status: "running" | "failed"; message: string }> {
+): Promise<{ status: "running" | "failed" | "cancelled"; message: string }> {
   const details = await pool.query<{
     deploymentId: string;
     serviceId: string;
+    status: DeploymentStatus;
     imageRef: string | null;
     projectId: string;
     organizationId: string;
@@ -380,7 +399,7 @@ export async function runDeployment(
     cpuLimit: string | number;
     memoryLimitMb: number;
   }>(
-    `SELECT d."id" AS "deploymentId", d."serviceId", d."imageRef",
+    `SELECT d."id" AS "deploymentId", d."serviceId", d."status", d."imageRef",
             s."projectId", p."organizationId", s."platformHostname",
             s."containerPort", s."healthPath", s."cpuLimit", s."memoryLimitMb"
      FROM "deployment" d
@@ -393,6 +412,11 @@ export async function runDeployment(
   const deployment = details.rows[0];
   if (!deployment) {
     throw new Error(`Deployment ${deploymentId} no longer exists.`);
+  }
+  // A cancel that landed between the Build finishing and this call must not
+  // start a container for a Deployment the user already abandoned.
+  if (deployment.status === "cancelled") {
+    return { status: "cancelled", message: "" };
   }
   if (!deployment.imageRef) {
     const message = "The Deployment has no image to run.";
@@ -518,8 +542,9 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
     branch: string;
     dockerfilePath: string;
     serviceId: string;
+    commitSha: string | null;
   }>(
-    `SELECT d."id", d."serviceId", s."repoUrl", s."branch", s."dockerfilePath"
+    `SELECT d."id", d."serviceId", d."commitSha", s."repoUrl", s."branch", s."dockerfilePath"
      FROM "deployment" d JOIN "service" s ON s."id" = d."serviceId"
      WHERE d."id" = $1`,
     [deploymentId],
@@ -542,6 +567,9 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
       branch: deployment.branch,
       dockerfilePath: deployment.dockerfilePath,
       imageTag,
+      // A redeploy pins the commit so the rebuild uses the same code even when
+      // the branch has moved on.
+      ...(deployment.commitSha ? { commitSha: deployment.commitSha } : {}),
     },
   });
 
@@ -574,6 +602,13 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
 
   const build: AgentBuild = finished.data;
 
+  // A Build that the user cancelled is not a failure: the Deployment row is
+  // already `cancelled`, so it must not be rewritten with an error message.
+  if (build.status === "cancelled") {
+    await markDeploymentCancelled(deploymentId);
+    return { status: "cancelled" as const, message: "" };
+  }
+
   if (build.status !== "succeeded" || !build.imageRef) {
     const message = build.error ?? "The Build failed.";
     await markDeploymentFailed(deploymentId, message);
@@ -583,7 +618,10 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
   await markDeploymentBuilt({
     deploymentId,
     imageRef: build.imageRef,
-    commitSha: build.commitSha ?? "",
+    // The Build reports the commit it actually checked out. Falling back to the
+    // pinned commit keeps a redeploy's history accurate even if the agent omits
+    // it.
+    commitSha: build.commitSha || deployment.commitSha || "",
   });
 
   return { status: "deploying" as const, message: "" };
@@ -595,4 +633,158 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
  */
 export function buildImageTag(serviceId: string, deploymentId: string): string {
   return `stealth/service-${serviceId}:${deploymentId}`;
+}
+
+/** Deployment statuses a cancel is allowed to touch. */
+export const CANCELLABLE_DEPLOYMENT_STATUSES: DeploymentStatus[] = ["queued", "building"];
+
+/**
+ * Cancels a Deployment that is still queued or building. The Node Agent stops the
+ * Build and removes any container and image the attempt produced; the route is
+ * never touched, so a Service that is already serving keeps serving.
+ *
+ * The Control Plane marks the Deployment `cancelled` even when the Node Agent
+ * cannot be reached, because the worker refuses to build a cancelled Deployment.
+ * Leftover containers and images from that case are removed by the agent's
+ * startup Cleanup, so a cancel never leaks resources permanently.
+ */
+export async function cancelDeployment(input: {
+  organizationId: string;
+  deploymentId: string;
+  options?: { client?: AgentClient };
+}): Promise<{ deployment: DeploymentSummary; aborted: AgentDeploymentAbort | null }> {
+  const found = await pool.query<{
+    id: string;
+    serviceId: string;
+    status: DeploymentStatus;
+    imageRef: string | null;
+  }>(
+    `SELECT d."id", d."serviceId", d."status", d."imageRef"
+     FROM "deployment" d
+     JOIN "service" s ON s."id" = d."serviceId"
+     JOIN "project" p ON p."id" = s."projectId"
+     WHERE p."organizationId" = $1 AND d."id" = $2`,
+    [input.organizationId, input.deploymentId],
+  );
+
+  const current = found.rows[0];
+  if (!current) {
+    throw new ApiError(404, "deployment_not_found", "Deployment not found.");
+  }
+  if (!CANCELLABLE_DEPLOYMENT_STATUSES.includes(current.status)) {
+    throw new ApiError(
+      409,
+      "deployment_not_cancellable",
+      "Only a Deployment that is still queued or building can be cancelled.",
+    );
+  }
+
+  const client = input.options?.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
+
+  // The image tag is deterministic, so the Control Plane can name the image even
+  // when the Build was cancelled before it reported one. Without this the image a
+  // cancelled Build already tagged would survive until the retention prune.
+  const imageRef = current.imageRef ?? buildImageTag(current.serviceId, input.deploymentId);
+
+  const abort = await client.POST("/v1/deployments/{deploymentId}/cancel", {
+    params: { path: { deploymentId: input.deploymentId } },
+    body: { serviceId: current.serviceId, imageRef },
+  });
+
+  // The agent answered with a real outcome, or it could not be reached. Either
+  // way the Control Plane stops the Deployment: a cancelled row is what keeps the
+  // worker from starting the Build.
+  const aborted = abort.response.ok ? (abort.data ?? null) : null;
+  if (!abort.response.ok) {
+    console.error(
+      `cancel ${input.deploymentId}: the Node Agent did not confirm (${abort.response.status})`,
+    );
+  }
+
+  await markDeploymentCancelled(input.deploymentId);
+
+  const deployment = await pool.query<DeploymentRow>(
+    `SELECT ${DEPLOYMENT_COLUMNS} FROM "deployment" WHERE "id" = $1`,
+    [input.deploymentId],
+  );
+
+  return { deployment: deployment.rows[0], aborted };
+}
+
+/**
+ * Marks a Deployment `cancelled` and puts the Service back where it was before
+ * the attempt: `running` when an older Deployment still serves traffic, and
+ * `not_deployed` when this was the first try. A cancelled Build never leaves the
+ * Service stuck in `deploying`.
+ */
+export async function markDeploymentCancelled(deploymentId: string): Promise<void> {
+  await pool.query(
+    `UPDATE "deployment"
+     SET "status" = 'cancelled', "finishedAt" = now()
+     WHERE "id" = $1 AND "status" IN ('queued', 'building', 'deploying')`,
+    [deploymentId],
+  );
+
+  // The Job is cancelled too, so a queued Job is never claimed for work whose
+  // Deployment is already gone.
+  await pool.query(
+    `UPDATE "job" SET "status" = 'cancelled', "lockedAt" = NULL
+     WHERE "payload"->>'deploymentId' = $1 AND "status" IN ('queued', 'running')`,
+    [deploymentId],
+  );
+
+  await pool.query(
+    `UPDATE "service" s
+     SET "status" = CASE
+       WHEN EXISTS (
+         SELECT 1 FROM "deployment" d
+         WHERE d."serviceId" = s."id" AND d."status" = 'running'
+       ) THEN 'running'
+       ELSE 'not_deployed'
+     END
+     WHERE s."id" = (SELECT "serviceId" FROM "deployment" WHERE "id" = $1)
+       AND s."status" = 'deploying'`,
+    [deploymentId],
+  );
+}
+
+/**
+ * Triggers a Deployment that rebuilds the same commit as an existing one. The
+ * commit is read from the stored Deployment instead of the request body, so a
+ * redeploy can never be talked into building different code.
+ */
+export async function redeployDeployment(input: {
+  organizationId: string;
+  deploymentId: string;
+  userId: string;
+}): Promise<{ deployment: DeploymentSummary; service: { id: string; name: string } }> {
+  const previous = await getDeployment(input.organizationId, input.deploymentId);
+
+  return triggerDeployment({
+    organizationId: input.organizationId,
+    serviceId: previous.serviceId,
+    userId: input.userId,
+    commitSha: previous.commitSha,
+  });
+}
+
+/**
+ * Deletes Build log lines older than the retention window. Runtime logs are not
+ * copied into the database: the Node Agent reads them straight from the container
+ * and never returns a line older than the same window, so retention holds for both
+ * kinds of log without a second store to prune.
+ *
+ * It returns how many lines it deleted so the caller can log a real number
+ * instead of assuming the cleanup worked.
+ */
+export async function pruneLogs(): Promise<{ lines: number }> {
+  const lines = await pool.query(
+    `DELETE FROM "build_log" bl
+     USING "deployment" d
+     WHERE bl."deploymentId" = d."id"
+       AND bl."createdAt" < now() - make_interval(days => $1)`,
+    [LOG_RETENTION_DAYS],
+  );
+
+  return { lines: lines.rowCount ?? 0 };
 }

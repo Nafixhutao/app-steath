@@ -127,6 +127,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/deployments/{deploymentId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abort a Deployment and remove its leftovers
+         * @description Cancels the Build if it is still running, removes any container started
+         *     for this Deployment, and deletes the image it produced when no running
+         *     container uses it. A Deployment that already took traffic is left alone,
+         *     so cancelling never takes a working Service down. Calling this again is
+         *     safe: a Deployment with nothing left to abort answers with zero counts.
+         */
+        post: operations["cancelDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/services/{serviceId}": {
         parameters: {
             query?: never;
@@ -255,6 +279,12 @@ export interface components {
             branch: string;
             dockerfilePath: string;
             imageTag: string;
+            /**
+             * @description Exact commit to build. A redeploy sets this so the new Deployment
+             *     builds the same code as the one it replaces instead of whatever the
+             *     branch points at now. Omitted means "the branch tip".
+             */
+            commitSha?: string;
         };
         Build: {
             buildId: string;
@@ -316,6 +346,28 @@ export interface components {
             deploymentId?: string;
             hostname?: string;
         };
+        CancelDeploymentRequest: {
+            /**
+             * @description Service that owns the Deployment. The agent uses it to find the
+             *     container and image names, so a cancel never has to guess.
+             */
+            serviceId: string;
+            /**
+             * @description Image the Build produced, when the Control Plane already knows it.
+             *     The agent removes it only when no running container uses it.
+             */
+            imageRef?: string;
+        };
+        DeploymentAbort: {
+            deploymentId: string;
+            serviceId: string;
+            /** @description True when a running Build was stopped by this call. */
+            buildCancelled: boolean;
+            /** @description Number of containers started for this Deployment that were removed. */
+            containersRemoved: number;
+            /** @description True when the image was deleted because nothing used it. */
+            imageRemoved: boolean;
+        };
         RuntimeLogEvent: {
             message: string;
             /** Format: date-time */
@@ -332,6 +384,8 @@ export interface components {
         BuildId: string;
         /** @description Service id that owns the container. */
         ServiceId: string;
+        /** @description Deployment id that owns the Build and the container. */
+        DeploymentId: string;
     };
     requestBodies: never;
     headers: never;
@@ -588,6 +642,51 @@ export interface operations {
                 };
             };
             /** @description Invalid Deploy request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    cancelDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deployment id that owns the Build and the container. */
+                deploymentId: components["parameters"]["DeploymentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelDeploymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Deployment aborted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentAbort"];
+                };
+            };
+            /** @description Invalid cancel request */
             400: {
                 headers: {
                     [name: string]: unknown;

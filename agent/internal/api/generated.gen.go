@@ -139,10 +139,26 @@ type BuildRequest struct {
 	Branch string `json:"branch"`
 
 	// BuildId Deployment id; makes Build creation idempotent.
-	BuildId        string `json:"buildId"`
-	DockerfilePath string `json:"dockerfilePath"`
-	ImageTag       string `json:"imageTag"`
-	RepoUrl        string `json:"repoUrl"`
+	BuildId string `json:"buildId"`
+
+	// CommitSha Exact commit to build. A redeploy sets this so the new Deployment
+	// builds the same code as the one it replaces instead of whatever the
+	// branch points at now. Omitted means "the branch tip".
+	CommitSha      *string `json:"commitSha,omitempty"`
+	DockerfilePath string  `json:"dockerfilePath"`
+	ImageTag       string  `json:"imageTag"`
+	RepoUrl        string  `json:"repoUrl"`
+}
+
+// CancelDeploymentRequest defines model for CancelDeploymentRequest.
+type CancelDeploymentRequest struct {
+	// ImageRef Image the Build produced, when the Control Plane already knows it.
+	// The agent removes it only when no running container uses it.
+	ImageRef *string `json:"imageRef,omitempty"`
+
+	// ServiceId Service that owns the Deployment. The agent uses it to find the
+	// container and image names, so a cancel never has to guess.
+	ServiceId string `json:"serviceId"`
 }
 
 // DeployRequest defines model for DeployRequest.
@@ -180,6 +196,20 @@ type Deployment struct {
 
 // DeploymentStatus defines model for Deployment.Status.
 type DeploymentStatus string
+
+// DeploymentAbort defines model for DeploymentAbort.
+type DeploymentAbort struct {
+	// BuildCancelled True when a running Build was stopped by this call.
+	BuildCancelled bool `json:"buildCancelled"`
+
+	// ContainersRemoved Number of containers started for this Deployment that were removed.
+	ContainersRemoved int    `json:"containersRemoved"`
+	DeploymentId      string `json:"deploymentId"`
+
+	// ImageRemoved True when the image was deleted because nothing used it.
+	ImageRemoved bool   `json:"imageRemoved"`
+	ServiceId    string `json:"serviceId"`
+}
 
 // EnvironmentVariable defines model for EnvironmentVariable.
 type EnvironmentVariable struct {
@@ -238,6 +268,9 @@ type ServiceStateStatus string
 // BuildId defines model for BuildId.
 type BuildId = string
 
+// DeploymentId defines model for DeploymentId.
+type DeploymentId = string
+
 // ServiceId defines model for ServiceId.
 type ServiceId = string
 
@@ -259,6 +292,9 @@ type StartBuildJSONRequestBody = BuildRequest
 // DeployServiceJSONRequestBody defines body for DeployService for application/json ContentType.
 type DeployServiceJSONRequestBody = DeployRequest
 
+// CancelDeploymentJSONRequestBody defines body for CancelDeployment for application/json ContentType.
+type CancelDeploymentJSONRequestBody = CancelDeploymentRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// StartBuild Start a Build for a Deployment
@@ -276,6 +312,9 @@ type ServerInterface interface {
 	// DeployService Run a built image as the Service container
 	// (POST /v1/deployments)
 	DeployService(w http.ResponseWriter, r *http.Request)
+	// CancelDeployment Abort a Deployment and remove its leftovers
+	// (POST /v1/deployments/{deploymentId}/cancel)
+	CancelDeployment(w http.ResponseWriter, r *http.Request, deploymentId DeploymentId)
 	// GetHealth Check whether the Node Agent is healthy
 	// (GET /v1/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -424,6 +463,32 @@ func (siw *ServerInterfaceWrapper) DeployService(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeployService(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelDeployment operation middleware
+func (siw *ServerInterfaceWrapper) CancelDeployment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "deploymentId" -------------
+	var deploymentId DeploymentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deploymentId", r.PathValue("deploymentId"), &deploymentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deploymentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelDeployment(w, r, deploymentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -760,6 +825,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.GetBuild)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}/logs", wrapper.StreamBuildLogs)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/deployments", wrapper.DeployService)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/deployments/{deploymentId}/cancel", wrapper.CancelDeployment)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/services/{serviceId}", wrapper.RemoveService)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/services/{serviceId}", wrapper.GetService)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/stop", wrapper.StopService)

@@ -26,6 +26,10 @@ type FakeAgent = {
   baseUrl: string;
   requests: Array<{ method: string; path: string; body?: unknown }>;
   failBuild: boolean;
+  /** Build ids whose Build the fake reports as cancelled. */
+  cancelledBuilds: Set<string>;
+  /** Set when a cancel request reaches the agent. */
+  cancels: Array<{ deploymentId: string; body?: unknown }>;
   logLines: string[];
   buildStarted: Promise<void>;
   reset(): void;
@@ -42,11 +46,15 @@ async function startFakeAgent(): Promise<FakeAgent> {
     baseUrl: "",
     requests: [],
     failBuild: false,
+    cancelledBuilds: new Set<string>(),
+    cancels: [],
     logLines: ["Cloning into 'src'...", "Step 1/3 : FROM busybox", "Successfully built image"],
     buildStarted,
     reset() {
       agent.requests = [];
       agent.failBuild = false;
+      agent.cancelledBuilds = new Set<string>();
+      agent.cancels = [];
       agent.logLines = ["Cloning into 'src'...", "Successfully built image"];
       buildStarted = new Promise<void>((resolve) => {
         signalStarted = resolve;
@@ -118,20 +126,26 @@ async function handleAgentRequest(
     response.writeHead(200, { "content-type": "application/json" });
     response.end(
       JSON.stringify(
-        agent.failBuild
+        agent.cancelledBuilds.has(buildId)
           ? {
               buildId,
-              status: "failed",
-              error: "Build failed: process did not complete successfully",
+              status: "cancelled",
               finishedAt: new Date().toISOString(),
             }
-          : {
-              buildId,
-              status: "succeeded",
-              imageRef: `stealth/service-test:${buildId}`,
-              commitSha: "a".repeat(40),
-              finishedAt: new Date().toISOString(),
-            },
+          : agent.failBuild
+            ? {
+                buildId,
+                status: "failed",
+                error: "Build failed: process did not complete successfully",
+                finishedAt: new Date().toISOString(),
+              }
+            : {
+                buildId,
+                status: "succeeded",
+                imageRef: `stealth/service-test:${buildId}`,
+                commitSha: "a".repeat(40),
+                finishedAt: new Date().toISOString(),
+              },
       ),
     );
     return;
@@ -151,6 +165,25 @@ async function handleAgentRequest(
       );
     }
     response.end();
+    return;
+  }
+
+  // POST /v1/deployments/{id}/cancel
+  if (request.method === "POST" && /^\/v1\/deployments\/[^/]+\/cancel$/.test(url.pathname)) {
+    const deploymentId = decodeURIComponent(url.pathname.split("/")[3] as string);
+    agent.cancels.push({ deploymentId, body });
+    agent.cancelledBuilds.add(deploymentId);
+
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(
+      JSON.stringify({
+        deploymentId,
+        serviceId: String(body?.serviceId ?? ""),
+        buildCancelled: true,
+        containersRemoved: 1,
+        imageRemoved: true,
+      }),
+    );
     return;
   }
 
@@ -235,7 +268,9 @@ async function addMember(
   expect(inviteResponse.status).toBe(200);
   const invitation = (await inviteResponse.json()) as { id: string };
 
-  const member = await signUp(email, uniqueName(`dep${role}`));
+  // The username must be unique per sign-up, so it is derived from the email
+  // rather than only from the role: two tests may both add a `member`.
+  const member = await signUp(email, email.split("@")[0].replace(/[^a-z0-9]/gi, ""));
   const accepted = await auth.handler(
     new Request(`${BASE_URL}/api/auth/organization/accept-invitation`, {
       method: "POST",
@@ -334,6 +369,28 @@ async function deploymentLogs(cookie: string, deploymentId: string): Promise<Res
   const { GET } = await import("@/app/api/deployments/[deploymentId]/logs/route");
   return GET(
     new Request(`${BASE_URL}/api/deployments/${deploymentId}/logs`, {
+      headers: { cookie, origin: BASE_URL },
+    }),
+    { params: Promise.resolve({ deploymentId }) },
+  );
+}
+
+async function cancelRequest(cookie: string, deploymentId: string): Promise<Response> {
+  const { POST } = await import("@/app/api/deployments/[deploymentId]/cancel/route");
+  return POST(
+    new Request(`${BASE_URL}/api/deployments/${deploymentId}/cancel`, {
+      method: "POST",
+      headers: { cookie, origin: BASE_URL },
+    }),
+    { params: Promise.resolve({ deploymentId }) },
+  );
+}
+
+async function redeployRequest(cookie: string, deploymentId: string): Promise<Response> {
+  const { POST } = await import("@/app/api/deployments/[deploymentId]/redeploy/route");
+  return POST(
+    new Request(`${BASE_URL}/api/deployments/${deploymentId}/redeploy`, {
+      method: "POST",
       headers: { cookie, origin: BASE_URL },
     }),
     { params: Promise.resolve({ deploymentId }) },
@@ -662,5 +719,265 @@ describe("Deployment Build pipeline", () => {
     const deployments = ((await list.json()) as { data: DeploymentBody[] }).data;
     expect(deployments.map((entry) => entry.id)).toEqual([firstDeployment.id]);
     expect(deployments[0].status).toBe("deploying");
+  });
+
+  it("shows the full Deployment history with timings and durations", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("depdur") + "@example.test", uniqueName("depdur"));
+    const project = await createProject(owner.cookie, "Durations");
+    const service = await createService(owner.cookie, project.id, "Duration App");
+
+    // One Deployment that runs to completion, so the history has a real
+    // `startedAt`/`finishedAt` pair to measure.
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+    await runJobFor(deployment.id);
+
+    const { markDeploymentRunning } = await import("@/lib/platform/deployments");
+    await markDeploymentRunning(deployment.id);
+
+    const list = await deploymentRequest(owner.cookie, service.id);
+    const history = ((await list.json()) as { data: DeploymentBody[] }).data;
+    expect(history).toHaveLength(1);
+
+    const [entry] = history;
+    expect(entry.status).toBe("running");
+    expect(entry.commitSha).toBe("a".repeat(40));
+    expect(entry.startedAt).toBeTruthy();
+    expect(entry.finishedAt).toBeTruthy();
+    expect(entry.errorMessage).toBeNull();
+
+    // The duration is derived from the two timestamps, so it must not be negative
+    // and must be measurable.
+    const duration = new Date(entry.finishedAt as string).getTime() - new Date(entry.startedAt as string).getTime();
+    expect(duration).toBeGreaterThanOrEqual(0);
+  });
+
+  it("redeploys the same commit as a new Deployment", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("deprede") + "@example.test", uniqueName("deprede"));
+    const project = await createProject(owner.cookie, "Redeploy");
+    const service = await createService(owner.cookie, project.id, "Redeploy App");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const first = ((await created.json()) as { data: DeploymentBody }).data;
+    await runJobFor(first.id);
+
+    const { markDeploymentRunning } = await import("@/lib/platform/deployments");
+    await markDeploymentRunning(first.id);
+
+    const response = await redeployRequest(owner.cookie, first.id);
+    expect(response.status).toBe(201);
+    const redeployed = ((await response.json()) as { data: DeploymentBody }).data;
+
+    // A new Deployment, not a re-run of the old one.
+    expect(redeployed.id).not.toBe(first.id);
+    expect(redeployed.serviceId).toBe(service.id);
+    expect(redeployed.status).toBe("queued");
+    expect(redeployed.commitSha).toBe("a".repeat(40));
+
+    agent.requests.length = 0;
+    await runJobFor(redeployed.id);
+
+    // The Build was pinned to the original commit instead of the branch tip.
+    const buildRequest = agent.requests.find(
+      (entry) => entry.method === "POST" && entry.path === "/v1/builds",
+    );
+    expect(buildRequest?.body).toMatchObject({
+      buildId: redeployed.id,
+      commitSha: "a".repeat(40),
+    });
+
+    const list = await deploymentRequest(owner.cookie, service.id);
+    const history = ((await list.json()) as { data: DeploymentBody[] }).data;
+    expect(history.map((entry) => entry.id)).toEqual([redeployed.id, first.id]);
+  });
+
+  it("cancels a queued Deployment and leaves nothing to build", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("depcancel") + "@example.test", uniqueName("depcancel"));
+    const project = await createProject(owner.cookie, "Cancel");
+    const service = await createService(owner.cookie, project.id, "Cancel App");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+    expect(deployment.status).toBe("queued");
+
+    const response = await cancelRequest(owner.cookie, deployment.id);
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      data: {
+        deployment: DeploymentBody;
+        aborted: { buildCancelled: boolean; containersRemoved: number; imageRemoved: boolean } | null;
+      };
+    };
+    expect(body.data.deployment.status).toBe("cancelled");
+    expect(body.data.deployment.finishedAt).toBeTruthy();
+    expect(body.data.aborted).toMatchObject({ buildCancelled: true, imageRemoved: true });
+
+    // The agent was told to abort the right Deployment for the right Service.
+    expect(agent.cancels).toHaveLength(1);
+    expect(agent.cancels[0]).toMatchObject({
+      deploymentId: deployment.id,
+      body: { serviceId: service.id },
+    });
+
+    // The Job is cancelled, so the worker never builds it.
+    const jobs = await queryRows<{ status: string }>(
+      'SELECT "status" FROM "job" WHERE "payload"->>\'deploymentId\' = $1',
+      [deployment.id],
+    );
+    expect(jobs[0].status).toBe("cancelled");
+
+    // The Service is not stuck in `deploying`, and the cancelled Deployment is
+    // not claimed by the worker.
+    const { getService } = await import("@/lib/platform/services");
+    expect((await getService(owner.organizationId, service.id)).status).toBe("not_deployed");
+    expect(await runJobFor(deployment.id)).toBeNull();
+
+    // A cancelled Deployment does not block a new attempt.
+    const retry = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    expect(retry.status).toBe(201);
+    const retried = ((await retry.json()) as { data: DeploymentBody }).data;
+    await runJobFor(retried.id);
+  });
+
+  it("keeps a running Service serving when a later Deployment is cancelled", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("depcancelrun") + "@example.test", uniqueName("depcancelrun"));
+    const project = await createProject(owner.cookie, "Cancel Running");
+    const service = await createService(owner.cookie, project.id, "Live App");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const live = ((await created.json()) as { data: DeploymentBody }).data;
+    await runJobFor(live.id);
+
+    const { markDeploymentRunning } = await import("@/lib/platform/deployments");
+    await markDeploymentRunning(live.id);
+
+    // A second Deployment starts while the first is serving.
+    const second = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const pending = ((await second.json()) as { data: DeploymentBody }).data;
+
+    const response = await cancelRequest(owner.cookie, pending.id);
+    expect(response.status).toBe(200);
+
+    // The Service keeps running because the older Deployment still serves.
+    const { getService } = await import("@/lib/platform/services");
+    expect((await getService(owner.organizationId, service.id)).status).toBe("running");
+
+    const detail = await deploymentDetail(owner.cookie, live.id);
+    expect(((await detail.json()) as { data: DeploymentBody }).data.status).toBe("running");
+  });
+
+  it("rejects a cancel for a Deployment that already finished", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("depcanceldone") + "@example.test", uniqueName("depcanceldone"));
+    const project = await createProject(owner.cookie, "Cancel Finished");
+    const service = await createService(owner.cookie, project.id, "Finished App");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+    await runJobFor(deployment.id);
+
+    const response = await cancelRequest(owner.cookie, deployment.id);
+    expect(response.status).toBe(409);
+    expect(((await response.json()) as FailureBody).error.code).toBe("deployment_not_cancellable");
+  });
+
+  it("limits redeploy and cancel to owners and admins", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("deprole") + "@example.test", uniqueName("deprole"));
+    const member = await addMember(owner.cookie, owner.organizationId, "member");
+    const project = await createProject(owner.cookie, "Roles");
+    const service = await createService(owner.cookie, project.id, "Role App");
+
+    const created = await deploymentRequest(member.cookie, service.id, { method: "POST" });
+    expect(created.status).toBe(201);
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+
+    const cancel = await cancelRequest(member.cookie, deployment.id);
+    expect(cancel.status).toBe(403);
+
+    const redeploy = await redeployRequest(member.cookie, deployment.id);
+    expect(redeploy.status).toBe(403);
+
+    await cancelRequest(owner.cookie, deployment.id);
+  });
+
+  it("records an AuditEvent when a Deployment is cancelled", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("depcancelaudit") + "@example.test", uniqueName("depcancelaudit"));
+    const project = await createProject(owner.cookie, "Cancel Audit");
+    const service = await createService(owner.cookie, project.id, "Audited Cancel");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+
+    await cancelRequest(owner.cookie, deployment.id);
+
+    const events = await queryRows<{ action: string; details: Record<string, unknown> }>(
+      'SELECT "action", "details" FROM "audit_event" WHERE "organizationId" = $1 AND "action" = $2',
+      [owner.organizationId, "deployment.cancelled"],
+    );
+    expect(events).toHaveLength(1);
+    expect(events[0].details).toMatchObject({
+      serviceId: service.id,
+      deploymentId: deployment.id,
+    });
+  });
+
+  it("deletes Build logs older than seven days", async () => {
+    const { pruneLogs } = await import("@/lib/platform/deployments");
+
+    // A Deployment old enough for its logs to expire, and one that is not.
+    const rows = await queryRows<{ id: string }>(
+      `INSERT INTO "deployment" ("id", "serviceId", "status", "createdAt")
+       SELECT gen_random_uuid()::text, s."id", 'failed', now() - make_interval(days => 8)
+       FROM "service" s LIMIT 1
+       RETURNING "id"`,
+      [],
+    );
+    const fresh = await queryRows<{ id: string }>(
+      `INSERT INTO "deployment" ("id", "serviceId", "status", "createdAt")
+       SELECT gen_random_uuid()::text, s."id", 'failed', now()
+       FROM "service" s LIMIT 1
+       RETURNING "id"`,
+      [],
+    );
+
+    const oldId = rows[0].id;
+    const freshId = fresh[0].id;
+
+    await queryRows(
+      `INSERT INTO "build_log" ("deploymentId", "sequence", "message", "createdAt") VALUES
+         ($1, 1, 'expired line', now() - make_interval(days => 8)),
+         ($2, 1, 'fresh line', now())`,
+      [oldId, freshId],
+    );
+
+    const pruned = await pruneLogs();
+    expect(pruned.lines).toBeGreaterThanOrEqual(1);
+
+    const remaining = await queryRows<{ message: string }>(
+      'SELECT "message" FROM "build_log" WHERE "deploymentId" = ANY($1::text[]) ORDER BY "message"',
+      [[oldId, freshId]],
+    );
+    expect(remaining.map((row) => row.message)).toEqual(["fresh line"]);
   });
 });

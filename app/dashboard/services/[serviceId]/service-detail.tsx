@@ -160,7 +160,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         </dl>
       </section>
 
-      <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} />
+      <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} canManage={canManage} />
 
       <RuntimePanel
         serviceId={service.id}

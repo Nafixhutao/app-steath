@@ -3,6 +3,7 @@ import {
   claimBuildJob,
   completeJob,
   failJob,
+  pruneLogs,
   runBuildJob,
   runDeployment,
   type JobRow,
@@ -18,6 +19,13 @@ import { createAgentClient } from "../lib/agent-client.ts";
  */
 
 const POLL_INTERVAL_MS = 1_000;
+
+/**
+ * How often the log-retention pass runs. Once an hour is enough to keep the
+ * seven-day promise without deleting anything early: a line only becomes
+ * eligible the moment it is a week old, and an hour of slack is harmless.
+ */
+const LOG_PRUNE_INTERVAL_MS = 60 * 60 * 1_000;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -63,6 +71,13 @@ async function runJob(job: JobRow): Promise<void> {
       return;
     }
 
+    // A cancelled Deployment already has its Job cancelled by the API, so the
+    // worker only has to leave the row alone.
+    if (result.status === "cancelled") {
+      console.log(`[worker] deployment ${deploymentId} build cancelled`);
+      return;
+    }
+
     // The Build produced an image. Run it as the Service container; the
     // Deployment only becomes `running` once the container answers its health
     // check, so a broken release never replaces a working one.
@@ -81,7 +96,24 @@ async function runJob(job: JobRow): Promise<void> {
 }
 
 async function loop(): Promise<void> {
+  let lastLogPrune = 0;
+
   while (!stopping) {
+    // The retention pass is time based, so it runs before claiming work and then
+    // at most once an hour. Doing it here keeps the worker a single process with
+    // one responsibility: it owns everything that happens after a Deployment.
+    if (Date.now() - lastLogPrune >= LOG_PRUNE_INTERVAL_MS) {
+      lastLogPrune = Date.now();
+      try {
+        const pruned = await pruneLogs();
+        if (pruned.lines > 0) {
+          console.log(`[worker] pruned ${pruned.lines} Build log lines older than seven days`);
+        }
+      } catch (error) {
+        console.error("[worker] could not prune old Build logs", error);
+      }
+    }
+
     let job: JobRow | null = null;
 
     try {

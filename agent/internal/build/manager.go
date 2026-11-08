@@ -39,6 +39,10 @@ type Request struct {
 	Branch         string
 	DockerfilePath string
 	ImageTag       string
+	// CommitSHA pins the Build to an exact commit. A redeploy sets it so the new
+	// Deployment rebuilds the same code as the one it replaces; an empty value
+	// means the tip of the branch.
+	CommitSHA string
 }
 
 // Snapshot is a copy of a Build's observable state.
@@ -243,6 +247,63 @@ func (m *Manager) run(ctx context.Context, state *buildState, workspace string) 
 		return StatusFailed, "", fmt.Sprintf("Could not read the checked out commit: %v", err)
 	}
 	commitSHA = strings.TrimSpace(commitSHA)
+
+	// A redeploy pins the Build to the commit it is replacing, so the same code
+	// is rebuilt even when the branch has moved on. The clone is shallow, so the
+	// exact commit has to be fetched by id.
+	if want := strings.TrimSpace(state.request.CommitSHA); want != "" && !strings.HasPrefix(commitSHA, want) {
+		m.append(state, fmt.Sprintf("Fetching commit %s", want))
+		fetchErr := m.executor.Stream(ctx, exec.Options{
+			Dir:  checkout,
+			Name: "git",
+			Args: []string{"fetch", "--depth", "1", "origin", want},
+		}, func(line string) { m.append(state, line) })
+		if fetchErr != nil {
+			if ctx.Err() != nil {
+				return StatusCancelled, "", ""
+			}
+			// Some servers refuse a fetch by id, so the branch is fetched and the
+			// commit is resolved from the objects it brought along.
+			m.append(state, fmt.Sprintf("Could not fetch the commit by id, fetching %s instead", state.request.Branch))
+			branchErr := m.executor.Stream(ctx, exec.Options{
+				Dir:  checkout,
+				Name: "git",
+				Args: []string{"fetch", "--depth", "1", "origin", state.request.Branch},
+			}, func(line string) { m.append(state, line) })
+			if branchErr != nil {
+				if ctx.Err() != nil {
+					return StatusCancelled, "", ""
+				}
+				return StatusFailed, "", fmt.Sprintf("Could not fetch commit %s: %v", want, fetchErr)
+			}
+		}
+
+		checkoutErr := m.executor.Stream(ctx, exec.Options{
+			Dir:  checkout,
+			Name: "git",
+			Args: []string{"checkout", want},
+		}, func(line string) { m.append(state, line) })
+		if checkoutErr != nil {
+			if ctx.Err() != nil {
+				return StatusCancelled, "", ""
+			}
+			return StatusFailed, "", fmt.Sprintf("Could not check out commit %s: %v", want, checkoutErr)
+		}
+
+		resolved, resolveErr := m.executor.Output(ctx, exec.Options{
+			Dir:  checkout,
+			Name: "git",
+			Args: []string{"rev-parse", "HEAD"},
+		})
+		if resolveErr != nil {
+			if ctx.Err() != nil {
+				return StatusCancelled, "", ""
+			}
+			return StatusFailed, "", fmt.Sprintf("Could not read the checked out commit: %v", resolveErr)
+		}
+		commitSHA = strings.TrimSpace(resolved)
+	}
+
 	m.setCommit(state, commitSHA)
 	m.append(state, fmt.Sprintf("Checked out commit %s", commitSHA))
 

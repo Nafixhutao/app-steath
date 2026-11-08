@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  cancelDeployment,
+  deploymentDuration,
   deploymentStatusLabel,
   getBuildLog,
   isDeploymentActive,
+  isDeploymentCancellable,
   listDeployments,
   listNodes,
+  redeployDeployment,
   triggerDeployment,
   type BuildLog,
   type DeploymentSummary,
@@ -35,15 +39,18 @@ function shortCommit(sha: string | null): string {
 export function DeploymentsPanel({
   serviceId,
   canDeploy,
+  canManage,
 }: {
   serviceId: string;
   canDeploy: boolean;
+  canManage: boolean;
 }) {
   const [deployments, setDeployments] = useState<DeploymentSummary[]>([]);
   const [node, setNode] = useState<NodeSummary | null>(null);
   const [selected, setSelected] = useState<BuildLog | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [actingOn, setActingOn] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -105,6 +112,36 @@ export function DeploymentsPanel({
     }
   }
 
+  async function redeploy(deployment: DeploymentSummary) {
+    setActingOn(deployment.id);
+    setError("");
+    try {
+      const created = await redeployDeployment(deployment.id);
+      setDeployments((current) => [created, ...current]);
+      await load();
+    } catch (cause) {
+      setError(getError(cause));
+    } finally {
+      setActingOn(null);
+    }
+  }
+
+  async function cancel(deployment: DeploymentSummary) {
+    setActingOn(deployment.id);
+    setError("");
+    try {
+      const result = await cancelDeployment(deployment.id);
+      setDeployments((current) =>
+        current.map((entry) => (entry.id === result.deployment.id ? result.deployment : entry)),
+      );
+      await load();
+    } catch (cause) {
+      setError(getError(cause));
+    } finally {
+      setActingOn(null);
+    }
+  }
+
   const nodeHealthy = node?.status === "healthy";
   const latest = deployments[0];
 
@@ -160,36 +197,67 @@ export function DeploymentsPanel({
                 <th>Commit</th>
                 <th>Started</th>
                 <th>Finished</th>
+                <th>Duration</th>
                 <th>Build log</th>
+                {canManage ? <th>Actions</th> : null}
               </tr>
             </thead>
             <tbody>
-              {deployments.map((deployment) => (
-                <tr key={deployment.id}>
-                  <td>
-                    <span className={`role-label is-${deployment.status}`}>
-                      {deploymentStatusLabel(deployment.status)}
-                    </span>
-                    {deployment.errorMessage ? (
-                      <small className="deployment-error">{deployment.errorMessage}</small>
+              {deployments.map((deployment) => {
+                const acting = actingOn === deployment.id;
+
+                return (
+                  <tr key={deployment.id}>
+                    <td>
+                      <span className={`role-label is-${deployment.status}`}>
+                        {deploymentStatusLabel(deployment.status)}
+                      </span>
+                      {deployment.errorMessage ? (
+                        <small className="deployment-error">{deployment.errorMessage}</small>
+                      ) : null}
+                    </td>
+                    <td>
+                      <code>{shortCommit(deployment.commitSha)}</code>
+                    </td>
+                    <td>{formatTime(deployment.startedAt)}</td>
+                    <td>{formatTime(deployment.finishedAt)}</td>
+                    <td>{deploymentDuration(deployment) ?? "—"}</td>
+                    <td>
+                      <button
+                        className="dashboard-link-button"
+                        type="button"
+                        onClick={() => void openLog(deployment)}
+                      >
+                        View log
+                      </button>
+                    </td>
+                    {canManage ? (
+                      <td>
+                        <div className="deployment-actions">
+                          <button
+                            className="dashboard-link-button"
+                            type="button"
+                            onClick={() => void redeploy(deployment)}
+                            disabled={acting || isDeploymentActive(latest?.status ?? "running")}
+                          >
+                            {acting ? "Working..." : "Redeploy"}
+                          </button>
+                          {isDeploymentCancellable(deployment.status) ? (
+                            <button
+                              className="dashboard-link-button is-danger"
+                              type="button"
+                              onClick={() => void cancel(deployment)}
+                              disabled={acting}
+                            >
+                              Cancel
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
                     ) : null}
-                  </td>
-                  <td>
-                    <code>{shortCommit(deployment.commitSha)}</code>
-                  </td>
-                  <td>{formatTime(deployment.startedAt)}</td>
-                  <td>{formatTime(deployment.finishedAt)}</td>
-                  <td>
-                    <button
-                      className="dashboard-link-button"
-                      type="button"
-                      onClick={() => void openLog(deployment)}
-                    >
-                      View log
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

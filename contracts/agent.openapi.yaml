@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
     only caller: it authenticates with a bearer token, starts Builds, runs the
@@ -212,6 +212,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/deployments/{deploymentId}/cancel:
+    post:
+      operationId: cancelDeployment
+      summary: Abort a Deployment and remove its leftovers
+      description: |
+        Cancels the Build if it is still running, removes any container started
+        for this Deployment, and deletes the image it produced when no running
+        container uses it. A Deployment that already took traffic is left alone,
+        so cancelling never takes a working Service down. Calling this again is
+        safe: a Deployment with nothing left to abort answers with zero counts.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DeploymentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelDeploymentRequest"
+      responses:
+        "200":
+          description: Deployment aborted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentAbort"
+        "400":
+          description: Invalid cancel request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /v1/services/{serviceId}:
     get:
       operationId: getService
@@ -397,6 +436,13 @@ components:
       description: Service id that owns the container.
       schema:
         type: string
+    DeploymentId:
+      name: deploymentId
+      in: path
+      required: true
+      description: Deployment id that owns the Build and the container.
+      schema:
+        type: string
   schemas:
     Health:
       type: object
@@ -449,6 +495,12 @@ components:
           type: string
         imageTag:
           type: string
+        commitSha:
+          type: string
+          description: |
+            Exact commit to build. A redeploy sets this so the new Deployment
+            builds the same code as the one it replaces instead of whatever the
+            branch points at now. Omitted means "the branch tip".
     Build:
       type: object
       required:
@@ -586,6 +638,43 @@ components:
           type: string
         hostname:
           type: string
+    CancelDeploymentRequest:
+      type: object
+      required:
+        - serviceId
+      properties:
+        serviceId:
+          type: string
+          description: |
+            Service that owns the Deployment. The agent uses it to find the
+            container and image names, so a cancel never has to guess.
+        imageRef:
+          type: string
+          description: |
+            Image the Build produced, when the Control Plane already knows it.
+            The agent removes it only when no running container uses it.
+    DeploymentAbort:
+      type: object
+      required:
+        - deploymentId
+        - serviceId
+        - buildCancelled
+        - containersRemoved
+        - imageRemoved
+      properties:
+        deploymentId:
+          type: string
+        serviceId:
+          type: string
+        buildCancelled:
+          type: boolean
+          description: True when a running Build was stopped by this call.
+        containersRemoved:
+          type: integer
+          description: Number of containers started for this Deployment that were removed.
+        imageRemoved:
+          type: boolean
+          description: True when the image was deleted because nothing used it.
     RuntimeLogEvent:
       type: object
       required:

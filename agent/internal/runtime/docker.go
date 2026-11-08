@@ -58,8 +58,17 @@ type ContainerInfo struct {
 	ID       string
 	Name     string
 	State    string
+	Image    string
 	Labels   map[string]string
 	Networks []string
+}
+
+// ImageInfo is one local image the cleanup considers. Ref is the repository and
+// tag the agent wrote when it built the image, which is what removal needs.
+type ImageInfo struct {
+	ID        string
+	Ref       string
+	CreatedAt time.Time
 }
 
 // Running reports whether the container is currently up.
@@ -108,6 +117,14 @@ type Docker interface {
 		follow bool,
 		onLine func(writtenAt time.Time, line string),
 	) error
+	// RemoveImage deletes a local image. It fails when a container still uses
+	// it, which is exactly the guard the cleanup needs.
+	RemoveImage(ctx context.Context, imageRef string) error
+	// ListImages returns the image references that match a repository prefix,
+	// newest first, so the cleanup can keep only the most recent releases.
+	ListImages(ctx context.Context, repositoryPrefix string) ([]ImageInfo, error)
+	// PruneBuildCache drops BuildKit cache older than the given age.
+	PruneBuildCache(ctx context.Context, olderThan time.Duration) error
 }
 
 // CLIDocker implements Docker by shelling out to the docker CLI.
@@ -162,6 +179,11 @@ func (d *CLIDocker) CreateContainer(ctx context.Context, spec ContainerSpec) (st
 		// The agent owns the lifecycle, so Docker must not restart the container
 		// behind its back.
 		"--restart", "no",
+		// Runtime logs are rotated by Docker so a chatty application cannot fill
+		// the disk; the seven-day window itself is enforced when the log is read.
+		"--log-driver", "local",
+		"--log-opt", "max-size=10m",
+		"--log-opt", "max-file=5",
 		"--expose", strconv.Itoa(spec.Port),
 	}
 
@@ -205,6 +227,7 @@ func (d *CLIDocker) InspectContainer(ctx context.Context, name string) (Containe
 		} `json:"State"`
 		Config struct {
 			Labels map[string]string `json:"Labels"`
+			Image  string            `json:"Image"`
 		} `json:"Config"`
 		NetworkSettings struct {
 			Networks map[string]struct {
@@ -220,6 +243,7 @@ func (d *CLIDocker) InspectContainer(ctx context.Context, name string) (Containe
 		ID:     raw.ID,
 		Name:   strings.TrimPrefix(raw.Name, "/"),
 		State:  raw.State.Status,
+		Image:  raw.Config.Image,
 		Labels: raw.Config.Labels,
 	}
 	for network := range raw.NetworkSettings.Networks {
@@ -340,7 +364,15 @@ func (d *CLIDocker) Logs(
 	// which is the only way to get a real timestamp: `docker logs` merges stdout
 	// and stderr without saying which is which, so the agent would otherwise have
 	// to invent both the stream and the time.
-	args := []string{"logs", "--timestamps", "--tail", strconv.Itoa(tail)}
+	//
+	// `--since` enforces the runtime-log retention window: a line older than the
+	// window is never handed to the Control Plane, so the dashboard cannot show a
+	// log the platform promised to delete.
+	args := []string{
+		"logs", "--timestamps",
+		"--since", formatLogAge(LogRetention),
+		"--tail", strconv.Itoa(tail),
+	}
 	if follow {
 		args = append(args, "--follow")
 	}
@@ -350,6 +382,22 @@ func (d *CLIDocker) Logs(
 		writtenAt, message := splitTimestamp(line)
 		onLine(writtenAt, message)
 	})
+}
+
+// LogRetention is how long a runtime log line stays readable. The spec fixes it
+// at seven days, matching the Build-log retention enforced by the Control Plane.
+const LogRetention = 7 * 24 * time.Hour
+
+// formatLogAge renders a duration in the hour unit `docker logs --since` accepts.
+// Docker also takes a timestamp, but an age keeps the cut-off relative to "now"
+// without the agent having to format one.
+func formatLogAge(age time.Duration) string {
+	hours := int(age.Hours())
+	if hours < 1 {
+		hours = 1
+	}
+
+	return strconv.Itoa(hours) + "h"
 }
 
 // splitTimestamp separates the RFC 3339 prefix `--timestamps` adds from the log
@@ -367,6 +415,97 @@ func splitTimestamp(line string) (time.Time, string) {
 	}
 
 	return writtenAt, message
+}
+
+// RemoveImage deletes a local image. Docker refuses while a container still
+// references it, so the cleanup cannot delete the image a Service is running.
+func (d *CLIDocker) RemoveImage(ctx context.Context, imageRef string) error {
+	_, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{"image", "rm", imageRef},
+	})
+
+	return err
+}
+
+// ListImages returns the tagged images whose reference starts with the given
+// repository, oldest first. `docker image ls` sorts by creation time descending,
+// so the result is reversed to make "keep the newest N" the obvious operation.
+func (d *CLIDocker) ListImages(ctx context.Context, repositoryPrefix string) ([]ImageInfo, error) {
+	output, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"image", "ls",
+			"--filter", "reference=" + repositoryPrefix + "*",
+			"--format", "{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var images []ImageInfo
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		ref, createdAt, found := strings.Cut(line, "\t")
+		if !found || strings.Contains(ref, "<none>") {
+			continue
+		}
+
+		images = append(images, ImageInfo{Ref: ref, CreatedAt: parseDockerCreatedAt(createdAt)})
+	}
+
+	// Oldest first, so pruning is "drop everything before the last N".
+	sort.Slice(images, func(i, j int) bool {
+		return images[i].CreatedAt.Before(images[j].CreatedAt)
+	})
+
+	return images, nil
+}
+
+// dockerCreatedAtLayout is the format `docker image ls --format {{.CreatedAt}}`
+// prints, e.g. "2026-11-08 02:43:11 +0000 UTC".
+const dockerCreatedAtLayout = "2006-01-02 15:04:05 -0700 MST"
+
+// parseDockerCreatedAt tolerates an unexpected format by treating the image as
+// old, so a parsing change can never keep an image forever.
+func parseDockerCreatedAt(value string) time.Time {
+	createdAt, err := time.Parse(dockerCreatedAtLayout, strings.TrimSpace(value))
+	if err != nil {
+		return time.Time{}
+	}
+
+	return createdAt
+}
+
+// PruneBuildCache drops BuildKit cache entries older than olderThan. The Build
+// cache is what makes repeat Builds fast, so it is only trimmed, never wiped.
+func (d *CLIDocker) PruneBuildCache(ctx context.Context, olderThan time.Duration) error {
+	_, err := d.runner.Output(ctx, exec.Options{
+		Env:  []string{"DOCKER_BUILDKIT=1"},
+		Name: "docker",
+		Args: []string{
+			"buildx", "prune", "--force",
+			"--filter", "until=" + formatPruneAge(olderThan),
+		},
+	})
+
+	return err
+}
+
+// formatPruneAge renders a duration in the hour unit `docker buildx prune`
+// accepts, rounding up so a short duration never becomes "until=0h".
+func formatPruneAge(olderThan time.Duration) string {
+	hours := int(olderThan.Hours())
+	if hours < 1 {
+		hours = 1
+	}
+
+	return strconv.Itoa(hours) + "h"
 }
 
 // sortedPairs keeps argument order stable, which makes the recorded commands in

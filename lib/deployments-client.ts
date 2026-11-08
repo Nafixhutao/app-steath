@@ -59,6 +59,31 @@ export function triggerDeployment(serviceId: string): Promise<DeploymentSummary>
   );
 }
 
+/** Rebuilds the same commit as a past Deployment, creating a new Deployment. */
+export function redeployDeployment(deploymentId: string): Promise<DeploymentSummary> {
+  return request<DeploymentSummary>(
+    `/api/deployments/${encodeURIComponent(deploymentId)}/redeploy`,
+    { method: "POST" },
+  );
+}
+
+export type DeploymentCancelResult = {
+  deployment: DeploymentSummary;
+  aborted: {
+    buildCancelled: boolean;
+    containersRemoved: number;
+    imageRemoved: boolean;
+  } | null;
+};
+
+/** Cancels a Deployment that is still queued or building. */
+export function cancelDeployment(deploymentId: string): Promise<DeploymentCancelResult> {
+  return request<DeploymentCancelResult>(
+    `/api/deployments/${encodeURIComponent(deploymentId)}/cancel`,
+    { method: "POST" },
+  );
+}
+
 export type BuildLog = { deployment: DeploymentSummary; lines: string[] };
 
 export function getBuildLog(deploymentId: string): Promise<BuildLog> {
@@ -168,4 +193,33 @@ export function deploymentStatusLabel(status: DeploymentStatus): string {
 /** Deployment statuses that are still moving, so the UI keeps polling. */
 export function isDeploymentActive(status: DeploymentStatus): boolean {
   return status === "queued" || status === "building" || status === "deploying";
+}
+
+/** Deployment statuses a cancel can still stop. */
+export function isDeploymentCancellable(status: DeploymentStatus): boolean {
+  return status === "queued" || status === "building";
+}
+
+/**
+ * How long a Deployment took. An unfinished Deployment has no duration yet, and
+ * a queued one never started, so both answer null instead of a misleading zero.
+ */
+export function deploymentDuration(
+  deployment: Pick<DeploymentSummary, "startedAt" | "finishedAt">,
+): string | null {
+  if (!deployment.startedAt || !deployment.finishedAt) return null;
+
+  const millis = new Date(deployment.finishedAt).getTime() - new Date(deployment.startedAt).getTime();
+  if (!Number.isFinite(millis) || millis < 0) return null;
+
+  const seconds = Math.round(millis / 1_000);
+  if (seconds < 60) return `${seconds}s`;
+
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  if (minutes < 60) return remainder ? `${minutes}m ${remainder}s` : `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
 }

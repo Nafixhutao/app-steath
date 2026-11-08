@@ -1369,6 +1369,18 @@ a:hover {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.deployment-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.deployment-actions .dashboard-link-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.deployment-actions .dashboard-link-button.is-danger {
+  color: #ff8f9d;
+}
 .deployment-log pre {
   max-height: 320px;
   margin: 0;

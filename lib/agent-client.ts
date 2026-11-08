@@ -14,6 +14,7 @@ export type AgentDeployRequest = components["schemas"]["DeployRequest"];
 export type AgentDeployment = components["schemas"]["Deployment"];
 export type AgentServiceState = components["schemas"]["ServiceState"];
 export type AgentRuntimeLogEvent = components["schemas"]["RuntimeLogEvent"];
+export type AgentDeploymentAbort = components["schemas"]["DeploymentAbort"];
 
 export type AgentClient = ReturnType<typeof createAgentClient>;
 

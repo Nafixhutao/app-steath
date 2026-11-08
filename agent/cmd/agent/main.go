@@ -58,6 +58,9 @@ func main() {
 		runtime.NewCLIDocker(executor, os.Getenv("AGENT_PROBE_IMAGE")),
 		runtime.NewCaddyRouter(caddyAdminURL),
 	)
+	// The weekly Build-cache prune is recorded here, so a restart does not prune
+	// again and a node that keeps restarting still gets pruned every week.
+	services.SetCleanupStatePath(filepath.Join(workRoot, "cleanup.json"))
 	// Caddy runs as a container on this node, so it must join each Project
 	// network to resolve the alias a route dials.
 	services.SetNetworkAttacher(runtime.NewCaddyAttacher(
@@ -75,6 +78,20 @@ func main() {
 		if err := services.Reconcile(ctx); err != nil {
 			log.Printf("reconcile services: %v", err)
 		}
+
+		// Housekeeping runs after Reconcile so it sees the containers the agent
+		// just adopted instead of deleting them as leftovers.
+		report, err := services.Cleanup(ctx)
+		if err != nil {
+			log.Printf("cleanup: %v", err)
+			return
+		}
+		log.Printf(
+			"cleanup: removed %d containers and %d images, cache pruned: %t",
+			report.ContainersRemoved,
+			report.ImagesRemoved,
+			report.CachePruned,
+		)
 	}()
 
 	// The heartbeat is optional so the agent can be run and tested on its own.

@@ -296,6 +296,201 @@ func TestCancelKeepsTheStatusOfAFinishedBuild(t *testing.T) {
 	}
 }
 
+// A redeploy pins the Build to the commit the previous Deployment built, so the
+// same code is rebuilt even after the branch moved on.
+func TestStartBuildChecksOutAPinnedCommit(t *testing.T) {
+	const pinned = "1111111111111111111111111111111111111111"
+
+	headReads := 0
+	executor := &fakeExecutor{
+		output: func(ctx context.Context, options exec.Options) (string, error) {
+			if options.Name == "git" && len(options.Args) > 0 && options.Args[0] == "rev-parse" {
+				headReads++
+				if headReads == 1 {
+					// The branch tip, which is not the commit that was asked for.
+					return "2222222222222222222222222222222222222222\n", nil
+				}
+				return pinned + "\n", nil
+			}
+
+			return "deadbeef\n", nil
+		},
+	}
+	manager := NewManager(t.TempDir(), executor)
+
+	request := newRequest()
+	request.CommitSHA = pinned
+
+	if _, err := manager.Start(context.Background(), request); err != nil {
+		t.Fatalf("start build: %v", err)
+	}
+
+	finished := waitForStatus(t, manager, "deployment-1", StatusSucceeded)
+	if finished.CommitSHA != pinned {
+		t.Fatalf("expected the pinned commit to be recorded, got %q", finished.CommitSHA)
+	}
+
+	commands := executor.recorded()
+	wantFetch := "git fetch --depth 1 origin " + pinned
+	wantCheckout := "git checkout " + pinned
+	var sawFetch, sawCheckout bool
+	for _, command := range commands {
+		if command == wantFetch {
+			sawFetch = true
+		}
+		if command == wantCheckout {
+			sawCheckout = true
+		}
+	}
+	if !sawFetch {
+		t.Fatalf("expected the pinned commit to be fetched, got %v", commands)
+	}
+	if !sawCheckout {
+		t.Fatalf("expected the pinned commit to be checked out, got %v", commands)
+	}
+
+	// The log has to explain the pin, so a failed redeploy is diagnosable.
+	events, _, err := manager.EventsSince("deployment-1", 0)
+	if err != nil {
+		t.Fatalf("read events: %v", err)
+	}
+	var messages []string
+	for _, event := range events {
+		messages = append(messages, event.Message)
+	}
+	joined := strings.Join(messages, "\n")
+	if !strings.Contains(joined, "Fetching commit "+pinned) {
+		t.Fatalf("expected the fetch to be logged, got %q", joined)
+	}
+}
+
+// A Build that already checked out the requested commit must not fetch it again,
+// because the shallow clone already has it.
+func TestStartBuildSkipsTheFetchWhenTheTipIsThePinnedCommit(t *testing.T) {
+	const pinned = "1111111111111111111111111111111111111111"
+
+	executor := &fakeExecutor{
+		output: func(ctx context.Context, options exec.Options) (string, error) {
+			if options.Name == "git" && len(options.Args) > 0 && options.Args[0] == "rev-parse" {
+				return pinned + "\n", nil
+			}
+
+			return "deadbeef\n", nil
+		},
+	}
+	manager := NewManager(t.TempDir(), executor)
+
+	request := newRequest()
+	request.CommitSHA = pinned
+
+	if _, err := manager.Start(context.Background(), request); err != nil {
+		t.Fatalf("start build: %v", err)
+	}
+
+	finished := waitForStatus(t, manager, "deployment-1", StatusSucceeded)
+	if finished.CommitSHA != pinned {
+		t.Fatalf("expected the checked out commit, got %q", finished.CommitSHA)
+	}
+
+	for _, command := range executor.recorded() {
+		if strings.HasPrefix(command, "git fetch") || strings.HasPrefix(command, "git checkout") {
+			t.Fatalf("expected no fetch or checkout for the tip, got %q", command)
+		}
+	}
+}
+
+// Some git servers refuse `fetch <sha>`, so the branch is fetched instead and the
+// pinned commit is resolved from the objects it brought along.
+func TestStartBuildFallsBackToTheBranchWhenTheCommitCannotBeFetched(t *testing.T) {
+	const pinned = "1111111111111111111111111111111111111111"
+
+	headReads := 0
+	executor := &fakeExecutor{
+		stream: func(ctx context.Context, options exec.Options, onLine func(string)) error {
+			if options.Name == "git" && len(options.Args) > 4 && options.Args[0] == "fetch" && options.Args[4] == pinned {
+				return errors.New("Server does not allow request for unadvertised object")
+			}
+			onLine(options.Name + " ran")
+			return nil
+		},
+		output: func(ctx context.Context, options exec.Options) (string, error) {
+			if options.Name == "git" && len(options.Args) > 0 && options.Args[0] == "rev-parse" {
+				headReads++
+				if headReads == 1 {
+					return "2222222222222222222222222222222222222222\n", nil
+				}
+				return pinned + "\n", nil
+			}
+
+			return "deadbeef\n", nil
+		},
+	}
+	manager := NewManager(t.TempDir(), executor)
+
+	request := newRequest()
+	request.CommitSHA = pinned
+
+	if _, err := manager.Start(context.Background(), request); err != nil {
+		t.Fatalf("start build: %v", err)
+	}
+
+	finished := waitForStatus(t, manager, "deployment-1", StatusSucceeded)
+	if finished.CommitSHA != pinned {
+		t.Fatalf("expected the pinned commit to be recorded, got %q", finished.CommitSHA)
+	}
+
+	var sawBranchFetch, sawCheckout bool
+	for _, command := range executor.recorded() {
+		if command == "git fetch --depth 1 origin main" {
+			sawBranchFetch = true
+		}
+		if command == "git checkout "+pinned {
+			sawCheckout = true
+		}
+	}
+	if !sawBranchFetch {
+		t.Fatalf("expected a fallback branch fetch, got %v", executor.recorded())
+	}
+	if !sawCheckout {
+		t.Fatalf("expected the pinned commit to be checked out, got %v", executor.recorded())
+	}
+}
+
+// An unknown commit fails the Build with a message the dashboard can show,
+// instead of silently building the branch tip.
+func TestStartBuildFailsWhenThePinnedCommitIsUnavailable(t *testing.T) {
+	const pinned = "1111111111111111111111111111111111111111"
+
+	executor := &fakeExecutor{
+		stream: func(ctx context.Context, options exec.Options, onLine func(string)) error {
+			if options.Name == "git" && len(options.Args) > 1 && options.Args[0] == "fetch" {
+				return errors.New("fatal: couldn't find remote ref")
+			}
+			onLine(options.Name + " ran")
+			return nil
+		},
+		output: func(ctx context.Context, options exec.Options) (string, error) {
+			return "2222222222222222222222222222222222222222\n", nil
+		},
+	}
+	manager := NewManager(t.TempDir(), executor)
+
+	request := newRequest()
+	request.CommitSHA = pinned
+
+	if _, err := manager.Start(context.Background(), request); err != nil {
+		t.Fatalf("start build: %v", err)
+	}
+
+	failed := waitForStatus(t, manager, "deployment-1", StatusFailed)
+	if !strings.Contains(failed.Error, pinned) {
+		t.Fatalf("expected the pinned commit in the error, got %q", failed.Error)
+	}
+	if failed.ImageRef != "" {
+		t.Fatalf("a failed build must not report an image, got %q", failed.ImageRef)
+	}
+}
+
 func TestUnknownBuildIsReported(t *testing.T) {
 	manager := NewManager(t.TempDir(), &fakeExecutor{})
 

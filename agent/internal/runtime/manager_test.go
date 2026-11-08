@@ -18,11 +18,15 @@ type fakeDocker struct {
 	nextID     int
 	networks   map[string]bool
 	containers map[string]*fakeContainer
+	images     map[string]time.Time
 
 	createErr  error
 	connectErr error
 	renameErr  error
 	removeErr  error
+	imageErr   error
+	pruneErr   error
+	pruneCalls int
 	// probeErr makes every Probe fail, which is how a failing health check is
 	// simulated. probeErrAfter lets a probe succeed only on a later attempt.
 	probeErr      error
@@ -42,6 +46,7 @@ type fakeContainer struct {
 	ID       string
 	Name     string
 	State    string
+	Image    string
 	Labels   map[string]string
 	Networks map[string]string
 	Logs     []string
@@ -51,6 +56,7 @@ func newFakeDocker() *fakeDocker {
 	return &fakeDocker{
 		networks:   make(map[string]bool),
 		containers: make(map[string]*fakeContainer),
+		images:     make(map[string]time.Time),
 		renamed:    make(map[string]string),
 	}
 }
@@ -79,6 +85,7 @@ func (f *fakeDocker) CreateContainer(_ context.Context, spec ContainerSpec) (str
 		ID:       fmt.Sprintf("container-%d", f.nextID),
 		Name:     spec.Name,
 		State:    "running",
+		Image:    spec.Image,
 		Labels:   spec.Labels,
 		Networks: map[string]string{spec.Network: spec.NetworkAlias},
 	}
@@ -106,6 +113,7 @@ func (f *fakeDocker) InspectContainer(_ context.Context, name string) (Container
 		ID:       container.ID,
 		Name:     container.Name,
 		State:    container.State,
+		Image:    container.Image,
 		Labels:   container.Labels,
 		Networks: networks,
 	}, nil
@@ -128,6 +136,7 @@ func (f *fakeDocker) ListContainers(_ context.Context, labels map[string]string)
 			ID:       container.ID,
 			Name:     container.Name,
 			State:    container.State,
+			Image:    container.Image,
 			Labels:   container.Labels,
 			Networks: networks,
 		})
@@ -265,6 +274,47 @@ func (f *fakeDocker) Logs(
 	}
 	for _, line := range container.Logs {
 		onLine(time.Now(), line)
+	}
+
+	return nil
+}
+
+func (f *fakeDocker) RemoveImage(_ context.Context, imageRef string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.imageErr != nil {
+		return f.imageErr
+	}
+	if _, ok := f.images[imageRef]; !ok {
+		return fmt.Errorf("no such image: %s", imageRef)
+	}
+	delete(f.images, imageRef)
+
+	return nil
+}
+
+func (f *fakeDocker) ListImages(_ context.Context, repositoryPrefix string) ([]ImageInfo, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	var images []ImageInfo
+	for ref, createdAt := range f.images {
+		if strings.HasPrefix(ref, repositoryPrefix) {
+			images = append(images, ImageInfo{Ref: ref, CreatedAt: createdAt})
+		}
+	}
+
+	return images, nil
+}
+
+func (f *fakeDocker) PruneBuildCache(_ context.Context, _ time.Duration) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.pruneCalls++
+	if f.pruneErr != nil {
+		return f.pruneErr
 	}
 
 	return nil

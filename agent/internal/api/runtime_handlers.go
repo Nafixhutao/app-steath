@@ -6,8 +6,10 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
+	"stealth/agent/internal/build"
 	"stealth/agent/internal/runtime"
 )
 
@@ -19,6 +21,7 @@ type RuntimeDeployer interface {
 	Restart(ctx context.Context, serviceID string) (runtime.ServiceState, error)
 	Remove(ctx context.Context, serviceID string) (runtime.ServiceState, error)
 	State(ctx context.Context, serviceID string) (runtime.ServiceState, error)
+	Abort(ctx context.Context, request runtime.AbortRequest) (runtime.AbortResult, error)
 	Logs(
 		ctx context.Context,
 		serviceID string,
@@ -77,6 +80,65 @@ func (s server) DeployService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, toDeployment(result))
+}
+
+// CancelDeployment aborts a Deployment: it stops the Build when it is still
+// running and removes the container and image the attempt produced. It never
+// touches the container that is already serving the Service.
+func (s server) CancelDeployment(
+	w http.ResponseWriter,
+	r *http.Request,
+	deploymentID DeploymentId,
+) {
+	var request CancelDeploymentRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_body", "The cancel request is not valid JSON.")
+		return
+	}
+	if strings.TrimSpace(request.ServiceId) == "" {
+		writeError(w, http.StatusBadRequest, "invalid_cancel_request", "serviceId is required.")
+		return
+	}
+
+	buildCancelled := false
+	if s.builds != nil {
+		// An unknown Build is expected for a Deployment that never started one;
+		// it is not an error, the cancel still has to clean up the runtime side.
+		snapshot, err := s.builds.Cancel(deploymentID)
+		switch {
+		case err == nil:
+			buildCancelled = snapshot.Status == build.StatusCancelled
+		case !errors.Is(err, build.ErrUnknownBuild):
+			writeError(w, http.StatusInternalServerError, "build_cancel_failed", err.Error())
+			return
+		}
+	}
+
+	abort := runtime.AbortResult{DeploymentID: deploymentID, ServiceID: request.ServiceId}
+	if s.runtime != nil {
+		result, err := s.runtime.Abort(r.Context(), runtime.AbortRequest{
+			DeploymentID: deploymentID,
+			ServiceID:    request.ServiceId,
+			ImageRef:     deref(request.ImageRef),
+		})
+		if errors.Is(err, runtime.ErrInvalidDeploy) {
+			writeError(w, http.StatusBadRequest, "invalid_cancel_request", err.Error())
+			return
+		}
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "deployment_cancel_failed", err.Error())
+			return
+		}
+		abort = result
+	}
+
+	writeJSON(w, http.StatusOK, DeploymentAbort{
+		DeploymentId:      abort.DeploymentID,
+		ServiceId:         abort.ServiceID,
+		BuildCancelled:    buildCancelled,
+		ContainersRemoved: abort.ContainersRemoved,
+		ImageRemoved:      abort.ImageRemoved,
+	})
 }
 
 // GetService reports the runtime state of one Service.
