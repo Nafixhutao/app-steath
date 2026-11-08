@@ -9,6 +9,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"stealth/agent/internal/exec"
 )
 
 // fakeExecutor stands in for git and docker so the Manager can be tested
@@ -16,13 +18,13 @@ import (
 type fakeExecutor struct {
 	mu       sync.Mutex
 	commands []string
-	stream   func(ctx context.Context, options ExecOptions, onLine func(string)) error
-	output   func(ctx context.Context, options ExecOptions) (string, error)
+	stream   func(ctx context.Context, options exec.Options, onLine func(string)) error
+	output   func(ctx context.Context, options exec.Options) (string, error)
 }
 
 func (f *fakeExecutor) Stream(
 	ctx context.Context,
-	options ExecOptions,
+	options exec.Options,
 	onLine func(string),
 ) error {
 	f.record(options)
@@ -38,7 +40,7 @@ func (f *fakeExecutor) Stream(
 
 // prepareCheckout stands in for the clone by creating the checked out tree the
 // Manager later inspects for the Dockerfile.
-func prepareCheckout(options ExecOptions) {
+func prepareCheckout(options exec.Options) {
 	if options.Name != "git" || len(options.Args) < 2 || options.Args[0] != "clone" {
 		return
 	}
@@ -48,7 +50,7 @@ func prepareCheckout(options ExecOptions) {
 	_ = os.WriteFile(filepath.Join(checkout, "Dockerfile"), []byte("FROM busybox\n"), 0o600)
 }
 
-func (f *fakeExecutor) Output(ctx context.Context, options ExecOptions) (string, error) {
+func (f *fakeExecutor) Output(ctx context.Context, options exec.Options) (string, error) {
 	f.record(options)
 
 	if f.output != nil {
@@ -58,7 +60,7 @@ func (f *fakeExecutor) Output(ctx context.Context, options ExecOptions) (string,
 	return "deadbeef\n", nil
 }
 
-func (f *fakeExecutor) record(options ExecOptions) {
+func (f *fakeExecutor) record(options exec.Options) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.commands = append(f.commands, options.Name+" "+strings.Join(options.Args, " "))
@@ -207,7 +209,7 @@ func TestStartBuildRejectsIncompleteRequests(t *testing.T) {
 
 func TestBuildFailureKeepsTheErrorAndLog(t *testing.T) {
 	executor := &fakeExecutor{
-		stream: func(ctx context.Context, options ExecOptions, onLine func(string)) error {
+		stream: func(ctx context.Context, options exec.Options, onLine func(string)) error {
 			if options.Name == "docker" {
 				onLine("error: failed to solve: process did not complete successfully")
 				return errors.New("exit status 1")
@@ -250,7 +252,7 @@ func TestBuildFailureKeepsTheErrorAndLog(t *testing.T) {
 func TestCancelBuildStopsARunningBuild(t *testing.T) {
 	started := make(chan struct{})
 	executor := &fakeExecutor{
-		stream: func(ctx context.Context, options ExecOptions, onLine func(string)) error {
+		stream: func(ctx context.Context, options exec.Options, onLine func(string)) error {
 			if options.Name == "git" {
 				onLine("cloned")
 				return nil

@@ -103,6 +103,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a built image as the Service container
+         * @description Starts a candidate container on the Project network, waits for it to pass
+         *     the health check, and only then points the Service route at it. When the
+         *     candidate never becomes healthy it is removed and the previously running
+         *     container keeps serving. Calling this again with the same `deploymentId`
+         *     returns the existing result instead of starting a second container.
+         */
+        post: operations["deployService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/services/{serviceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the runtime state of a Service */
+        get: operations["getService"];
+        put?: never;
+        post?: never;
+        /**
+         * Remove a Service container and its route
+         * @description Stops and removes the Service container and its route. Used when a Service
+         *     is deleted, so nothing is left orphaned on the node.
+         */
+        delete: operations["removeService"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/services/{serviceId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop a Service container
+         * @description Stops the container without removing it, so a later start brings the same
+         *     container and its writable state back.
+         */
+        post: operations["stopService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/services/{serviceId}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a stopped Service container */
+        post: operations["startService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/services/{serviceId}/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restart a Service container
+         * @description Restarts the container without changing its configuration.
+         */
+        post: operations["restartService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/services/{serviceId}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream runtime logs
+         * @description Streams the container's combined output as newline-delimited
+         *     `RuntimeLogEvent` objects. The stream follows the container, so the
+         *     dashboard sees new lines as the application writes them. Docker merges
+         *     stdout and stderr into one stream, so events do not claim which one a
+         *     line came from.
+         */
+        get: operations["streamServiceLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -114,7 +242,7 @@ export interface components {
         NodeInfo: {
             name?: string;
             /** @enum {string} */
-            status: "ok";
+            status: "ok" | "error";
             dockerVersion: string;
             buildkitAvailable: boolean;
             cpuCount?: number;
@@ -146,6 +274,53 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        EnvironmentVariable: {
+            name: string;
+            /**
+             * @description Sent in the request body only. The Node Agent passes it to the
+             *     container and never writes it to a log or to disk.
+             */
+            value: string;
+        };
+        DeployRequest: {
+            /** @description Deployment id; makes Deploy idempotent. */
+            deploymentId: string;
+            serviceId: string;
+            projectId: string;
+            organizationId: string;
+            /** @description Platform Subdomain the route is created for. */
+            hostname: string;
+            imageRef: string;
+            containerPort: number;
+            /** @description Path that must answer 2xx before the route is switched. */
+            healthPath?: string;
+            /** @description CPU limit in vCPU. */
+            cpuLimit: number;
+            memoryLimitMb: number;
+            environmentVariables?: components["schemas"]["EnvironmentVariable"][];
+        };
+        Deployment: {
+            deploymentId: string;
+            serviceId: string;
+            /** @enum {string} */
+            status: "running" | "failed";
+            containerId?: string;
+            hostname?: string;
+            error?: string;
+        };
+        ServiceState: {
+            serviceId: string;
+            /** @enum {string} */
+            status: "running" | "stopped" | "failed" | "absent";
+            containerId?: string;
+            deploymentId?: string;
+            hostname?: string;
+        };
+        RuntimeLogEvent: {
+            message: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         Error: {
             error: string;
             code?: string;
@@ -155,6 +330,8 @@ export interface components {
     parameters: {
         /** @description Deployment id that owns the Build. */
         BuildId: string;
+        /** @description Service id that owns the container. */
+        ServiceId: string;
     };
     requestBodies: never;
     headers: never;
@@ -378,6 +555,270 @@ export interface operations {
                 };
             };
             /** @description Unknown Build */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deployService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeployRequest"];
+            };
+        };
+        responses: {
+            /** @description Deployment finished */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            /** @description Invalid Deploy request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Service id that owns the container. */
+                serviceId: components["parameters"]["ServiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service runtime state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceState"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Service id that owns the container. */
+                serviceId: components["parameters"]["ServiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceState"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    stopService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Service id that owns the container. */
+                serviceId: components["parameters"]["ServiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service stopped */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceState"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Service id that owns the container. */
+                serviceId: components["parameters"]["ServiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceState"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service has no container yet */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    restartService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Service id that owns the container. */
+                serviceId: components["parameters"]["ServiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service restarted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceState"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service has no container yet */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    streamServiceLogs: {
+        parameters: {
+            query?: {
+                /** @description Number of already-written lines to replay first. */
+                tail?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Service id that owns the container. */
+                serviceId: components["parameters"]["ServiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newline-delimited runtime log events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/x-ndjson": components["schemas"]["RuntimeLogEvent"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service has no container yet */
             404: {
                 headers: {
                     [name: string]: unknown;

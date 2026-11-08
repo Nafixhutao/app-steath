@@ -1,12 +1,13 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
-    only caller: it authenticates with a bearer token, starts Builds, and reads
-    the Build status and log stream. Operations that receive a Deployment
-    identifier are idempotent, so a retried request never starts a second Build.
+    only caller: it authenticates with a bearer token, starts Builds, runs the
+    resulting image as a container, and manages the Service lifecycle. Operations
+    that receive a Deployment or Service identifier are idempotent, so a retried
+    request never starts a second Build or a second container.
 paths:
   /v1/health:
     get:
@@ -174,6 +175,208 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/deployments:
+    post:
+      operationId: deployService
+      summary: Run a built image as the Service container
+      description: |
+        Starts a candidate container on the Project network, waits for it to pass
+        the health check, and only then points the Service route at it. When the
+        candidate never becomes healthy it is removed and the previously running
+        container keeps serving. Calling this again with the same `deploymentId`
+        returns the existing result instead of starting a second container.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeployRequest"
+      responses:
+        "200":
+          description: Deployment finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Invalid Deploy request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}:
+    get:
+      operationId: getService
+      summary: Read the runtime state of a Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service runtime state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeService
+      summary: Remove a Service container and its route
+      description: |
+        Stops and removes the Service container and its route. Used when a Service
+        is deleted, so nothing is left orphaned on the node.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/stop:
+    post:
+      operationId: stopService
+      summary: Stop a Service container
+      description: |
+        Stops the container without removing it, so a later start brings the same
+        container and its writable state back.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/start:
+    post:
+      operationId: startService
+      summary: Start a stopped Service container
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Service has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/restart:
+    post:
+      operationId: restartService
+      summary: Restart a Service container
+      description: Restarts the container without changing its configuration.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service restarted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Service has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/logs:
+    get:
+      operationId: streamServiceLogs
+      summary: Stream runtime logs
+      description: |
+        Streams the container's combined output as newline-delimited
+        `RuntimeLogEvent` objects. The stream follows the container, so the
+        dashboard sees new lines as the application writes them. Docker merges
+        stdout and stderr into one stream, so events do not claim which one a
+        line came from.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+        - name: tail
+          in: query
+          required: false
+          description: Number of already-written lines to replay first.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1000
+            default: 200
+      responses:
+        "200":
+          description: Newline-delimited runtime log events
+          content:
+            application/x-ndjson:
+              schema:
+                $ref: "#/components/schemas/RuntimeLogEvent"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Service has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -185,6 +388,13 @@ components:
       in: path
       required: true
       description: Deployment id that owns the Build.
+      schema:
+        type: string
+    ServiceId:
+      name: serviceId
+      in: path
+      required: true
+      description: Service id that owns the container.
       schema:
         type: string
   schemas:
@@ -210,6 +420,7 @@ components:
           type: string
           enum:
             - ok
+            - error
         dockerVersion:
           type: string
         buildkitAvailable:
@@ -273,6 +484,113 @@ components:
       properties:
         sequence:
           type: integer
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    EnvironmentVariable:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+          description: |
+            Sent in the request body only. The Node Agent passes it to the
+            container and never writes it to a log or to disk.
+    DeployRequest:
+      type: object
+      required:
+        - deploymentId
+        - serviceId
+        - projectId
+        - organizationId
+        - hostname
+        - imageRef
+        - containerPort
+        - cpuLimit
+        - memoryLimitMb
+      properties:
+        deploymentId:
+          type: string
+          description: Deployment id; makes Deploy idempotent.
+        serviceId:
+          type: string
+        projectId:
+          type: string
+        organizationId:
+          type: string
+        hostname:
+          type: string
+          description: Platform Subdomain the route is created for.
+        imageRef:
+          type: string
+        containerPort:
+          type: integer
+        healthPath:
+          type: string
+          description: Path that must answer 2xx before the route is switched.
+        cpuLimit:
+          type: number
+          description: CPU limit in vCPU.
+        memoryLimitMb:
+          type: integer
+        environmentVariables:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnvironmentVariable"
+    Deployment:
+      type: object
+      required:
+        - deploymentId
+        - serviceId
+        - status
+      properties:
+        deploymentId:
+          type: string
+        serviceId:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - failed
+        containerId:
+          type: string
+        hostname:
+          type: string
+        error:
+          type: string
+    ServiceState:
+      type: object
+      required:
+        - serviceId
+        - status
+      properties:
+        serviceId:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - stopped
+            - failed
+            - absent
+        containerId:
+          type: string
+        deploymentId:
+          type: string
+        hostname:
+          type: string
+    RuntimeLogEvent:
+      type: object
+      required:
+        - message
+      properties:
         message:
           type: string
         timestamp:

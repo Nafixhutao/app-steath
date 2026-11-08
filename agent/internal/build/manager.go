@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"stealth/agent/internal/exec"
 )
 
 // Status is the state of a single Build.
@@ -82,13 +84,13 @@ type Manager struct {
 	mu        sync.Mutex
 	builds    map[string]*buildState
 	workRoot  string
-	executor  Executor
+	executor  exec.Executor
 	clock     func() time.Time
 	maxBuilds int
 }
 
 // NewManager returns a Manager that keeps Build workspaces under workRoot.
-func NewManager(workRoot string, executor Executor) *Manager {
+func NewManager(workRoot string, executor exec.Executor) *Manager {
 	return &Manager{
 		builds:    make(map[string]*buildState),
 		workRoot:  workRoot,
@@ -213,7 +215,7 @@ func (m *Manager) run(ctx context.Context, state *buildState, workspace string) 
 	// Clone into a directory that does not exist yet, so git owns it.
 	checkout := filepath.Join(workspace, "src")
 	m.append(state, fmt.Sprintf("Cloning %s at branch %s", state.request.RepoURL, state.request.Branch))
-	cloneErr := m.executor.Stream(ctx, ExecOptions{
+	cloneErr := m.executor.Stream(ctx, exec.Options{
 		Dir:  workspace,
 		Name: "git",
 		Args: []string{
@@ -229,7 +231,7 @@ func (m *Manager) run(ctx context.Context, state *buildState, workspace string) 
 		return StatusFailed, "", fmt.Sprintf("Could not clone the repository: %v", cloneErr)
 	}
 
-	commitSHA, err := m.executor.Output(ctx, ExecOptions{
+	commitSHA, err := m.executor.Output(ctx, exec.Options{
 		Dir:  checkout,
 		Name: "git",
 		Args: []string{"rev-parse", "HEAD"},
@@ -252,7 +254,7 @@ func (m *Manager) run(ctx context.Context, state *buildState, workspace string) 
 	}
 
 	m.append(state, fmt.Sprintf("Building image %s with BuildKit", state.request.ImageTag))
-	buildErr := m.executor.Stream(ctx, ExecOptions{
+	buildErr := m.executor.Stream(ctx, exec.Options{
 		Dir:  checkout,
 		Env:  []string{"DOCKER_BUILDKIT=1"},
 		Name: "docker",

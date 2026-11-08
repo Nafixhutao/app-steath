@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"stealth/agent/internal/build"
+	"stealth/agent/internal/exec"
 )
 
 // stubExecutor records the commands a Build would run and lets each test decide
@@ -26,7 +27,7 @@ type stubExecutor struct {
 
 func (s *stubExecutor) Stream(
 	ctx context.Context,
-	options build.ExecOptions,
+	options exec.Options,
 	onLine func(string),
 ) error {
 	s.mu.Lock()
@@ -57,7 +58,7 @@ func (s *stubExecutor) Stream(
 	return nil
 }
 
-func (s *stubExecutor) Output(ctx context.Context, options build.ExecOptions) (string, error) {
+func (s *stubExecutor) Output(ctx context.Context, options exec.Options) (string, error) {
 	return "abc123\n", nil
 }
 
@@ -83,7 +84,7 @@ func newTestHandler(t *testing.T, executor *stubExecutor) http.Handler {
 	t.Helper()
 
 	manager := build.NewManager(t.TempDir(), executor)
-	return NewHandler("test-token", manager, newNodeInfo())
+	return NewHandler("test-token", manager, newNodeInfo(), nil)
 }
 
 func authorized(method, path string, body string) *http.Request {
@@ -184,7 +185,7 @@ func TestStartBuildReturnsAcceptedAndFinishes(t *testing.T) {
 		t.Fatalf("expected the deployment id, got %q", body.BuildId)
 	}
 
-	finished := waitForBuild(t, handler, "deployment-1", Succeeded)
+	finished := waitForBuild(t, handler, "deployment-1", BuildStatusSucceeded)
 	if finished.ImageRef == nil || *finished.ImageRef != "stealth/service:deployment-1" {
 		t.Fatalf("expected the image reference, got %v", finished.ImageRef)
 	}
@@ -221,7 +222,7 @@ func TestBuildFailureIsReported(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusAccepted, response.Code)
 	}
 
-	failed := waitForBuild(t, handler, "deployment-1", Failed)
+	failed := waitForBuild(t, handler, "deployment-1", BuildStatusFailed)
 	if failed.Error == nil || !strings.Contains(*failed.Error, "Build failed") {
 		t.Fatalf("expected a failure message, got %v", failed.Error)
 	}

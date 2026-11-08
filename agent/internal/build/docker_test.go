@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	stealthexec "stealth/agent/internal/exec"
 )
 
 // These tests run real `git` and `docker` against the fixture repository, which
@@ -101,7 +103,7 @@ func copyFile(t *testing.T, source, destination string) {
 func startBuild(t *testing.T, request Request) (*Manager, Snapshot) {
 	t.Helper()
 
-	manager := NewManager(filepath.Join(t.TempDir(), "builds"), SystemExecutor{})
+	manager := NewManager(filepath.Join(t.TempDir(), "builds"), stealthexec.SystemExecutor{})
 	if _, err := manager.Start(context.Background(), request); err != nil {
 		t.Fatalf("start build: %v", err)
 	}

@@ -69,6 +69,89 @@ export function listNodes(): Promise<NodeSummary[]> {
   return request<NodeSummary[]>("/api/nodes");
 }
 
+export type ServiceRuntimeState = {
+  serviceId: string;
+  status: "running" | "stopped" | "absent";
+  containerId: string | null;
+  deploymentId: string | null;
+  hostname: string | null;
+};
+
+export type ServiceRuntimeAction = "stop" | "start" | "restart";
+
+/** Reads whether the Service container is running, stopped, or absent. */
+export function getServiceRuntime(serviceId: string): Promise<ServiceRuntimeState> {
+  return request<ServiceRuntimeState>(`/api/services/${encodeURIComponent(serviceId)}/runtime`);
+}
+
+/** Runs a lifecycle action against the Service container. */
+export function runServiceAction(
+  serviceId: string,
+  action: ServiceRuntimeAction,
+): Promise<ServiceRuntimeState> {
+  return request<ServiceRuntimeState>(
+    `/api/services/${encodeURIComponent(serviceId)}/${action}`,
+    { method: "POST" },
+  );
+}
+
+/**
+ * Follows the Service's runtime log. The caller aborts the signal when the log
+ * panel closes, which also stops the Node Agent from streaming.
+ */
+export async function streamRuntimeLog(
+  serviceId: string,
+  tail: number,
+  onLine: (line: string) => void,
+  signal: AbortSignal,
+): Promise<void> {
+  const response = await fetch(
+    `/api/services/${encodeURIComponent(serviceId)}/logs?tail=${tail}`,
+    { signal },
+  );
+
+  if (!response.ok || !response.body) {
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: { message?: string };
+    };
+    throw new Error(payload.error?.message ?? "The runtime log could not be read.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    let newline = buffer.indexOf("\n");
+    while (newline !== -1) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (line) {
+        const event = JSON.parse(line) as { message?: string };
+        if (typeof event.message === "string") {
+          onLine(event.message);
+        }
+      }
+      newline = buffer.indexOf("\n");
+    }
+  }
+}
+
+export function serviceRuntimeLabel(status: ServiceRuntimeState["status"]): string {
+  switch (status) {
+    case "running":
+      return "Running";
+    case "stopped":
+      return "Stopped";
+    default:
+      return "Not deployed";
+  }
+}
+
 const STATUS_LABELS: Record<DeploymentStatus, string> = {
   queued: "Queued",
   building: "Building",

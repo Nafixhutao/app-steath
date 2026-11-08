@@ -4,6 +4,7 @@ import {
   completeJob,
   failJob,
   runBuildJob,
+  runDeployment,
   type JobRow,
 } from "../lib/platform/deployments.ts";
 import { createAgentClient } from "../lib/agent-client.ts";
@@ -11,8 +12,9 @@ import { createAgentClient } from "../lib/agent-client.ts";
 /**
  * Deployment worker. It runs as its own process from the same codebase, claims
  * one Build Job at a time with `FOR UPDATE SKIP LOCKED`, and lets the Node Agent
- * do the actual Build. Build concurrency is therefore one per node, as the spec
- * requires, because a single worker handles one Job to completion.
+ * do the actual Build and container run. Build concurrency is therefore one per
+ * node, as the spec requires, because a single worker handles one Job to
+ * completion.
  */
 
 const POLL_INTERVAL_MS = 1_000;
@@ -52,13 +54,24 @@ async function runJob(job: JobRow): Promise<void> {
 
   try {
     const result = await runBuildJob(job);
+
     // A Build that failed is a terminal outcome for this Job; retrying it would
     // rebuild the same broken commit forever.
-    await completeJob(job.id, result.status === "failed" ? "failed" : "succeeded");
+    if (result.status === "failed") {
+      await completeJob(job.id, "failed");
+      console.log(`[worker] deployment ${deploymentId} build failed - ${result.message}`);
+      return;
+    }
+
+    // The Build produced an image. Run it as the Service container; the
+    // Deployment only becomes `running` once the container answers its health
+    // check, so a broken release never replaces a working one.
+    const deployed = await runDeployment(deploymentId);
+    await completeJob(job.id, deployed.status === "failed" ? "failed" : "succeeded");
 
     console.log(
-      `[worker] deployment ${deploymentId} build ${result.status}`,
-      result.message ? `- ${result.message}` : "",
+      `[worker] deployment ${deploymentId} ${deployed.status}`,
+      deployed.message ? `- ${deployed.message}` : "",
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

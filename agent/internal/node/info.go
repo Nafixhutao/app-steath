@@ -11,19 +11,19 @@ import (
 	"time"
 
 	"stealth/agent/internal/api"
-	"stealth/agent/internal/build"
+	"stealth/agent/internal/exec"
 )
 
 // Info reports Docker and BuildKit availability plus basic capacity.
 type Info struct {
 	Name    string
-	exec    build.Executor
+	runner  exec.Executor
 	timeout time.Duration
 }
 
 // New returns an Info that probes Docker through the given Executor.
-func New(name string, exec build.Executor) *Info {
-	return &Info{Name: name, exec: exec, timeout: 5 * time.Second}
+func New(name string, runner exec.Executor) *Info {
+	return &Info{Name: name, runner: runner, timeout: 5 * time.Second}
 }
 
 // NodeInfo probes Docker and BuildKit. A failed probe reports the node as
@@ -33,55 +33,58 @@ func (i *Info) NodeInfo() api.NodeInfo {
 	ctx, cancel := context.WithTimeout(context.Background(), i.timeout)
 	defer cancel()
 
-	dockerVersion, err := i.exec.Output(ctx, build.ExecOptions{
+	dockerVersion, err := i.runner.Output(ctx, exec.Options{
 		Name: "docker",
 		Args: []string{"version", "--format", "{{.Server.Version}}"},
 	})
 	if err != nil {
+		status := api.NodeInfoStatus("error")
 		return api.NodeInfo{
 			Name:              &i.Name,
-			Status:            api.NodeInfoStatusOk,
+			Status:            status,
 			DockerVersion:     "unavailable",
 			BuildkitAvailable: false,
 			CpuCount:          pointer(runtime.NumCPU()),
-			MemoryMb:          pointer(0),
+			MemoryMb:          pointer(memoryMB()),
 		}
 	}
 
-	buildkitAvailable := i.buildkitAvailable(ctx)
-	memoryMb := i.memoryMb()
+	status := api.NodeInfoStatus("ok")
+	buildkit := i.buildkitAvailable(ctx)
 
 	return api.NodeInfo{
 		Name:              &i.Name,
-		Status:            api.NodeInfoStatusOk,
+		Status:            status,
 		DockerVersion:     strings.TrimSpace(dockerVersion),
-		BuildkitAvailable: buildkitAvailable,
+		BuildkitAvailable: buildkit,
 		CpuCount:          pointer(runtime.NumCPU()),
-		MemoryMb:          pointer(memoryMb),
+		MemoryMb:          pointer(memoryMB()),
 	}
 }
 
+// buildkitAvailable asks the Docker daemon whether the BuildKit builder is
+// usable, which is what a Build actually needs.
 func (i *Info) buildkitAvailable(ctx context.Context) bool {
-	output, err := i.exec.Output(ctx, build.ExecOptions{
+	_, err := i.runner.Output(ctx, exec.Options{
 		Name: "docker",
 		Args: []string{"buildx", "version"},
 	})
-	if err != nil {
-		return false
-	}
 
-	return strings.Contains(output, "buildx")
+	return err == nil
 }
 
-// memoryMb reads the total memory of the host from /proc when available and
-// reports zero when the platform does not expose it.
-func (i *Info) memoryMb() int {
-	raw, err := os.ReadFile("/proc/meminfo")
+func pointer[T any](value T) *T {
+	return &value
+}
+
+// memoryMB reports total host memory in megabytes, or 0 when it cannot be read.
+func memoryMB() int {
+	data, err := os.ReadFile("/proc/meminfo")
 	if err != nil {
 		return 0
 	}
 
-	for _, line := range strings.Split(string(raw), "\n") {
+	for _, line := range strings.Split(string(data), "\n") {
 		if !strings.HasPrefix(line, "MemTotal:") {
 			continue
 		}
@@ -100,8 +103,4 @@ func (i *Info) memoryMb() int {
 	}
 
 	return 0
-}
-
-func pointer(value int) *int {
-	return &value
 }

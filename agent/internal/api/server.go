@@ -20,11 +20,21 @@ type NodeInfoProvider interface {
 type server struct {
 	builds   *build.Manager
 	nodeInfo NodeInfoProvider
+	runtime  RuntimeDeployer
 }
 
 // NewHandler returns the versioned Node Agent API guarded by a bearer token.
-func NewHandler(token string, builds *build.Manager, nodeInfo NodeInfoProvider) http.Handler {
-	return authMiddleware(token, Handler(server{builds: builds, nodeInfo: nodeInfo}))
+func NewHandler(
+	token string,
+	builds *build.Manager,
+	nodeInfo NodeInfoProvider,
+	runtimeDeployer RuntimeDeployer,
+) http.Handler {
+	return authMiddleware(token, Handler(server{
+		builds:   builds,
+		nodeInfo: nodeInfo,
+		runtime:  runtimeDeployer,
+	}))
 }
 
 // GetHealth reports that the agent process is up. It never touches Docker, so

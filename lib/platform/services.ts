@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import { ApiError } from "@/lib/platform/api";
 import { buildPlatformHostname } from "@/lib/platform/platform-domain";
 import { QUOTAS, QuotaExceededError } from "@/lib/platform/quota";
+import { removeServiceRuntime } from "@/lib/platform/runtime";
 import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -470,6 +471,15 @@ export async function deleteService(input: {
   }
 
   await pool.query('DELETE FROM "service" WHERE "id" = $1', [input.serviceId]);
+
+  // Remove the container and its route so a deleted Service leaves nothing
+  // running on the node. This is best effort: the Service row is already gone, so
+  // a node that is unreachable must not fail the delete the user asked for.
+  try {
+    await removeServiceRuntime(input.serviceId);
+  } catch (error) {
+    console.error(`could not remove the runtime for Service ${input.serviceId}`, error);
+  }
 
   return {
     id: current.id,

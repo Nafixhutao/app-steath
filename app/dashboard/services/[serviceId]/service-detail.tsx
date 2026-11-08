@@ -12,6 +12,7 @@ import {
   type ServiceSummary,
 } from "@/lib/services-client";
 import { DeploymentsPanel } from "./deployments-panel";
+import { RuntimePanel } from "./runtime-panel";
 
 function getError(error: unknown) {
   return error instanceof Error ? error.message : "The request could not be completed.";
@@ -160,6 +161,12 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
       </section>
 
       <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} />
+
+      <RuntimePanel
+        serviceId={service.id}
+        canManage={canManage}
+        hostname={service.platformHostname}
+      />
 
       {canManage ? (
         <section

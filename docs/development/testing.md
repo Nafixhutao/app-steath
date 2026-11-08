@@ -70,3 +70,15 @@ npm run agent:run     # Node Agent side
 Both need `AGENT_TOKEN`. The worker also needs `AGENT_BASE_URL` pointing at the agent, and the agent needs `CONTROL_PLANE_URL` to send heartbeats to `/api/nodes/heartbeat`. A node that has not heartbeated for 90 seconds is reported unhealthy and blocks new Deployments.
 
 The Control Plane API tests in `tests/api/deployments.test.ts` use a fake Node Agent over HTTP, so they exercise the Deployment state machine (`queued → building → deploying`, and `failed` on a Build error) without Docker.
+
+### Runtime environment
+
+Running a Service needs the Node Agent to reach Caddy and Docker. These variables are read by the agent:
+
+| Variable               | Default                  | Purpose                                                                     |
+| ---------------------- | ------------------------ | --------------------------------------------------------------------------- |
+| `CADDY_ADMIN_URL`      | `http://127.0.0.1:2019`  | Caddy admin API the agent rewrites routes through                           |
+| `CADDY_CONTAINER_NAME` | `stealth-caddy`          | Caddy container the agent attaches to each Project network                  |
+| `AGENT_PROBE_IMAGE`    | `busybox:1.36`           | Image for the one-shot health-check probe                                   |
+
+Caddy must join every Project network to resolve the per-Deployment alias a route dials, which is why `CADDY_CONTAINER_NAME` has to match the container started by `docker compose up`. The Control Plane reads `PLATFORM_DOMAIN` to build Platform Subdomains; with `PLATFORM_DOMAIN=127.0.0.1.nip.io` a Service is reachable at `https://<name>-<suffix>.<ip>.nip.io`. Caddy uses `local_certs`, so the certificate comes from Caddy's internal CA and `curl -k` (or trusting the CA) is expected in development.

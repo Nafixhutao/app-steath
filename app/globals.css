@@ -1359,6 +1359,16 @@ a:hover {
   font-size: 12px;
   font-weight: 600;
 }
+.runtime-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.runtime-actions .dashboard-link-button:disabled,
+.runtime-actions .create-project-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .deployment-log pre {
   max-height: 320px;
   margin: 0;

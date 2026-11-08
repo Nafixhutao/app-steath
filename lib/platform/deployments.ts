@@ -359,6 +359,124 @@ export async function markDeploymentBuilt(input: {
 }
 
 /**
+ * Runs the runtime half of a Deployment: asks the Node Agent to start the built
+ * image, and marks the Deployment `running` only once the container is healthy and
+ * serving. A Deployment whose container never becomes healthy is marked `failed`
+ * while the previous version keeps serving.
+ */
+export async function runDeployment(
+  deploymentId: string,
+  options: { client?: AgentClient } = {},
+): Promise<{ status: "running" | "failed"; message: string }> {
+  const details = await pool.query<{
+    deploymentId: string;
+    serviceId: string;
+    imageRef: string | null;
+    projectId: string;
+    organizationId: string;
+    platformHostname: string;
+    containerPort: number;
+    healthPath: string | null;
+    cpuLimit: string | number;
+    memoryLimitMb: number;
+  }>(
+    `SELECT d."id" AS "deploymentId", d."serviceId", d."imageRef",
+            s."projectId", p."organizationId", s."platformHostname",
+            s."containerPort", s."healthPath", s."cpuLimit", s."memoryLimitMb"
+     FROM "deployment" d
+     JOIN "service" s ON s."id" = d."serviceId"
+     JOIN "project" p ON p."id" = s."projectId"
+     WHERE d."id" = $1`,
+    [deploymentId],
+  );
+
+  const deployment = details.rows[0];
+  if (!deployment) {
+    throw new Error(`Deployment ${deploymentId} no longer exists.`);
+  }
+  if (!deployment.imageRef) {
+    const message = "The Deployment has no image to run.";
+    await markDeploymentFailed(deploymentId, message);
+    return { status: "failed", message };
+  }
+
+  const client = options.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
+
+  const started = await client.POST("/v1/deployments", {
+    body: {
+      deploymentId: deployment.deploymentId,
+      serviceId: deployment.serviceId,
+      projectId: deployment.projectId,
+      organizationId: deployment.organizationId,
+      hostname: deployment.platformHostname,
+      imageRef: deployment.imageRef,
+      containerPort: deployment.containerPort,
+      cpuLimit: Number(deployment.cpuLimit),
+      memoryLimitMb: deployment.memoryLimitMb,
+      ...(deployment.healthPath ? { healthPath: deployment.healthPath } : {}),
+    },
+  });
+
+  if (!started.response.ok || !started.data) {
+    const message = `The Node Agent rejected the Deployment (${started.response.status}).`;
+    await markDeploymentFailed(deploymentId, message);
+    return { status: "failed", message };
+  }
+
+  if (started.data.status !== "running") {
+    const message = started.data.error ?? "The container did not become healthy.";
+    await markDeploymentFailed(deploymentId, message);
+    return { status: "failed", message };
+  }
+
+  await markDeploymentRunning(deploymentId);
+
+  return { status: "running", message: "" };
+}
+
+/**
+ * Marks the Deployment `running` and points the Service at it. Only the newest
+ * successful Deployment keeps the Service `running`; older ones stay `running`
+ * in the history because they did serve traffic at the time.
+ */
+export async function markDeploymentRunning(deploymentId: string): Promise<void> {
+  await pool.query(
+    `UPDATE "deployment"
+     SET "status" = 'running', "finishedAt" = now()
+     WHERE "id" = $1 AND "status" = 'deploying'`,
+    [deploymentId],
+  );
+
+  await pool.query(
+    `UPDATE "service" s
+     SET "status" = 'running', "updatedAt" = now()
+     WHERE s."id" = (SELECT "serviceId" FROM "deployment" WHERE "id" = $1)`,
+    [deploymentId],
+  );
+}
+
+/**
+ * Marks the Service `stopped` without touching its Deployment history, which is
+ * what the runtime does when the user stops a Service.
+ */
+export async function markServiceStopped(serviceId: string): Promise<void> {
+  await pool.query(
+    `UPDATE "service" SET "status" = 'stopped', "updatedAt" = now() WHERE "id" = $1`,
+    [serviceId],
+  );
+}
+
+/**
+ * Marks the Service `running` again after a start or restart.
+ */
+export async function markServiceRunning(serviceId: string): Promise<void> {
+  await pool.query(
+    `UPDATE "service" SET "status" = 'running', "updatedAt" = now() WHERE "id" = $1`,
+    [serviceId],
+  );
+}
+
+/**
  * Appends Build log lines. The sequence continues from the highest stored value
  * so a resumed stream never collides with an earlier line.
  */

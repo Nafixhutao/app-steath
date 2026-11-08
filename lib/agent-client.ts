@@ -10,6 +10,10 @@ export type AgentBuild = components["schemas"]["Build"];
 export type AgentBuildRequest = components["schemas"]["BuildRequest"];
 export type AgentBuildLogEvent = components["schemas"]["BuildLogEvent"];
 export type AgentNodeInfo = components["schemas"]["NodeInfo"];
+export type AgentDeployRequest = components["schemas"]["DeployRequest"];
+export type AgentDeployment = components["schemas"]["Deployment"];
+export type AgentServiceState = components["schemas"]["ServiceState"];
+export type AgentRuntimeLogEvent = components["schemas"]["RuntimeLogEvent"];
 
 export type AgentClient = ReturnType<typeof createAgentClient>;
 
@@ -46,7 +50,42 @@ export async function streamBuildLogs(
     throw new Error(`The Node Agent rejected the Build log stream (${response.response.status}).`);
   }
 
-  const reader = response.data.getReader();
+  await readNdjson(response.data, onEvent);
+}
+
+/**
+ * Follows the runtime log of a Service container. The stream stays open while the
+ * container runs, so callers must abort the request when the reader goes away.
+ */
+export async function streamServiceLogs(
+  client: AgentClient,
+  serviceId: string,
+  tail: number,
+  onEvent: (event: AgentRuntimeLogEvent) => Promise<void> | void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await client.GET("/v1/services/{serviceId}/logs", {
+    params: { path: { serviceId }, query: { tail } },
+    parseAs: "stream",
+    ...(signal ? { signal } : {}),
+  });
+
+  if (!response.response.ok || !response.data) {
+    throw new Error(`The Node Agent rejected the runtime log stream (${response.response.status}).`);
+  }
+
+  await readNdjson(response.data, onEvent);
+}
+
+/**
+ * Parses newline-delimited JSON as it arrives, so the caller sees each event
+ * without waiting for the stream to close.
+ */
+async function readNdjson<T>(
+  stream: ReadableStream<Uint8Array>,
+  onEvent: (event: T) => Promise<void> | void,
+): Promise<void> {
+  const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
@@ -60,7 +99,7 @@ export async function streamBuildLogs(
       const line = buffer.slice(0, newline).trim();
       buffer = buffer.slice(newline + 1);
       if (line) {
-        await onEvent(JSON.parse(line) as AgentBuildLogEvent);
+        await onEvent(JSON.parse(line) as T);
       }
       newline = buffer.indexOf("\n");
     }
@@ -68,6 +107,6 @@ export async function streamBuildLogs(
 
   const remainder = buffer.trim();
   if (remainder) {
-    await onEvent(JSON.parse(remainder) as AgentBuildLogEvent);
+    await onEvent(JSON.parse(remainder) as T);
   }
 }

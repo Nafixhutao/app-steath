@@ -16,22 +16,40 @@ import (
 
 // Defines values for BuildStatus.
 const (
-	Cancelled BuildStatus = "cancelled"
-	Failed    BuildStatus = "failed"
-	Running   BuildStatus = "running"
-	Succeeded BuildStatus = "succeeded"
+	BuildStatusCancelled BuildStatus = "cancelled"
+	BuildStatusFailed    BuildStatus = "failed"
+	BuildStatusRunning   BuildStatus = "running"
+	BuildStatusSucceeded BuildStatus = "succeeded"
 )
 
 // Valid indicates whether the value is a known member of the BuildStatus enum.
 func (e BuildStatus) Valid() bool {
 	switch e {
-	case Cancelled:
+	case BuildStatusCancelled:
 		return true
-	case Failed:
+	case BuildStatusFailed:
 		return true
-	case Running:
+	case BuildStatusRunning:
 		return true
-	case Succeeded:
+	case BuildStatusSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploymentStatus.
+const (
+	DeploymentStatusFailed  DeploymentStatus = "failed"
+	DeploymentStatusRunning DeploymentStatus = "running"
+)
+
+// Valid indicates whether the value is a known member of the DeploymentStatus enum.
+func (e DeploymentStatus) Valid() bool {
+	switch e {
+	case DeploymentStatusFailed:
+		return true
+	case DeploymentStatusRunning:
 		return true
 	default:
 		return false
@@ -55,13 +73,40 @@ func (e HealthStatus) Valid() bool {
 
 // Defines values for NodeInfoStatus.
 const (
-	NodeInfoStatusOk NodeInfoStatus = "ok"
+	NodeInfoStatusError NodeInfoStatus = "error"
+	NodeInfoStatusOk    NodeInfoStatus = "ok"
 )
 
 // Valid indicates whether the value is a known member of the NodeInfoStatus enum.
 func (e NodeInfoStatus) Valid() bool {
 	switch e {
+	case NodeInfoStatusError:
+		return true
 	case NodeInfoStatusOk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ServiceStateStatus.
+const (
+	ServiceStateStatusAbsent  ServiceStateStatus = "absent"
+	ServiceStateStatusFailed  ServiceStateStatus = "failed"
+	ServiceStateStatusRunning ServiceStateStatus = "running"
+	ServiceStateStatusStopped ServiceStateStatus = "stopped"
+)
+
+// Valid indicates whether the value is a known member of the ServiceStateStatus enum.
+func (e ServiceStateStatus) Valid() bool {
+	switch e {
+	case ServiceStateStatusAbsent:
+		return true
+	case ServiceStateStatusFailed:
+		return true
+	case ServiceStateStatusRunning:
+		return true
+	case ServiceStateStatusStopped:
 		return true
 	default:
 		return false
@@ -100,6 +145,51 @@ type BuildRequest struct {
 	RepoUrl        string `json:"repoUrl"`
 }
 
+// DeployRequest defines model for DeployRequest.
+type DeployRequest struct {
+	ContainerPort int `json:"containerPort"`
+
+	// CpuLimit CPU limit in vCPU.
+	CpuLimit float32 `json:"cpuLimit"`
+
+	// DeploymentId Deployment id; makes Deploy idempotent.
+	DeploymentId         string                 `json:"deploymentId"`
+	EnvironmentVariables *[]EnvironmentVariable `json:"environmentVariables,omitempty"`
+
+	// HealthPath Path that must answer 2xx before the route is switched.
+	HealthPath *string `json:"healthPath,omitempty"`
+
+	// Hostname Platform Subdomain the route is created for.
+	Hostname       string `json:"hostname"`
+	ImageRef       string `json:"imageRef"`
+	MemoryLimitMb  int    `json:"memoryLimitMb"`
+	OrganizationId string `json:"organizationId"`
+	ProjectId      string `json:"projectId"`
+	ServiceId      string `json:"serviceId"`
+}
+
+// Deployment defines model for Deployment.
+type Deployment struct {
+	ContainerId  *string          `json:"containerId,omitempty"`
+	DeploymentId string           `json:"deploymentId"`
+	Error        *string          `json:"error,omitempty"`
+	Hostname     *string          `json:"hostname,omitempty"`
+	ServiceId    string           `json:"serviceId"`
+	Status       DeploymentStatus `json:"status"`
+}
+
+// DeploymentStatus defines model for Deployment.Status.
+type DeploymentStatus string
+
+// EnvironmentVariable defines model for EnvironmentVariable.
+type EnvironmentVariable struct {
+	Name string `json:"name"`
+
+	// Value Sent in the request body only. The Node Agent passes it to the
+	// container and never writes it to a log or to disk.
+	Value string `json:"value"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Code  *string `json:"code,omitempty"`
@@ -127,8 +217,29 @@ type NodeInfo struct {
 // NodeInfoStatus defines model for NodeInfo.Status.
 type NodeInfoStatus string
 
+// RuntimeLogEvent defines model for RuntimeLogEvent.
+type RuntimeLogEvent struct {
+	Message   string     `json:"message"`
+	Timestamp *time.Time `json:"timestamp,omitempty"`
+}
+
+// ServiceState defines model for ServiceState.
+type ServiceState struct {
+	ContainerId  *string            `json:"containerId,omitempty"`
+	DeploymentId *string            `json:"deploymentId,omitempty"`
+	Hostname     *string            `json:"hostname,omitempty"`
+	ServiceId    string             `json:"serviceId"`
+	Status       ServiceStateStatus `json:"status"`
+}
+
+// ServiceStateStatus defines model for ServiceState.Status.
+type ServiceStateStatus string
+
 // BuildId defines model for BuildId.
 type BuildId = string
+
+// ServiceId defines model for ServiceId.
+type ServiceId = string
 
 // StreamBuildLogsParams defines parameters for StreamBuildLogs.
 type StreamBuildLogsParams struct {
@@ -136,8 +247,17 @@ type StreamBuildLogsParams struct {
 	After *int `form:"after,omitempty" json:"after,omitempty"`
 }
 
+// StreamServiceLogsParams defines parameters for StreamServiceLogs.
+type StreamServiceLogsParams struct {
+	// Tail Number of already-written lines to replay first.
+	Tail *int `form:"tail,omitempty" json:"tail,omitempty"`
+}
+
 // StartBuildJSONRequestBody defines body for StartBuild for application/json ContentType.
 type StartBuildJSONRequestBody = BuildRequest
+
+// DeployServiceJSONRequestBody defines body for DeployService for application/json ContentType.
+type DeployServiceJSONRequestBody = DeployRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -153,12 +273,33 @@ type ServerInterface interface {
 	// StreamBuildLogs Stream Build logs
 	// (GET /v1/builds/{buildId}/logs)
 	StreamBuildLogs(w http.ResponseWriter, r *http.Request, buildId BuildId, params StreamBuildLogsParams)
+	// DeployService Run a built image as the Service container
+	// (POST /v1/deployments)
+	DeployService(w http.ResponseWriter, r *http.Request)
 	// GetHealth Check whether the Node Agent is healthy
 	// (GET /v1/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
 	// GetNode Read node info and capacity
 	// (GET /v1/node)
 	GetNode(w http.ResponseWriter, r *http.Request)
+	// RemoveService Remove a Service container and its route
+	// (DELETE /v1/services/{serviceId})
+	RemoveService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// GetService Read the runtime state of a Service
+	// (GET /v1/services/{serviceId})
+	GetService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// StreamServiceLogs Stream runtime logs
+	// (GET /v1/services/{serviceId}/logs)
+	StreamServiceLogs(w http.ResponseWriter, r *http.Request, serviceId ServiceId, params StreamServiceLogsParams)
+	// RestartService Restart a Service container
+	// (POST /v1/services/{serviceId}/restart)
+	RestartService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// StartService Start a stopped Service container
+	// (POST /v1/services/{serviceId}/start)
+	StartService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// StopService Stop a Service container
+	// (POST /v1/services/{serviceId}/stop)
+	StopService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -278,6 +419,20 @@ func (siw *ServerInterfaceWrapper) StreamBuildLogs(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// DeployService operation middleware
+func (siw *ServerInterfaceWrapper) DeployService(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeployService(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
 
@@ -297,6 +452,178 @@ func (siw *ServerInterfaceWrapper) GetNode(w http.ResponseWriter, r *http.Reques
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetNode(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveService operation middleware
+func (siw *ServerInterfaceWrapper) RemoveService(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveService(w, r, serviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetService operation middleware
+func (siw *ServerInterfaceWrapper) GetService(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetService(w, r, serviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StreamServiceLogs operation middleware
+func (siw *ServerInterfaceWrapper) StreamServiceLogs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params StreamServiceLogsParams
+
+	// ------------- Optional query parameter "tail" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tail", r.URL.Query(), &params.Tail, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tail"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tail", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StreamServiceLogs(w, r, serviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RestartService operation middleware
+func (siw *ServerInterfaceWrapper) RestartService(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RestartService(w, r, serviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StartService operation middleware
+func (siw *ServerInterfaceWrapper) StartService(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StartService(w, r, serviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StopService operation middleware
+func (siw *ServerInterfaceWrapper) StopService(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StopService(w, r, serviceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -432,6 +759,13 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.CancelBuild)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.GetBuild)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}/logs", wrapper.StreamBuildLogs)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/deployments", wrapper.DeployService)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/services/{serviceId}", wrapper.RemoveService)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/services/{serviceId}", wrapper.GetService)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/stop", wrapper.StopService)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/start", wrapper.StartService)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/restart", wrapper.RestartService)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/services/{serviceId}/logs", wrapper.StreamServiceLogs)
 
 	return m
 }
