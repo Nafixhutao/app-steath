@@ -4,8 +4,9 @@
 # Platform Subdomain through it, so this file deliberately declares no site of its
 # own. `local_certs` issues certificates from Caddy's internal CA, which is what
 # makes `<ip>.nip.io` hostnames work over HTTPS without public DNS or an ACME
-# account. On a real deployment with a public domain, replace it with an ACME
-# issuer and the `ask` endpoint that only allows registered hostnames.
+# account. The Node Agent also turns on on-demand TLS through the admin API and
+# points its `ask` endpoint at the Control Plane, so a certificate is only issued
+# for a Platform Subdomain or an active Custom Domain.
 {
 	admin 0.0.0.0:2019
 	local_certs

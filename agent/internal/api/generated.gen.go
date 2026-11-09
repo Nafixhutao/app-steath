@@ -362,6 +362,16 @@ type RuntimeLogEvent struct {
 	Timestamp *time.Time `json:"timestamp,omitempty"`
 }
 
+// ServiceHostnameState defines model for ServiceHostnameState.
+type ServiceHostnameState struct {
+	Hostname string `json:"hostname"`
+
+	// Routed True when a route for the hostname now points at the Service. A
+	// removal reports false because no route remains.
+	Routed    bool   `json:"routed"`
+	ServiceId string `json:"serviceId"`
+}
+
 // ServiceState defines model for ServiceState.
 type ServiceState struct {
 	ContainerId  *string            `json:"containerId,omitempty"`
@@ -425,6 +435,9 @@ type DatabaseId = string
 
 // DeploymentId defines model for DeploymentId.
 type DeploymentId = string
+
+// Hostname defines model for Hostname.
+type Hostname = string
 
 // ServiceId defines model for ServiceId.
 type ServiceId = string
@@ -530,6 +543,12 @@ type ServerInterface interface {
 	// GetService Read the runtime state of a Service
 	// (GET /v1/services/{serviceId})
 	GetService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// RemoveServiceHostname Stop routing an extra hostname to a Service
+	// (DELETE /v1/services/{serviceId}/hostnames/{hostname})
+	RemoveServiceHostname(w http.ResponseWriter, r *http.Request, serviceId ServiceId, hostname Hostname)
+	// AddServiceHostname Route an extra hostname to a running Service
+	// (PUT /v1/services/{serviceId}/hostnames/{hostname})
+	AddServiceHostname(w http.ResponseWriter, r *http.Request, serviceId ServiceId, hostname Hostname)
 	// StreamServiceLogs Stream runtime logs
 	// (GET /v1/services/{serviceId}/logs)
 	StreamServiceLogs(w http.ResponseWriter, r *http.Request, serviceId ServiceId, params StreamServiceLogsParams)
@@ -988,6 +1007,76 @@ func (siw *ServerInterfaceWrapper) GetService(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// RemoveServiceHostname operation middleware
+func (siw *ServerInterfaceWrapper) RemoveServiceHostname(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "hostname" -------------
+	var hostname Hostname
+
+	err = runtime.BindStyledParameterWithOptions("simple", "hostname", r.PathValue("hostname"), &hostname, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "hostname", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveServiceHostname(w, r, serviceId, hostname)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddServiceHostname operation middleware
+func (siw *ServerInterfaceWrapper) AddServiceHostname(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "hostname" -------------
+	var hostname Hostname
+
+	err = runtime.BindStyledParameterWithOptions("simple", "hostname", r.PathValue("hostname"), &hostname, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "hostname", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddServiceHostname(w, r, serviceId, hostname)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // StreamServiceLogs operation middleware
 func (siw *ServerInterfaceWrapper) StreamServiceLogs(w http.ResponseWriter, r *http.Request) {
 
@@ -1335,6 +1424,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/stop", wrapper.StopService)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/start", wrapper.StartService)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/restart", wrapper.RestartService)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/services/{serviceId}/hostnames/{hostname}", wrapper.RemoveServiceHostname)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/v1/services/{serviceId}/hostnames/{hostname}", wrapper.AddServiceHostname)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/services/{serviceId}/logs", wrapper.StreamServiceLogs)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/volumes/{name}", wrapper.RemoveVolume)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/volumes/{name}", wrapper.GetVolume)

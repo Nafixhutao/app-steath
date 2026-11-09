@@ -4,8 +4,10 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"stealth/agent/internal/api"
@@ -58,9 +60,23 @@ func main() {
 	builds := build.NewManager(filepath.Join(workRoot, "builds"), executor)
 	nodeInfo := node.New(name, executor)
 
+	router := runtime.NewCaddyRouter(caddyAdminURL)
+	// Caddy asks the Control Plane before it issues a certificate. The endpoint
+	// runs inside the Caddy container, so a loopback Control Plane URL is
+	// rewritten to the host gateway the container can reach.
+	controlPlaneURL := os.Getenv("CONTROL_PLANE_URL")
+	if controlPlaneURL != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		askURL := caddyAskURL(controlPlaneURL, token)
+		if err := router.ConfigureOnDemandTLS(ctx, askURL); err != nil {
+			log.Printf("caddy on-demand TLS: %v", err)
+		}
+		cancel()
+	}
+
 	services := runtime.NewManager(
 		runtime.NewCLIDocker(executor, os.Getenv("AGENT_PROBE_IMAGE")),
-		runtime.NewCaddyRouter(caddyAdminURL),
+		router,
 	)
 	// The weekly Build-cache prune is recorded here, so a restart does not prune
 	// again and a node that keeps restarting still gets pruned every week.
@@ -128,9 +144,9 @@ func main() {
 	}()
 
 	// The heartbeat is optional so the agent can be run and tested on its own.
-	if controlPlane := os.Getenv("CONTROL_PLANE_URL"); controlPlane != "" {
+	if controlPlaneURL != "" {
 		sender := heartbeat.New(
-			controlPlane+"/api/nodes/heartbeat",
+			controlPlaneURL+"/api/nodes/heartbeat",
 			token,
 			heartbeatInterval,
 			nodeInfo,
@@ -148,4 +164,24 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// caddyAskURL builds the on-demand TLS permission endpoint. Caddy runs in its
+// own container, so a loopback Control Plane host is rewritten to the Docker
+// host gateway: `localhost` inside that container would be Caddy itself.
+func caddyAskURL(controlPlane string, token string) string {
+	base := strings.TrimRight(controlPlane, "/")
+	if parsed, err := url.Parse(base); err == nil {
+		switch parsed.Hostname() {
+		case "localhost", "127.0.0.1", "::1":
+			port := parsed.Port()
+			parsed.Host = "host.docker.internal"
+			if port != "" {
+				parsed.Host += ":" + port
+			}
+			base = strings.TrimRight(parsed.String(), "/")
+		}
+	}
+
+	return base + "/api/internal/caddy/ask?token=" + url.QueryEscape(token)
 }

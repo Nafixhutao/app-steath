@@ -231,6 +231,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/services/{serviceId}/hostnames/{hostname}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Route an extra hostname to a running Service
+         * @description Points a Custom Domain at the running Service container. The Service must
+         *     already have a container that is running; the Control Plane only calls this
+         *     after DNS verification succeeded. Calling it again is idempotent.
+         */
+        put: operations["addServiceHostname"];
+        post?: never;
+        /**
+         * Stop routing an extra hostname to a Service
+         * @description Removes the route for a Custom Domain. Removing an unknown hostname
+         *     succeeds, so the Control Plane can retry a delete safely.
+         */
+        delete: operations["removeServiceHostname"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/services/{serviceId}/logs": {
         parameters: {
             query?: never;
@@ -567,6 +594,15 @@ export interface components {
             deploymentId?: string;
             hostname?: string;
         };
+        ServiceHostnameState: {
+            serviceId: string;
+            hostname: string;
+            /**
+             * @description True when a route for the hostname now points at the Service. A
+             *     removal reports false because no route remains.
+             */
+            routed: boolean;
+        };
         CancelDeploymentRequest: {
             /**
              * @description Service that owns the Deployment. The agent uses it to find the
@@ -611,6 +647,8 @@ export interface components {
         VolumeName: string;
         /** @description Database id that owns the container and Volume. */
         DatabaseId: string;
+        /** @description Bare DNS hostname of the Custom Domain, without a scheme or port. */
+        Hostname: string;
     };
     requestBodies: never;
     headers: never;
@@ -1100,6 +1138,110 @@ export interface operations {
             };
             /** @description Service has no container yet */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addServiceHostname: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Service id that owns the container. */
+                serviceId: components["parameters"]["ServiceId"];
+                /** @description Bare DNS hostname of the Custom Domain, without a scheme or port. */
+                hostname: components["parameters"]["Hostname"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hostname routed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceHostnameState"];
+                };
+            };
+            /** @description Invalid hostname */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service has no container yet */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service container is not running */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeServiceHostname: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Service id that owns the container. */
+                serviceId: components["parameters"]["ServiceId"];
+                /** @description Bare DNS hostname of the Custom Domain, without a scheme or port. */
+                hostname: components["parameters"]["Hostname"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hostname removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceHostnameState"];
+                };
+            };
+            /** @description Invalid hostname */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -13,6 +13,7 @@ import {
 } from "@/lib/services-client";
 import { DeploymentsPanel } from "./deployments-panel";
 import { EnvironmentPanel } from "./environment-panel";
+import { CustomDomainPanel } from "./custom-domain-panel";
 import { RuntimePanel } from "./runtime-panel";
 import { VolumePanel } from "./volume-panel";
 
@@ -173,6 +174,8 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         needsRedeploy={service.needsRedeploy}
         canManage={canManage}
       />
+
+      <CustomDomainPanel serviceId={service.id} canManage={canManage} />
 
       <RuntimePanel
         serviceId={service.id}

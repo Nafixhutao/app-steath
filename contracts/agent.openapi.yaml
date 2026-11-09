@@ -374,6 +374,80 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/hostnames/{hostname}:
+    put:
+      operationId: addServiceHostname
+      summary: Route an extra hostname to a running Service
+      description: |
+        Points a Custom Domain at the running Service container. The Service must
+        already have a container that is running; the Control Plane only calls this
+        after DNS verification succeeded. Calling it again is idempotent.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+        - $ref: "#/components/parameters/Hostname"
+      responses:
+        "200":
+          description: Hostname routed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceHostnameState"
+        "400":
+          description: Invalid hostname
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Service has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Service container is not running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeServiceHostname
+      summary: Stop routing an extra hostname to a Service
+      description: |
+        Removes the route for a Custom Domain. Removing an unknown hostname
+        succeeds, so the Control Plane can retry a delete safely.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+        - $ref: "#/components/parameters/Hostname"
+      responses:
+        "200":
+          description: Hostname removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceHostnameState"
+        "400":
+          description: Invalid hostname
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /v1/services/{serviceId}/logs:
     get:
       operationId: streamServiceLogs
@@ -788,6 +862,13 @@ components:
       description: Database id that owns the container and Volume.
       schema:
         type: string
+    Hostname:
+      name: hostname
+      in: path
+      required: true
+      description: Bare DNS hostname of the Custom Domain, without a scheme or port.
+      schema:
+        type: string
   schemas:
     Health:
       type: object
@@ -1200,6 +1281,22 @@ components:
           type: string
         hostname:
           type: string
+    ServiceHostnameState:
+      type: object
+      required:
+        - serviceId
+        - hostname
+        - routed
+      properties:
+        serviceId:
+          type: string
+        hostname:
+          type: string
+        routed:
+          type: boolean
+          description: |
+            True when a route for the hostname now points at the Service. A
+            removal reports false because no route remains.
     CancelDeploymentRequest:
       type: object
       required:

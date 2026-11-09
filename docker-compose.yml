@@ -32,6 +32,10 @@ services:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    # Caddy asks the Control Plane before issuing a certificate. On Docker
+    # Desktop this name already exists; the mapping makes it work on Linux too.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:2019/config/"]
       interval: 5s

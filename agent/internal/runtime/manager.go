@@ -334,6 +334,23 @@ func (m *Manager) deploy(ctx context.Context, request DeployRequest) DeployResul
 
 	// Traffic is on the new container, so the old one can go.
 	if previousErr == nil {
+		// Any Custom Domain route dialled the previous container's alias. Move it
+		// to the new alias before the old container disappears, so a redeploy does
+		// not leave an active Custom Domain pointing at a removed container.
+		if previousAlias := previous.Labels[LabelAlias]; previousAlias != "" {
+			previousPort := request.ContainerPort
+			if port, err := containerPortOf(previous); err == nil {
+				previousPort = port
+			}
+			oldUpstream := upstream(previousAlias, previousPort)
+			newUpstream := upstream(candidateAlias, request.ContainerPort)
+			if oldUpstream != newUpstream {
+				if err := m.repointRoutes(ctx, oldUpstream, newUpstream, request); err != nil {
+					log.Printf("deploy: could not move Custom Domain routes for %s: %v", request.ServiceID, err)
+				}
+			}
+		}
+
 		_ = m.docker.StopContainer(ctx, previous.ID)
 		_ = m.docker.RemoveContainer(ctx, previous.ID, false)
 	}
@@ -604,6 +621,16 @@ func (m *Manager) Remove(ctx context.Context, serviceID string) (ServiceState, e
 			}
 		}
 
+		// A Custom Domain route has no label of its own; remove every route that
+		// dials this container so a deleted Service leaves nothing serving.
+		if alias := info.Labels[LabelAlias]; alias != "" {
+			if port, err := containerPortOf(info); err == nil {
+				if err := m.removeRoutesForUpstream(ctx, upstream(alias, port)); err != nil {
+					return ServiceState{}, err
+				}
+			}
+		}
+
 		_ = m.docker.StopContainer(ctx, info.ID)
 		if err := m.docker.RemoveContainer(ctx, info.ID, true); err != nil {
 			return ServiceState{}, err
@@ -685,8 +712,10 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 
 	// A route whose container is gone must be removed, otherwise Caddy answers
 	// 502 for a Service that no longer exists. Candidates are skipped: they do
-	// not hold the hostname yet.
+	// not hold the hostname yet. A Custom Domain route has no label of its own,
+	// so it counts as live while it dials a running container's alias.
 	live := make(map[string]bool, len(containers))
+	liveUpstreams := make(map[string]bool, len(containers))
 	for _, container := range containers {
 		if !container.Running() {
 			continue
@@ -694,9 +723,14 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 		if hostname := container.Labels[LabelHostname]; hostname != "" {
 			live[hostname] = true
 		}
+		if alias := container.Labels[LabelAlias]; alias != "" {
+			if port, err := containerPortOf(container); err == nil {
+				liveUpstreams[upstream(alias, port)] = true
+			}
+		}
 	}
 	for _, route := range existing {
-		if live[route.Hostname] {
+		if live[route.Hostname] || liveUpstreams[route.Upstream] {
 			continue
 		}
 		if err := m.router.DeleteRoute(ctx, route.Hostname); err != nil {
@@ -786,6 +820,60 @@ func (m *Manager) restoreRoute(ctx context.Context, info ContainerInfo) error {
 		ServiceID:    info.Labels[LabelServiceID],
 		DeploymentID: info.Labels[LabelDeploymentID],
 	})
+}
+
+// repointRoutes moves every route that dials oldUpstream to newUpstream. The
+// Platform Subdomain is skipped because Deploy already wrote it; everything else
+// is a Custom Domain route and must follow the new container. Failing to move a
+// route is logged rather than fatal: the release is already serving and the
+// Control Plane can re-route the domain on the next verify.
+func (m *Manager) repointRoutes(
+	ctx context.Context,
+	oldUpstream string,
+	newUpstream string,
+	request DeployRequest,
+) error {
+	routes, err := m.router.ListRoutes(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, route := range routes {
+		if route.Upstream != oldUpstream || route.Hostname == request.Hostname {
+			continue
+		}
+
+		if err := m.router.PutRoute(ctx, Route{
+			Hostname:     route.Hostname,
+			Upstream:     newUpstream,
+			ServiceID:    request.ServiceID,
+			DeploymentID: request.DeploymentID,
+		}); err != nil {
+			return fmt.Errorf("move route %s: %w", route.Hostname, err)
+		}
+	}
+
+	return nil
+}
+
+// removeRoutesForUpstream deletes every route that dials upstream. Remove uses
+// it to take Custom Domain routes down with the container they pointed at.
+func (m *Manager) removeRoutesForUpstream(ctx context.Context, upstream string) error {
+	routes, err := m.router.ListRoutes(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, route := range routes {
+		if route.Upstream != upstream {
+			continue
+		}
+		if err := m.router.DeleteRoute(ctx, route.Hostname); err != nil {
+			return fmt.Errorf("remove route %s: %w", route.Hostname, err)
+		}
+	}
+
+	return nil
 }
 
 // lockService serialises the runtime operations of one Service and returns the

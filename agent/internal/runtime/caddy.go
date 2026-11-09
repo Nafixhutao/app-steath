@@ -365,6 +365,72 @@ func isMissing(err error) bool {
 	return caddyErr.status == http.StatusBadRequest && strings.Contains(caddyErr.body, "invalid traversal path")
 }
 
+// ConfigureOnDemandTLS teaches Caddy to ask the Control Plane before issuing a
+// certificate for a hostname. Without it Caddy would issue a certificate for any
+// name that reached a route, which would let anyone point DNS at the platform and
+// get a trusted certificate. The `ask` endpoint only allows a Platform Subdomain
+// or an active Custom Domain.
+func (r *CaddyRouter) ConfigureOnDemandTLS(ctx context.Context, askURL string) error {
+	if strings.TrimSpace(askURL) == "" {
+		return nil
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	automation := map[string]any{}
+	exists := false
+	body, err := r.get(ctx, "/config/apps/tls/automation")
+	if err != nil {
+		if !isMissing(err) {
+			return err
+		}
+	} else {
+		exists = true
+		if trimmed := bytes.TrimSpace(body); len(trimmed) > 0 && string(trimmed) != "null" {
+			if err := json.Unmarshal(trimmed, &automation); err != nil {
+				return fmt.Errorf("read Caddy TLS automation: %w", err)
+			}
+		}
+	}
+
+	policies, _ := automation["policies"].([]any)
+	onDemandSet := false
+	for _, policy := range policies {
+		entry, ok := policy.(map[string]any)
+		if !ok {
+			continue
+		}
+		// Caddy allows only one default/catch-all policy. The `local_certs`
+		// directive already creates one, so on-demand is enabled on that policy
+		// instead of adding a second one Caddy would reject.
+		if _, hasSubjects := entry["subjects"]; hasSubjects {
+			continue
+		}
+		entry["on_demand"] = true
+		onDemandSet = true
+		break
+	}
+	if !onDemandSet {
+		policies = append([]any{map[string]any{"on_demand": true}}, policies...)
+	}
+	automation["policies"] = policies
+	automation["on_demand"] = map[string]any{
+		"permission": map[string]any{
+			"module":   "http",
+			"endpoint": askURL,
+		},
+	}
+
+	method := http.MethodPut
+	if exists {
+		// Caddy rejects a PUT onto an existing key; PATCH replaces it.
+		method = http.MethodPatch
+	}
+
+	return r.send(ctx, method, "/config/apps/tls/automation", automation)
+}
+
 // CaddyAttacher joins the Caddy container to a Project network so it can resolve
 // the `svc-...` alias of every Service in that Project.
 type CaddyAttacher struct {

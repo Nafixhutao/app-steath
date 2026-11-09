@@ -38,6 +38,16 @@ type RuntimeDeployer interface {
 	) (runtime.DatabaseProxyState, error)
 	GetDatabaseProxy(ctx context.Context, databaseID string) (runtime.DatabaseProxyState, error)
 	RemoveDatabaseProxy(ctx context.Context, databaseID string) (bool, error)
+	AddHostname(
+		ctx context.Context,
+		serviceID string,
+		hostname string,
+	) (runtime.ServiceHostnameState, error)
+	RemoveHostname(
+		ctx context.Context,
+		serviceID string,
+		hostname string,
+	) (runtime.ServiceHostnameState, error)
 	Logs(
 		ctx context.Context,
 		serviceID string,
@@ -585,6 +595,64 @@ func (s server) RestartService(w http.ResponseWriter, r *http.Request, serviceID
 	writeJSON(w, http.StatusOK, toServiceState(state))
 }
 
+// AddServiceHostname points a verified Custom Domain at the running Service.
+func (s server) AddServiceHostname(
+	w http.ResponseWriter,
+	r *http.Request,
+	serviceID ServiceId,
+	hostname Hostname,
+) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	state, err := s.runtime.AddHostname(r.Context(), serviceID, hostname)
+	if errors.Is(err, runtime.ErrInvalidHostname) {
+		writeError(w, http.StatusBadRequest, "invalid_hostname", "The hostname is not a valid domain name.")
+		return
+	}
+	if errors.Is(err, runtime.ErrUnknownService) {
+		writeError(w, http.StatusNotFound, "service_not_running", "The Service has no container on this node.")
+		return
+	}
+	if errors.Is(err, runtime.ErrServiceNotRunning) {
+		writeError(w, http.StatusConflict, "service_not_running", "Deploy the Service before verifying its Custom Domain.")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "hostname_add_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toServiceHostnameState(state))
+}
+
+// RemoveServiceHostname withdraws a Custom Domain route.
+func (s server) RemoveServiceHostname(
+	w http.ResponseWriter,
+	r *http.Request,
+	serviceID ServiceId,
+	hostname Hostname,
+) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	state, err := s.runtime.RemoveHostname(r.Context(), serviceID, hostname)
+	if errors.Is(err, runtime.ErrInvalidHostname) {
+		writeError(w, http.StatusBadRequest, "invalid_hostname", "The hostname is not a valid domain name.")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "hostname_remove_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toServiceHostnameState(state))
+}
+
 // StreamServiceLogs follows the container output as newline-delimited JSON, so
 // the dashboard can show runtime logs the same way it shows Build logs.
 func (s server) StreamServiceLogs(
@@ -686,6 +754,14 @@ func toServiceState(state runtime.ServiceState) ServiceState {
 	}
 
 	return result
+}
+
+func toServiceHostnameState(state runtime.ServiceHostnameState) ServiceHostnameState {
+	return ServiceHostnameState{
+		ServiceId: state.ServiceID,
+		Hostname:  state.Hostname,
+		Routed:    state.Routed,
+	}
 }
 
 func toVolumeInfo(state runtime.VolumeState) VolumeInfo {
