@@ -5,6 +5,8 @@ import {
   createProjectDatabase,
   databaseStatusLabel,
   deleteProjectDatabase,
+  disableProjectDatabaseProxy,
+  enableProjectDatabaseProxy,
   getProjectDatabase,
   rotateProjectDatabaseCredentials,
   type DatabaseSummary,
@@ -46,6 +48,7 @@ export function DatabasePanel({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState("");
+  const [allowlist, setAllowlist] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -54,6 +57,9 @@ export function DatabasePanel({
       const result = await getProjectDatabase(projectId);
       setDatabase(result.database);
       setRedeployNeeded(result.needsRedeploy);
+      if (result.database?.proxy.enabled) {
+        setAllowlist(result.database.proxy.allowlist.join("\n"));
+      }
       setError("");
     } catch (cause) {
       setError(getError(cause));
@@ -113,6 +119,48 @@ export function DatabasePanel({
       setConfirmation("");
       await load();
       setNotice("Database deleted.");
+    } catch (cause) {
+      setError(getError(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function parseAllowlist(value: string): string[] {
+    return value
+      .split(/[\n,]+/)
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+  }
+
+  async function enableProxy() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const proxy = await enableProjectDatabaseProxy(projectId, parseAllowlist(allowlist));
+      await load();
+      setAllowlist(proxy.allowlist.join("\n"));
+      setNotice("Public proxy enabled. Only the listed CIDRs can connect over TLS.");
+    } catch (cause) {
+      setError(getError(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disableProxy() {
+    if (!window.confirm("Disable the public proxy? The public port will be revoked immediately.")) {
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await disableProjectDatabaseProxy(projectId);
+      await load();
+      setNotice("Public proxy disabled and its endpoint revoked.");
     } catch (cause) {
       setError(getError(cause));
     } finally {
@@ -254,6 +302,80 @@ export function DatabasePanel({
               Reachable only from Services in this Project through the <code>db</code> host. It is
               injected automatically as <code>DATABASE_URL</code>; a user value cannot override it.
             </p>
+          </div>
+
+          <div className="organization-settings-form environment-form">
+            <h3>Public proxy</h3>
+            <p>
+              {database.proxy.enabled
+                ? `Enabled on port ${database.proxy.port}. Only the allowlisted addresses can connect, and the connection must use TLS.`
+                : "Disabled. The Database has no public endpoint until an owner or admin enables it with at least one allowlist CIDR."}
+            </p>
+
+            {database.proxy.enabled ? (
+              <label>
+                Allowed CIDRs
+                <input
+                  value={database.proxy.allowlist.join(", ")}
+                  readOnly
+                  onFocus={(event) => event.currentTarget.select()}
+                  spellCheck={false}
+                />
+              </label>
+            ) : null}
+
+            {canManage ? (
+              <>
+                <label>
+                  Allowlist CIDRs (one per line)
+                  <textarea
+                    value={allowlist}
+                    onChange={(event) => setAllowlist(event.target.value)}
+                    placeholder="203.0.113.0/24"
+                    rows={3}
+                    spellCheck={false}
+                  />
+                </label>
+                <div className="deployment-actions">
+                  <button
+                    className="dashboard-link-button"
+                    type="button"
+                    onClick={() => void enableProxy()}
+                    disabled={busy}
+                  >
+                    {database.proxy.enabled ? "Update allowlist" : "Enable public proxy"}
+                  </button>
+                  {database.proxy.enabled ? (
+                    <button
+                      className="dashboard-danger-button"
+                      type="button"
+                      onClick={() => void disableProxy()}
+                      disabled={busy}
+                    >
+                      Disable public proxy
+                    </button>
+                  ) : null}
+                </div>
+
+                {database.proxy.enabled ? (
+                  <label>
+                    Connection string (public)
+                    {database.proxy.connectionString ? (
+                      <input
+                        value={database.proxy.connectionString}
+                        readOnly
+                        onFocus={(event) => event.currentTarget.select()}
+                        spellCheck={false}
+                      />
+                    ) : null}
+                  </label>
+                ) : null}
+              </>
+            ) : (
+              <p className="settings-readonly">
+                Only an owner or admin can enable the public proxy or view its connection string.
+              </p>
+            )}
           </div>
 
           {canManage ? (

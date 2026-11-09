@@ -194,6 +194,36 @@ type DatabasePasswordRequest struct {
 	Username string `json:"username"`
 }
 
+// DatabaseProxyRemoval defines model for DatabaseProxyRemoval.
+type DatabaseProxyRemoval struct {
+	DatabaseId string `json:"databaseId"`
+
+	// Removed True when this call actually removed a listener or Volume.
+	Removed bool `json:"removed"`
+}
+
+// DatabaseProxyRequest defines model for DatabaseProxyRequest.
+type DatabaseProxyRequest struct {
+	// Allowlist Source CIDRs allowed to reach the public port. An empty list is
+	// rejected, because a public Database must never be open to everyone
+	// by accident.
+	Allowlist  []string `json:"allowlist"`
+	DatabaseId string   `json:"databaseId"`
+
+	// Port Optional port to reuse. Omit it on the first enable so the agent
+	// allocates a free port in the public range.
+	Port      *int   `json:"port,omitempty"`
+	ProjectId string `json:"projectId"`
+}
+
+// DatabaseProxyState defines model for DatabaseProxyState.
+type DatabaseProxyState struct {
+	Allowlist  []string `json:"allowlist"`
+	DatabaseId string   `json:"databaseId"`
+	Enabled    bool     `json:"enabled"`
+	Port       *int     `json:"port,omitempty"`
+}
+
 // DatabaseRemoval defines model for DatabaseRemoval.
 type DatabaseRemoval struct {
 	DatabaseId string `json:"databaseId"`
@@ -432,6 +462,9 @@ type StartBuildJSONRequestBody = BuildRequest
 // EnsureDatabaseJSONRequestBody defines body for EnsureDatabase for application/json ContentType.
 type EnsureDatabaseJSONRequestBody = DatabaseRequest
 
+// EnsureDatabaseProxyJSONRequestBody defines body for EnsureDatabaseProxy for application/json ContentType.
+type EnsureDatabaseProxyJSONRequestBody = DatabaseProxyRequest
+
 // RotateDatabasePasswordJSONRequestBody defines body for RotateDatabasePassword for application/json ContentType.
 type RotateDatabasePasswordJSONRequestBody = DatabasePasswordRequest
 
@@ -467,6 +500,15 @@ type ServerInterface interface {
 	// EnsureDatabase Create or start a Project Database
 	// (PUT /v1/databases/{databaseId})
 	EnsureDatabase(w http.ResponseWriter, r *http.Request, databaseId DatabaseId)
+	// RemoveDatabaseProxy Disable the Database's public proxy
+	// (DELETE /v1/databases/{databaseId}/proxy)
+	RemoveDatabaseProxy(w http.ResponseWriter, r *http.Request, databaseId DatabaseId)
+	// GetDatabaseProxy Read the Database's public proxy state
+	// (GET /v1/databases/{databaseId}/proxy)
+	GetDatabaseProxy(w http.ResponseWriter, r *http.Request, databaseId DatabaseId)
+	// EnsureDatabaseProxy Enable or update the Database's public TLS proxy
+	// (PUT /v1/databases/{databaseId}/proxy)
+	EnsureDatabaseProxy(w http.ResponseWriter, r *http.Request, databaseId DatabaseId)
 	// RotateDatabasePassword Replace the Database password
 	// (POST /v1/databases/{databaseId}/rotate)
 	RotateDatabasePassword(w http.ResponseWriter, r *http.Request, databaseId DatabaseId)
@@ -713,6 +755,84 @@ func (siw *ServerInterfaceWrapper) EnsureDatabase(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnsureDatabase(w, r, databaseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveDatabaseProxy operation middleware
+func (siw *ServerInterfaceWrapper) RemoveDatabaseProxy(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "databaseId" -------------
+	var databaseId DatabaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "databaseId", r.PathValue("databaseId"), &databaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "databaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveDatabaseProxy(w, r, databaseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDatabaseProxy operation middleware
+func (siw *ServerInterfaceWrapper) GetDatabaseProxy(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "databaseId" -------------
+	var databaseId DatabaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "databaseId", r.PathValue("databaseId"), &databaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "databaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDatabaseProxy(w, r, databaseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnsureDatabaseProxy operation middleware
+func (siw *ServerInterfaceWrapper) EnsureDatabaseProxy(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "databaseId" -------------
+	var databaseId DatabaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "databaseId", r.PathValue("databaseId"), &databaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "databaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnsureDatabaseProxy(w, r, databaseId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1223,6 +1343,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/databases/{databaseId}", wrapper.GetDatabase)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/v1/databases/{databaseId}", wrapper.EnsureDatabase)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/databases/{databaseId}/rotate", wrapper.RotateDatabasePassword)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/databases/{databaseId}/proxy", wrapper.RemoveDatabaseProxy)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/databases/{databaseId}/proxy", wrapper.GetDatabaseProxy)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/v1/databases/{databaseId}/proxy", wrapper.EnsureDatabaseProxy)
 
 	return m
 }

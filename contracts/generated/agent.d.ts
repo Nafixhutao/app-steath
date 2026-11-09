@@ -343,6 +343,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/databases/{databaseId}/proxy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the Database's public proxy state */
+        get: operations["getDatabaseProxy"];
+        /**
+         * Enable or update the Database's public TLS proxy
+         * @description Starts an nginx TCP proxy that terminates TLS on a unique public port in
+         *     the 20000-29999 range and forwards to the Database over the Project
+         *     network. The proxy accepts only the source CIDRs in `allowlist`; an empty
+         *     allowlist is rejected. Calling this again with the same `databaseId`
+         *     reuses the existing port and replaces the allowlist.
+         */
+        put: operations["ensureDatabaseProxy"];
+        post?: never;
+        /**
+         * Disable the Database's public proxy
+         * @description Stops the public listener, removes its container and certificate Volume,
+         *     and revokes the public endpoint. Disabling a proxy that is already gone
+         *     is not an error.
+         */
+        delete: operations["removeDatabaseProxy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -473,6 +504,32 @@ export interface components {
         DatabaseRemoval: {
             databaseId: string;
             /** @description True when this call actually removed a container or Volume. */
+            removed: boolean;
+        };
+        DatabaseProxyRequest: {
+            databaseId: string;
+            projectId: string;
+            /**
+             * @description Source CIDRs allowed to reach the public port. An empty list is
+             *     rejected, because a public Database must never be open to everyone
+             *     by accident.
+             */
+            allowlist: string[];
+            /**
+             * @description Optional port to reuse. Omit it on the first enable so the agent
+             *     allocates a free port in the public range.
+             */
+            port?: number;
+        };
+        DatabaseProxyState: {
+            databaseId: string;
+            enabled: boolean;
+            port?: number;
+            allowlist: string[];
+        };
+        DatabaseProxyRemoval: {
+            databaseId: string;
+            /** @description True when this call actually removed a listener or Volume. */
             removed: boolean;
         };
         DeployRequest: {
@@ -1383,6 +1440,124 @@ export interface operations {
             };
             /** @description Database has no container yet */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getDatabaseProxy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Database id that owns the container and Volume. */
+                databaseId: components["parameters"]["DatabaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public proxy state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseProxyState"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    ensureDatabaseProxy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Database id that owns the container and Volume. */
+                databaseId: components["parameters"]["DatabaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatabaseProxyRequest"];
+            };
+        };
+        responses: {
+            /** @description Public proxy enabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseProxyState"];
+                };
+            };
+            /** @description Invalid proxy request or allowlist */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Database has no running container */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeDatabaseProxy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Database id that owns the container and Volume. */
+                databaseId: components["parameters"]["DatabaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public proxy removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseProxyRemoval"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -41,6 +41,17 @@ const (
 	// it means the image entrypoint never needs root or extra capabilities.
 	DatabaseUser = "postgres"
 
+	// The Database terminates TLS itself. libpq starts with a plaintext
+	// SSLRequest, so a generic TLS proxy cannot sit in front of it; PostgreSQL
+	// holds the certificate and the public proxy only forwards the stream.
+	DatabaseTLSCertFile = DatabaseMountPath + "/pg-server.crt"
+	DatabaseTLSKeyFile  = DatabaseMountPath + "/pg-server.key"
+	// DatabaseHBAFile is a custom pg_hba.conf that accepts only TLS from the
+	// network. The agent's pg_isready and rotation use the local socket.
+	DatabaseHBAFile = DatabaseMountPath + "/pg_hba.ssl.conf"
+	// DatabaseFileOwner is the uid:gid of the postgres user in postgres:16-alpine.
+	DatabaseFileOwner = "70:70"
+
 	// databaseReadyTimeout is longer than a Service health check because the
 	// first start runs initdb, which has to create the cluster on disk.
 	databaseReadyTimeout = 2 * time.Minute
@@ -132,6 +143,18 @@ func (m *Manager) EnsureDatabase(ctx context.Context, request DatabaseRequest) (
 		return m.databaseState(ctx, request.DatabaseID, request.StorageLimitMB)
 	}
 
+	certificate, key, err := generateServerCertificate(DatabaseAlias, []string{DatabaseAlias, "localhost"})
+	if err != nil {
+		return DatabaseState{}, err
+	}
+	if err := m.docker.WriteVolumeFiles(ctx, databaseVolumeName(request.DatabaseID), []VolumeFile{
+		{Name: "pg-server.crt", Content: string(certificate), Mode: 0644, Owner: DatabaseFileOwner},
+		{Name: "pg-server.key", Content: string(key), Mode: 0600, Owner: DatabaseFileOwner},
+		{Name: "pg_hba.ssl.conf", Content: databaseHBAConfig, Mode: 0644, Owner: DatabaseFileOwner},
+	}); err != nil {
+		return DatabaseState{}, fmt.Errorf("could not write the Database TLS material: %w", err)
+	}
+
 	spec := ContainerSpec{
 		Name:         containerName,
 		Network:      network,
@@ -141,6 +164,14 @@ func (m *Manager) EnsureDatabase(ctx context.Context, request DatabaseRequest) (
 		CPU:          DatabaseCPULimit,
 		MemoryMB:     DatabaseMemoryMB,
 		User:         DatabaseUser,
+		// PostgreSQL is the TLS terminator, so the public proxy can forward the
+		// stream unchanged and `sslmode=require` still encrypts end to end.
+		Command: []string{
+			"-c", "ssl=on",
+			"-c", "ssl_cert_file=" + DatabaseTLSCertFile,
+			"-c", "ssl_key_file=" + DatabaseTLSKeyFile,
+			"-c", "hba_file=" + DatabaseHBAFile,
+		},
 		Environment: map[string]string{
 			"POSTGRES_DB":       request.DatabaseName,
 			"POSTGRES_USER":     request.Username,
@@ -201,6 +232,12 @@ func (m *Manager) GetDatabase(
 func (m *Manager) RemoveDatabase(ctx context.Context, databaseID string) (bool, error) {
 	if strings.TrimSpace(databaseID) == "" {
 		return false, fmt.Errorf("%w: databaseId is required", ErrInvalidDatabase)
+	}
+
+	// The public proxy must be revoked before the Database disappears, or a
+	// listener could stay open after the owner deleted the Database.
+	if _, err := m.RemoveDatabaseProxy(ctx, databaseID); err != nil {
+		return false, err
 	}
 
 	unlock := m.lockService(databaseLockKey(databaseID))
@@ -311,6 +348,14 @@ func (m *Manager) EnforceDatabases(ctx context.Context) (int, error) {
 
 	return stopped, nil
 }
+
+// databaseHBAConfig is the pg_hba.conf the Database starts with. Local socket
+// access is trusted so the agent can check readiness and rotate a password;
+// every network connection must use TLS.
+const databaseHBAConfig = `# Managed by the Stealth Node Agent. Local access is the agent's socket.
+local all all trust
+hostssl all all all scram-sha-256
+`
 
 // ensureDatabaseVolume creates the Database Volume and labels it with its
 // owners, so cleanup can find it after a restart without the Control Plane.

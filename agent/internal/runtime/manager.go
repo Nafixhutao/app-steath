@@ -758,6 +758,11 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 	// Project network for the Services to reach them after a restart.
 	m.reconcileDatabases(ctx)
 
+	// A public proxy is a second container that must follow the same network
+	// after a restart, or the listener would be up but unable to reach its
+	// Database.
+	m.reconcileDatabaseProxies(ctx)
+
 	return nil
 }
 

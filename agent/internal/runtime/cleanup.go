@@ -148,6 +148,18 @@ func (m *Manager) Cleanup(ctx context.Context) (CleanupReport, error) {
 	}
 	report.VolumesRemoved += databaseVolumesRemoved
 
+	proxyContainersRemoved, err := m.pruneOrphanDatabaseProxies(ctx)
+	if err != nil {
+		log.Printf("cleanup: could not prune public Database proxies: %v", err)
+	}
+	report.ContainersRemoved += proxyContainersRemoved
+
+	proxyVolumesRemoved, err := m.pruneOrphanDatabaseProxyVolumes(ctx)
+	if err != nil {
+		log.Printf("cleanup: could not prune public Database proxy Volumes: %v", err)
+	}
+	report.VolumesRemoved += proxyVolumesRemoved
+
 	pruned, err := m.pruneBuildCacheWeekly(ctx)
 	if err != nil {
 		log.Printf("cleanup: could not prune the Build cache: %v", err)

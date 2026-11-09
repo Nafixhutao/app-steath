@@ -32,6 +32,12 @@ type RuntimeDeployer interface {
 		ctx context.Context,
 		request runtime.DatabasePasswordRequest,
 	) (runtime.DatabaseState, error)
+	EnsureDatabaseProxy(
+		ctx context.Context,
+		request runtime.DatabaseProxyRequest,
+	) (runtime.DatabaseProxyState, error)
+	GetDatabaseProxy(ctx context.Context, databaseID string) (runtime.DatabaseProxyState, error)
+	RemoveDatabaseProxy(ctx context.Context, databaseID string) (bool, error)
 	Logs(
 		ctx context.Context,
 		serviceID string,
@@ -400,6 +406,98 @@ func (s server) RotateDatabasePassword(
 	writeJSON(w, http.StatusOK, toDatabaseState(state))
 }
 
+// EnsureDatabaseProxy starts or updates the public TLS listener. The allowlist
+// is validated by the runtime, which rejects an empty list so a public Database
+// is never open to everyone by accident.
+func (s server) EnsureDatabaseProxy(
+	w http.ResponseWriter,
+	r *http.Request,
+	databaseID DatabaseId,
+) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	var request EnsureDatabaseProxyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_body", "The proxy request is not valid JSON.")
+		return
+	}
+	if request.DatabaseId != databaseID {
+		writeError(
+			w,
+			http.StatusBadRequest,
+			"invalid_database_proxy_request",
+			"The databaseId in the path and the body must match.",
+		)
+		return
+	}
+
+	state, err := s.runtime.EnsureDatabaseProxy(r.Context(), runtime.DatabaseProxyRequest{
+		DatabaseID: databaseID,
+		ProjectID:  request.ProjectId,
+		Allowlist:  request.Allowlist,
+		Port:       derefInt(request.Port),
+	})
+	if errors.Is(err, runtime.ErrInvalidDatabaseProxy) {
+		writeError(w, http.StatusBadRequest, "invalid_database_proxy_request", err.Error())
+		return
+	}
+	if errors.Is(err, runtime.ErrUnknownDatabase) {
+		writeError(w, http.StatusNotFound, "database_not_found", "The Database has no running container on this node.")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_proxy_enable_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toDatabaseProxyState(state))
+}
+
+// GetDatabaseProxy reports whether the public listener is running. A missing
+// listener is a disabled proxy, not an error.
+func (s server) GetDatabaseProxy(w http.ResponseWriter, r *http.Request, databaseID DatabaseId) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	state, err := s.runtime.GetDatabaseProxy(r.Context(), databaseID)
+	if errors.Is(err, runtime.ErrInvalidDatabaseProxy) {
+		writeError(w, http.StatusBadRequest, "invalid_database_proxy_request", err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_proxy_read_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toDatabaseProxyState(state))
+}
+
+// RemoveDatabaseProxy stops the public listener and revokes its endpoint. An
+// already-disabled proxy is reported as not removed rather than as an error.
+func (s server) RemoveDatabaseProxy(w http.ResponseWriter, r *http.Request, databaseID DatabaseId) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	removed, err := s.runtime.RemoveDatabaseProxy(r.Context(), databaseID)
+	if errors.Is(err, runtime.ErrInvalidDatabaseProxy) {
+		writeError(w, http.StatusBadRequest, "invalid_database_proxy_request", err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_proxy_disable_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, DatabaseProxyRemoval{DatabaseId: databaseID, Removed: removed})
+}
+
 // GetService reports the runtime state of one Service.
 func (s server) GetService(w http.ResponseWriter, r *http.Request, serviceID ServiceId) {
 	state, err := s.runtimeState(r.Context(), serviceID)
@@ -618,9 +716,31 @@ func toDatabaseState(state runtime.DatabaseState) DatabaseState {
 	return result
 }
 
+func toDatabaseProxyState(state runtime.DatabaseProxyState) DatabaseProxyState {
+	result := DatabaseProxyState{
+		DatabaseId: state.DatabaseID,
+		Enabled:    state.Enabled,
+		Allowlist:  state.Allowlist,
+	}
+	if state.Port > 0 {
+		port := state.Port
+		result.Port = &port
+	}
+
+	return result
+}
+
 func deref(value *string) string {
 	if value == nil {
 		return ""
+	}
+
+	return *value
+}
+
+func derefInt(value *int) int {
+	if value == nil {
+		return 0
 	}
 
 	return *value

@@ -1,8 +1,10 @@
 import { randomBytes } from "node:crypto";
+import { isIP } from "node:net";
 import { Pool } from "pg";
 import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { nodeConfig } from "./nodes.ts";
+import { getPlatformDomain } from "./platform-domain.ts";
 import { QUOTAS } from "./quota-limits.ts";
 import { decryptSecret, encryptSecret } from "./secrets.ts";
 
@@ -31,7 +33,26 @@ const DEFAULT_USERNAME = "app";
 const DATABASE_HOSTNAME = "db";
 const DATABASE_PORT = 5432;
 
+/** The public proxy may only publish a port in this range. */
+export const MIN_DATABASE_PROXY_PORT = 20000;
+export const MAX_DATABASE_PROXY_PORT = 29999;
+
+/** The generated nginx configuration stays bounded with this many entries. */
+export const MAX_DATABASE_PROXY_ALLOWLIST = 50;
+
 export type DatabaseStatus = "provisioning" | "running" | "stopped" | "failed";
+
+/**
+ * The opt-in public endpoint for a Database. It is disabled by default, so a
+ * new Database has no public port. The public connection string is only sent to
+ * owners and admins.
+ */
+export type DatabaseProxySummary = {
+  enabled: boolean;
+  port: number | null;
+  allowlist: string[];
+  connectionString: string | null;
+};
 
 export type DatabaseSummary = {
   id: string;
@@ -49,6 +70,8 @@ export type DatabaseSummary = {
   overQuota: boolean;
   /** The private URL; only owners and admins receive it, members get null. */
   connectionString: string | null;
+  /** The opt-in public TLS endpoint. Disabled until an owner or admin enables it. */
+  proxy: DatabaseProxySummary;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -81,6 +104,14 @@ const DATABASE_COLUMNS = `"id", "projectId", "engine", "version", "databaseName"
 const PREFIXED_DATABASE_COLUMNS = `d."id", d."projectId", d."engine", d."version", d."databaseName",
   d."username", d."encryptedPassword", d."storageLimitMb", d."status", d."createdAt", d."updatedAt"`;
 
+type DatabaseProxyRow = {
+  databaseId: string;
+  port: number;
+  allowlist: string[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type Measurement = {
   status: DatabaseStatus;
   healthy: boolean;
@@ -112,6 +143,15 @@ async function loadDatabaseRow(projectId: string): Promise<DatabaseRow | null> {
   const result = await pool.query<DatabaseRow>(
     `SELECT ${DATABASE_COLUMNS} FROM "database" WHERE "projectId" = $1`,
     [projectId],
+  );
+
+  return result.rows[0] ?? null;
+}
+
+async function loadProxyRow(databaseId: string): Promise<DatabaseProxyRow | null> {
+  const result = await pool.query<DatabaseProxyRow>(
+    'SELECT "databaseId", "port", "allowlist", "createdAt", "updatedAt" FROM "database_proxy" WHERE "databaseId" = $1',
+    [databaseId],
   );
 
   return result.rows[0] ?? null;
@@ -154,6 +194,121 @@ function quotaError(limit: number, usage: number): ApiError {
  */
 function buildConnectionString(row: DatabaseRow, password: string): string {
   return `postgres://${encodeURIComponent(row.username)}:${encodeURIComponent(password)}@${DATABASE_HOSTNAME}:${DATABASE_PORT}/${encodeURIComponent(row.databaseName)}`;
+}
+
+/**
+ * The public connection string. It uses the Platform Domain and the proxy's
+ * unique port, and it requires TLS: the Database terminates TLS itself, so the
+ * proxy can forward the stream without breaking libpq's SSLRequest negotiation.
+ */
+function buildPublicConnectionString(row: DatabaseRow, password: string, port: number): string {
+  return `postgres://${encodeURIComponent(row.username)}:${encodeURIComponent(password)}@${getPlatformDomain()}:${port}/${encodeURIComponent(row.databaseName)}?sslmode=require`;
+}
+
+function toProxySummary(
+  row: DatabaseRow,
+  proxyRow: DatabaseProxyRow | null,
+  includeConnectionString: boolean,
+): DatabaseProxySummary {
+  if (!proxyRow) {
+    return { enabled: false, port: null, allowlist: [], connectionString: null };
+  }
+
+  return {
+    enabled: true,
+    port: proxyRow.port,
+    allowlist: proxyRow.allowlist,
+    connectionString: includeConnectionString
+      ? buildPublicConnectionString(row, decryptPassword(row), proxyRow.port)
+      : null,
+  };
+}
+
+/**
+ * Validates the allowlist before it reaches the Node Agent. Bare IPs are
+ * accepted; the agent canonicalizes them to /32 or /128 and masks a non-network
+ * IPv4 address, then its response is what the Control Plane stores.
+ */
+export function normalizeProxyAllowlist(value: unknown): string[] {
+  const raw = typeof value === "string" ? value.split(/[\n,]+/) : value;
+  if (!Array.isArray(raw)) {
+    throw new ApiError(
+      400,
+      "invalid_allowlist",
+      "At least one allowlist CIDR is required to enable the public proxy.",
+    );
+  }
+
+  const entries = raw
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+  if (entries.length === 0) {
+    throw new ApiError(
+      400,
+      "invalid_allowlist",
+      "At least one allowlist CIDR is required to enable the public proxy.",
+    );
+  }
+  if (entries.length > MAX_DATABASE_PROXY_ALLOWLIST) {
+    throw new ApiError(
+      400,
+      "invalid_allowlist",
+      `At most ${MAX_DATABASE_PROXY_ALLOWLIST} allowlist entries are allowed.`,
+    );
+  }
+
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const entry of entries) {
+    const cidr = normalizeCidr(entry);
+    if (!seen.has(cidr)) {
+      seen.add(cidr);
+      normalized.push(cidr);
+    }
+  }
+
+  return normalized;
+}
+
+function normalizeCidr(value: string): string {
+  if (/[\s;]/.test(value)) {
+    throw invalidCidr(value);
+  }
+
+  const slash = value.indexOf("/");
+  if (slash === -1) {
+    if (isIP(value) === 0) {
+      throw invalidCidr(value);
+    }
+    return value;
+  }
+
+  const address = value.slice(0, slash);
+  const prefix = value.slice(slash + 1);
+  const family = isIP(address);
+  if (family === 0 || !/^\d+$/.test(prefix)) {
+    throw invalidCidr(value);
+  }
+
+  const prefixNumber = Number(prefix);
+  if (
+    (family === 4 && prefixNumber > 32) ||
+    (family === 6 && prefixNumber > 128)
+  ) {
+    throw invalidCidr(value);
+  }
+
+  return `${address}/${prefixNumber}`;
+}
+
+function invalidCidr(value: string): ApiError {
+  return new ApiError(
+    400,
+    "invalid_allowlist",
+    `${JSON.stringify(value)} is not a valid IPv4 or IPv6 CIDR.`,
+  );
 }
 
 function decryptPassword(row: DatabaseRow): string {
@@ -223,6 +378,7 @@ function toSummary(
   row: DatabaseRow,
   measurement: Measurement,
   includeConnectionString: boolean,
+  proxyRow: DatabaseProxyRow | null = null,
 ): DatabaseSummary {
   return {
     id: row.id,
@@ -239,6 +395,7 @@ function toSummary(
     connectionString: includeConnectionString
       ? buildConnectionString(row, decryptPassword(row))
       : null,
+    proxy: toProxySummary(row, proxyRow, includeConnectionString),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -301,9 +458,10 @@ export async function getProjectDatabase(input: {
 
   const measurement = await measureDatabase(row);
   await persistStatus(row, measurement.status);
+  const proxyRow = await loadProxyRow(row.id);
 
   return {
-    database: toSummary(row, measurement, input.includeConnectionString),
+    database: toSummary(row, measurement, input.includeConnectionString, proxyRow),
     needsRedeploy,
   };
 }
@@ -328,8 +486,9 @@ export async function listOrganizationDatabases(
   for (const row of result.rows) {
     const measurement = await measureDatabase(row);
     await persistStatus(row, measurement.status);
+    const proxyRow = await loadProxyRow(row.id);
     summaries.push({
-      ...toSummary(row, measurement, includeConnectionString),
+      ...toSummary(row, measurement, includeConnectionString, proxyRow),
       projectName: row.projectName,
     });
   }
@@ -580,7 +739,145 @@ export async function rotateProjectDatabaseCredentials(input: {
 
   const measurement = await measureDatabase(row);
 
-  return toSummary(row, measurement, true);
+  return toSummary(row, measurement, true, await loadProxyRow(row.id));
+}
+
+/**
+ * Enables or updates the Database's public proxy. The allowlist is mandatory:
+ * a public Database must never be reachable from every address by accident. The
+ * agent returns the canonical CIDRs and the allocated port, which are what the
+ * Control Plane stores and shows.
+ */
+export async function enableProjectDatabaseProxy(input: {
+  organizationId: string;
+  projectId: string;
+  allowlist: unknown;
+}): Promise<{ databaseId: string; proxy: DatabaseProxySummary }> {
+  await requireProject(input.organizationId, input.projectId);
+  const allowlist = normalizeProxyAllowlist(input.allowlist);
+
+  const row = await loadDatabaseRow(input.projectId);
+  if (!row) {
+    throw new ApiError(404, "database_not_found", "This Project has no Database.");
+  }
+
+  const existing = await loadProxyRow(row.id);
+  let port: number;
+  let canonicalAllowlist: string[];
+  try {
+    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
+    const response = await client.PUT("/v1/databases/{databaseId}/proxy", {
+      params: { path: { databaseId: row.id } },
+      body: {
+        databaseId: row.id,
+        projectId: input.projectId,
+        allowlist,
+        ...(existing ? { port: existing.port } : {}),
+      },
+    });
+
+    if (response.response.status === 404) {
+      throw new ApiError(
+        409,
+        "database_not_running",
+        "Start the Database before enabling its public proxy.",
+      );
+    }
+    if (!response.response.ok || !response.data) {
+      throw new ApiError(
+        502,
+        "database_proxy_enable_failed",
+        `The Node Agent rejected the public proxy (${response.response.status}).`,
+      );
+    }
+
+    port = response.data.port ?? 0;
+    canonicalAllowlist = response.data.allowlist ?? allowlist;
+    if (
+      !Number.isInteger(port) ||
+      port < MIN_DATABASE_PROXY_PORT ||
+      port > MAX_DATABASE_PROXY_PORT
+    ) {
+      throw new ApiError(
+        502,
+        "database_proxy_enable_failed",
+        "The Node Agent returned an invalid public port.",
+      );
+    }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    console.error(`could not enable the public proxy of Database ${row.id}`, error);
+    throw new ApiError(
+      502,
+      "database_proxy_enable_failed",
+      "The Node Agent could not enable the public proxy. Try again when the node is healthy.",
+    );
+  }
+
+  await pool.query(
+    `INSERT INTO "database_proxy" ("databaseId", "port", "allowlist")
+     VALUES ($1, $2, $3)
+     ON CONFLICT ("databaseId")
+     DO UPDATE SET "port" = EXCLUDED."port", "allowlist" = EXCLUDED."allowlist"`,
+    [row.id, port, canonicalAllowlist],
+  );
+
+  return {
+    databaseId: row.id,
+    proxy: {
+      enabled: true,
+      port,
+      allowlist: canonicalAllowlist,
+      connectionString: buildPublicConnectionString(row, decryptPassword(row), port),
+    },
+  };
+}
+
+/**
+ * Disables the public proxy. The agent stops the listener and revokes the port
+ * before the row is removed, so the dashboard never shows an endpoint that is
+ * already gone.
+ */
+export async function disableProjectDatabaseProxy(input: {
+  organizationId: string;
+  projectId: string;
+}): Promise<{ databaseId: string; proxy: DatabaseProxySummary; changed: boolean }> {
+  await requireProject(input.organizationId, input.projectId);
+
+  const row = await loadDatabaseRow(input.projectId);
+  if (!row) {
+    throw new ApiError(404, "database_not_found", "This Project has no Database.");
+  }
+
+  const existing = await loadProxyRow(row.id);
+
+  try {
+    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
+    const response = await client.DELETE("/v1/databases/{databaseId}/proxy", {
+      params: { path: { databaseId: row.id } },
+    });
+
+    if (!response.response.ok && response.response.status !== 404) {
+      throw new Error(`The Node Agent answered ${response.response.status}.`);
+    }
+  } catch (error) {
+    console.error(`could not disable the public proxy of Database ${row.id}`, error);
+    throw new ApiError(
+      502,
+      "database_proxy_disable_failed",
+      "The Node Agent could not disable the public proxy. Try again when the node is healthy.",
+    );
+  }
+
+  await pool.query('DELETE FROM "database_proxy" WHERE "databaseId" = $1', [row.id]);
+
+  return {
+    databaseId: row.id,
+    proxy: { enabled: false, port: null, allowlist: [], connectionString: null },
+    changed: existing !== null,
+  };
 }
 
 /**

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.6.0
+  version: 0.7.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
     only caller: it authenticates with a bearer token, starts Builds, runs the
@@ -658,6 +658,95 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/databases/{databaseId}/proxy:
+    put:
+      operationId: ensureDatabaseProxy
+      summary: Enable or update the Database's public TLS proxy
+      description: |
+        Starts an nginx TCP proxy that terminates TLS on a unique public port in
+        the 20000-29999 range and forwards to the Database over the Project
+        network. The proxy accepts only the source CIDRs in `allowlist`; an empty
+        allowlist is rejected. Calling this again with the same `databaseId`
+        reuses the existing port and replaces the allowlist.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabaseProxyRequest"
+      responses:
+        "200":
+          description: Public proxy enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseProxyState"
+        "400":
+          description: Invalid proxy request or allowlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Database has no running container
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: getDatabaseProxy
+      summary: Read the Database's public proxy state
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      responses:
+        "200":
+          description: Public proxy state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseProxyState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeDatabaseProxy
+      summary: Disable the Database's public proxy
+      description: |
+        Stops the public listener, removes its container and certificate Volume,
+        and revokes the public endpoint. Disabling a proxy that is already gone
+        is not an error.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      responses:
+        "200":
+          description: Public proxy removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseProxyRemoval"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -967,6 +1056,64 @@ components:
         removed:
           type: boolean
           description: True when this call actually removed a container or Volume.
+    DatabaseProxyRequest:
+      type: object
+      required:
+        - databaseId
+        - projectId
+        - allowlist
+      properties:
+        databaseId:
+          type: string
+        projectId:
+          type: string
+        allowlist:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+          description: |
+            Source CIDRs allowed to reach the public port. An empty list is
+            rejected, because a public Database must never be open to everyone
+            by accident.
+        port:
+          type: integer
+          minimum: 20000
+          maximum: 29999
+          description: |
+            Optional port to reuse. Omit it on the first enable so the agent
+            allocates a free port in the public range.
+    DatabaseProxyState:
+      type: object
+      required:
+        - databaseId
+        - enabled
+        - allowlist
+      properties:
+        databaseId:
+          type: string
+        enabled:
+          type: boolean
+        port:
+          type: integer
+          minimum: 20000
+          maximum: 29999
+        allowlist:
+          type: array
+          items:
+            type: string
+    DatabaseProxyRemoval:
+      type: object
+      required:
+        - databaseId
+        - removed
+      properties:
+        databaseId:
+          type: string
+        removed:
+          type: boolean
+          description: True when this call actually removed a listener or Volume.
     DeployRequest:
       type: object
       required:

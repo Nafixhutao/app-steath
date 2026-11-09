@@ -44,6 +44,12 @@ type fakeDocker struct {
 	removed []string
 	renamed map[string]string
 
+	// volumeFiles records what WriteVolumeFiles wrote, keyed by Volume and file
+	// name, so the proxy tests can assert the generated configuration and TLS
+	// material.
+	volumeFiles map[string]map[string]string
+	writeErr    error
+
 	// execErr makes every Exec fail, which is how a Database that never becomes
 	// ready or a failed rotation is simulated.
 	execErr   error
@@ -64,6 +70,9 @@ type fakeContainer struct {
 	Labels   map[string]string
 	Networks map[string]string
 	Logs     []string
+	// PublishedPorts mirrors the host ports Docker would publish for the
+	// container, which is how the proxy allocator avoids a port collision.
+	PublishedPorts []int
 }
 
 type fakeVolume struct {
@@ -74,11 +83,12 @@ type fakeVolume struct {
 
 func newFakeDocker() *fakeDocker {
 	return &fakeDocker{
-		networks:   make(map[string]bool),
-		containers: make(map[string]*fakeContainer),
-		images:     make(map[string]time.Time),
-		volumes:    make(map[string]*fakeVolume),
-		renamed:    make(map[string]string),
+		networks:    make(map[string]bool),
+		containers:  make(map[string]*fakeContainer),
+		images:      make(map[string]time.Time),
+		volumes:     make(map[string]*fakeVolume),
+		renamed:     make(map[string]string),
+		volumeFiles: make(map[string]map[string]string),
 	}
 }
 
@@ -110,6 +120,9 @@ func (f *fakeDocker) CreateContainer(_ context.Context, spec ContainerSpec) (str
 		Labels:   spec.Labels,
 		Networks: map[string]string{spec.Network: spec.NetworkAlias},
 	}
+	if spec.PublishedPort > 0 {
+		container.PublishedPorts = []int{spec.PublishedPort}
+	}
 	f.containers[container.ID] = container
 	f.created = append(f.created, spec)
 
@@ -131,12 +144,13 @@ func (f *fakeDocker) InspectContainer(_ context.Context, name string) (Container
 	}
 
 	return ContainerInfo{
-		ID:       container.ID,
-		Name:     container.Name,
-		State:    container.State,
-		Image:    container.Image,
-		Labels:   container.Labels,
-		Networks: networks,
+		ID:             container.ID,
+		Name:           container.Name,
+		State:          container.State,
+		Image:          container.Image,
+		Labels:         container.Labels,
+		Networks:       networks,
+		PublishedPorts: append([]int(nil), container.PublishedPorts...),
 	}, nil
 }
 
@@ -154,12 +168,13 @@ func (f *fakeDocker) ListContainers(_ context.Context, labels map[string]string)
 			networks = append(networks, network)
 		}
 		containers = append(containers, ContainerInfo{
-			ID:       container.ID,
-			Name:     container.Name,
-			State:    container.State,
-			Image:    container.Image,
-			Labels:   container.Labels,
-			Networks: networks,
+			ID:             container.ID,
+			Name:           container.Name,
+			State:          container.State,
+			Image:          container.Image,
+			Labels:         container.Labels,
+			Networks:       networks,
+			PublishedPorts: append([]int(nil), container.PublishedPorts...),
 		})
 	}
 
@@ -410,6 +425,26 @@ func (f *fakeDocker) RemoveVolume(_ context.Context, name string) (bool, error) 
 	delete(f.volumes, name)
 
 	return true, nil
+}
+
+func (f *fakeDocker) WriteVolumeFiles(_ context.Context, volumeName string, files []VolumeFile) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.writeErr != nil {
+		return f.writeErr
+	}
+	if _, ok := f.volumes[volumeName]; !ok {
+		return fmt.Errorf("no such volume: %s", volumeName)
+	}
+	if f.volumeFiles[volumeName] == nil {
+		f.volumeFiles[volumeName] = make(map[string]string)
+	}
+	for _, file := range files {
+		f.volumeFiles[volumeName][file.Name] = file.Content
+	}
+
+	return nil
 }
 
 func (f *fakeDocker) ListVolumes(_ context.Context, labels map[string]string) ([]VolumeInfo, error) {

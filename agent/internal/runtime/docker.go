@@ -6,9 +6,11 @@ package runtime
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -44,9 +46,14 @@ const (
 	LabelDatabaseName      = "stealth.databaseName"
 	LabelDatabaseUsername  = "stealth.databaseUsername"
 	LabelDatabaseStorageMb = "stealth.databaseStorageMb"
-	ResourceTypeService    = "service"
-	ResourceTypeVolume     = "volume"
-	ResourceTypeDatabase   = "database"
+	// The public proxy labels record the port and allowlist on the container, so
+	// the agent can report and reuse them after a restart.
+	LabelDatabaseProxyPort      = "stealth.databaseProxyPort"
+	LabelDatabaseProxyAllowlist = "stealth.databaseProxyAllowlist"
+	ResourceTypeService         = "service"
+	ResourceTypeVolume          = "volume"
+	ResourceTypeDatabase        = "database"
+	ResourceTypeDatabaseProxy   = "database-proxy"
 )
 
 // ContainerSpec is one Service container the agent wants running.
@@ -64,14 +71,33 @@ type ContainerSpec struct {
 	MemoryMB     int
 	// User overrides the image's default user. The Database runs as the
 	// `postgres` user so its entrypoint never needs root capabilities.
-	User        string
+	User string
+	// Entrypoint overrides the image entrypoint and Command appends arguments
+	// after the image name. The public Database proxy uses both to run nginx with
+	// its generated configuration instead of the image's default entrypoint.
+	Entrypoint  string
+	Command     []string
 	Environment map[string]string
+	// PublishedPort, when set, publishes the container Port on the host. Only the
+	// public Database proxy uses it; a Database itself never publishes a port.
+	PublishedPort int
 	// Volume is the Service's persistent Volume, mounted at MountPath. Nil
 	// means the Service has no Volume.
 	Volume *VolumeMount
 	Labels map[string]string
 	// ReadOnlyRoot keeps the container filesystem immutable; /tmp is a tmpfs.
 	ReadOnlyRoot bool
+}
+
+// VolumeFile is one file the agent writes into a named Volume before starting a
+// container that reads it. The public proxy uses it for its nginx configuration,
+// and the Database uses it for its TLS material. Owner is the `uid:gid` the
+// files must belong to, because the containers run unprivileged.
+type VolumeFile struct {
+	Name    string
+	Content string
+	Mode    os.FileMode
+	Owner   string
 }
 
 // VolumeMount is a named Docker Volume at a path inside the container.
@@ -105,6 +131,9 @@ type ContainerInfo struct {
 	Image    string
 	Labels   map[string]string
 	Networks []string
+	// PublishedPorts are the host ports Docker publishes for the container. The
+	// public proxy allocator reads them so two Databases never share a port.
+	PublishedPorts []int
 }
 
 // ImageInfo is one local image the cleanup considers. Ref is the repository and
@@ -182,6 +211,10 @@ type Docker interface {
 	// ListVolumes returns the Volumes that match every label, with the labels the
 	// cleanup needs to decide whether their Service still exists.
 	ListVolumes(ctx context.Context, labels map[string]string) ([]VolumeInfo, error)
+	// WriteVolumeFiles writes files into a named Volume through a throwaway
+	// container. It is how the public proxy receives its TLS certificate and
+	// nginx configuration without a host bind mount.
+	WriteVolumeFiles(ctx context.Context, volumeName string, files []VolumeFile) error
 	// Exec runs a command inside a running container and returns its output. It
 	// is how the agent asks PostgreSQL for readiness and rotates a password
 	// without publishing a host port. `stdin` carries secrets so they never
@@ -249,6 +282,17 @@ func (d *CLIDocker) CreateContainer(ctx context.Context, spec ContainerSpec) (st
 		"--expose", strconv.Itoa(spec.Port),
 	}
 
+	if spec.PublishedPort > 0 {
+		// Only the public Database proxy publishes a host port. Binding all
+		// interfaces is intentional: the nginx allowlist is what decides which
+		// source addresses may use it.
+		args = append(args, "--publish", fmt.Sprintf("%d:%d", spec.PublishedPort, spec.Port))
+	}
+
+	if spec.Entrypoint != "" {
+		args = append(args, "--entrypoint", spec.Entrypoint)
+	}
+
 	if spec.User != "" {
 		// The Database image's entrypoint only chowns and drops privileges when
 		// it runs as root; with all capabilities dropped it cannot, so the
@@ -281,6 +325,7 @@ func (d *CLIDocker) CreateContainer(ctx context.Context, spec ContainerSpec) (st
 	}
 
 	args = append(args, spec.Image)
+	args = append(args, spec.Command...)
 
 	output, err := d.runner.Output(ctx, exec.Options{Name: "docker", Args: args})
 	if err != nil {
@@ -331,6 +376,10 @@ func (d *CLIDocker) InspectContainer(ctx context.Context, name string) (Containe
 			Networks map[string]struct {
 				IPAddress string `json:"IPAddress"`
 			} `json:"Networks"`
+			Ports map[string][]struct {
+				HostIp   string `json:"HostIp"`
+				HostPort string `json:"HostPort"`
+			} `json:"Ports"`
 		} `json:"NetworkSettings"`
 	}
 	if err := json.Unmarshal([]byte(output), &raw); err != nil {
@@ -348,6 +397,15 @@ func (d *CLIDocker) InspectContainer(ctx context.Context, name string) (Containe
 		info.Networks = append(info.Networks, network)
 	}
 	sort.Strings(info.Networks)
+	for _, bindings := range raw.NetworkSettings.Ports {
+		for _, binding := range bindings {
+			port, err := strconv.Atoi(binding.HostPort)
+			if err == nil && port > 0 {
+				info.PublishedPorts = append(info.PublishedPorts, port)
+			}
+		}
+	}
+	sort.Ints(info.PublishedPorts)
 
 	return info, nil
 }
@@ -752,6 +810,98 @@ func (d *CLIDocker) Exec(
 	args := append([]string{"exec", "--interactive", containerID}, command...)
 
 	return d.runner.Output(ctx, exec.Options{Name: "docker", Args: args, Stdin: stdin})
+}
+
+// WriteVolumeFiles writes files into a named Volume through a throwaway
+// container. The content is base64-encoded into the script so a newline or a
+// quote in a configuration file cannot break the command, and the helper runs as
+// root only long enough to set ownership for the unprivileged container user.
+func (d *CLIDocker) WriteVolumeFiles(
+	ctx context.Context,
+	volumeName string,
+	files []VolumeFile,
+) error {
+	owner := defaultVolumeFileOwner
+	if len(files) > 0 && files[0].Owner != "" {
+		owner = files[0].Owner
+	}
+	if !safeVolumeFileOwner(owner) {
+		return fmt.Errorf("invalid Volume file owner %q", owner)
+	}
+
+	script := "set -e; mkdir -p /target; chown " + owner + " /target;"
+	for _, file := range files {
+		if !safeVolumeFileName(file.Name) {
+			return fmt.Errorf("invalid Volume file name %q", file.Name)
+		}
+		encoded := base64.StdEncoding.EncodeToString([]byte(file.Content))
+		script += fmt.Sprintf(
+			" printf '%%s' '%s' | base64 -d > /target/%s; chmod %04o /target/%s; chown %s /target/%s;",
+			encoded,
+			file.Name,
+			file.Mode,
+			file.Name,
+			owner,
+			file.Name,
+		)
+	}
+
+	_, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"run", "--rm", "--network", "none", "--user", "0:0",
+			"--mount", "type=volume,source=" + volumeName + ",target=/target",
+			"--entrypoint", "/bin/sh",
+			d.probeImage,
+			"-c", script,
+		},
+	})
+
+	return err
+}
+
+// defaultVolumeFileOwner is the nginx user, which is the common case for a
+// generated configuration. A Database passes the postgres user explicitly.
+const defaultVolumeFileOwner = "101:101"
+
+// safeVolumeFileOwner keeps the generated shell script from accepting anything
+// but a numeric uid:gid pair.
+func safeVolumeFileOwner(owner string) bool {
+	parts := strings.Split(owner, ":")
+	if len(parts) != 2 {
+		return false
+	}
+	for _, part := range parts {
+		if part == "" {
+			return false
+		}
+		for _, char := range part {
+			if char < '0' || char > '9' {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// safeVolumeFileName keeps a file name from escaping the Volume's root.
+func safeVolumeFileName(name string) bool {
+	if name == "" || name == "." || name == ".." {
+		return false
+	}
+	for _, char := range name {
+		switch {
+		case char >= 'a' && char <= 'z':
+		case char >= 'A' && char <= 'Z':
+		case char >= '0' && char <= '9':
+		case char == '.' || char == '_' || char == '-':
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 // sortedPairs keeps argument order stable, which makes the recorded commands in

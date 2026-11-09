@@ -1,5 +1,16 @@
 export type DatabaseStatus = "provisioning" | "running" | "stopped" | "failed";
 
+/**
+ * The opt-in public endpoint for a Database. It is disabled by default, and the
+ * public connection string is only present for owners and admins.
+ */
+export type DatabaseProxySummary = {
+  enabled: boolean;
+  port: number | null;
+  allowlist: string[];
+  connectionString: string | null;
+};
+
 export type DatabaseSummary = {
   id: string;
   projectId: string;
@@ -15,6 +26,8 @@ export type DatabaseSummary = {
   overQuota: boolean;
   /** Only owners and admins receive the private connection string. */
   connectionString: string | null;
+  /** The opt-in public endpoint. Disabled until an owner or admin enables it. */
+  proxy: DatabaseProxySummary;
   createdAt: string;
   updatedAt: string;
 };
@@ -84,6 +97,29 @@ export function rotateProjectDatabaseCredentials(projectId: string): Promise<Dat
 
 export function listOrganizationDatabases(): Promise<OrganizationDatabaseSummary[]> {
   return request<OrganizationDatabaseSummary[]>("/api/databases");
+}
+
+export function getProjectDatabaseProxy(projectId: string): Promise<DatabaseProxySummary> {
+  return request<DatabaseProxySummary>(
+    `/api/projects/${encodeURIComponent(projectId)}/database/proxy`,
+  );
+}
+
+export function enableProjectDatabaseProxy(
+  projectId: string,
+  allowlist: string[],
+): Promise<DatabaseProxySummary> {
+  return request<DatabaseProxySummary>(
+    `/api/projects/${encodeURIComponent(projectId)}/database/proxy`,
+    { method: "PUT", body: { allowlist } },
+  );
+}
+
+export function disableProjectDatabaseProxy(projectId: string): Promise<DatabaseProxySummary> {
+  return request<DatabaseProxySummary>(
+    `/api/projects/${encodeURIComponent(projectId)}/database/proxy`,
+    { method: "DELETE" },
+  );
 }
 
 const STATUS_LABELS: Record<DatabaseStatus, string> = {
