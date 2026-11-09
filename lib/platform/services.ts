@@ -37,6 +37,12 @@ export type ServiceSummary = {
   url: string;
   cpuLimit: number;
   memoryLimitMb: number;
+  /**
+   * True when the Service's environment revision is newer than the revision its
+   * serving Deployment was started with, i.e. Environment Variable changes are
+   * not live yet.
+   */
+  needsRedeploy: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -55,6 +61,7 @@ type ServiceRow = {
   platformHostname: string;
   cpuLimit: string | number;
   memoryLimitMb: number;
+  needsRedeploy?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -81,6 +88,21 @@ const SERVICE_COLUMNS = SERVICE_FIELDS.map((field) => `"${field}"`).join(", ");
 const PREFIXED_SERVICE_COLUMNS = SERVICE_FIELDS.map((field) => `s."${field}"`).join(", ");
 
 /**
+ * Computes `needsRedeploy` from the environment revisions: a Service that has a
+ * running Deployment needs a redeploy when its revision is newer than the
+ * revision the newest running Deployment recorded. Without a running
+ * Deployment the flag is false, because nothing is live to be stale yet.
+ */
+const NEEDS_REDEPLOY_COLUMN = `
+  EXISTS (
+    SELECT 1 FROM "deployment" rd
+    WHERE rd."serviceId" = s."id" AND rd."status" = 'running'
+  ) AND s."envRevision" > COALESCE((
+    SELECT max(rd."envRevision") FROM "deployment" rd
+    WHERE rd."serviceId" = s."id" AND rd."status" = 'running'
+  ), 0) AS "needsRedeploy"`.trim();
+
+/**
  * Public URL of a Service. Platform Subdomains are served over HTTPS in every
  * environment except local development, where the host has no certificate.
  */
@@ -93,6 +115,9 @@ function toSummary(row: ServiceRow): ServiceSummary {
   return {
     ...row,
     cpuLimit: Number(row.cpuLimit),
+    // A caller that did not select the expression (a raw ServiceRow without it)
+    // defaults to false: no Environment Variables have been changed.
+    needsRedeploy: row.needsRedeploy ?? false,
     url: serviceUrl(row.platformHostname),
   };
 }
@@ -296,8 +321,8 @@ export async function listServices(
   await requireProject(organizationId, projectId);
 
   const result = await pool.query<ServiceRow>(
-    `SELECT ${SERVICE_COLUMNS} FROM "service"
-     WHERE "projectId" = $1 ORDER BY "createdAt", "id"`,
+    `SELECT ${SERVICE_COLUMNS}, ${NEEDS_REDEPLOY_COLUMN} FROM "service" s
+     WHERE s."projectId" = $1 ORDER BY s."createdAt", s."id"`,
     [projectId],
   );
 
@@ -314,7 +339,7 @@ export async function listOrganizationServices(
   organizationId: string,
 ): Promise<OrganizationServiceSummary[]> {
   const result = await pool.query<ServiceRow & { projectName: string }>(
-    `SELECT ${PREFIXED_SERVICE_COLUMNS}, p."name" AS "projectName"
+    `SELECT ${PREFIXED_SERVICE_COLUMNS}, ${NEEDS_REDEPLOY_COLUMN}, p."name" AS "projectName"
      FROM "service" s JOIN "project" p ON p."id" = s."projectId"
      WHERE p."organizationId" = $1
      ORDER BY p."createdAt", s."createdAt", s."id"`,
@@ -329,7 +354,7 @@ export async function getService(
   serviceId: string,
 ): Promise<ServiceSummary> {
   const result = await pool.query<ServiceRow>(
-    `SELECT ${PREFIXED_SERVICE_COLUMNS}
+    `SELECT ${PREFIXED_SERVICE_COLUMNS}, ${NEEDS_REDEPLOY_COLUMN}
      FROM "service" s JOIN "project" p ON p."id" = s."projectId"
      WHERE p."organizationId" = $1 AND s."id" = $2`,
     [organizationId, serviceId],
@@ -405,7 +430,7 @@ export async function createService(input: {
           `INSERT INTO "service" ("id", "projectId", "name", "slug", "repoUrl", "branch",
              "dockerfilePath", "containerPort", "healthPath", "platformHostname")
            VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9)
-           RETURNING ${SERVICE_COLUMNS}`,
+           RETURNING ${SERVICE_COLUMNS}, false AS "needsRedeploy"`,
           [
             input.projectId,
             name,

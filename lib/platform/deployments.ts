@@ -7,6 +7,7 @@ import {
   type AgentDeploymentAbort,
 } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
+import { loadDeploymentEnvironment } from "./environment-variables.ts";
 import { nodeConfig, requireHealthyNode } from "./nodes.ts";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -424,6 +425,31 @@ export async function runDeployment(
     return { status: "failed", message };
   }
 
+  // The revision and its values are one consistent snapshot: the container is
+  // started with exactly the values this revision held, so a Service whose
+  // revision is newer afterwards is honestly reported as needing a redeploy.
+  let environment: Array<{ name: string; value: string }>;
+  let envRevision: number;
+  try {
+    const snapshot = await loadDeploymentEnvironment(deployment.serviceId);
+    envRevision = snapshot.revision;
+    environment = snapshot.environment;
+  } catch (error) {
+    const message =
+      error instanceof ApiError
+        ? error.message
+        : "The Service's Environment Variables could not be read.";
+    await markDeploymentFailed(deploymentId, message);
+    return { status: "failed", message };
+  }
+
+  // The values travel to the Node Agent in this request body only. They are
+  // never logged here: a failure is reported with a reason, not a payload.
+  await pool.query('UPDATE "deployment" SET "envRevision" = $2 WHERE "id" = $1', [
+    deploymentId,
+    envRevision,
+  ]);
+
   const client = options.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
 
   const started = await client.POST("/v1/deployments", {
@@ -437,6 +463,7 @@ export async function runDeployment(
       containerPort: deployment.containerPort,
       cpuLimit: Number(deployment.cpuLimit),
       memoryLimitMb: deployment.memoryLimitMb,
+      ...(environment.length > 0 ? { environmentVariables: environment } : {}),
       ...(deployment.healthPath ? { healthPath: deployment.healthPath } : {}),
     },
   });

@@ -16,6 +16,8 @@ export type ServiceSummary = {
   url: string;
   cpuLimit: number;
   memoryLimitMb: number;
+  /** True when Environment Variable changes are not live yet. */
+  needsRedeploy: boolean;
   createdAt: string;
   updatedAt: string;
 };

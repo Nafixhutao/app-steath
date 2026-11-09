@@ -12,6 +12,7 @@ import {
   type ServiceSummary,
 } from "@/lib/services-client";
 import { DeploymentsPanel } from "./deployments-panel";
+import { EnvironmentPanel } from "./environment-panel";
 import { RuntimePanel } from "./runtime-panel";
 
 function getError(error: unknown) {
@@ -161,6 +162,10 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
       </section>
 
       <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} canManage={canManage} />
+
+      {canManage ? (
+        <EnvironmentPanel serviceId={service.id} needsRedeploy={service.needsRedeploy} />
+      ) : null}
 
       <RuntimePanel
         serviceId={service.id}

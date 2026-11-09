@@ -1328,6 +1328,36 @@ a:hover {
   border-color: #5c5142;
   color: #d8c8a8;
 }
+.environment-redeploy-banner {
+  margin: 14px 0 0;
+  padding: 11px 14px;
+  border: 1px solid #6b5a33;
+  border-radius: 9px;
+  background: rgb(58 46 22 / 40%);
+  color: #e8d49a;
+  font-size: 13px;
+}
+.environment-form {
+  align-items: end;
+}
+.environment-form input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+.environment-form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 18px;
+}
+.environment-key,
+.environment-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+.environment-value {
+  overflow-wrap: anywhere;
+}
 .dashboard-link-button {
   padding: 0;
   border: 0;

@@ -502,3 +502,59 @@ func requestThroughCaddy(t *testing.T, hostname string) string {
 
 	return string(output)
 }
+
+// TestRedactEnvironmentHidesValuesInErrorMessages proves a tool error that
+// echoes its arguments never carries an Environment Variable value out of the
+// agent. This is a pure-function test, so it runs everywhere without Docker.
+func TestRedactEnvironmentHidesValuesInErrorMessages(t *testing.T) {
+	environment := map[string]string{
+		"DATABASE_URL": "postgres://stealth:hunter2@db.internal/app",
+		"API_TOKEN":    "s3cr3t-token-value",
+		"EMPTY":        "",
+	}
+
+	tests := []struct {
+		name    string
+		message string
+		want    string
+	}{
+		{
+			name:    "echoed value is replaced",
+			message: `docker: invalid --env API_TOKEN=s3cr3t-token-value: bad format`,
+			want:    `docker: invalid --env API_TOKEN=***: bad format`,
+		},
+		{
+			name:    "every value is replaced",
+			message: "failed to reach db at postgres://stealth:hunter2@db.internal/app with s3cr3t-token-value",
+			want:    "failed to reach db at *** with ***",
+		},
+		{
+			name:    "unrelated message is untouched",
+			message: "docker: image not found",
+			want:    "docker: image not found",
+		},
+		{
+			name:    "empty value is skipped so nothing else is rewritten",
+			message: "the value  is empty", // two spaces, not a value to redact
+			want:    "the value  is empty",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := redactEnvironment(test.message, environment)
+			if got != test.want {
+				t.Fatalf("redactEnvironment() = %q, want %q", got, test.want)
+			}
+		})
+	}
+
+	for _, value := range environment {
+		if value == "" {
+			continue
+		}
+		if got := redactEnvironment("boom "+value, environment); strings.Contains(got, value) {
+			t.Fatalf("redactEnvironment leaked a value: %q", got)
+		}
+	}
+}

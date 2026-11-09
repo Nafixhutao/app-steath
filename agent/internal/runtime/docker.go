@@ -7,6 +7,7 @@ package runtime
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -204,10 +205,28 @@ func (d *CLIDocker) CreateContainer(ctx context.Context, spec ContainerSpec) (st
 
 	output, err := d.runner.Output(ctx, exec.Options{Name: "docker", Args: args})
 	if err != nil {
-		return "", err
+		// Docker reports the reason a run failed on its own streams, but an error
+		// message must never carry a secret, so any Environment Variable value the
+		// message happens to echo is replaced before the error leaves the agent.
+		return "", errors.New(redactEnvironment(err.Error(), spec.Environment))
 	}
 
 	return strings.TrimSpace(output), nil
+}
+
+// redactEnvironment replaces every Environment Variable value in a message with
+// a placeholder. Values are passed as `--env` arguments, so a tool error that
+// echoes its arguments would otherwise leak a secret into the Deployment's
+// error message, the database, and the dashboard.
+func redactEnvironment(message string, environment map[string]string) string {
+	for _, value := range environment {
+		if value == "" {
+			continue
+		}
+		message = strings.ReplaceAll(message, value, "***")
+	}
+
+	return message
 }
 
 func (d *CLIDocker) InspectContainer(ctx context.Context, name string) (ContainerInfo, error) {
