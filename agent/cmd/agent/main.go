@@ -108,6 +108,14 @@ func main() {
 		for range ticker.C {
 			ctx, cancel := context.WithTimeout(context.Background(), reconcileTimeout)
 			stopped, err := services.EnforceVolumes(ctx)
+			if err == nil {
+				databasesStopped, databaseErr := services.EnforceDatabases(ctx)
+				if databaseErr != nil {
+					log.Printf("database enforcement: %v", databaseErr)
+				} else if databasesStopped > 0 {
+					log.Printf("database enforcement: stopped %d over-quota Database(s)", databasesStopped)
+				}
+			}
 			cancel()
 			if err != nil {
 				log.Printf("volume enforcement: %v", err)

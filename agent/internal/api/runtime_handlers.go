@@ -25,6 +25,13 @@ type RuntimeDeployer interface {
 	EnsureVolume(ctx context.Context, request runtime.VolumeRequest) (runtime.VolumeState, error)
 	GetVolume(ctx context.Context, name string, sizeMB int) (runtime.VolumeState, error)
 	RemoveVolume(ctx context.Context, name string) (bool, error)
+	EnsureDatabase(ctx context.Context, request runtime.DatabaseRequest) (runtime.DatabaseState, error)
+	GetDatabase(ctx context.Context, databaseID string, storageLimitMB int) (runtime.DatabaseState, error)
+	RemoveDatabase(ctx context.Context, databaseID string) (bool, error)
+	RotateDatabasePassword(
+		ctx context.Context,
+		request runtime.DatabasePasswordRequest,
+	) (runtime.DatabaseState, error)
 	Logs(
 		ctx context.Context,
 		serviceID string,
@@ -253,6 +260,146 @@ func (s server) RemoveVolume(w http.ResponseWriter, r *http.Request, name Volume
 	writeJSON(w, http.StatusOK, VolumeRemoval{Name: name, Removed: removed})
 }
 
+// EnsureDatabase creates the Database container and its Volume on the Project
+// network, or starts the existing one. It is idempotent, so a retried create
+// never replaces the data or rewrites the credentials.
+func (s server) EnsureDatabase(w http.ResponseWriter, r *http.Request, databaseID DatabaseId) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	var request DatabaseRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_body", "The Database request is not valid JSON.")
+		return
+	}
+	if request.DatabaseId != databaseID {
+		writeError(
+			w,
+			http.StatusBadRequest,
+			"invalid_database_request",
+			"The databaseId in the path and the body must match.",
+		)
+		return
+	}
+
+	state, err := s.runtime.EnsureDatabase(r.Context(), runtime.DatabaseRequest{
+		DatabaseID:     databaseID,
+		ProjectID:      request.ProjectId,
+		OrganizationID: request.OrganizationId,
+		DatabaseName:   request.DatabaseName,
+		Username:       request.Username,
+		Password:       request.Password,
+		StorageLimitMB: request.StorageLimitMb,
+	})
+	if errors.Is(err, runtime.ErrInvalidDatabase) {
+		writeError(w, http.StatusBadRequest, "invalid_database_request", err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_create_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toDatabaseState(state))
+}
+
+// GetDatabase reports the Database's health and the space its Volume uses.
+func (s server) GetDatabase(
+	w http.ResponseWriter,
+	r *http.Request,
+	databaseID DatabaseId,
+	params GetDatabaseParams,
+) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	storageLimitMB := runtime.MaxDatabaseStorageMB
+	if params.StorageLimitMb != nil {
+		storageLimitMB = *params.StorageLimitMb
+	}
+
+	state, err := s.runtime.GetDatabase(r.Context(), databaseID, storageLimitMB)
+	if errors.Is(err, runtime.ErrInvalidDatabase) {
+		writeError(w, http.StatusBadRequest, "invalid_database_request", err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_read_failed", err.Error())
+		return
+	}
+	if state.Status == "absent" {
+		writeError(w, http.StatusNotFound, "database_not_found", "The Database does not exist on this node.")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toDatabaseState(state))
+}
+
+// RemoveDatabase deletes the Database container and its Volume. A Database that
+// is already gone is reported as not removed rather than as an error.
+func (s server) RemoveDatabase(w http.ResponseWriter, r *http.Request, databaseID DatabaseId) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	removed, err := s.runtime.RemoveDatabase(r.Context(), databaseID)
+	if errors.Is(err, runtime.ErrInvalidDatabase) {
+		writeError(w, http.StatusBadRequest, "invalid_database_request", err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_remove_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, DatabaseRemoval{DatabaseId: databaseID, Removed: removed})
+}
+
+// RotateDatabasePassword replaces the password inside the running Database. The
+// new password is only ever in the request body, never in a log or an error.
+func (s server) RotateDatabasePassword(
+	w http.ResponseWriter,
+	r *http.Request,
+	databaseID DatabaseId,
+) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	var request DatabasePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_body", "The rotation request is not valid JSON.")
+		return
+	}
+
+	state, err := s.runtime.RotateDatabasePassword(r.Context(), runtime.DatabasePasswordRequest{
+		DatabaseID:   databaseID,
+		DatabaseName: request.DatabaseName,
+		Username:     request.Username,
+		Password:     request.Password,
+	})
+	if errors.Is(err, runtime.ErrInvalidDatabase) {
+		writeError(w, http.StatusBadRequest, "invalid_database_request", err.Error())
+		return
+	}
+	if errors.Is(err, runtime.ErrUnknownDatabase) {
+		writeError(w, http.StatusNotFound, "database_not_found", "The Database has no container on this node.")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_rotate_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toDatabaseState(state))
+}
+
 // GetService reports the runtime state of one Service.
 func (s server) GetService(w http.ResponseWriter, r *http.Request, serviceID ServiceId) {
 	state, err := s.runtimeState(r.Context(), serviceID)
@@ -450,6 +597,25 @@ func toVolumeInfo(state runtime.VolumeState) VolumeInfo {
 		UsageMb: state.UsageMB,
 		Exists:  state.Exists,
 	}
+}
+
+func toDatabaseState(state runtime.DatabaseState) DatabaseState {
+	result := DatabaseState{
+		DatabaseId:     state.DatabaseID,
+		Status:         DatabaseStateStatus(state.Status),
+		StorageLimitMb: state.StorageLimitMB,
+		UsageMb:        state.UsageMB,
+		Healthy:        state.Healthy,
+		OverQuota:      &state.OverQuota,
+	}
+	if state.ContainerID != "" {
+		result.ContainerId = &state.ContainerID
+	}
+	if state.Hostname != "" {
+		result.Hostname = &state.Hostname
+	}
+
+	return result
 }
 
 func deref(value *string) string {

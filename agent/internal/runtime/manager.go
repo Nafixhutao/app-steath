@@ -754,6 +754,10 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 		}
 	}
 
+	// Database containers are not routed, but they still have to be on their
+	// Project network for the Services to reach them after a restart.
+	m.reconcileDatabases(ctx)
+
 	return nil
 }
 

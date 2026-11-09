@@ -38,6 +38,30 @@ func (e BuildStatus) Valid() bool {
 	}
 }
 
+// Defines values for DatabaseStateStatus.
+const (
+	DatabaseStateStatusAbsent  DatabaseStateStatus = "absent"
+	DatabaseStateStatusFailed  DatabaseStateStatus = "failed"
+	DatabaseStateStatusRunning DatabaseStateStatus = "running"
+	DatabaseStateStatusStopped DatabaseStateStatus = "stopped"
+)
+
+// Valid indicates whether the value is a known member of the DatabaseStateStatus enum.
+func (e DatabaseStateStatus) Valid() bool {
+	switch e {
+	case DatabaseStateStatusAbsent:
+		return true
+	case DatabaseStateStatusFailed:
+		return true
+	case DatabaseStateStatusRunning:
+		return true
+	case DatabaseStateStatusStopped:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DeploymentStatus.
 const (
 	DeploymentStatusFailed  DeploymentStatus = "failed"
@@ -160,6 +184,60 @@ type CancelDeploymentRequest struct {
 	// container and image names, so a cancel never has to guess.
 	ServiceId string `json:"serviceId"`
 }
+
+// DatabasePasswordRequest defines model for DatabasePasswordRequest.
+type DatabasePasswordRequest struct {
+	DatabaseName string `json:"databaseName"`
+
+	// Password The new password. It is sent in the body only and is never logged.
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
+
+// DatabaseRemoval defines model for DatabaseRemoval.
+type DatabaseRemoval struct {
+	DatabaseId string `json:"databaseId"`
+
+	// Removed True when this call actually removed a container or Volume.
+	Removed bool `json:"removed"`
+}
+
+// DatabaseRequest defines model for DatabaseRequest.
+type DatabaseRequest struct {
+	DatabaseId     string `json:"databaseId"`
+	DatabaseName   string `json:"databaseName"`
+	OrganizationId string `json:"organizationId"`
+
+	// Password Sent in the request body only. The Node Agent passes it to the
+	// container on first start and never writes it to a log or to disk.
+	Password       string `json:"password"`
+	ProjectId      string `json:"projectId"`
+	StorageLimitMb int    `json:"storageLimitMb"`
+	Username       string `json:"username"`
+}
+
+// DatabaseState defines model for DatabaseState.
+type DatabaseState struct {
+	ContainerId *string `json:"containerId,omitempty"`
+	DatabaseId  string  `json:"databaseId"`
+
+	// Healthy True when PostgreSQL answers `pg_isready`.
+	Healthy bool `json:"healthy"`
+
+	// Hostname Network alias Services in the same Project connect to.
+	Hostname *string `json:"hostname,omitempty"`
+
+	// OverQuota True when the Database Volume is over its storage limit.
+	OverQuota      *bool               `json:"overQuota,omitempty"`
+	Status         DatabaseStateStatus `json:"status"`
+	StorageLimitMb int                 `json:"storageLimitMb"`
+
+	// UsageMb Space the Database Volume currently uses, measured on the node.
+	UsageMb int64 `json:"usageMb"`
+}
+
+// DatabaseStateStatus defines model for DatabaseState.Status.
+type DatabaseStateStatus string
 
 // DeployRequest defines model for DeployRequest.
 type DeployRequest struct {
@@ -312,6 +390,9 @@ type VolumeRequest struct {
 // BuildId defines model for BuildId.
 type BuildId = string
 
+// DatabaseId defines model for DatabaseId.
+type DatabaseId = string
+
 // DeploymentId defines model for DeploymentId.
 type DeploymentId = string
 
@@ -325,6 +406,12 @@ type VolumeName = string
 type StreamBuildLogsParams struct {
 	// After Return events with a sequence greater than this value.
 	After *int `form:"after,omitempty" json:"after,omitempty"`
+}
+
+// GetDatabaseParams defines parameters for GetDatabase.
+type GetDatabaseParams struct {
+	// StorageLimitMb The Database's configured storage limit, echoed back.
+	StorageLimitMb *int `form:"storageLimitMb,omitempty" json:"storageLimitMb,omitempty"`
 }
 
 // StreamServiceLogsParams defines parameters for StreamServiceLogs.
@@ -341,6 +428,12 @@ type GetVolumeParams struct {
 
 // StartBuildJSONRequestBody defines body for StartBuild for application/json ContentType.
 type StartBuildJSONRequestBody = BuildRequest
+
+// EnsureDatabaseJSONRequestBody defines body for EnsureDatabase for application/json ContentType.
+type EnsureDatabaseJSONRequestBody = DatabaseRequest
+
+// RotateDatabasePasswordJSONRequestBody defines body for RotateDatabasePassword for application/json ContentType.
+type RotateDatabasePasswordJSONRequestBody = DatabasePasswordRequest
 
 // DeployServiceJSONRequestBody defines body for DeployService for application/json ContentType.
 type DeployServiceJSONRequestBody = DeployRequest
@@ -365,6 +458,18 @@ type ServerInterface interface {
 	// StreamBuildLogs Stream Build logs
 	// (GET /v1/builds/{buildId}/logs)
 	StreamBuildLogs(w http.ResponseWriter, r *http.Request, buildId BuildId, params StreamBuildLogsParams)
+	// RemoveDatabase Remove a Database container and its Volume
+	// (DELETE /v1/databases/{databaseId})
+	RemoveDatabase(w http.ResponseWriter, r *http.Request, databaseId DatabaseId)
+	// GetDatabase Read Database health and storage usage
+	// (GET /v1/databases/{databaseId})
+	GetDatabase(w http.ResponseWriter, r *http.Request, databaseId DatabaseId, params GetDatabaseParams)
+	// EnsureDatabase Create or start a Project Database
+	// (PUT /v1/databases/{databaseId})
+	EnsureDatabase(w http.ResponseWriter, r *http.Request, databaseId DatabaseId)
+	// RotateDatabasePassword Replace the Database password
+	// (POST /v1/databases/{databaseId}/rotate)
+	RotateDatabasePassword(w http.ResponseWriter, r *http.Request, databaseId DatabaseId)
 	// DeployService Run a built image as the Service container
 	// (POST /v1/deployments)
 	DeployService(w http.ResponseWriter, r *http.Request)
@@ -514,6 +619,126 @@ func (siw *ServerInterfaceWrapper) StreamBuildLogs(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.StreamBuildLogs(w, r, buildId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveDatabase operation middleware
+func (siw *ServerInterfaceWrapper) RemoveDatabase(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "databaseId" -------------
+	var databaseId DatabaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "databaseId", r.PathValue("databaseId"), &databaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "databaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveDatabase(w, r, databaseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDatabase operation middleware
+func (siw *ServerInterfaceWrapper) GetDatabase(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "databaseId" -------------
+	var databaseId DatabaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "databaseId", r.PathValue("databaseId"), &databaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "databaseId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDatabaseParams
+
+	// ------------- Optional query parameter "storageLimitMb" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "storageLimitMb", r.URL.Query(), &params.StorageLimitMb, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "storageLimitMb"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storageLimitMb", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDatabase(w, r, databaseId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnsureDatabase operation middleware
+func (siw *ServerInterfaceWrapper) EnsureDatabase(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "databaseId" -------------
+	var databaseId DatabaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "databaseId", r.PathValue("databaseId"), &databaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "databaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnsureDatabase(w, r, databaseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RotateDatabasePassword operation middleware
+func (siw *ServerInterfaceWrapper) RotateDatabasePassword(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "databaseId" -------------
+	var databaseId DatabaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "databaseId", r.PathValue("databaseId"), &databaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "databaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RotateDatabasePassword(w, r, databaseId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -994,6 +1219,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/volumes/{name}", wrapper.RemoveVolume)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/volumes/{name}", wrapper.GetVolume)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/v1/volumes/{name}", wrapper.EnsureVolume)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/databases/{databaseId}", wrapper.RemoveDatabase)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/databases/{databaseId}", wrapper.GetDatabase)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/v1/databases/{databaseId}", wrapper.EnsureDatabase)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/databases/{databaseId}/rotate", wrapper.RotateDatabasePassword)
 
 	return m
 }

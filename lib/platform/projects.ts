@@ -24,6 +24,7 @@ type ProjectRow = {
   name: string;
   slug: string;
   serviceCount: string | number;
+  databaseCount: string | number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -75,13 +76,12 @@ function normalizeSlug(value: unknown, fallbackName: string): string {
 }
 
 /**
- * Resource counts per Project. Databases arrive in a later ticket, so their
- * count stays zero until that table exists; the Service count is read from the
- * real table so the Project summary never guesses.
+ * Resource counts per Project. The Service and Database counts are read from the
+ * real tables so the Project summary never guesses.
  */
 function summarize(row: ProjectRow): ProjectSummary {
   const serviceCount = Number(row.serviceCount ?? 0);
-  const databaseCount = 0;
+  const databaseCount = Number(row.databaseCount ?? 0);
 
   return {
     ...row,
@@ -92,7 +92,8 @@ function summarize(row: ProjectRow): ProjectSummary {
 }
 
 const PROJECT_SELECT = `SELECT p."id", p."name", p."slug", p."createdAt", p."updatedAt",
-  (SELECT count(*) FROM "service" s WHERE s."projectId" = p."id") AS "serviceCount"
+  (SELECT count(*) FROM "service" s WHERE s."projectId" = p."id") AS "serviceCount",
+  (SELECT count(*) FROM "database" d WHERE d."projectId" = p."id") AS "databaseCount"
   FROM "project" p`;
 
 export async function listProjects(organizationId: string): Promise<ProjectSummary[]> {
@@ -163,7 +164,8 @@ export async function createProject(input: {
     const inserted = await client.query<ProjectRow>(
       `INSERT INTO "project" ("id", "organizationId", "name", "slug")
        VALUES (gen_random_uuid()::text, $1, $2, $3)
-       RETURNING "id", "name", "slug", 0 AS "serviceCount", "createdAt", "updatedAt"`,
+       RETURNING "id", "name", "slug", 0 AS "serviceCount", 0 AS "databaseCount",
+         "createdAt", "updatedAt"`,
       [input.organizationId, name, slug],
     );
 
@@ -206,6 +208,7 @@ export async function updateProject(input: {
      WHERE "organizationId" = $3 AND "id" = $4
      RETURNING "id", "name", "slug",
        (SELECT count(*) FROM "service" s WHERE s."projectId" = "project"."id") AS "serviceCount",
+       (SELECT count(*) FROM "database" d WHERE d."projectId" = "project"."id") AS "databaseCount",
        "createdAt", "updatedAt"`,
     [name, slug, input.organizationId, input.projectId],
   );

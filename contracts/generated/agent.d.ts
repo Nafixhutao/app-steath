@@ -290,6 +290,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/databases/{databaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Database health and storage usage */
+        get: operations["getDatabase"];
+        /**
+         * Create or start a Project Database
+         * @description Creates the Database container on the Project network with its own Volume,
+         *     or starts it when it already exists. The container publishes no host port,
+         *     so it is reachable only from the Project network. Calling this again with
+         *     the same `databaseId` is idempotent.
+         */
+        put: operations["ensureDatabase"];
+        post?: never;
+        /**
+         * Remove a Database container and its Volume
+         * @description Stops and removes the Database container and deletes its Volume, so a
+         *     deleted Database leaves nothing behind on the node. Removing a Database
+         *     that is already gone is not an error.
+         */
+        delete: operations["removeDatabase"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/databases/{databaseId}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Replace the Database password
+         * @description Runs `ALTER ROLE` inside the running Database so the new password takes
+         *     effect immediately. The password travels in the request body only and is
+         *     never logged. Services must be redeployed to pick up the new
+         *     `DATABASE_URL`.
+         */
+        post: operations["rotateDatabasePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -380,6 +433,48 @@ export interface components {
             /** @description True when this call actually deleted the Volume. */
             removed: boolean;
         };
+        DatabaseRequest: {
+            databaseId: string;
+            projectId: string;
+            organizationId: string;
+            databaseName: string;
+            username: string;
+            /**
+             * @description Sent in the request body only. The Node Agent passes it to the
+             *     container on first start and never writes it to a log or to disk.
+             */
+            password: string;
+            storageLimitMb: number;
+        };
+        DatabasePasswordRequest: {
+            databaseName: string;
+            username: string;
+            /** @description The new password. It is sent in the body only and is never logged. */
+            password: string;
+        };
+        DatabaseState: {
+            databaseId: string;
+            /** @enum {string} */
+            status: "running" | "stopped" | "absent" | "failed";
+            containerId?: string;
+            /** @description Network alias Services in the same Project connect to. */
+            hostname?: string;
+            storageLimitMb: number;
+            /**
+             * Format: int64
+             * @description Space the Database Volume currently uses, measured on the node.
+             */
+            usageMb: number;
+            /** @description True when PostgreSQL answers `pg_isready`. */
+            healthy: boolean;
+            /** @description True when the Database Volume is over its storage limit. */
+            overQuota?: boolean;
+        };
+        DatabaseRemoval: {
+            databaseId: string;
+            /** @description True when this call actually removed a container or Volume. */
+            removed: boolean;
+        };
         DeployRequest: {
             /** @description Deployment id; makes Deploy idempotent. */
             deploymentId: string;
@@ -457,6 +552,8 @@ export interface components {
         DeploymentId: string;
         /** @description Docker Volume name the agent created for a Service. */
         VolumeName: string;
+        /** @description Database id that owns the container and Volume. */
+        DatabaseId: string;
     };
     requestBodies: never;
     headers: never;
@@ -1111,6 +1208,181 @@ export interface operations {
             };
             /** @description Missing or invalid token */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getDatabase: {
+        parameters: {
+            query?: {
+                /** @description The Database's configured storage limit, echoed back. */
+                storageLimitMb?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Database id that owns the container and Volume. */
+                databaseId: components["parameters"]["DatabaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Database state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseState"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unknown Database */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    ensureDatabase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Database id that owns the container and Volume. */
+                databaseId: components["parameters"]["DatabaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatabaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Database running */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseState"];
+                };
+            };
+            /** @description Invalid Database request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeDatabase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Database id that owns the container and Volume. */
+                databaseId: components["parameters"]["DatabaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Database removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseRemoval"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    rotateDatabasePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Database id that owns the container and Volume. */
+                databaseId: components["parameters"]["DatabaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatabasePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Password rotated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseState"];
+                };
+            };
+            /** @description Invalid rotation request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Database has no container yet */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -142,6 +142,12 @@ func (m *Manager) Cleanup(ctx context.Context) (CleanupReport, error) {
 	}
 	report.VolumesRemoved = volumesRemoved
 
+	databaseVolumesRemoved, err := m.pruneOrphanDatabaseVolumes(ctx)
+	if err != nil {
+		log.Printf("cleanup: could not prune Database Volumes: %v", err)
+	}
+	report.VolumesRemoved += databaseVolumesRemoved
+
 	pruned, err := m.pruneBuildCacheWeekly(ctx)
 	if err != nil {
 		log.Printf("cleanup: could not prune the Build cache: %v", err)

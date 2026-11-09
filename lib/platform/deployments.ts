@@ -7,6 +7,7 @@ import {
   type AgentDeploymentAbort,
 } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
+import { loadDeploymentDatabaseUrl } from "./databases.ts";
 import { loadDeploymentEnvironment } from "./environment-variables.ts";
 import { nodeConfig, requireHealthyNode } from "./nodes.ts";
 import { loadDeploymentVolume } from "./volumes.ts";
@@ -437,6 +438,15 @@ export async function runDeployment(
     envRevision = snapshot.revision;
     environment = snapshot.environment;
     volume = await loadDeploymentVolume(deployment.serviceId);
+
+    // `DATABASE_URL` is platform-owned: a user value is reserved, and the real
+    // value is built from the Project Database at deploy time so a rotated
+    // password is never stale in a running container.
+    const databaseUrl = await loadDeploymentDatabaseUrl(deployment.projectId);
+    if (databaseUrl) {
+      environment = environment.filter((variable) => variable.name !== "DATABASE_URL");
+      environment.push({ name: "DATABASE_URL", value: databaseUrl });
+    }
   } catch (error) {
     const message =
       error instanceof ApiError

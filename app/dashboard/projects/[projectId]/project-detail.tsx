@@ -11,6 +11,7 @@ import {
   type ProjectSummary,
 } from "@/lib/projects-client";
 import { ServicesPanel } from "./services-panel";
+import { DatabasePanel } from "./database-panel";
 
 function getError(error: unknown) {
   return error instanceof Error ? error.message : "The request could not be completed.";
@@ -173,6 +174,8 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         canManage={canManage}
         onChanged={() => void refreshSummary()}
       />
+
+      <DatabasePanel projectId={project.id} projectName={project.name} canManage={canManage} />
 
       {canManage ? (
         <section className="dashboard-section" aria-labelledby="settings-heading">

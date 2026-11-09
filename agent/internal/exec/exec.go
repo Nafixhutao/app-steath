@@ -22,6 +22,10 @@ type Options struct {
 	Env  []string
 	Name string
 	Args []string
+	// Stdin is fed to the command's standard input. It is how a secret can be
+	// passed to `docker exec` without putting it in the process arguments, where
+	// another user on the host could read it.
+	Stdin string
 }
 
 // Executor runs the commands the Node Agent needs. Tests substitute a fake, and
@@ -42,6 +46,9 @@ func (SystemExecutor) Stream(ctx context.Context, options Options, onLine func(s
 	cmd.Dir = options.Dir
 	if len(options.Env) > 0 {
 		cmd.Env = append(cmd.Environ(), options.Env...)
+	}
+	if options.Stdin != "" {
+		cmd.Stdin = strings.NewReader(options.Stdin)
 	}
 
 	stdout, err := cmd.StdoutPipe()
@@ -78,6 +85,9 @@ func (SystemExecutor) Output(ctx context.Context, options Options) (string, erro
 	cmd.Dir = options.Dir
 	if len(options.Env) > 0 {
 		cmd.Env = append(cmd.Environ(), options.Env...)
+	}
+	if options.Stdin != "" {
+		cmd.Stdin = strings.NewReader(options.Stdin)
 	}
 
 	var stdout, stderr bytes.Buffer

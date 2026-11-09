@@ -38,8 +38,15 @@ const (
 	LabelVolumePath   = "stealth.volumePath"
 	LabelVolumeSizeMb = "stealth.volumeSizeMb"
 
-	ResourceTypeService = "service"
-	ResourceTypeVolume  = "volume"
+	// Database labels let the agent find a Project Database after a restart,
+	// measure its storage, and run `pg_isready` without asking the Control Plane.
+	LabelDatabaseID        = "stealth.databaseId"
+	LabelDatabaseName      = "stealth.databaseName"
+	LabelDatabaseUsername  = "stealth.databaseUsername"
+	LabelDatabaseStorageMb = "stealth.databaseStorageMb"
+	ResourceTypeService    = "service"
+	ResourceTypeVolume     = "volume"
+	ResourceTypeDatabase   = "database"
 )
 
 // ContainerSpec is one Service container the agent wants running.
@@ -55,7 +62,10 @@ type ContainerSpec struct {
 	Port         int
 	CPU          float64
 	MemoryMB     int
-	Environment  map[string]string
+	// User overrides the image's default user. The Database runs as the
+	// `postgres` user so its entrypoint never needs root capabilities.
+	User        string
+	Environment map[string]string
 	// Volume is the Service's persistent Volume, mounted at MountPath. Nil
 	// means the Service has no Volume.
 	Volume *VolumeMount
@@ -172,6 +182,11 @@ type Docker interface {
 	// ListVolumes returns the Volumes that match every label, with the labels the
 	// cleanup needs to decide whether their Service still exists.
 	ListVolumes(ctx context.Context, labels map[string]string) ([]VolumeInfo, error)
+	// Exec runs a command inside a running container and returns its output. It
+	// is how the agent asks PostgreSQL for readiness and rotates a password
+	// without publishing a host port. `stdin` carries secrets so they never
+	// appear in the process arguments.
+	Exec(ctx context.Context, containerID string, command []string, stdin string) (string, error)
 }
 
 // CLIDocker implements Docker by shelling out to the docker CLI.
@@ -232,6 +247,13 @@ func (d *CLIDocker) CreateContainer(ctx context.Context, spec ContainerSpec) (st
 		"--log-opt", "max-size=10m",
 		"--log-opt", "max-file=5",
 		"--expose", strconv.Itoa(spec.Port),
+	}
+
+	if spec.User != "" {
+		// The Database image's entrypoint only chowns and drops privileges when
+		// it runs as root; with all capabilities dropped it cannot, so the
+		// container starts directly as the unprivileged owner of its Volume.
+		args = append(args, "--user", spec.User)
 	}
 
 	if spec.ReadOnlyRoot {
@@ -716,6 +738,20 @@ func (d *CLIDocker) ListVolumes(ctx context.Context, labels map[string]string) (
 	}
 
 	return volumes, nil
+}
+
+// Exec runs a command inside a running container. Standard input is used for
+// secrets, so a password never appears in the Docker command line or in the
+// error the agent might return.
+func (d *CLIDocker) Exec(
+	ctx context.Context,
+	containerID string,
+	command []string,
+	stdin string,
+) (string, error) {
+	args := append([]string{"exec", "--interactive", containerID}, command...)
+
+	return d.runner.Output(ctx, exec.Options{Name: "docker", Args: args, Stdin: stdin})
 }
 
 // sortedPairs keeps argument order stable, which makes the recorded commands in

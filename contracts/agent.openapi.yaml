@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.5.0
+  version: 0.6.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
     only caller: it authenticates with a bearer token, starts Builds, runs the
@@ -517,6 +517,147 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/databases/{databaseId}:
+    put:
+      operationId: ensureDatabase
+      summary: Create or start a Project Database
+      description: |
+        Creates the Database container on the Project network with its own Volume,
+        or starts it when it already exists. The container publishes no host port,
+        so it is reachable only from the Project network. Calling this again with
+        the same `databaseId` is idempotent.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabaseRequest"
+      responses:
+        "200":
+          description: Database running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseState"
+        "400":
+          description: Invalid Database request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: getDatabase
+      summary: Read Database health and storage usage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+        - name: storageLimitMb
+          in: query
+          required: false
+          description: The Database's configured storage limit, echoed back.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1024
+            default: 1024
+      responses:
+        "200":
+          description: Database state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Database
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeDatabase
+      summary: Remove a Database container and its Volume
+      description: |
+        Stops and removes the Database container and deletes its Volume, so a
+        deleted Database leaves nothing behind on the node. Removing a Database
+        that is already gone is not an error.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      responses:
+        "200":
+          description: Database removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseRemoval"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/databases/{databaseId}/rotate:
+    post:
+      operationId: rotateDatabasePassword
+      summary: Replace the Database password
+      description: |
+        Runs `ALTER ROLE` inside the running Database so the new password takes
+        effect immediately. The password travels in the request body only and is
+        never logged. Services must be redeployed to pick up the new
+        `DATABASE_URL`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabasePasswordRequest"
+      responses:
+        "200":
+          description: Password rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseState"
+        "400":
+          description: Invalid rotation request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Database has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -549,6 +690,13 @@ components:
       in: path
       required: true
       description: Docker Volume name the agent created for a Service.
+      schema:
+        type: string
+    DatabaseId:
+      name: databaseId
+      in: path
+      required: true
+      description: Database id that owns the container and Volume.
       schema:
         type: string
   schemas:
@@ -728,6 +876,97 @@ components:
         removed:
           type: boolean
           description: True when this call actually deleted the Volume.
+    DatabaseRequest:
+      type: object
+      required:
+        - databaseId
+        - projectId
+        - organizationId
+        - databaseName
+        - username
+        - password
+        - storageLimitMb
+      properties:
+        databaseId:
+          type: string
+        projectId:
+          type: string
+        organizationId:
+          type: string
+        databaseName:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          description: |
+            Sent in the request body only. The Node Agent passes it to the
+            container on first start and never writes it to a log or to disk.
+        storageLimitMb:
+          type: integer
+          minimum: 1
+          maximum: 1024
+    DatabasePasswordRequest:
+      type: object
+      required:
+        - databaseName
+        - username
+        - password
+      properties:
+        databaseName:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          description: |
+            The new password. It is sent in the body only and is never logged.
+    DatabaseState:
+      type: object
+      required:
+        - databaseId
+        - status
+        - storageLimitMb
+        - usageMb
+        - healthy
+      properties:
+        databaseId:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - stopped
+            - absent
+            - failed
+        containerId:
+          type: string
+        hostname:
+          type: string
+          description: Network alias Services in the same Project connect to.
+        storageLimitMb:
+          type: integer
+        usageMb:
+          type: integer
+          format: int64
+          description: Space the Database Volume currently uses, measured on the node.
+        healthy:
+          type: boolean
+          description: True when PostgreSQL answers `pg_isready`.
+        overQuota:
+          type: boolean
+          description: True when the Database Volume is over its storage limit.
+    DatabaseRemoval:
+      type: object
+      required:
+        - databaseId
+        - removed
+      properties:
+        databaseId:
+          type: string
+        removed:
+          type: boolean
+          description: True when this call actually removed a container or Volume.
     DeployRequest:
       type: object
       required:

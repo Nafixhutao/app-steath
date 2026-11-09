@@ -43,6 +43,17 @@ type fakeDocker struct {
 	stopped []string
 	removed []string
 	renamed map[string]string
+
+	// execErr makes every Exec fail, which is how a Database that never becomes
+	// ready or a failed rotation is simulated.
+	execErr   error
+	execCalls []fakeExec
+}
+
+type fakeExec struct {
+	ContainerID string
+	Command     []string
+	Stdin       string
 }
 
 type fakeContainer struct {
@@ -266,6 +277,32 @@ func (f *fakeDocker) Probe(_ context.Context, containerID, _ string) error {
 	}
 
 	return nil
+}
+
+// Exec records the command it was asked to run. `pg_isready` succeeds unless the
+// test injects an error, which is how readiness and rotation are exercised.
+func (f *fakeDocker) Exec(
+	_ context.Context,
+	containerID string,
+	command []string,
+	stdin string,
+) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if _, ok := f.find(containerID); !ok {
+		return "", fmt.Errorf("no such container: %s", containerID)
+	}
+	f.execCalls = append(f.execCalls, fakeExec{
+		ContainerID: containerID,
+		Command:     append([]string(nil), command...),
+		Stdin:       stdin,
+	})
+	if f.execErr != nil {
+		return "", f.execErr
+	}
+
+	return "accepting connections", nil
 }
 
 func (f *fakeDocker) Logs(
