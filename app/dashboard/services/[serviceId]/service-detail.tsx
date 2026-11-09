@@ -14,6 +14,7 @@ import {
 import { DeploymentsPanel } from "./deployments-panel";
 import { EnvironmentPanel } from "./environment-panel";
 import { RuntimePanel } from "./runtime-panel";
+import { VolumePanel } from "./volume-panel";
 
 function getError(error: unknown) {
   return error instanceof Error ? error.message : "The request could not be completed.";
@@ -166,6 +167,12 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
       {canManage ? (
         <EnvironmentPanel serviceId={service.id} needsRedeploy={service.needsRedeploy} />
       ) : null}
+
+      <VolumePanel
+        serviceId={service.id}
+        needsRedeploy={service.needsRedeploy}
+        canManage={canManage}
+      />
 
       <RuntimePanel
         serviceId={service.id}

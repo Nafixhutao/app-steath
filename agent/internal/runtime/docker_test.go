@@ -48,6 +48,7 @@ func buildTestImage(t *testing.T) string {
 	dockerfile := "FROM busybox:1.36\n" +
 		"WORKDIR /www\n" +
 		"RUN echo healthy > index.html\n" +
+		"USER 1000:1000\n" +
 		"EXPOSE 3000\n" +
 		"CMD [\"httpd\", \"-f\", \"-p\", \"3000\"]\n"
 
@@ -394,6 +395,94 @@ func TestDockerStopStartKeepsTheContainerAndItsData(t *testing.T) {
 	// The container must still serve after the lifecycle round trip.
 	if body := requestThroughCaddy(t, request.Hostname); !strings.Contains(body, "healthy") {
 		t.Fatalf("expected the Service to serve after restart, got %q", body)
+	}
+}
+
+func TestDockerVolumeKeepsItsDataAcrossRestartAndRedeploy(t *testing.T) {
+	requireDocker(t)
+	buildTestImage(t)
+
+	manager, _ := newDockerBackedManager(t)
+	request := dockerRequest("svcvolume")
+	request.Volume = &VolumeMount{
+		Name:      "stealth-vol-svcvolume",
+		MountPath: "/data",
+		SizeMB:    MaxVolumeSizeMB,
+	}
+	t.Cleanup(func() { cleanupService(t, manager, request) })
+
+	ctx, cancel := context.WithTimeout(context.Background(), dockerDeadline)
+	defer cancel()
+
+	// The Volume must not survive from an earlier failed run, or the test would
+	// pass on stale data.
+	_, _ = manager.RemoveVolume(ctx, request.Volume.Name)
+
+	deployed, err := manager.Deploy(ctx, request)
+	if err != nil {
+		t.Fatalf("deploy: %v", err)
+	}
+	if deployed.Status != "running" {
+		t.Fatalf("expected a running deployment, got %q: %s", deployed.Status, deployed.Error)
+	}
+
+	// Write into the mounted Volume, which is the only writable path because the
+	// root filesystem is read-only.
+	write := exec.Command("docker", "exec", deployed.ContainerID, "sh", "-c", "echo persisted > /data/proof.txt")
+	if output, err := write.CombinedOutput(); err != nil {
+		t.Fatalf("write into the Volume: %v\n%s", err, output)
+	}
+
+	state, err := manager.GetVolume(ctx, request.Volume.Name, request.Volume.SizeMB)
+	if err != nil {
+		t.Fatalf("get volume: %v", err)
+	}
+	if !state.Exists || state.UsageMB == 0 {
+		t.Fatalf("expected the Volume to exist with usage, got %+v", state)
+	}
+
+	// A restart keeps the same container and therefore the same data.
+	if _, err := manager.Restart(ctx, request.ServiceID); err != nil {
+		t.Fatalf("restart: %v", err)
+	}
+	read := exec.Command("docker", "exec", deployed.ContainerID, "cat", "/data/proof.txt")
+	output, err := read.Output()
+	if err != nil {
+		t.Fatalf("read after restart: %v", err)
+	}
+	if strings.TrimSpace(string(output)) != "persisted" {
+		t.Fatalf("expected the file to survive the restart, got %q", output)
+	}
+
+	// A redeploy replaces the container; the Volume name is stable per Service,
+	// so the new container must see the same file.
+	redeploy := request
+	redeploy.DeploymentID = "deployment-svcvolume-2"
+	next, err := manager.Deploy(ctx, redeploy)
+	if err != nil {
+		t.Fatalf("redeploy: %v", err)
+	}
+	if next.Status != "running" {
+		t.Fatalf("expected a running redeploy, got %q: %s", next.Status, next.Error)
+	}
+	if next.ContainerID == deployed.ContainerID {
+		t.Fatal("expected the redeploy to replace the container")
+	}
+	read = exec.Command("docker", "exec", next.ContainerID, "cat", "/data/proof.txt")
+	output, err = read.Output()
+	if err != nil {
+		t.Fatalf("read after redeploy: %v", err)
+	}
+	if strings.TrimSpace(string(output)) != "persisted" {
+		t.Fatalf("expected the file to survive the redeploy, got %q", output)
+	}
+
+	// Deleting the Service must delete the Volume and its data.
+	if _, err := manager.Remove(ctx, request.ServiceID); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+	if err := exec.Command("docker", "volume", "inspect", request.Volume.Name).Run(); err == nil {
+		t.Fatalf("expected the Volume %s to be removed with the Service", request.Volume.Name)
 	}
 }
 

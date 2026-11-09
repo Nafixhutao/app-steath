@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -19,6 +20,7 @@ type fakeDocker struct {
 	networks   map[string]bool
 	containers map[string]*fakeContainer
 	images     map[string]time.Time
+	volumes    map[string]*fakeVolume
 
 	createErr  error
 	connectErr error
@@ -26,6 +28,7 @@ type fakeDocker struct {
 	removeErr  error
 	imageErr   error
 	pruneErr   error
+	volumeErr  error
 	pruneCalls int
 	// probeErr makes every Probe fail, which is how a failing health check is
 	// simulated. probeErrAfter lets a probe succeed only on a later attempt.
@@ -52,11 +55,18 @@ type fakeContainer struct {
 	Logs     []string
 }
 
+type fakeVolume struct {
+	Name    string
+	Labels  map[string]string
+	UsageMB int64
+}
+
 func newFakeDocker() *fakeDocker {
 	return &fakeDocker{
 		networks:   make(map[string]bool),
 		containers: make(map[string]*fakeContainer),
 		images:     make(map[string]time.Time),
+		volumes:    make(map[string]*fakeVolume),
 		renamed:    make(map[string]string),
 	}
 }
@@ -318,6 +328,66 @@ func (f *fakeDocker) PruneBuildCache(_ context.Context, _ time.Duration) error {
 	}
 
 	return nil
+}
+
+func (f *fakeDocker) EnsureVolume(_ context.Context, spec VolumeSpec) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.volumeErr != nil {
+		return f.volumeErr
+	}
+	if volume, ok := f.volumes[spec.Name]; ok {
+		// Docker's `volume create` on an existing Volume returns it untouched,
+		// so a redeploy never replaces the data or rewrites the labels.
+		_ = volume
+		return nil
+	}
+	f.volumes[spec.Name] = &fakeVolume{Name: spec.Name, Labels: spec.Labels}
+
+	return nil
+}
+
+func (f *fakeDocker) VolumeUsage(_ context.Context, name string) (int64, bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	volume, ok := f.volumes[name]
+	if !ok {
+		return 0, false, nil
+	}
+
+	return volume.UsageMB, true, nil
+}
+
+func (f *fakeDocker) RemoveVolume(_ context.Context, name string) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.volumeErr != nil {
+		return false, f.volumeErr
+	}
+	if _, ok := f.volumes[name]; !ok {
+		return false, nil
+	}
+	delete(f.volumes, name)
+
+	return true, nil
+}
+
+func (f *fakeDocker) ListVolumes(_ context.Context, labels map[string]string) ([]VolumeInfo, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	var volumes []VolumeInfo
+	for _, volume := range f.volumes {
+		if !matchesLabels(volume.Labels, labels) {
+			continue
+		}
+		volumes = append(volumes, VolumeInfo{Name: volume.Name, Labels: volume.Labels})
+	}
+
+	return volumes, nil
 }
 
 // find resolves a container by id or name, the way the docker CLI does.
@@ -1042,5 +1112,261 @@ func TestLogsForwardsContainerOutput(t *testing.T) {
 
 	if len(lines) != 2 {
 		t.Fatalf("expected two log lines, got %v", lines)
+	}
+}
+
+// volumeRequest returns sampleRequest with a Volume mounted at /data.
+func volumeRequest() DeployRequest {
+	request := sampleRequest()
+	request.Volume = &VolumeMount{
+		Name:      "stealth-vol-service-1",
+		MountPath: "/data",
+		SizeMB:    MaxVolumeSizeMB,
+	}
+
+	return request
+}
+
+func TestDeployCreatesTheVolumeAndMountsIt(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+
+	result, err := manager.Deploy(context.Background(), volumeRequest())
+	if err != nil {
+		t.Fatalf("deploy: %v", err)
+	}
+	if result.Status != "running" {
+		t.Fatalf("expected a running deployment, got %q (%s)", result.Status, result.Error)
+	}
+
+	volume, ok := docker.volumes["stealth-vol-service-1"]
+	if !ok {
+		t.Fatal("expected the Volume to be created before the container starts")
+	}
+	for key, want := range map[string]string{
+		LabelType:           ResourceTypeVolume,
+		LabelOrganizationID: "org-1",
+		LabelProjectID:      "project-1",
+		LabelServiceID:      "service-1",
+		LabelDeploymentID:   "deployment-1",
+	} {
+		if volume.Labels[key] != want {
+			t.Fatalf("expected Volume label %s=%q, got %q", key, want, volume.Labels[key])
+		}
+	}
+
+	spec := docker.created[0]
+	if spec.Volume == nil || spec.Volume.Name != "stealth-vol-service-1" || spec.Volume.MountPath != "/data" {
+		t.Fatalf("expected the Volume to be mounted at /data, got %+v", spec.Volume)
+	}
+	for key, want := range map[string]string{
+		LabelVolumeName:   "stealth-vol-service-1",
+		LabelVolumePath:   "/data",
+		LabelVolumeSizeMb: "1024",
+	} {
+		if spec.Labels[key] != want {
+			t.Fatalf("expected container label %s=%q, got %q", key, want, spec.Labels[key])
+		}
+	}
+}
+
+func TestDeployKeepsAnExistingVolumeInsteadOfReplacingIt(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+
+	// A previous Deployment already wrote data; the Volume carries its usage.
+	docker.volumes["stealth-vol-service-1"] = &fakeVolume{
+		Name:    "stealth-vol-service-1",
+		Labels:  map[string]string{LabelType: ResourceTypeVolume, LabelServiceID: "service-1"},
+		UsageMB: 40,
+	}
+
+	if _, err := manager.Deploy(context.Background(), volumeRequest()); err != nil {
+		t.Fatalf("deploy: %v", err)
+	}
+	if usage := docker.volumes["stealth-vol-service-1"].UsageMB; usage != 40 {
+		t.Fatalf("expected the existing data to survive, usage became %d MB", usage)
+	}
+}
+
+func TestDeployFailsWhenTheVolumeIsAlreadyOverItsLimit(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+
+	docker.volumes["stealth-vol-service-1"] = &fakeVolume{
+		Name:    "stealth-vol-service-1",
+		Labels:  map[string]string{LabelType: ResourceTypeVolume, LabelServiceID: "service-1"},
+		UsageMB: MaxVolumeSizeMB + 1,
+	}
+
+	result, err := manager.Deploy(context.Background(), volumeRequest())
+	if err != nil {
+		t.Fatalf("deploy: %v", err)
+	}
+	if result.Status != "failed" {
+		t.Fatalf("expected the Deployment to fail, got %q", result.Status)
+	}
+	if !strings.Contains(result.Error, "over its") {
+		t.Fatalf("expected an over-quota reason, got %q", result.Error)
+	}
+	if len(docker.created) != 0 {
+		t.Fatal("expected no container to start when the Volume is over quota")
+	}
+}
+
+func TestEnsureVolumeIsIdempotentAndReportsUsage(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+
+	request := VolumeRequest{
+		Name:           "stealth-vol-service-1",
+		ServiceID:      "service-1",
+		ProjectID:      "project-1",
+		OrganizationID: "org-1",
+		DeploymentID:   "deployment-1",
+		SizeMB:         1024,
+	}
+	state, err := manager.EnsureVolume(context.Background(), request)
+	if err != nil {
+		t.Fatalf("ensure: %v", err)
+	}
+	if !state.Exists || state.SizeMB != 1024 || state.UsageMB != 0 {
+		t.Fatalf("unexpected Volume state: %+v", state)
+	}
+
+	docker.volumes["stealth-vol-service-1"].UsageMB = 12
+	again, err := manager.EnsureVolume(context.Background(), request)
+	if err != nil {
+		t.Fatalf("second ensure: %v", err)
+	}
+	if again.UsageMB != 12 {
+		t.Fatalf("expected the usage to be reported, got %d MB", again.UsageMB)
+	}
+}
+
+func TestGetVolumeReportsAMissingVolume(t *testing.T) {
+	manager := testManager(t, newFakeDocker(), newFakeRouter())
+
+	state, err := manager.GetVolume(context.Background(), "stealth-vol-service-1", 1024)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if state.Exists {
+		t.Fatal("expected a Volume that was never created to report exists=false")
+	}
+}
+
+func TestRemoveDeletesTheServiceVolume(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+
+	if _, err := manager.Deploy(context.Background(), volumeRequest()); err != nil {
+		t.Fatalf("deploy: %v", err)
+	}
+	if _, ok := docker.volumes["stealth-vol-service-1"]; !ok {
+		t.Fatal("expected the Volume to exist after the deploy")
+	}
+
+	if _, err := manager.Remove(context.Background(), "service-1"); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+	if _, ok := docker.volumes["stealth-vol-service-1"]; ok {
+		t.Fatal("expected the Volume to be removed with the Service")
+	}
+}
+
+func TestEnforceVolumesStopsAnOverQuotaContainer(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+
+	if _, err := manager.Deploy(context.Background(), volumeRequest()); err != nil {
+		t.Fatalf("deploy: %v", err)
+	}
+	docker.volumes["stealth-vol-service-1"].UsageMB = MaxVolumeSizeMB + 10
+
+	stopped, err := manager.EnforceVolumes(context.Background())
+	if err != nil {
+		t.Fatalf("enforce: %v", err)
+	}
+	if stopped != 1 {
+		t.Fatalf("expected one container to be stopped, got %d", stopped)
+	}
+	if container, _ := docker.find("stealth-svc-service-1"); container.State != "exited" {
+		t.Fatalf("expected the container to be stopped, got %q", container.State)
+	}
+}
+
+func TestEnforceVolumesLeavesAContainerUnderItsLimitAlone(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+
+	if _, err := manager.Deploy(context.Background(), volumeRequest()); err != nil {
+		t.Fatalf("deploy: %v", err)
+	}
+	docker.volumes["stealth-vol-service-1"].UsageMB = MaxVolumeSizeMB - 1
+
+	stopped, err := manager.EnforceVolumes(context.Background())
+	if err != nil {
+		t.Fatalf("enforce: %v", err)
+	}
+	if stopped != 0 {
+		t.Fatalf("expected nothing to be stopped, got %d", stopped)
+	}
+	if container, _ := docker.find("stealth-svc-service-1"); container.State != "running" {
+		t.Fatalf("expected the container to keep running, got %q", container.State)
+	}
+}
+
+func TestCleanupRemovesOrphanVolumesOnly(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+	manager.SetCleanupStatePath(filepath.Join(t.TempDir(), "cleanup.json"))
+
+	// A live Service keeps its Volume.
+	docker.containers["container-1"] = &fakeContainer{
+		ID:       "container-1",
+		Name:     "stealth-svc-service-1",
+		State:    "running",
+		Labels:   map[string]string{LabelType: ResourceTypeService, LabelServiceID: "service-1"},
+		Networks: map[string]string{},
+	}
+	docker.volumes["stealth-vol-service-1"] = &fakeVolume{
+		Name:   "stealth-vol-service-1",
+		Labels: map[string]string{LabelType: ResourceTypeVolume, LabelServiceID: "service-1"},
+	}
+	// A Volume whose Service is gone must be removed.
+	docker.volumes["stealth-vol-service-2"] = &fakeVolume{
+		Name:   "stealth-vol-service-2",
+		Labels: map[string]string{LabelType: ResourceTypeVolume, LabelServiceID: "service-2"},
+	}
+
+	report, err := manager.Cleanup(context.Background())
+	if err != nil {
+		t.Fatalf("cleanup: %v", err)
+	}
+	if report.VolumesRemoved != 1 {
+		t.Fatalf("expected one orphan Volume to be removed, got %d", report.VolumesRemoved)
+	}
+	if _, ok := docker.volumes["stealth-vol-service-1"]; !ok {
+		t.Fatal("expected the live Service Volume to survive")
+	}
+	if _, ok := docker.volumes["stealth-vol-service-2"]; ok {
+		t.Fatal("expected the orphan Volume to be gone")
+	}
+}
+
+func TestVolumeRequestsAreValidated(t *testing.T) {
+	manager := testManager(t, newFakeDocker(), newFakeRouter())
+
+	cases := map[string]VolumeRequest{
+		"bad name":       {Name: "not a name", ServiceID: "service-1", ProjectID: "project-1", OrganizationID: "org-1", SizeMB: 1024},
+		"missing owner":  {Name: "stealth-vol-1", ProjectID: "project-1", OrganizationID: "org-1", SizeMB: 1024},
+		"size too small": {Name: "stealth-vol-1", ServiceID: "service-1", ProjectID: "project-1", OrganizationID: "org-1", SizeMB: 0},
+		"size too large": {Name: "stealth-vol-1", ServiceID: "service-1", ProjectID: "project-1", OrganizationID: "org-1", SizeMB: MaxVolumeSizeMB + 1},
+	}
+	for name, request := range cases {
+		if _, err := manager.EnsureVolume(context.Background(), request); !errors.Is(err, ErrInvalidDeploy) {
+			t.Fatalf("%s: expected ErrInvalidDeploy, got %v", name, err)
+		}
 	}
 }

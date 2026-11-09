@@ -53,6 +53,7 @@ type AbortResult struct {
 type CleanupReport struct {
 	ContainersRemoved int
 	ImagesRemoved     int
+	VolumesRemoved    int
 	CachePruned       bool
 }
 
@@ -135,6 +136,12 @@ func (m *Manager) Cleanup(ctx context.Context) (CleanupReport, error) {
 	}
 	report.ImagesRemoved = removed
 
+	volumesRemoved, err := m.pruneOrphanVolumes(ctx, containers)
+	if err != nil {
+		log.Printf("cleanup: could not prune Volumes: %v", err)
+	}
+	report.VolumesRemoved = volumesRemoved
+
 	pruned, err := m.pruneBuildCacheWeekly(ctx)
 	if err != nil {
 		log.Printf("cleanup: could not prune the Build cache: %v", err)
@@ -142,6 +149,38 @@ func (m *Manager) Cleanup(ctx context.Context) (CleanupReport, error) {
 	report.CachePruned = pruned
 
 	return report, nil
+}
+
+// pruneOrphanVolumes removes a labelled Volume whose Service has no container on
+// this node. A stopped Service keeps its container, so its Volume is never
+// mistaken for an orphan.
+func (m *Manager) pruneOrphanVolumes(ctx context.Context, containers []ContainerInfo) (int, error) {
+	live := make(map[string]bool, len(containers))
+	for _, container := range containers {
+		if serviceID := container.Labels[LabelServiceID]; serviceID != "" {
+			live[serviceID] = true
+		}
+	}
+
+	volumes, err := m.docker.ListVolumes(ctx, map[string]string{LabelType: ResourceTypeVolume})
+	if err != nil {
+		return 0, err
+	}
+
+	removed := 0
+	for _, volume := range volumes {
+		serviceID := volume.Labels[LabelServiceID]
+		if serviceID != "" && live[serviceID] {
+			continue
+		}
+		if _, err := m.docker.RemoveVolume(ctx, volume.Name); err != nil {
+			log.Printf("cleanup: could not remove orphan Volume %s: %v", volume.Name, err)
+			continue
+		}
+		removed++
+	}
+
+	return removed, nil
 }
 
 // PruneImages keeps the newest ImageRetention images of every Service and removes

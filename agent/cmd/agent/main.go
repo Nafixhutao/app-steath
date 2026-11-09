@@ -24,6 +24,10 @@ const heartbeatInterval = 30 * time.Second
 // container labels, so a hung Docker daemon cannot block the agent from serving.
 const reconcileTimeout = 2 * time.Minute
 
+// volumeEnforceInterval is how often the agent checks that no Service Volume has
+// grown past its limit.
+const volumeEnforceInterval = 1 * time.Minute
+
 func main() {
 	token := os.Getenv("AGENT_TOKEN")
 	if token == "" {
@@ -87,11 +91,32 @@ func main() {
 			return
 		}
 		log.Printf(
-			"cleanup: removed %d containers and %d images, cache pruned: %t",
+			"cleanup: removed %d containers, %d images and %d volumes, cache pruned: %t",
 			report.ContainersRemoved,
 			report.ImagesRemoved,
+			report.VolumesRemoved,
 			report.CachePruned,
 		)
+	}()
+
+	// Docker cannot quota a Volume on the local driver, so the agent measures the
+	// Volumes of running Services and stops a container that grew past its limit.
+	go func() {
+		ticker := time.NewTicker(volumeEnforceInterval)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			ctx, cancel := context.WithTimeout(context.Background(), reconcileTimeout)
+			stopped, err := services.EnforceVolumes(ctx)
+			cancel()
+			if err != nil {
+				log.Printf("volume enforcement: %v", err)
+				continue
+			}
+			if stopped > 0 {
+				log.Printf("volume enforcement: stopped %d over-quota container(s)", stopped)
+			}
+		}
 	}()
 
 	// The heartbeat is optional so the agent can be run and tested on its own.

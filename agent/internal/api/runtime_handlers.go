@@ -22,6 +22,9 @@ type RuntimeDeployer interface {
 	Remove(ctx context.Context, serviceID string) (runtime.ServiceState, error)
 	State(ctx context.Context, serviceID string) (runtime.ServiceState, error)
 	Abort(ctx context.Context, request runtime.AbortRequest) (runtime.AbortResult, error)
+	EnsureVolume(ctx context.Context, request runtime.VolumeRequest) (runtime.VolumeState, error)
+	GetVolume(ctx context.Context, name string, sizeMB int) (runtime.VolumeState, error)
+	RemoveVolume(ctx context.Context, name string) (bool, error)
 	Logs(
 		ctx context.Context,
 		serviceID string,
@@ -57,6 +60,15 @@ func (s server) DeployService(w http.ResponseWriter, r *http.Request) {
 		cpuLimit = 0.5
 	}
 
+	var volume *runtime.VolumeMount
+	if request.Volume != nil {
+		volume = &runtime.VolumeMount{
+			Name:      request.Volume.Name,
+			MountPath: request.Volume.MountPath,
+			SizeMB:    request.Volume.SizeMb,
+		}
+	}
+
 	result, err := s.runtime.Deploy(r.Context(), runtime.DeployRequest{
 		DeploymentID:   request.DeploymentId,
 		ServiceID:      request.ServiceId,
@@ -69,6 +81,7 @@ func (s server) DeployService(w http.ResponseWriter, r *http.Request) {
 		CPULimit:       cpuLimit,
 		MemoryLimitMB:  request.MemoryLimitMb,
 		Environment:    environment,
+		Volume:         volume,
 	})
 	if errors.Is(err, runtime.ErrInvalidDeploy) {
 		writeError(w, http.StatusBadRequest, "invalid_deploy_request", err.Error())
@@ -139,6 +152,105 @@ func (s server) CancelDeployment(
 		ContainersRemoved: abort.ContainersRemoved,
 		ImageRemoved:      abort.ImageRemoved,
 	})
+}
+
+// EnsureVolume creates the Volume for a Service, or adopts the existing one, and
+// answers with the usage the node measures. It is idempotent so a retried Deploy
+// never replaces data.
+func (s server) EnsureVolume(w http.ResponseWriter, r *http.Request, name VolumeName) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	var request VolumeRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_body", "The Volume request is not valid JSON.")
+		return
+	}
+
+	state, err := s.runtime.EnsureVolume(r.Context(), runtime.VolumeRequest{
+		Name:           name,
+		ServiceID:      request.ServiceId,
+		ProjectID:      request.ProjectId,
+		OrganizationID: request.OrganizationId,
+		DeploymentID:   deref(request.DeploymentId),
+		SizeMB:         request.SizeMb,
+	})
+	if errors.Is(err, runtime.ErrInvalidDeploy) {
+		writeError(w, http.StatusBadRequest, "invalid_volume_request", err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "volume_create_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVolumeInfo(state))
+}
+
+// GetVolume reports the Volume's limit and the space it uses.
+func (s server) GetVolume(
+	w http.ResponseWriter,
+	r *http.Request,
+	name VolumeName,
+	params GetVolumeParams,
+) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	sizeMB := runtime.MaxVolumeSizeMB
+	if params.SizeMb != nil {
+		sizeMB = *params.SizeMb
+	}
+
+	state, err := s.runtime.GetVolume(r.Context(), name, sizeMB)
+	if errors.Is(err, runtime.ErrInvalidDeploy) {
+		writeError(w, http.StatusBadRequest, "invalid_volume_request", err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "volume_read_failed", err.Error())
+		return
+	}
+	if !state.Exists {
+		writeError(w, http.StatusNotFound, "volume_not_found", "The Volume does not exist on this node.")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVolumeInfo(state))
+}
+
+// RemoveVolume deletes a Volume and its data. A Volume that is already gone is
+// reported as not removed rather than as an error.
+func (s server) RemoveVolume(w http.ResponseWriter, r *http.Request, name VolumeName) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	removed, err := s.runtime.RemoveVolume(r.Context(), name)
+	if errors.Is(err, runtime.ErrInvalidDeploy) {
+		writeError(w, http.StatusBadRequest, "invalid_volume_request", err.Error())
+		return
+	}
+	if err != nil && strings.Contains(strings.ToLower(err.Error()), "in use") {
+		writeError(
+			w,
+			http.StatusConflict,
+			"volume_in_use",
+			"Stop the Service before removing its Volume.",
+		)
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "volume_remove_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, VolumeRemoval{Name: name, Removed: removed})
 }
 
 // GetService reports the runtime state of one Service.
@@ -329,6 +441,15 @@ func toServiceState(state runtime.ServiceState) ServiceState {
 	}
 
 	return result
+}
+
+func toVolumeInfo(state runtime.VolumeState) VolumeInfo {
+	return VolumeInfo{
+		Name:    state.Name,
+		SizeMb:  state.SizeMB,
+		UsageMb: state.UsageMB,
+		Exists:  state.Exists,
+	}
 }
 
 func deref(value *string) string {

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,6 +31,9 @@ var ErrUnknownService = errors.New("unknown service")
 // ErrInvalidDeploy is returned for a Deploy request that cannot be honoured.
 var ErrInvalidDeploy = errors.New("invalid deploy request")
 
+// MaxVolumeSizeMB is the spec limit for one Service Volume.
+const MaxVolumeSizeMB = 1024
+
 // DeployRequest describes one Deployment the agent must run.
 type DeployRequest struct {
 	DeploymentID   string
@@ -43,6 +47,25 @@ type DeployRequest struct {
 	CPULimit       float64
 	MemoryLimitMB  int
 	Environment    map[string]string
+	Volume         *VolumeMount
+}
+
+// VolumeRequest describes a Volume the Control Plane wants the node to own.
+type VolumeRequest struct {
+	Name           string
+	ServiceID      string
+	ProjectID      string
+	OrganizationID string
+	DeploymentID   string
+	SizeMB         int
+}
+
+// VolumeState is what the Control Plane reads back about a Volume.
+type VolumeState struct {
+	Name    string
+	SizeMB  int
+	UsageMB int64
+	Exists  bool
 }
 
 // DeployResult is the outcome of a Deploy.
@@ -205,6 +228,34 @@ func (m *Manager) deploy(ctx context.Context, request DeployRequest) DeployResul
 		_ = m.docker.RemoveContainer(ctx, stale.ID, true)
 	}
 
+	// A Volume is created before the container so a missing Volume is a clear
+	// Deployment failure rather than a container that starts and cannot write.
+	if request.Volume != nil {
+		volume := request.Volume
+		if err := m.ensureVolume(ctx, VolumeRequest{
+			Name:           volume.Name,
+			ServiceID:      request.ServiceID,
+			ProjectID:      request.ProjectID,
+			OrganizationID: request.OrganizationID,
+			DeploymentID:   request.DeploymentID,
+			SizeMB:         volume.SizeMB,
+		}); err != nil {
+			return failedResult(request, err.Error())
+		}
+
+		usage, exists, err := m.docker.VolumeUsage(ctx, volume.Name)
+		if err != nil {
+			return failedResult(request, fmt.Sprintf("Could not read the Volume usage: %v", err))
+		}
+		if exists && usage > int64(volume.SizeMB) {
+			return failedResult(request, fmt.Sprintf(
+				"The Volume already uses %d MB, which is over its %d MB limit. Free some space or raise the limit.",
+				usage,
+				volume.SizeMB,
+			))
+		}
+	}
+
 	spec := ContainerSpec{
 		Name:         candidateName,
 		Network:      network,
@@ -214,6 +265,7 @@ func (m *Manager) deploy(ctx context.Context, request DeployRequest) DeployResul
 		CPU:          request.CPULimit,
 		MemoryMB:     request.MemoryLimitMB,
 		Environment:  request.Environment,
+		Volume:       request.Volume,
 		ReadOnlyRoot: true,
 		Labels: map[string]string{
 			LabelType:           ResourceTypeService,
@@ -225,6 +277,11 @@ func (m *Manager) deploy(ctx context.Context, request DeployRequest) DeployResul
 			LabelPort:           strconv.Itoa(request.ContainerPort),
 			LabelAlias:          candidateAlias,
 		},
+	}
+	if request.Volume != nil {
+		spec.Labels[LabelVolumeName] = request.Volume.Name
+		spec.Labels[LabelVolumePath] = request.Volume.MountPath
+		spec.Labels[LabelVolumeSizeMb] = strconv.Itoa(request.Volume.SizeMB)
 	}
 
 	candidateID, err := m.docker.CreateContainer(ctx, spec)
@@ -288,6 +345,119 @@ func (m *Manager) deploy(ctx context.Context, request DeployRequest) DeployResul
 		ContainerID:  candidateID,
 		Hostname:     request.Hostname,
 	}
+}
+
+// ensureVolume creates the Volume when needed and labels it with its owners. The
+// labels are what let Cleanup and Remove find it without asking the Control Plane.
+func (m *Manager) ensureVolume(ctx context.Context, request VolumeRequest) error {
+	if err := validateVolumeRequest(request); err != nil {
+		return err
+	}
+
+	labels := map[string]string{
+		LabelType:           ResourceTypeVolume,
+		LabelOrganizationID: request.OrganizationID,
+		LabelProjectID:      request.ProjectID,
+		LabelServiceID:      request.ServiceID,
+	}
+	if request.DeploymentID != "" {
+		labels[LabelDeploymentID] = request.DeploymentID
+	}
+
+	if err := m.docker.EnsureVolume(ctx, VolumeSpec{
+		Name:   request.Name,
+		SizeMB: request.SizeMB,
+		Labels: labels,
+	}); err != nil {
+		return fmt.Errorf("Could not prepare the Volume: %v", err)
+	}
+
+	return nil
+}
+
+// EnsureVolume creates or adopts a Volume and reports its usage, so the Control
+// Plane can show the same numbers the node enforces.
+func (m *Manager) EnsureVolume(ctx context.Context, request VolumeRequest) (VolumeState, error) {
+	if err := m.ensureVolume(ctx, request); err != nil {
+		return VolumeState{}, err
+	}
+
+	return m.volumeState(ctx, request.Name, request.SizeMB)
+}
+
+// GetVolume reports a Volume's limit and usage. A Volume that does not exist yet
+// answers `Exists: false` instead of an error, because a Service with a Volume row
+// may not have been deployed since the node lost its data.
+func (m *Manager) GetVolume(ctx context.Context, name string, sizeMB int) (VolumeState, error) {
+	if strings.TrimSpace(name) == "" {
+		return VolumeState{}, fmt.Errorf("%w: volume name is required", ErrInvalidDeploy)
+	}
+
+	return m.volumeState(ctx, name, sizeMB)
+}
+
+func (m *Manager) volumeState(ctx context.Context, name string, sizeMB int) (VolumeState, error) {
+	usage, exists, err := m.docker.VolumeUsage(ctx, name)
+	if err != nil {
+		return VolumeState{}, err
+	}
+
+	return VolumeState{Name: name, SizeMB: sizeMB, UsageMB: usage, Exists: exists}, nil
+}
+
+// RemoveVolume deletes one Volume and its data, reporting whether it existed.
+func (m *Manager) RemoveVolume(ctx context.Context, name string) (bool, error) {
+	if strings.TrimSpace(name) == "" {
+		return false, fmt.Errorf("%w: volume name is required", ErrInvalidDeploy)
+	}
+
+	return m.docker.RemoveVolume(ctx, name)
+}
+
+// EnforceVolumes stops a Service container whose Volume is over its limit. Docker's
+// local driver cannot enforce a per-Volume quota, so the node enforces it by
+// measuring and stopping the writer instead of letting it fill the disk.
+func (m *Manager) EnforceVolumes(ctx context.Context) (int, error) {
+	containers, err := m.docker.ListContainers(ctx, map[string]string{LabelType: ResourceTypeService})
+	if err != nil {
+		return 0, err
+	}
+
+	stopped := 0
+	for _, container := range containers {
+		if !container.Running() {
+			continue
+		}
+
+		name := container.Labels[LabelVolumeName]
+		if name == "" {
+			continue
+		}
+		sizeMB, err := strconv.Atoi(container.Labels[LabelVolumeSizeMb])
+		if err != nil || sizeMB <= 0 {
+			continue
+		}
+
+		usage, exists, err := m.docker.VolumeUsage(ctx, name)
+		if err != nil || !exists || usage <= int64(sizeMB) {
+			continue
+		}
+
+		log.Printf(
+			"volume %s uses %d MB, over its %d MB limit; stopping Service %s",
+			name,
+			usage,
+			sizeMB,
+			container.Labels[LabelServiceID],
+		)
+		if err := m.docker.StopContainer(ctx, container.ID); err != nil {
+			log.Printf("volume %s: could not stop the over-quota container: %v", name, err)
+			continue
+		}
+		stopped++
+	}
+
+	return stopped, nil
 }
 
 // waitHealthy polls until the container answers on its port and, when a health
@@ -421,26 +591,38 @@ func (m *Manager) Restart(ctx context.Context, serviceID string) (ServiceState, 
 	return m.state(ctx, serviceID)
 }
 
-// Remove stops the container, deletes its route, and removes the container so a
-// deleted Service leaves nothing behind on the node.
+// Remove stops the container, deletes its route, and removes the container and
+// Volume so a deleted Service leaves nothing behind on the node.
 func (m *Manager) Remove(ctx context.Context, serviceID string) (ServiceState, error) {
 	unlock := m.lockService(serviceID)
 	defer unlock()
 
-	info, err := m.docker.InspectContainer(ctx, serviceContainerName(serviceID))
-	if err != nil {
-		return ServiceState{ServiceID: serviceID, Status: "absent"}, nil
-	}
+	if info, err := m.docker.InspectContainer(ctx, serviceContainerName(serviceID)); err == nil {
+		if hostname := info.Labels[LabelHostname]; hostname != "" {
+			if err := m.router.DeleteRoute(ctx, hostname); err != nil {
+				return ServiceState{}, err
+			}
+		}
 
-	if hostname := info.Labels[LabelHostname]; hostname != "" {
-		if err := m.router.DeleteRoute(ctx, hostname); err != nil {
+		_ = m.docker.StopContainer(ctx, info.ID)
+		if err := m.docker.RemoveContainer(ctx, info.ID, true); err != nil {
 			return ServiceState{}, err
 		}
 	}
 
-	_ = m.docker.StopContainer(ctx, info.ID)
-	if err := m.docker.RemoveContainer(ctx, info.ID, true); err != nil {
+	// The Volume is removed even when the container was already gone, so a
+	// half-cleaned Service cannot leave a Volume with customer data behind.
+	volumes, err := m.docker.ListVolumes(ctx, map[string]string{
+		LabelType:      ResourceTypeVolume,
+		LabelServiceID: serviceID,
+	})
+	if err != nil {
 		return ServiceState{}, err
+	}
+	for _, volume := range volumes {
+		if _, err := m.docker.RemoveVolume(ctx, volume.Name); err != nil {
+			return ServiceState{}, err
+		}
 	}
 
 	return ServiceState{ServiceID: serviceID, Status: "absent"}, nil
@@ -691,6 +873,27 @@ func containerPortOf(info ContainerInfo) (int, error) {
 
 	return port, nil
 }
+
+// validateVolumeRequest rejects a Volume the agent could not create or mount.
+func validateVolumeRequest(request VolumeRequest) error {
+	switch {
+	case !volumeNamePattern.MatchString(request.Name):
+		return fmt.Errorf("%w: volume name %q is not a valid Docker volume name", ErrInvalidDeploy, request.Name)
+	case strings.TrimSpace(request.ServiceID) == "":
+		return fmt.Errorf("%w: serviceId is required", ErrInvalidDeploy)
+	case strings.TrimSpace(request.ProjectID) == "":
+		return fmt.Errorf("%w: projectId is required", ErrInvalidDeploy)
+	case strings.TrimSpace(request.OrganizationID) == "":
+		return fmt.Errorf("%w: organizationId is required", ErrInvalidDeploy)
+	case request.SizeMB <= 0 || request.SizeMB > MaxVolumeSizeMB:
+		return fmt.Errorf("%w: sizeMb must be between 1 and %d", ErrInvalidDeploy, MaxVolumeSizeMB)
+	}
+
+	return nil
+}
+
+// volumeNamePattern is Docker's own rule for a Volume name.
+var volumeNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 
 func upstream(host string, port int) string {
 	return host + ":" + strconv.Itoa(port)

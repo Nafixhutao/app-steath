@@ -1358,6 +1358,18 @@ a:hover {
 .environment-value {
   overflow-wrap: anywhere;
 }
+.volume-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 140px;
+}
+.volume-usage-bar {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: #b5a8ff;
+}
 .dashboard-link-button {
   padding: 0;
   border: 0;

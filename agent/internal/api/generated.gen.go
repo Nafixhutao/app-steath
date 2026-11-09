@@ -176,12 +176,13 @@ type DeployRequest struct {
 	HealthPath *string `json:"healthPath,omitempty"`
 
 	// Hostname Platform Subdomain the route is created for.
-	Hostname       string `json:"hostname"`
-	ImageRef       string `json:"imageRef"`
-	MemoryLimitMb  int    `json:"memoryLimitMb"`
-	OrganizationId string `json:"organizationId"`
-	ProjectId      string `json:"projectId"`
-	ServiceId      string `json:"serviceId"`
+	Hostname       string       `json:"hostname"`
+	ImageRef       string       `json:"imageRef"`
+	MemoryLimitMb  int          `json:"memoryLimitMb"`
+	OrganizationId string       `json:"organizationId"`
+	ProjectId      string       `json:"projectId"`
+	ServiceId      string       `json:"serviceId"`
+	Volume         *VolumeMount `json:"volume,omitempty"`
 }
 
 // Deployment defines model for Deployment.
@@ -265,6 +266,49 @@ type ServiceState struct {
 // ServiceStateStatus defines model for ServiceState.Status.
 type ServiceStateStatus string
 
+// VolumeInfo defines model for VolumeInfo.
+type VolumeInfo struct {
+	// Exists False when the Volume has not been created yet.
+	Exists bool   `json:"exists"`
+	Name   string `json:"name"`
+	SizeMb int    `json:"sizeMb"`
+
+	// UsageMb Space the Volume currently uses, measured on the node.
+	UsageMb int64 `json:"usageMb"`
+}
+
+// VolumeMount defines model for VolumeMount.
+type VolumeMount struct {
+	// MountPath Absolute path inside the container that the Volume is mounted at.
+	MountPath string `json:"mountPath"`
+
+	// Name Docker Volume name the agent creates for this Service.
+	Name string `json:"name"`
+
+	// SizeMb Size limit in MB. The platform caps a Service Volume at 1024.
+	SizeMb int `json:"sizeMb"`
+}
+
+// VolumeRemoval defines model for VolumeRemoval.
+type VolumeRemoval struct {
+	Name string `json:"name"`
+
+	// Removed True when this call actually deleted the Volume.
+	Removed bool `json:"removed"`
+}
+
+// VolumeRequest defines model for VolumeRequest.
+type VolumeRequest struct {
+	// DeploymentId Deployment that most recently asked for the Volume.
+	DeploymentId   *string `json:"deploymentId,omitempty"`
+	OrganizationId string  `json:"organizationId"`
+	ProjectId      string  `json:"projectId"`
+	ServiceId      string  `json:"serviceId"`
+
+	// SizeMb Size limit in MB, enforced by the agent.
+	SizeMb int `json:"sizeMb"`
+}
+
 // BuildId defines model for BuildId.
 type BuildId = string
 
@@ -273,6 +317,9 @@ type DeploymentId = string
 
 // ServiceId defines model for ServiceId.
 type ServiceId = string
+
+// VolumeName defines model for VolumeName.
+type VolumeName = string
 
 // StreamBuildLogsParams defines parameters for StreamBuildLogs.
 type StreamBuildLogsParams struct {
@@ -286,6 +333,12 @@ type StreamServiceLogsParams struct {
 	Tail *int `form:"tail,omitempty" json:"tail,omitempty"`
 }
 
+// GetVolumeParams defines parameters for GetVolume.
+type GetVolumeParams struct {
+	// SizeMb The Volume's configured limit, echoed back in the response.
+	SizeMb *int `form:"sizeMb,omitempty" json:"sizeMb,omitempty"`
+}
+
 // StartBuildJSONRequestBody defines body for StartBuild for application/json ContentType.
 type StartBuildJSONRequestBody = BuildRequest
 
@@ -294,6 +347,9 @@ type DeployServiceJSONRequestBody = DeployRequest
 
 // CancelDeploymentJSONRequestBody defines body for CancelDeployment for application/json ContentType.
 type CancelDeploymentJSONRequestBody = CancelDeploymentRequest
+
+// EnsureVolumeJSONRequestBody defines body for EnsureVolume for application/json ContentType.
+type EnsureVolumeJSONRequestBody = VolumeRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -339,6 +395,15 @@ type ServerInterface interface {
 	// StopService Stop a Service container
 	// (POST /v1/services/{serviceId}/stop)
 	StopService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// RemoveVolume Remove a Volume
+	// (DELETE /v1/volumes/{name})
+	RemoveVolume(w http.ResponseWriter, r *http.Request, name VolumeName)
+	// GetVolume Read a Volume and its usage
+	// (GET /v1/volumes/{name})
+	GetVolume(w http.ResponseWriter, r *http.Request, name VolumeName, params GetVolumeParams)
+	// EnsureVolume Create a Volume or refresh its labels
+	// (PUT /v1/volumes/{name})
+	EnsureVolume(w http.ResponseWriter, r *http.Request, name VolumeName)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -698,6 +763,100 @@ func (siw *ServerInterfaceWrapper) StopService(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// RemoveVolume operation middleware
+func (siw *ServerInterfaceWrapper) RemoveVolume(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name VolumeName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveVolume(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetVolume operation middleware
+func (siw *ServerInterfaceWrapper) GetVolume(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name VolumeName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetVolumeParams
+
+	// ------------- Optional query parameter "sizeMb" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sizeMb", r.URL.Query(), &params.SizeMb, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sizeMb"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sizeMb", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetVolume(w, r, name, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnsureVolume operation middleware
+func (siw *ServerInterfaceWrapper) EnsureVolume(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name VolumeName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnsureVolume(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -832,6 +991,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/start", wrapper.StartService)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/restart", wrapper.RestartService)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/services/{serviceId}/logs", wrapper.StreamServiceLogs)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/volumes/{name}", wrapper.RemoveVolume)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/volumes/{name}", wrapper.GetVolume)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/v1/volumes/{name}", wrapper.EnsureVolume)
 
 	return m
 }

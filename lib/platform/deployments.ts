@@ -9,6 +9,7 @@ import {
 import { ApiError } from "./api-error.ts";
 import { loadDeploymentEnvironment } from "./environment-variables.ts";
 import { nodeConfig, requireHealthyNode } from "./nodes.ts";
+import { loadDeploymentVolume } from "./volumes.ts";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -430,15 +431,17 @@ export async function runDeployment(
   // revision is newer afterwards is honestly reported as needing a redeploy.
   let environment: Array<{ name: string; value: string }>;
   let envRevision: number;
+  let volume: { name: string; mountPath: string; sizeMb: number } | null;
   try {
     const snapshot = await loadDeploymentEnvironment(deployment.serviceId);
     envRevision = snapshot.revision;
     environment = snapshot.environment;
+    volume = await loadDeploymentVolume(deployment.serviceId);
   } catch (error) {
     const message =
       error instanceof ApiError
         ? error.message
-        : "The Service's Environment Variables could not be read.";
+        : "The Service's Environment Variables or Volume could not be read.";
     await markDeploymentFailed(deploymentId, message);
     return { status: "failed", message };
   }
@@ -464,6 +467,7 @@ export async function runDeployment(
       cpuLimit: Number(deployment.cpuLimit),
       memoryLimitMb: deployment.memoryLimitMb,
       ...(environment.length > 0 ? { environmentVariables: environment } : {}),
+      ...(volume ? { volume } : {}),
       ...(deployment.healthPath ? { healthPath: deployment.healthPath } : {}),
     },
   });

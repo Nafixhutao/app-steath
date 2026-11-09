@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.4.0
+  version: 0.5.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
     only caller: it authenticates with a bearer token, starts Builds, runs the
@@ -416,6 +416,107 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/volumes/{name}:
+    put:
+      operationId: ensureVolume
+      summary: Create a Volume or refresh its labels
+      description: |
+        Creates the named Volume when it does not exist and labels it with the
+        Organization, Project, Service, and Deployment that own it. Calling this
+        again for an existing Volume is a no-op, so a retried Deploy never
+        replaces the data.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VolumeName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolumeRequest"
+      responses:
+        "200":
+          description: Volume ensured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeInfo"
+        "400":
+          description: Invalid Volume request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: getVolume
+      summary: Read a Volume and its usage
+      description: |
+        Reports the Volume's size limit and the space it currently uses. Usage is
+        measured on the node, so the Control Plane never has to reach into the
+        Docker daemon.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VolumeName"
+        - name: sizeMb
+          in: query
+          required: false
+          description: The Volume's configured limit, echoed back in the response.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1024
+            default: 1024
+      responses:
+        "200":
+          description: Volume information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeInfo"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Volume
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeVolume
+      summary: Remove a Volume
+      description: |
+        Deletes the Volume and everything stored in it. Used when a Service's
+        Volume is deleted or the Service itself is removed, so no data is left
+        orphaned. Removing a Volume that is already gone is not an error.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VolumeName"
+      responses:
+        "200":
+          description: Volume removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeRemoval"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -441,6 +542,13 @@ components:
       in: path
       required: true
       description: Deployment id that owns the Build and the container.
+      schema:
+        type: string
+    VolumeName:
+      name: name
+      in: path
+      required: true
+      description: Docker Volume name the agent created for a Service.
       schema:
         type: string
   schemas:
@@ -554,6 +662,72 @@ components:
           description: |
             Sent in the request body only. The Node Agent passes it to the
             container and never writes it to a log or to disk.
+    VolumeMount:
+      type: object
+      required:
+        - name
+        - mountPath
+        - sizeMb
+      properties:
+        name:
+          type: string
+          description: Docker Volume name the agent creates for this Service.
+        mountPath:
+          type: string
+          description: Absolute path inside the container that the Volume is mounted at.
+        sizeMb:
+          type: integer
+          description: Size limit in MB. The platform caps a Service Volume at 1024.
+    VolumeRequest:
+      type: object
+      required:
+        - serviceId
+        - projectId
+        - organizationId
+        - sizeMb
+      properties:
+        serviceId:
+          type: string
+        projectId:
+          type: string
+        organizationId:
+          type: string
+        deploymentId:
+          type: string
+          description: Deployment that most recently asked for the Volume.
+        sizeMb:
+          type: integer
+          description: Size limit in MB, enforced by the agent.
+    VolumeInfo:
+      type: object
+      required:
+        - name
+        - sizeMb
+        - usageMb
+        - exists
+      properties:
+        name:
+          type: string
+        sizeMb:
+          type: integer
+        usageMb:
+          type: integer
+          format: int64
+          description: Space the Volume currently uses, measured on the node.
+        exists:
+          type: boolean
+          description: False when the Volume has not been created yet.
+    VolumeRemoval:
+      type: object
+      required:
+        - name
+        - removed
+      properties:
+        name:
+          type: string
+        removed:
+          type: boolean
+          description: True when this call actually deleted the Volume.
     DeployRequest:
       type: object
       required:
@@ -595,6 +769,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EnvironmentVariable"
+        volume:
+          $ref: "#/components/schemas/VolumeMount"
     Deployment:
       type: object
       required:

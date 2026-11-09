@@ -32,7 +32,14 @@ const (
 	LabelPort  = "stealth.port"
 	LabelAlias = "stealth.alias"
 
+	// Volume labels let the agent find a Service's Volume after a restart
+	// without the Control Plane, and keep every Volume attributable to its owner.
+	LabelVolumeName   = "stealth.volumeName"
+	LabelVolumePath   = "stealth.volumePath"
+	LabelVolumeSizeMb = "stealth.volumeSizeMb"
+
 	ResourceTypeService = "service"
+	ResourceTypeVolume  = "volume"
 )
 
 // ContainerSpec is one Service container the agent wants running.
@@ -49,9 +56,35 @@ type ContainerSpec struct {
 	CPU          float64
 	MemoryMB     int
 	Environment  map[string]string
-	Labels       map[string]string
+	// Volume is the Service's persistent Volume, mounted at MountPath. Nil
+	// means the Service has no Volume.
+	Volume *VolumeMount
+	Labels map[string]string
 	// ReadOnlyRoot keeps the container filesystem immutable; /tmp is a tmpfs.
 	ReadOnlyRoot bool
+}
+
+// VolumeMount is a named Docker Volume at a path inside the container.
+type VolumeMount struct {
+	Name      string
+	MountPath string
+	SizeMB    int
+}
+
+// VolumeSpec describes a Volume the agent should create or adopt.
+type VolumeSpec struct {
+	Name   string
+	SizeMB int
+	// Labels are written on creation. Docker keeps the labels forever, which is
+	// what lets Cleanup find a Volume whose Service is gone.
+	Labels map[string]string
+}
+
+// VolumeInfo is a Volume the agent knows about, with the labels it was created
+// with.
+type VolumeInfo struct {
+	Name   string
+	Labels map[string]string
 }
 
 // ContainerInfo is what the agent needs to know about a container.
@@ -126,6 +159,19 @@ type Docker interface {
 	ListImages(ctx context.Context, repositoryPrefix string) ([]ImageInfo, error)
 	// PruneBuildCache drops BuildKit cache older than the given age.
 	PruneBuildCache(ctx context.Context, olderThan time.Duration) error
+	// EnsureVolume creates the named Volume when it is missing and applies its
+	// labels. It never replaces an existing Volume, so data survives a redeploy.
+	EnsureVolume(ctx context.Context, spec VolumeSpec) error
+	// VolumeUsage reports how many megabytes a Volume currently uses and whether
+	// the Volume exists at all. A Service can have a Volume row before its first
+	// Deployment created the Volume on this node.
+	VolumeUsage(ctx context.Context, name string) (int64, bool, error)
+	// RemoveVolume deletes a Volume and its data, reporting whether it existed.
+	// A missing Volume is not an error, because removal must be safe to retry.
+	RemoveVolume(ctx context.Context, name string) (bool, error)
+	// ListVolumes returns the Volumes that match every label, with the labels the
+	// cleanup needs to decide whether their Service still exists.
+	ListVolumes(ctx context.Context, labels map[string]string) ([]VolumeInfo, error)
 }
 
 // CLIDocker implements Docker by shelling out to the docker CLI.
@@ -192,6 +238,17 @@ func (d *CLIDocker) CreateContainer(ctx context.Context, spec ContainerSpec) (st
 		// A read-only root filesystem still needs somewhere to write; /tmp is a
 		// small tmpfs with noexec and nosuid.
 		args = append(args, "--read-only", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m")
+	}
+
+	if spec.Volume != nil {
+		// The Volume is the only writable path on an otherwise immutable
+		// container, and its name is stable per Service so redeploys and
+		// restarts keep the same data.
+		args = append(args, "--mount", fmt.Sprintf(
+			"type=volume,source=%s,target=%s",
+			spec.Volume.Name,
+			spec.Volume.MountPath,
+		))
 	}
 
 	for _, pair := range sortedPairs(spec.Labels) {
@@ -525,6 +582,140 @@ func formatPruneAge(olderThan time.Duration) string {
 	}
 
 	return strconv.Itoa(hours) + "h"
+}
+
+// EnsureVolume creates the Volume if it is missing and labels it. `docker volume
+// create` is idempotent: for an existing Volume it returns the name and keeps
+// the data, which is what makes a redeploy safe.
+func (d *CLIDocker) EnsureVolume(ctx context.Context, spec VolumeSpec) error {
+	if _, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{"volume", "inspect", spec.Name, "--format", "{{.Name}}"},
+	}); err == nil {
+		// An existing Volume keeps its data, labels, and permissions. Recreating
+		// or re-chmodding it on every Deploy would fight the application.
+		return nil
+	}
+
+	args := []string{"volume", "create"}
+	for _, pair := range sortedPairs(spec.Labels) {
+		args = append(args, "--label", pair[0]+"="+pair[1])
+	}
+	args = append(args, spec.Name)
+
+	if _, err := d.runner.Output(ctx, exec.Options{Name: "docker", Args: args}); err != nil {
+		return err
+	}
+
+	// Docker creates a named Volume owned by root, but a Service image usually
+	// runs as a non-root user. Opening the Volume to writes is what makes the
+	// mount usable; the Volume is only ever attached to that Service's containers.
+	_, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"run", "--rm", "--network", "none",
+			"--mount", "type=volume,source=" + spec.Name + ",target=/volume",
+			"--entrypoint", "/bin/sh",
+			d.probeImage,
+			"-c", "chmod 0777 /volume",
+		},
+	})
+
+	return err
+}
+
+// VolumeUsage measures the Volume with a throwaway container. Docker has no
+// portable per-Volume quota on the local driver, so the agent enforces the limit
+// by measuring and reacting rather than by asking Docker to refuse writes.
+func (d *CLIDocker) VolumeUsage(ctx context.Context, name string) (int64, bool, error) {
+	if _, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{"volume", "inspect", name, "--format", "{{.Name}}"},
+	}); err != nil {
+		return 0, false, nil
+	}
+
+	output, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"run", "--rm", "--network", "none",
+			"--mount", "type=volume,source=" + name + ",target=/volume,readonly",
+			"--entrypoint", "/bin/sh",
+			d.probeImage,
+			"-c", "du -sk /volume | cut -f1",
+		},
+	})
+	if err != nil {
+		return 0, true, err
+	}
+
+	kilobytes, err := strconv.ParseInt(strings.TrimSpace(output), 10, 64)
+	if err != nil {
+		return 0, true, fmt.Errorf("read the Volume usage of %s: %w", name, err)
+	}
+
+	// Round up so a Volume that is a single byte over a megabyte is reported as
+	// over the limit rather than truncated back under it.
+	return (kilobytes + 1023) / 1024, true, nil
+}
+
+// RemoveVolume deletes a Volume, reporting whether it existed. A Volume that is
+// already gone counts as removed, so a retried cleanup never fails on a missing
+// Volume.
+func (d *CLIDocker) RemoveVolume(ctx context.Context, name string) (bool, error) {
+	if _, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{"volume", "inspect", name, "--format", "{{.Name}}"},
+	}); err != nil {
+		return false, nil
+	}
+
+	if _, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{"volume", "rm", "--force", name},
+	}); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// ListVolumes returns the Volumes that carry every requested label. The labels
+// are read back so the cleanup can attribute a Volume to its Service.
+func (d *CLIDocker) ListVolumes(ctx context.Context, labels map[string]string) ([]VolumeInfo, error) {
+	args := []string{"volume", "ls", "--format", "{{.Name}}"}
+	for _, pair := range sortedPairs(labels) {
+		args = append(args, "--filter", "label="+pair[0]+"="+pair[1])
+	}
+
+	output, err := d.runner.Output(ctx, exec.Options{Name: "docker", Args: args})
+	if err != nil {
+		return nil, err
+	}
+
+	var volumes []VolumeInfo
+	for _, name := range strings.Fields(output) {
+		raw, err := d.runner.Output(ctx, exec.Options{
+			Name: "docker",
+			Args: []string{"volume", "inspect", name, "--format", "{{json .}}"},
+		})
+		if err != nil {
+			// A Volume can disappear between `ls` and `inspect`; skip it rather
+			// than failing the whole listing.
+			continue
+		}
+
+		var inspected struct {
+			Name   string            `json:"Name"`
+			Labels map[string]string `json:"Labels"`
+		}
+		if err := json.Unmarshal([]byte(raw), &inspected); err != nil {
+			continue
+		}
+		volumes = append(volumes, VolumeInfo{Name: inspected.Name, Labels: inspected.Labels})
+	}
+
+	return volumes, nil
 }
 
 // sortedPairs keeps argument order stable, which makes the recorded commands in

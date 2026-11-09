@@ -255,6 +255,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/volumes/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a Volume and its usage
+         * @description Reports the Volume's size limit and the space it currently uses. Usage is
+         *     measured on the node, so the Control Plane never has to reach into the
+         *     Docker daemon.
+         */
+        get: operations["getVolume"];
+        /**
+         * Create a Volume or refresh its labels
+         * @description Creates the named Volume when it does not exist and labels it with the
+         *     Organization, Project, Service, and Deployment that own it. Calling this
+         *     again for an existing Volume is a no-op, so a retried Deploy never
+         *     replaces the data.
+         */
+        put: operations["ensureVolume"];
+        post?: never;
+        /**
+         * Remove a Volume
+         * @description Deletes the Volume and everything stored in it. Used when a Service's
+         *     Volume is deleted or the Service itself is removed, so no data is left
+         *     orphaned. Removing a Volume that is already gone is not an error.
+         */
+        delete: operations["removeVolume"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -312,6 +347,39 @@ export interface components {
              */
             value: string;
         };
+        VolumeMount: {
+            /** @description Docker Volume name the agent creates for this Service. */
+            name: string;
+            /** @description Absolute path inside the container that the Volume is mounted at. */
+            mountPath: string;
+            /** @description Size limit in MB. The platform caps a Service Volume at 1024. */
+            sizeMb: number;
+        };
+        VolumeRequest: {
+            serviceId: string;
+            projectId: string;
+            organizationId: string;
+            /** @description Deployment that most recently asked for the Volume. */
+            deploymentId?: string;
+            /** @description Size limit in MB, enforced by the agent. */
+            sizeMb: number;
+        };
+        VolumeInfo: {
+            name: string;
+            sizeMb: number;
+            /**
+             * Format: int64
+             * @description Space the Volume currently uses, measured on the node.
+             */
+            usageMb: number;
+            /** @description False when the Volume has not been created yet. */
+            exists: boolean;
+        };
+        VolumeRemoval: {
+            name: string;
+            /** @description True when this call actually deleted the Volume. */
+            removed: boolean;
+        };
         DeployRequest: {
             /** @description Deployment id; makes Deploy idempotent. */
             deploymentId: string;
@@ -328,6 +396,7 @@ export interface components {
             cpuLimit: number;
             memoryLimitMb: number;
             environmentVariables?: components["schemas"]["EnvironmentVariable"][];
+            volume?: components["schemas"]["VolumeMount"];
         };
         Deployment: {
             deploymentId: string;
@@ -386,6 +455,8 @@ export interface components {
         ServiceId: string;
         /** @description Deployment id that owns the Build and the container. */
         DeploymentId: string;
+        /** @description Docker Volume name the agent created for a Service. */
+        VolumeName: string;
     };
     requestBodies: never;
     headers: never;
@@ -919,6 +990,127 @@ export interface operations {
             };
             /** @description Service has no container yet */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getVolume: {
+        parameters: {
+            query?: {
+                /** @description The Volume's configured limit, echoed back in the response. */
+                sizeMb?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Docker Volume name the agent created for a Service. */
+                name: components["parameters"]["VolumeName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Volume information */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VolumeInfo"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unknown Volume */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    ensureVolume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Docker Volume name the agent created for a Service. */
+                name: components["parameters"]["VolumeName"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VolumeRequest"];
+            };
+        };
+        responses: {
+            /** @description Volume ensured */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VolumeInfo"];
+                };
+            };
+            /** @description Invalid Volume request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeVolume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Docker Volume name the agent created for a Service. */
+                name: components["parameters"]["VolumeName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Volume removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VolumeRemoval"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
