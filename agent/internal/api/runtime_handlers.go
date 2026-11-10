@@ -48,6 +48,7 @@ type RuntimeDeployer interface {
 		serviceID string,
 		hostname string,
 	) (runtime.ServiceHostnameState, error)
+	Usage(ctx context.Context) (runtime.UsageReport, error)
 	Logs(
 		ctx context.Context,
 		serviceID string,
@@ -519,6 +520,24 @@ func (s server) GetService(w http.ResponseWriter, r *http.Request, serviceID Ser
 	writeJSON(w, http.StatusOK, toServiceState(state))
 }
 
+// GetUsage reports the current CPU, memory, and storage usage of every Service
+// and Database on the node. The Control Plane stores the report as UsageSnapshots
+// for the Quota dashboard.
+func (s server) GetUsage(w http.ResponseWriter, r *http.Request) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	report, err := s.runtime.Usage(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "usage_read_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toUsageReport(report))
+}
+
 // RemoveService deletes the container and its route.
 func (s server) RemoveService(w http.ResponseWriter, r *http.Request, serviceID ServiceId) {
 	if s.runtime == nil {
@@ -762,6 +781,30 @@ func toServiceHostnameState(state runtime.ServiceHostnameState) ServiceHostnameS
 		Hostname:  state.Hostname,
 		Routed:    state.Routed,
 	}
+}
+
+func toUsageReport(report runtime.UsageReport) UsageReport {
+	result := UsageReport{
+		CapturedAt: report.CapturedAt,
+		Services:   make([]ServiceUsage, 0, len(report.Services)),
+		Databases:  make([]DatabaseUsage, 0, len(report.Databases)),
+	}
+	for _, service := range report.Services {
+		result.Services = append(result.Services, ServiceUsage{
+			ServiceId:     service.ServiceID,
+			CpuUsage:      float32(service.CPUUsage),
+			MemoryUsageMb: int(service.MemoryUsageMB),
+			VolumeUsageMb: int(service.VolumeUsageMB),
+		})
+	}
+	for _, database := range report.Databases {
+		result.Databases = append(result.Databases, DatabaseUsage{
+			DatabaseId: database.DatabaseID,
+			UsageMb:    int(database.UsageMB),
+		})
+	}
+
+	return result
 }
 
 func toVolumeInfo(state runtime.VolumeState) VolumeInfo {

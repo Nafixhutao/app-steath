@@ -428,7 +428,9 @@ type DatabaseBody = {
   updatedAt: string;
 };
 type DatabaseListBody = { database: DatabaseBody | null; needsRedeploy: boolean };
-type FailureBody = { error: { code: string; message: string } };
+type FailureBody = {
+  error: { code: string; message: string; details?: Record<string, unknown> };
+};
 
 async function createProject(cookie: string, name: string): Promise<{ id: string; name: string }> {
   const { POST } = await import("@/app/api/projects/route");
@@ -642,6 +644,12 @@ describe("Databases", () => {
     const failure = (await duplicate.json()) as FailureBody;
     expect(failure.error.code).toBe("quota_exceeded");
     expect(failure.error.message).toContain("Database Quota reached");
+    expect(failure.error.details).toEqual({
+      resource: "database",
+      scope: "project",
+      limit: 1,
+      usage: 1,
+    });
 
     // The Project summary counts the Database.
     const { GET: getProjectRoute } = await import("@/app/api/projects/[projectId]/route");

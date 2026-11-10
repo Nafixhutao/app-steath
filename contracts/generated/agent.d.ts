@@ -38,6 +38,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Measure CPU, memory, and storage usage on the node
+         * @description Reports the current usage of every Service and Database the agent owns.
+         *     CPU and memory come from Docker stats; Volume and Database storage are
+         *     measured on disk. The Control Plane stores the report as UsageSnapshots
+         *     for the Quota dashboard, so the node is only asked once per refresh.
+         */
+        get: operations["getUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/builds": {
         parameters: {
             query?: never;
@@ -418,6 +441,23 @@ export interface components {
             cpuCount?: number;
             memoryMb?: number;
         };
+        UsageReport: {
+            /** Format: date-time */
+            capturedAt: string;
+            services: components["schemas"]["ServiceUsage"][];
+            databases: components["schemas"]["DatabaseUsage"][];
+        };
+        ServiceUsage: {
+            serviceId: string;
+            /** @description CPU used in vCPU, measured from Docker stats. */
+            cpuUsage: number;
+            memoryUsageMb: number;
+            volumeUsageMb: number;
+        };
+        DatabaseUsage: {
+            databaseId: string;
+            usageMb: number;
+        };
         BuildRequest: {
             /** @description Deployment id; makes Build creation idempotent. */
             buildId: string;
@@ -701,6 +741,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeInfo"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Usage report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReport"];
                 };
             };
             /** @description Missing or invalid token */

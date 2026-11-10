@@ -269,6 +269,12 @@ type DatabaseState struct {
 // DatabaseStateStatus defines model for DatabaseState.Status.
 type DatabaseStateStatus string
 
+// DatabaseUsage defines model for DatabaseUsage.
+type DatabaseUsage struct {
+	DatabaseId string `json:"databaseId"`
+	UsageMb    int    `json:"usageMb"`
+}
+
 // DeployRequest defines model for DeployRequest.
 type DeployRequest struct {
 	ContainerPort int `json:"containerPort"`
@@ -383,6 +389,22 @@ type ServiceState struct {
 
 // ServiceStateStatus defines model for ServiceState.Status.
 type ServiceStateStatus string
+
+// ServiceUsage defines model for ServiceUsage.
+type ServiceUsage struct {
+	// CpuUsage CPU used in vCPU, measured from Docker stats.
+	CpuUsage      float32 `json:"cpuUsage"`
+	MemoryUsageMb int     `json:"memoryUsageMb"`
+	ServiceId     string  `json:"serviceId"`
+	VolumeUsageMb int     `json:"volumeUsageMb"`
+}
+
+// UsageReport defines model for UsageReport.
+type UsageReport struct {
+	CapturedAt time.Time       `json:"capturedAt"`
+	Databases  []DatabaseUsage `json:"databases"`
+	Services   []ServiceUsage  `json:"services"`
+}
 
 // VolumeInfo defines model for VolumeInfo.
 type VolumeInfo struct {
@@ -561,6 +583,9 @@ type ServerInterface interface {
 	// StopService Stop a Service container
 	// (POST /v1/services/{serviceId}/stop)
 	StopService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// GetUsage Measure CPU, memory, and storage usage on the node
+	// (GET /v1/usage)
+	GetUsage(w http.ResponseWriter, r *http.Request)
 	// RemoveVolume Remove a Volume
 	// (DELETE /v1/volumes/{name})
 	RemoveVolume(w http.ResponseWriter, r *http.Request, name VolumeName)
@@ -1197,6 +1222,20 @@ func (siw *ServerInterfaceWrapper) StopService(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// GetUsage operation middleware
+func (siw *ServerInterfaceWrapper) GetUsage(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUsage(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveVolume operation middleware
 func (siw *ServerInterfaceWrapper) RemoveVolume(w http.ResponseWriter, r *http.Request) {
 
@@ -1413,6 +1452,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/health", wrapper.GetHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/node", wrapper.GetNode)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/usage", wrapper.GetUsage)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/builds", wrapper.StartBuild)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.CancelBuild)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.GetBuild)

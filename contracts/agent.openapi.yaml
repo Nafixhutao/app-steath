@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.7.0
+  version: 0.8.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
     only caller: it authenticates with a bearer token, starts Builds, runs the
@@ -41,6 +41,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NodeInfo"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/usage:
+    get:
+      operationId: getUsage
+      summary: Measure CPU, memory, and storage usage on the node
+      description: |
+        Reports the current usage of every Service and Database the agent owns.
+        CPU and memory come from Docker stats; Volume and Database storage are
+        measured on disk. The Control Plane stores the report as UsageSnapshots
+        for the Quota dashboard, so the node is only asked once per refresh.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usage report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageReport"
         "401":
           description: Missing or invalid token
           content:
@@ -900,6 +924,51 @@ components:
         cpuCount:
           type: integer
         memoryMb:
+          type: integer
+    UsageReport:
+      type: object
+      required:
+        - capturedAt
+        - services
+        - databases
+      properties:
+        capturedAt:
+          type: string
+          format: date-time
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceUsage"
+        databases:
+          type: array
+          items:
+            $ref: "#/components/schemas/DatabaseUsage"
+    ServiceUsage:
+      type: object
+      required:
+        - serviceId
+        - cpuUsage
+        - memoryUsageMb
+        - volumeUsageMb
+      properties:
+        serviceId:
+          type: string
+        cpuUsage:
+          type: number
+          description: CPU used in vCPU, measured from Docker stats.
+        memoryUsageMb:
+          type: integer
+        volumeUsageMb:
+          type: integer
+    DatabaseUsage:
+      type: object
+      required:
+        - databaseId
+        - usageMb
+      properties:
+        databaseId:
+          type: string
+        usageMb:
           type: integer
     BuildRequest:
       type: object

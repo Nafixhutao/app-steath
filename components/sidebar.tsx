@@ -26,6 +26,7 @@ import {
   ChevronsUpDown,
   Code,
   ExternalLink,
+  Gauge,
   GitPullRequestArrow,
   Gift,
   Inbox,
@@ -66,12 +67,14 @@ type IconName =
   | "projects"
   | "services"
   | "databases"
-  | "domains";
+  | "domains"
+  | "gauge";
 
 type Theme = "light" | "dark" | "system";
 
 const primaryItems: Array<{ label: string; icon: IconName; href: string }> = [
   { label: "Overview", icon: "chart", href: "/dashboard" },
+  { label: "Usage", icon: "gauge", href: "/dashboard/usage" },
   { label: "Projects", icon: "projects", href: "/dashboard/projects" },
   { label: "Services", icon: "services", href: "/dashboard/services" },
   { label: "Databases", icon: "databases", href: "/dashboard/databases" },
@@ -132,6 +135,7 @@ const iconMap: Record<Exclude<IconName, "slack">, LucideIcon> = {
   services: Zap,
   databases: ShieldCheck,
   domains: ExternalLink,
+  gauge: Gauge,
 };
 
 function Icon({ name, size = 16 }: { name: IconName; size?: number }) {

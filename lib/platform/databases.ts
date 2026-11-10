@@ -19,7 +19,7 @@ import { decryptSecret, encryptSecret } from "./secrets.ts";
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 /** The spec limit for one Database. */
-export const MAX_DATABASE_STORAGE_MB = 1024;
+export const MAX_DATABASE_STORAGE_MB = QUOTAS.databaseStorageMb;
 
 /** The only engine and version the platform supports. */
 export const DATABASE_ENGINE = "postgres";

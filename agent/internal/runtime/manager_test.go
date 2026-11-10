@@ -43,6 +43,9 @@ type fakeDocker struct {
 	stopped []string
 	removed []string
 	renamed map[string]string
+	// stats is what ContainerStats reports, keyed by container id, so the usage
+	// tests can set measured CPU and memory.
+	stats map[string]ContainerStats
 
 	// volumeFiles records what WriteVolumeFiles wrote, keyed by Volume and file
 	// name, so the proxy tests can assert the generated configuration and TLS
@@ -88,6 +91,7 @@ func newFakeDocker() *fakeDocker {
 		images:      make(map[string]time.Time),
 		volumes:     make(map[string]*fakeVolume),
 		renamed:     make(map[string]string),
+		stats:       make(map[string]ContainerStats),
 		volumeFiles: make(map[string]map[string]string),
 	}
 }
@@ -410,6 +414,13 @@ func (f *fakeDocker) VolumeUsage(_ context.Context, name string) (int64, bool, e
 	}
 
 	return volume.UsageMB, true, nil
+}
+
+func (f *fakeDocker) ContainerStats(_ context.Context, containerID string) (ContainerStats, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return f.stats[containerID], nil
 }
 
 func (f *fakeDocker) RemoveVolume(_ context.Context, name string) (bool, error) {

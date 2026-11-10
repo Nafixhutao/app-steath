@@ -9,4 +9,11 @@ export const QUOTAS = {
   databasesPerProject: 1,
   cpuPerService: 0.5,
   memoryMbPerService: 512,
+  volumeMbPerService: 1024,
+  databaseStorageMb: 1024,
+  // The experiment runs one Build at a time per node, because the worker claims
+  // one Build Job at a time.
+  buildConcurrencyPerNode: 1,
+  // Build and runtime logs are deleted after this many days.
+  logRetentionDays: 7,
 } as const;

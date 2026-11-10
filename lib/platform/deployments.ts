@@ -10,6 +10,7 @@ import { ApiError } from "./api-error.ts";
 import { loadDeploymentDatabaseUrl } from "./databases.ts";
 import { loadDeploymentEnvironment } from "./environment-variables.ts";
 import { nodeConfig, requireHealthyNode } from "./nodes.ts";
+import { QUOTAS } from "./quota-limits.ts";
 import { loadDeploymentVolume } from "./volumes.ts";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -22,7 +23,7 @@ export const MAX_BUILD_ATTEMPTS = 3;
  * long enough to investigate a fresh problem, short enough that the disk does
  * not fill up.
  */
-export const LOG_RETENTION_DAYS = 7;
+export const LOG_RETENTION_DAYS = QUOTAS.logRetentionDays;
 
 export type DeploymentStatus =
   | "queued"

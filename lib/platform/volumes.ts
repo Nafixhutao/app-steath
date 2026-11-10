@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { nodeConfig } from "./nodes.ts";
+import { QUOTAS } from "./quota-limits.ts";
 
 /**
  * A Service's persistent Volume. The Control Plane owns the row that records the
@@ -13,7 +14,7 @@ import { nodeConfig } from "./nodes.ts";
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 /** The spec limit for one Service Volume. */
-export const MAX_VOLUME_SIZE_MB = 1024;
+export const MAX_VOLUME_SIZE_MB = QUOTAS.volumeMbPerService;
 
 /** Absolute path segments made of characters that are safe in `--mount`. */
 const MOUNT_PATH_PATTERN = /^\/[A-Za-z0-9._/-]+$/;

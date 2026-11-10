@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -136,6 +137,13 @@ type ContainerInfo struct {
 	PublishedPorts []int
 }
 
+// ContainerStats is the live resource usage Docker reports for one container.
+// CPUUsage is in vCPU, so 0.25 means a quarter of one core.
+type ContainerStats struct {
+	CPUUsage      float64
+	MemoryUsageMB int64
+}
+
 // ImageInfo is one local image the cleanup considers. Ref is the repository and
 // tag the agent wrote when it built the image, which is what removal needs.
 type ImageInfo struct {
@@ -205,6 +213,9 @@ type Docker interface {
 	// the Volume exists at all. A Service can have a Volume row before its first
 	// Deployment created the Volume on this node.
 	VolumeUsage(ctx context.Context, name string) (int64, bool, error)
+	// ContainerStats reports the live CPU and memory usage of one container.
+	// Stopped containers are not sampled; the caller treats them as zero.
+	ContainerStats(ctx context.Context, containerID string) (ContainerStats, error)
 	// RemoveVolume deletes a Volume and its data, reporting whether it existed.
 	// A missing Volume is not an error, because removal must be safe to retry.
 	RemoveVolume(ctx context.Context, name string) (bool, error)
@@ -737,6 +748,78 @@ func (d *CLIDocker) VolumeUsage(ctx context.Context, name string) (int64, bool, 
 	// Round up so a Volume that is a single byte over a megabyte is reported as
 	// over the limit rather than truncated back under it.
 	return (kilobytes + 1023) / 1024, true, nil
+}
+
+// ContainerStats samples one container with `docker stats`. Docker reports CPU
+// as a percentage of one core, so it can exceed 100% on a multi-core host, and
+// memory as a human-readable pair such as `12.5MiB / 512MiB`.
+func (d *CLIDocker) ContainerStats(ctx context.Context, containerID string) (ContainerStats, error) {
+	output, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{"stats", "--no-stream", "--format", "{{json .}}", containerID},
+	})
+	if err != nil {
+		return ContainerStats{}, err
+	}
+
+	var raw struct {
+		CPUPerc  string `json:"CPUPerc"`
+		MemUsage string `json:"MemUsage"`
+	}
+	if err := json.Unmarshal([]byte(strings.TrimSpace(output)), &raw); err != nil {
+		return ContainerStats{}, fmt.Errorf("read the stats of container %s: %w", containerID, err)
+	}
+
+	return ContainerStats{
+		CPUUsage:      parseCPUPercent(raw.CPUPerc),
+		MemoryUsageMB: parseMemoryMB(raw.MemUsage),
+	}, nil
+}
+
+// parseCPUPercent turns Docker's `12.50%` into vCPU.
+func parseCPUPercent(value string) float64 {
+	percent, err := strconv.ParseFloat(strings.TrimSuffix(strings.TrimSpace(value), "%"), 64)
+	if err != nil || percent < 0 {
+		return 0
+	}
+
+	return percent / 100
+}
+
+// parseMemoryMB turns Docker's `12.5MiB / 512MiB` into whole MiB.
+func parseMemoryMB(value string) int64 {
+	current := strings.TrimSpace(strings.Split(value, "/")[0])
+	if current == "" {
+		return 0
+	}
+
+	number := current
+	unit := ""
+	for _, candidate := range []string{"TiB", "GiB", "MiB", "KiB", "B"} {
+		if strings.HasSuffix(current, candidate) {
+			unit = candidate
+			number = strings.TrimSpace(strings.TrimSuffix(current, candidate))
+			break
+		}
+	}
+
+	amount, err := strconv.ParseFloat(number, 64)
+	if err != nil || amount < 0 {
+		return 0
+	}
+
+	switch unit {
+	case "TiB":
+		amount *= 1024 * 1024
+	case "GiB":
+		amount *= 1024
+	case "KiB":
+		amount /= 1024
+	case "B":
+		amount /= 1024 * 1024
+	}
+
+	return int64(math.Round(amount))
 }
 
 // RemoveVolume deletes a Volume, reporting whether it existed. A Volume that is

@@ -9,6 +9,7 @@ import {
   type JobRow,
 } from "../lib/platform/deployments.ts";
 import { createAgentClient } from "../lib/agent-client.ts";
+import { refreshAllOrganizationsUsage } from "../lib/platform/usage.ts";
 
 /**
  * Deployment worker. It runs as its own process from the same codebase, claims
@@ -26,6 +27,12 @@ const POLL_INTERVAL_MS = 1_000;
  * eligible the moment it is a week old, and an hour of slack is harmless.
  */
 const LOG_PRUNE_INTERVAL_MS = 60 * 60 * 1_000;
+
+/**
+ * How often the node's measured CPU, memory, and storage usage is stored. The
+ * spec fixes this at five minutes; the Quota page also refreshes on open.
+ */
+const USAGE_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -97,8 +104,23 @@ async function runJob(job: JobRow): Promise<void> {
 
 async function loop(): Promise<void> {
   let lastLogPrune = 0;
+  let lastUsageRefresh = 0;
 
   while (!stopping) {
+    if (Date.now() - lastUsageRefresh >= USAGE_REFRESH_INTERVAL_MS) {
+      lastUsageRefresh = Date.now();
+      try {
+        const refreshed = await refreshAllOrganizationsUsage();
+        if (refreshed.snapshots > 0) {
+          console.log(
+            `[worker] stored ${refreshed.snapshots} usage snapshots for ${refreshed.organizations} Organizations`,
+          );
+        }
+      } catch (error) {
+        console.error("[worker] could not refresh usage snapshots", error);
+      }
+    }
+
     // The retention pass is time based, so it runs before claiming work and then
     // at most once an hour. Doing it here keeps the worker a single process with
     // one responsibility: it owns everything that happens after a Deployment.
