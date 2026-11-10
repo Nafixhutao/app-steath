@@ -1,5 +1,5 @@
 import { createHash, createHmac } from "node:crypto";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 /**
@@ -16,6 +16,7 @@ export type BackupStorageProvider = "s3" | "local";
 export type BackupStorage = {
   provider: BackupStorageProvider;
   put(key: string, body: Buffer): Promise<void>;
+  get(key: string): Promise<Buffer>;
   remove(key: string): Promise<void>;
 };
 
@@ -74,6 +75,9 @@ export function createLocalBackupStorage(
       await mkdir(path.dirname(target), { recursive: true });
       await writeFile(target, body, { mode: 0o600 });
     },
+    async get(key) {
+      return readFile(safeLocalPath(dir, key));
+    },
     async remove(key) {
       await rm(safeLocalPath(dir, key), { force: true });
     },
@@ -99,7 +103,7 @@ function s3Storage(config: BackupStorageConfig): BackupStorage {
   const accessKeyId = config.accessKeyId as string;
   const secretAccessKey = config.secretAccessKey as string;
 
-  async function send(method: "PUT" | "DELETE", key: string, body?: Buffer): Promise<void> {
+  async function send(method: "GET" | "PUT" | "DELETE", key: string, body?: Buffer): Promise<Response> {
     const url = new URL(`${endpoint}/${bucket}/${encodeKey(key)}`);
     const payload = body ?? Buffer.alloc(0);
     const payloadHash = sha256Hex(payload);
@@ -154,6 +158,8 @@ function s3Storage(config: BackupStorageConfig): BackupStorage {
     if (!response.ok) {
       throw new Error(`S3 ${method} ${key} failed with status ${response.status}`);
     }
+
+    return response;
   }
 
   return {
@@ -161,10 +167,37 @@ function s3Storage(config: BackupStorageConfig): BackupStorage {
     async put(key, body) {
       await send("PUT", key, body);
     },
+    async get(key) {
+      const response = await send("GET", key);
+
+      return Buffer.from(await response.arrayBuffer());
+    },
     async remove(key) {
       await send("DELETE", key);
     },
   };
+}
+
+/**
+ * Opens a stored artifact using the provider recorded on its Backup row. A row
+ * may predate a change to the environment, so the provider decides where to
+ * look rather than what is configured today.
+ */
+export async function readStoredObject(
+  storageKey: string,
+  provider: BackupStorageProvider,
+): Promise<Buffer> {
+  if (provider === "local") {
+    return createLocalBackupStorage().get(storageKey);
+  }
+
+  if (!hasS3Credentials(backupStorageConfigFromEnv())) {
+    throw new Error(
+      `the Backup ${storageKey} is in S3 but the S3 credentials are not configured`,
+    );
+  }
+
+  return createBackupStorage().get(storageKey);
 }
 
 function encodeKey(key: string): string {

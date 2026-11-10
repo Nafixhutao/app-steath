@@ -84,6 +84,9 @@ func main() {
 	// Backup artifacts are staged here between creation and the Control Plane's
 	// download. The Control Plane removes each file once it is stored.
 	services.SetBackupDir(filepath.Join(workRoot, "backups"))
+	// A Restore artifact is staged here while it is loaded into a Database or
+	// Volume. The agent removes each file when the Restore finishes.
+	services.SetRestoreDir(filepath.Join(workRoot, "restores"))
 	// Caddy runs as a container on this node, so it must join each Project
 	// network to resolve the alias a route dials.
 	services.SetNetworkAttacher(runtime.NewCaddyAttacher(

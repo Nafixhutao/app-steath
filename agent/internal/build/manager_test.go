@@ -66,6 +66,12 @@ func (f *fakeExecutor) OutputToFile(ctx context.Context, options exec.Options, p
 	return os.WriteFile(path, []byte("backup-bytes"), 0o600)
 }
 
+func (f *fakeExecutor) RunFile(ctx context.Context, options exec.Options, path string) error {
+	f.record(options)
+
+	return nil
+}
+
 func (f *fakeExecutor) record(options exec.Options) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

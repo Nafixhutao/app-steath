@@ -391,6 +391,18 @@ type BackupListRow = BackupRow & {
 };
 
 function targetName(row: BackupListRow): string {
+  return backupTargetName(row);
+}
+
+/**
+ * The name the dashboard shows for a Backup target and the string a Restore
+ * asks the user to type. It lives here so the Backup list, the Restore list, and
+ * the confirmation check can never disagree.
+ */
+export function backupTargetName(row: {
+  targetType: BackupTargetType;
+  serviceName: string | null;
+}): string {
   if (row.targetType === "database") {
     return "PostgreSQL Database";
   }

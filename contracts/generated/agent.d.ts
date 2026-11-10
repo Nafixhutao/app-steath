@@ -118,6 +118,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/restores/{restoreId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore a Database or Volume from a Backup artifact
+         * @description The request body is the Backup artifact itself. A Database restore loads
+         *     the custom-format dump into a temporary database and only swaps it into
+         *     place after the load succeeds, so a failed restore leaves the original
+         *     data untouched. A Volume restore extracts the archive into a staging
+         *     directory and only replaces the Volume contents after extraction
+         *     succeeds.
+         */
+        post: operations["restoreBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/builds": {
         parameters: {
             query?: never;
@@ -538,6 +563,11 @@ export interface components {
             backupId: string;
             removed: boolean;
         };
+        RestoreResult: {
+            restoreId: string;
+            /** @enum {string} */
+            status: "completed";
+        };
         BuildRequest: {
             /** @description Deployment id; makes Build creation idempotent. */
             buildId: string;
@@ -757,6 +787,8 @@ export interface components {
     };
     responses: never;
     parameters: {
+        /** @description Control Plane Restore id; makes the operation idempotent. */
+        RestoreId: string;
         BackupId: string;
         /** @description Deployment id that owns the Build. */
         BuildId: string;
@@ -968,6 +1000,64 @@ export interface operations {
             };
             /** @description Unknown Backup artifact */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    restoreBackup: {
+        parameters: {
+            query: {
+                targetType: "database" | "volume";
+                /** @description Database id or Docker Volume name, matching the Backup. */
+                targetId: string;
+            };
+            header?: never;
+            path: {
+                /** @description Control Plane Restore id; makes the operation idempotent. */
+                restoreId: components["parameters"]["RestoreId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Restore finished */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResult"];
+                };
+            };
+            /** @description Invalid Restore request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Restore target not found on this node */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Restore failed */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

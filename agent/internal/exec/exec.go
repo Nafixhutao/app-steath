@@ -40,6 +40,10 @@ type Executor interface {
 	// exists for Backup artifacts, which are binary and can be large, so they
 	// never have to fit in a string.
 	OutputToFile(ctx context.Context, options Options, path string) error
+	// RunFile runs the command with standard input read from path. Restores use
+	// it to feed a Backup artifact to pg_restore or tar without loading the whole
+	// file into memory.
+	RunFile(ctx context.Context, options Options, path string) error
 }
 
 // SystemExecutor runs commands on the host.
@@ -146,6 +150,38 @@ func (SystemExecutor) OutputToFile(ctx context.Context, options Options, path st
 	if closeErr != nil {
 		_ = os.Remove(path)
 		return fmt.Errorf("close %s: %w", path, closeErr)
+	}
+
+	return nil
+}
+
+// RunFile runs the command with its standard input connected to path. Standard
+// output is discarded because a restore command reports progress on stderr; both
+// streams are kept for the error message when the command fails.
+func (SystemExecutor) RunFile(ctx context.Context, options Options, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("open %s: %w", path, err)
+	}
+	defer file.Close()
+
+	cmd := exec.CommandContext(ctx, options.Name, options.Args...)
+	cmd.Dir = options.Dir
+	if len(options.Env) > 0 {
+		cmd.Env = append(cmd.Environ(), options.Env...)
+	}
+	cmd.Stdin = file
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf(
+			"%s: %w: %s",
+			options.Name,
+			err,
+			strings.TrimSpace(stderr.String()+stdout.String()),
+		)
 	}
 
 	return nil

@@ -115,6 +115,8 @@ type Manager struct {
 	backupDir string
 	// backupArtifacts maps a Backup id to the file it produced.
 	backupArtifacts backupArtifacts
+	// restoreDir is where an incoming artifact is staged for a Restore.
+	restoreDir string
 }
 
 // NewManager returns a Manager that runs containers with docker and routes them

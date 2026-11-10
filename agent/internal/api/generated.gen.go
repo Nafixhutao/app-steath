@@ -16,19 +16,19 @@ import (
 
 // Defines values for BackupRequestTargetType.
 const (
-	Database BackupRequestTargetType = "database"
-	Platform BackupRequestTargetType = "platform"
-	Volume   BackupRequestTargetType = "volume"
+	BackupRequestTargetTypeDatabase BackupRequestTargetType = "database"
+	BackupRequestTargetTypePlatform BackupRequestTargetType = "platform"
+	BackupRequestTargetTypeVolume   BackupRequestTargetType = "volume"
 )
 
 // Valid indicates whether the value is a known member of the BackupRequestTargetType enum.
 func (e BackupRequestTargetType) Valid() bool {
 	switch e {
-	case Database:
+	case BackupRequestTargetTypeDatabase:
 		return true
-	case Platform:
+	case BackupRequestTargetTypePlatform:
 		return true
-	case Volume:
+	case BackupRequestTargetTypeVolume:
 		return true
 	default:
 		return false
@@ -134,6 +134,21 @@ func (e NodeInfoStatus) Valid() bool {
 	}
 }
 
+// Defines values for RestoreResultStatus.
+const (
+	Completed RestoreResultStatus = "completed"
+)
+
+// Valid indicates whether the value is a known member of the RestoreResultStatus enum.
+func (e RestoreResultStatus) Valid() bool {
+	switch e {
+	case Completed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ServiceStateStatus.
 const (
 	ServiceStateStatusAbsent  ServiceStateStatus = "absent"
@@ -152,6 +167,24 @@ func (e ServiceStateStatus) Valid() bool {
 	case ServiceStateStatusRunning:
 		return true
 	case ServiceStateStatusStopped:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RestoreBackupParamsTargetType.
+const (
+	RestoreBackupParamsTargetTypeDatabase RestoreBackupParamsTargetType = "database"
+	RestoreBackupParamsTargetTypeVolume   RestoreBackupParamsTargetType = "volume"
+)
+
+// Valid indicates whether the value is a known member of the RestoreBackupParamsTargetType enum.
+func (e RestoreBackupParamsTargetType) Valid() bool {
+	switch e {
+	case RestoreBackupParamsTargetTypeDatabase:
+		return true
+	case RestoreBackupParamsTargetTypeVolume:
 		return true
 	default:
 		return false
@@ -417,6 +450,15 @@ type NodeInfo struct {
 // NodeInfoStatus defines model for NodeInfo.Status.
 type NodeInfoStatus string
 
+// RestoreResult defines model for RestoreResult.
+type RestoreResult struct {
+	RestoreId string              `json:"restoreId"`
+	Status    RestoreResultStatus `json:"status"`
+}
+
+// RestoreResultStatus defines model for RestoreResult.Status.
+type RestoreResultStatus string
+
 // RuntimeLogEvent defines model for RuntimeLogEvent.
 type RuntimeLogEvent struct {
 	Message   string     `json:"message"`
@@ -519,6 +561,9 @@ type DeploymentId = string
 // Hostname defines model for Hostname.
 type Hostname = string
 
+// RestoreId defines model for RestoreId.
+type RestoreId = string
+
 // ServiceId defines model for ServiceId.
 type ServiceId = string
 
@@ -536,6 +581,17 @@ type GetDatabaseParams struct {
 	// StorageLimitMb The Database's configured storage limit, echoed back.
 	StorageLimitMb *int `form:"storageLimitMb,omitempty" json:"storageLimitMb,omitempty"`
 }
+
+// RestoreBackupParams defines parameters for RestoreBackup.
+type RestoreBackupParams struct {
+	TargetType RestoreBackupParamsTargetType `form:"targetType" json:"targetType"`
+
+	// TargetId Database id or Docker Volume name, matching the Backup.
+	TargetId string `form:"targetId" json:"targetId"`
+}
+
+// RestoreBackupParamsTargetType defines parameters for RestoreBackup.
+type RestoreBackupParamsTargetType string
 
 // StreamServiceLogsParams defines parameters for StreamServiceLogs.
 type StreamServiceLogsParams struct {
@@ -629,6 +685,9 @@ type ServerInterface interface {
 	// GetNode Read node info and capacity
 	// (GET /v1/node)
 	GetNode(w http.ResponseWriter, r *http.Request)
+	// RestoreBackup Restore a Database or Volume from a Backup artifact
+	// (POST /v1/restores/{restoreId})
+	RestoreBackup(w http.ResponseWriter, r *http.Request, restoreId RestoreId, params RestoreBackupParams)
 	// RemoveService Remove a Service container and its route
 	// (DELETE /v1/services/{serviceId})
 	RemoveService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
@@ -1116,6 +1175,61 @@ func (siw *ServerInterfaceWrapper) GetNode(w http.ResponseWriter, r *http.Reques
 	handler.ServeHTTP(w, r)
 }
 
+// RestoreBackup operation middleware
+func (siw *ServerInterfaceWrapper) RestoreBackup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "restoreId" -------------
+	var restoreId RestoreId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "restoreId", r.PathValue("restoreId"), &restoreId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "restoreId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RestoreBackupParams
+
+	// ------------- Required query parameter "targetType" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "targetType", r.URL.Query(), &params.TargetType, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "targetType"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "targetType", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "targetId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "targetId", r.URL.Query(), &params.TargetId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "targetId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "targetId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RestoreBackup(w, r, restoreId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveService operation middleware
 func (siw *ServerInterfaceWrapper) RemoveService(w http.ResponseWriter, r *http.Request) {
 
@@ -1592,6 +1706,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/backups", wrapper.CreateBackup)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/backups/{backupId}", wrapper.RemoveBackup)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/backups/{backupId}/content", wrapper.GetBackupContent)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/restores/{restoreId}", wrapper.RestoreBackup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/builds", wrapper.StartBuild)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.CancelBuild)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.GetBuild)

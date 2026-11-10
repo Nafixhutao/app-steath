@@ -65,6 +65,13 @@ type fakeDocker struct {
 	archiveErr error
 	dumped     []string
 	archived   []string
+
+	// restoreDatabaseErr and restoreVolumeErr simulate a Restore that fails. The
+	// recorded calls let the Restore tests assert the target names.
+	restoreDatabaseErr error
+	restoreVolumeErr   error
+	restoredDatabases  []string
+	restoredVolumes    []string
 }
 
 type fakeExec struct {
@@ -456,6 +463,39 @@ func (f *fakeDocker) ArchiveVolume(_ context.Context, volumeName, destPath strin
 	f.archived = append(f.archived, volumeName)
 
 	return os.WriteFile(destPath, []byte("compressed-tar"), 0o600)
+}
+
+func (f *fakeDocker) RestoreDatabase(
+	_ context.Context,
+	containerName, databaseName, username, srcPath string,
+) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.restoreDatabaseErr != nil {
+		return f.restoreDatabaseErr
+	}
+	if _, err := os.Stat(srcPath); err != nil {
+		return err
+	}
+	f.restoredDatabases = append(f.restoredDatabases, containerName+" "+databaseName+" "+username)
+
+	return nil
+}
+
+func (f *fakeDocker) RestoreVolume(_ context.Context, volumeName, srcPath string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.restoreVolumeErr != nil {
+		return f.restoreVolumeErr
+	}
+	if _, err := os.Stat(srcPath); err != nil {
+		return err
+	}
+	f.restoredVolumes = append(f.restoredVolumes, volumeName)
+
+	return nil
 }
 
 func (f *fakeDocker) RemoveVolume(_ context.Context, name string) (bool, error) {

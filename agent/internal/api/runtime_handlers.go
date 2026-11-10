@@ -44,6 +44,7 @@ type RuntimeDeployer interface {
 	Backup(ctx context.Context, request runtime.BackupRequest) (runtime.BackupArtifact, error)
 	BackupContent(backupID string) (string, int64, error)
 	RemoveBackup(backupID string) (bool, error)
+	Restore(ctx context.Context, request runtime.RestoreRequest, body io.Reader) (runtime.RestoreResult, error)
 	AddHostname(
 		ctx context.Context,
 		serviceID string,
@@ -630,6 +631,43 @@ func (s server) RemoveBackup(w http.ResponseWriter, _ *http.Request, backupID Ba
 	}
 
 	writeJSON(w, http.StatusOK, BackupRemoval{BackupId: string(backupID), Removed: removed})
+}
+
+// RestoreBackup loads a Backup artifact into the original Database or Volume.
+// The request body is the artifact itself, streamed so it never has to fit in
+// memory.
+func (s server) RestoreBackup(
+	w http.ResponseWriter,
+	r *http.Request,
+	restoreID RestoreId,
+	params RestoreBackupParams,
+) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	result, err := s.runtime.Restore(r.Context(), runtime.RestoreRequest{
+		RestoreID:  string(restoreID),
+		TargetType: string(params.TargetType),
+		TargetID:   params.TargetId,
+	}, r.Body)
+	switch {
+	case errors.Is(err, runtime.ErrInvalidRestore):
+		writeError(w, http.StatusBadRequest, "invalid_restore_request", err.Error())
+		return
+	case errors.Is(err, runtime.ErrRestoreTargetNotFound):
+		writeError(w, http.StatusNotFound, "restore_target_not_found", err.Error())
+		return
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, "restore_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, RestoreResult{
+		RestoreId: result.RestoreID,
+		Status:    RestoreResultStatus(result.Status),
+	})
 }
 
 // RemoveService deletes the container and its route.

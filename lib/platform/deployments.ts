@@ -78,7 +78,12 @@ const PREFIXED_DEPLOYMENT_COLUMNS = DEPLOYMENT_FIELDS.map((field) => `d."${field
 export type JobRow = {
   id: string;
   type: string;
-  payload: { deploymentId?: string; serviceId?: string; backupId?: string };
+  payload: {
+    deploymentId?: string;
+    serviceId?: string;
+    backupId?: string;
+    restoreId?: string;
+  };
   attempts: number;
 };
 

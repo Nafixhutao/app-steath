@@ -18,6 +18,11 @@ import {
   runBackupJob,
   scheduleDailyBackups,
 } from "../lib/platform/backups.ts";
+import {
+  RESTORE_JOB_TYPE,
+  recoverStaleRestores,
+  runRestoreJob,
+} from "../lib/platform/restores.ts";
 
 /**
  * Deployment worker. It runs as its own process from the same codebase, claims
@@ -81,6 +86,19 @@ async function runJob(job: JobRow): Promise<void> {
       const message = error instanceof Error ? error.message : String(error);
       await failJob(job.id, message);
       console.error(`[worker] backup job failed: ${message}`);
+    }
+    return;
+  }
+
+  if (job.type === RESTORE_JOB_TYPE) {
+    try {
+      const result = await runRestoreJob(job);
+      await completeJob(job.id, result.status === "failed" ? "failed" : "succeeded");
+      console.log(`[worker] restore ${job.payload.restoreId ?? job.id} ${result.status}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await failJob(job.id, message);
+      console.error(`[worker] restore job failed: ${message}`);
     }
     return;
   }
@@ -206,7 +224,7 @@ async function loop(): Promise<void> {
     }
 
     try {
-      job = await claimBuildJob([BUILD_JOB_TYPE, BACKUP_JOB_TYPE]);
+      job = await claimBuildJob([BUILD_JOB_TYPE, BACKUP_JOB_TYPE, RESTORE_JOB_TYPE]);
     } catch (error) {
       console.error("[worker] could not claim a job", error);
       await sleep(POLL_INTERVAL_MS);
@@ -248,4 +266,17 @@ createAgentClient(
 );
 
 console.log("[worker] deployment worker started");
+
+// A Restore that was pending or running belongs to a worker that is no longer
+// alive, because this is the only worker. Failing it here keeps the target from
+// staying locked behind the active-Restore index.
+try {
+  const recovered = await recoverStaleRestores();
+  if (recovered.failed > 0) {
+    console.log(`[worker] failed ${recovered.failed} Restores interrupted by a restart`);
+  }
+} catch (error) {
+  console.error("[worker] could not recover interrupted Restores", error);
+}
+
 await loop();

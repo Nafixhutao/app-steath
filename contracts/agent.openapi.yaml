@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.9.0
+  version: 0.10.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
     only caller: it authenticates with a bearer token, starts Builds, runs the
@@ -152,6 +152,67 @@ paths:
                 format: binary
         "404":
           description: Unknown Backup artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/restores/{restoreId}:
+    post:
+      operationId: restoreBackup
+      summary: Restore a Database or Volume from a Backup artifact
+      description: |
+        The request body is the Backup artifact itself. A Database restore loads
+        the custom-format dump into a temporary database and only swaps it into
+        place after the load succeeds, so a failed restore leaves the original
+        data untouched. A Volume restore extracts the archive into a staging
+        directory and only replaces the Volume contents after extraction
+        succeeds.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RestoreId"
+        - name: targetType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - database
+              - volume
+        - name: targetId
+          in: query
+          required: true
+          description: Database id or Docker Volume name, matching the Backup.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Restore finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestoreResult"
+        "400":
+          description: Invalid Restore request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Restore target not found on this node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Restore failed
           content:
             application/json:
               schema:
@@ -936,6 +997,13 @@ components:
       type: http
       scheme: bearer
   parameters:
+    RestoreId:
+      name: restoreId
+      in: path
+      required: true
+      description: Control Plane Restore id; makes the operation idempotent.
+      schema:
+        type: string
     BackupId:
       name: backupId
       in: path
@@ -1109,6 +1177,18 @@ components:
           type: string
         removed:
           type: boolean
+    RestoreResult:
+      type: object
+      required:
+        - restoreId
+        - status
+      properties:
+        restoreId:
+          type: string
+        status:
+          type: string
+          enum:
+            - completed
     BuildRequest:
       type: object
       required:

@@ -1,8 +1,8 @@
 import { Pool } from "pg";
-import { createAgentClient, type AgentClient, type AgentServiceState } from "@/lib/agent-client";
-import { ApiError } from "./api-error";
-import { markServiceRunning, markServiceStopped } from "./deployments";
-import { nodeConfig } from "./nodes";
+import { createAgentClient, type AgentClient, type AgentServiceState } from "../../lib/agent-client.ts";
+import { ApiError } from "./api-error.ts";
+import { markServiceRunning, markServiceStopped } from "./deployments.ts";
+import { nodeConfig } from "./nodes.ts";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 

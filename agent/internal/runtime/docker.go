@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -221,6 +222,14 @@ type Docker interface {
 	DumpDatabase(ctx context.Context, containerName, databaseName, username, destPath string) error
 	// ArchiveVolume writes a gzip compressed tar of one Volume to destPath.
 	ArchiveVolume(ctx context.Context, volumeName, destPath string) error
+	// RestoreDatabase replaces one Database's contents from a custom-format dump.
+	// The load goes into a temporary Database and is only swapped in after it
+	// succeeds, so a failed Restore leaves the original data untouched.
+	RestoreDatabase(ctx context.Context, containerName, databaseName, username, srcPath string) error
+	// RestoreVolume replaces one Volume's contents from a gzip compressed tar.
+	// Extraction goes to a staging directory first, so a corrupt archive never
+	// removes the data that was already there.
+	RestoreVolume(ctx context.Context, volumeName, srcPath string) error
 	// RemoveVolume deletes a Volume and its data, reporting whether it existed.
 	// A missing Volume is not an error, because removal must be safe to retry.
 	RemoveVolume(ctx context.Context, name string) (bool, error)
@@ -812,6 +821,218 @@ func (d *CLIDocker) ArchiveVolume(ctx context.Context, volumeName, destPath stri
 			"-czf", "-", "-C", "/volume", ".",
 		},
 	}, destPath)
+}
+
+// RestoreDatabase loads a custom-format dump into a temporary Database and swaps
+// it into place only after the load succeeds. A corrupt or partial dump
+// therefore leaves the original Database exactly as it was.
+func (d *CLIDocker) RestoreDatabase(
+	ctx context.Context,
+	containerName, databaseName, username, srcPath string,
+) error {
+	tempDatabase := restoreTempDatabaseName(srcPath)
+
+	create := fmt.Sprintf("CREATE DATABASE %s", quoteSQLIdentifier(tempDatabase))
+	if err := d.execSQL(ctx, containerName, username, "postgres", create); err != nil {
+		return fmt.Errorf("create the temporary Database: %w", err)
+	}
+
+	loadErr := d.runner.RunFile(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"exec", "-i", containerName,
+			"pg_restore", "--no-password",
+			"--username", username, "--dbname", tempDatabase,
+		},
+	}, srcPath)
+	if loadErr != nil {
+		_ = d.execSQL(
+			ctx,
+			containerName,
+			username,
+			"postgres",
+			fmt.Sprintf("DROP DATABASE IF EXISTS %s", quoteSQLIdentifier(tempDatabase)),
+		)
+		return fmt.Errorf("load the Backup into the temporary Database: %w", loadErr)
+	}
+
+	// The Services are stopped before a Restore starts, but a leftover client can
+	// still hold a connection. Ending it is best effort: DROP DATABASE reports a
+	// clear error if one survives.
+	terminate := fmt.Sprintf(
+		"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s AND pid <> pg_backend_pid()",
+		quoteSQLString(databaseName),
+	)
+	_ = d.execSQL(ctx, containerName, username, "postgres", terminate)
+
+	drop := fmt.Sprintf("DROP DATABASE IF EXISTS %s", quoteSQLIdentifier(databaseName))
+	if err := d.execSQL(ctx, containerName, username, "postgres", drop); err != nil {
+		_ = d.execSQL(
+			ctx,
+			containerName,
+			username,
+			"postgres",
+			fmt.Sprintf("DROP DATABASE IF EXISTS %s", quoteSQLIdentifier(tempDatabase)),
+		)
+		return fmt.Errorf("replace the Database: %w", err)
+	}
+
+	rename := fmt.Sprintf(
+		"ALTER DATABASE %s RENAME TO %s",
+		quoteSQLIdentifier(tempDatabase),
+		quoteSQLIdentifier(databaseName),
+	)
+	if err := d.execSQL(ctx, containerName, username, "postgres", rename); err != nil {
+		return fmt.Errorf("rename the restored Database: %w", err)
+	}
+
+	return nil
+}
+
+// RestoreVolume extracts the archive into a staging directory on the Volume and
+// only replaces the existing contents after extraction succeeds. A corrupt
+// archive therefore never removes the data that was already there.
+func (d *CLIDocker) RestoreVolume(ctx context.Context, volumeName, srcPath string) error {
+	staging := restoreStagingName(srcPath)
+	mount := "type=volume,source=" + volumeName + ",target=/volume"
+
+	if _, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"run", "--rm", "--network", "none",
+			"--mount", mount,
+			"--entrypoint", "mkdir",
+			d.probeImage,
+			"-p", "/volume/" + staging,
+		},
+	}); err != nil {
+		return fmt.Errorf("prepare the staging directory: %w", err)
+	}
+
+	extractErr := d.runner.RunFile(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"run", "--rm", "-i", "--network", "none",
+			"--mount", mount,
+			"--entrypoint", "tar",
+			d.probeImage,
+			"-xzf", "-", "-C", "/volume/" + staging,
+		},
+	}, srcPath)
+	if extractErr != nil {
+		d.removeVolumePath(ctx, mount, staging)
+		return fmt.Errorf("extract the Backup into the staging directory: %w", extractErr)
+	}
+
+	script := restoreSwapScript(staging)
+	if _, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"run", "--rm", "--network", "none",
+			"--mount", mount,
+			"--entrypoint", "sh",
+			d.probeImage,
+			"-c", script,
+		},
+	}); err != nil {
+		d.removeVolumePath(ctx, mount, staging)
+		return fmt.Errorf("replace the Volume contents: %w", err)
+	}
+
+	return nil
+}
+
+// execSQL runs one psql statement inside a PostgreSQL container. The statement is
+// passed as an argument, so it never goes through a shell.
+func (d *CLIDocker) execSQL(
+	ctx context.Context,
+	containerName, username, database, statement string,
+) error {
+	_, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"exec", containerName,
+			"psql", "--no-password", "--username", username,
+			"--dbname", database, "--command", statement,
+		},
+	})
+
+	return err
+}
+
+func (d *CLIDocker) removeVolumePath(ctx context.Context, mount, name string) {
+	_, _ = d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"run", "--rm", "--network", "none",
+			"--mount", mount,
+			"--entrypoint", "rm",
+			d.probeImage,
+			"-rf", "/volume/" + name,
+		},
+	})
+}
+
+// restoreTempDatabaseName derives a stable temporary Database name from the
+// artifact file name, which the Control Plane sets to the Restore id.
+func restoreTempDatabaseName(srcPath string) string {
+	base := strings.TrimSuffix(filepath.Base(srcPath), filepath.Ext(srcPath))
+	name := "stealth_restore_" + strings.ReplaceAll(sanitizeID(base), "-", "_")
+	if len(name) > 63 {
+		name = name[:63]
+	}
+
+	return name
+}
+
+func restoreStagingName(srcPath string) string {
+	base := strings.TrimSuffix(filepath.Base(srcPath), filepath.Ext(srcPath))
+
+	return ".stealth-restore-" + sanitizeID(base)
+}
+
+// restoreSwapScript replaces the Volume contents with the staged restore. The
+// existing entries move aside first; if copying the staged tree fails, they are
+// moved back before the script exits non-zero.
+func restoreSwapScript(staging string) string {
+	return `set -e
+cd /volume
+mkdir -p .stealth-restore-old
+for entry in * .[!.]*; do
+  [ -e "$entry" ] || continue
+  case "$entry" in
+    .stealth-restore-*) continue ;;
+  esac
+  mv "$entry" .stealth-restore-old/
+done
+if ! (cd "` + staging + `" && tar -cf - .) | tar -xf - -C .; then
+  for entry in * .[!.]*; do
+    [ -e "$entry" ] || continue
+    case "$entry" in
+      .stealth-restore-*) continue ;;
+    esac
+    rm -rf "$entry"
+  done
+  for entry in .stealth-restore-old/* .stealth-restore-old/.[!.]*; do
+    [ -e "$entry" ] || continue
+    mv "$entry" .
+  done
+  rm -rf .stealth-restore-old "` + staging + `"
+  exit 1
+fi
+rm -rf .stealth-restore-old "` + staging + `"
+`
+}
+
+// quoteSQLIdentifier quotes a PostgreSQL identifier. Values come from container
+// labels the platform wrote, but quoting keeps a rename from changing meaning.
+func quoteSQLIdentifier(value string) string {
+	return `"` + strings.ReplaceAll(value, `"`, `""`) + `"`
+}
+
+// quoteSQLString quotes a PostgreSQL string literal.
+func quoteSQLString(value string) string {
+	return `'` + strings.ReplaceAll(value, `'`, `''`) + `'`
 }
 
 // parseCPUPercent turns Docker's `12.50%` into vCPU.
