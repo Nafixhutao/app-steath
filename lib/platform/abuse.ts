@@ -55,23 +55,47 @@ export async function createAbuseReport(input: {
     }
     email = input.reporterEmail.trim().toLowerCase();
   }
-  const window = new Date();
-  window.setUTCMinutes(0, 0, 0);
   const ipHash = createHash("sha256").update(input.ip).digest("hex");
-  const limited = await pool.query<{ count: number }>(
-    `INSERT INTO "abuse_report_rate_limit" ("ipHash", "windowStartedAt", "count") VALUES ($1, $2, 1)
-     ON CONFLICT ("ipHash", "windowStartedAt") DO UPDATE SET "count" = "abuse_report_rate_limit"."count" + 1
-     WHERE "abuse_report_rate_limit"."count" < 3 RETURNING "count"`,
-    [ipHash, window],
-  );
-  if (!limited.rowCount)
-    throw new ApiError(429, "rate_limited", "You can submit at most three abuse reports per hour.");
-  const id = randomUUID();
-  await pool.query(
-    `INSERT INTO "abuse_report" ("id", "targetUrl", "category", "description", "reporterEmail") VALUES ($1,$2,$3,$4,$5)`,
-    [id, target.toString(), input.category, input.description.trim(), email],
-  );
-  return { id, status: "new" as const };
+  // A rolling hour, not a calendar hour: a fixed window lets six reports
+  // through across a boundary (e.g. 09:59 and 10:01). Counts are bucketed per
+  // minute and summed over the last 60 minutes. The advisory lock serialises
+  // concurrent submissions from the same IP, and the report insert shares the
+  // transaction so a failed write never consumes quota.
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [ipHash]);
+    const recent = await client.query<{ total: string }>(
+      `SELECT COALESCE(SUM("count"), 0) AS total FROM "abuse_report_rate_limit"
+       WHERE "ipHash" = $1 AND "windowStartedAt" > now() - interval '1 hour'`,
+      [ipHash],
+    );
+    if (Number(recent.rows[0].total) >= 3)
+      throw new ApiError(
+        429,
+        "rate_limited",
+        "You can submit at most three abuse reports per hour.",
+      );
+    await client.query(
+      `INSERT INTO "abuse_report_rate_limit" ("ipHash", "windowStartedAt", "count")
+       VALUES ($1, date_trunc('minute', now()), 1)
+       ON CONFLICT ("ipHash", "windowStartedAt") DO UPDATE
+         SET "count" = "abuse_report_rate_limit"."count" + 1`,
+      [ipHash],
+    );
+    const id = randomUUID();
+    await client.query(
+      `INSERT INTO "abuse_report" ("id", "targetUrl", "category", "description", "reporterEmail") VALUES ($1,$2,$3,$4,$5)`,
+      [id, target.toString(), input.category, input.description.trim(), email],
+    );
+    await client.query("COMMIT");
+    return { id, status: "new" as const };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function listAbuseReports(status?: AbuseStatus) {
@@ -90,17 +114,4 @@ export async function updateAbuseReport(id: string, status: AbuseStatus) {
   );
   if (!result.rowCount) throw new ApiError(404, "report_not_found", "Abuse Report not found.");
   return result.rows[0];
-}
-
-export async function searchAdminResources(query: string) {
-  const result = await pool.query(
-    `SELECT o."id" AS "organizationId", o."name" AS "organizationName", o."slug" AS "organizationSlug",
-      s."id" AS "serviceId", s."name" AS "serviceName", s."platformHostname", s."status"
-    FROM "organization" o LEFT JOIN "project" p ON p."organizationId"=o."id"
-    LEFT JOIN "service" s ON s."projectId"=p."id"
-    WHERE o."name" ILIKE $1 OR o."slug" ILIKE $1 OR s."name" ILIKE $1 OR s."platformHostname" ILIKE $1
-    ORDER BY o."name",s."name" LIMIT 100`,
-    [`%${query}%`],
-  );
-  return result.rows;
 }

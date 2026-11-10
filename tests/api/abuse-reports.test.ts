@@ -11,6 +11,7 @@ let adminCookie = "";
 let adminId = "";
 let fakeAgent: Server;
 const agentRequests: string[] = [];
+let agentFailureStatus = 0;
 let authModule: typeof import("@/lib/auth");
 const createdReportIds: string[] = [];
 const createdOrganizationIds: string[] = [];
@@ -26,7 +27,7 @@ beforeAll(async () => {
   process.env.AGENT_NAME = "test-node";
   fakeAgent = createServer((request, response) => {
     agentRequests.push(`${request.method} ${request.url}`);
-    response.writeHead(200, { "content-type": "application/json" });
+    response.writeHead(agentFailureStatus || 200, { "content-type": "application/json" });
     response.end(JSON.stringify({ serviceId: "suspended-service", status: "stopped" }));
   });
   await new Promise<void>((resolve) => fakeAgent.listen(0, "127.0.0.1", resolve));
@@ -60,9 +61,15 @@ beforeAll(async () => {
 afterAll(async () => {
   if (pool) {
     const { createHash } = await import("node:crypto");
-    const ipHashes = [ip, `${ip}-limit`, `${ip}-public-api`, `${ip}-triage`, `${ip}-bad`].map(
-      (value) => createHash("sha256").update(value).digest("hex"),
-    );
+    const ipHashes = [
+      ip,
+      `${ip}-limit`,
+      `${ip}-public-api`,
+      `${ip}-triage`,
+      `${ip}-bad`,
+      `${ip}-boundary`,
+      "unknown",
+    ].map((value) => createHash("sha256").update(value).digest("hex"));
 
     if (createdReportIds.length) {
       await pool.query('DELETE FROM "abuse_report" WHERE "id" = ANY($1::text[])', [
@@ -416,6 +423,63 @@ describe("public Abuse Reports", () => {
       agentRequests.filter((line) => line.includes("/unsuspend")).length,
     ).toBeGreaterThanOrEqual(3);
     await pool.query('DELETE FROM "service" WHERE "projectId"=$1', [`p-${id}`]);
+    await pool.query('DELETE FROM "project" WHERE "id"=$1', [`p-${id}`]);
+    await pool.query('DELETE FROM "organization" WHERE "id"=$1', [id]);
+  });
+
+  it("counts reports over a rolling hour rather than a calendar hour", async () => {
+    const { createHash } = await import("node:crypto");
+    const boundaryIp = `${ip}-boundary`;
+    const hash = createHash("sha256").update(boundaryIp).digest("hex");
+    await pool.query(
+      `INSERT INTO "abuse_report_rate_limit" ("ipHash","windowStartedAt","count") VALUES ($1, now() - interval '59 minutes', 3)`,
+      [hash],
+    );
+    const input = {
+      targetUrl: "https://boundary.example.test",
+      category: "spam",
+      description: "Boundary check",
+      challengeAnswer: "7",
+      ip: boundaryIp,
+    };
+    await expect(abuse.createAbuseReport(input)).rejects.toMatchObject({ status: 429 });
+    // Move the same three reports just outside the window; they must stop counting.
+    await pool.query(
+      `UPDATE "abuse_report_rate_limit" SET "windowStartedAt" = now() - interval '61 minutes' WHERE "ipHash"=$1`,
+      [hash],
+    );
+    const created = await abuse.createAbuseReport(input);
+    createdReportIds.push(created.id);
+  });
+
+  it("keeps the Service running when the Node Agent cannot install the 503", async () => {
+    const id = `agentfail-${Math.random().toString(36).slice(2, 10)}`;
+    createdOrganizationIds.push(id);
+    await pool.query(
+      'INSERT INTO "organization" ("id","name","slug","createdAt") VALUES ($1,$2,$3,now())',
+      [id, `Agent fail ${id}`, id],
+    );
+    await pool.query(
+      'INSERT INTO "project" ("id","organizationId","name","slug") VALUES ($1,$2,$3,$4)',
+      [`p-${id}`, id, `Project ${id}`, `p-${id}`],
+    );
+    await pool.query(
+      `INSERT INTO "service" ("id","projectId","name","slug","repoUrl","platformHostname","status") VALUES ($1,$2,'Running','running','https://github.com/example/app','agentfail.example.test','running')`,
+      [`s-${id}`, `p-${id}`],
+    );
+    const { suspendService } = await import("@/lib/platform/suspensions");
+    agentFailureStatus = 503;
+    try {
+      await expect(suspendService(`s-${id}`)).rejects.toMatchObject({ status: 502 });
+    } finally {
+      agentFailureStatus = 0;
+    }
+    const row = await pool.query(
+      'SELECT "status","suspendedFromStatus" FROM "service" WHERE "id"=$1',
+      [`s-${id}`],
+    );
+    expect(row.rows[0]).toEqual({ status: "running", suspendedFromStatus: null });
+    await pool.query('DELETE FROM "service" WHERE "id"=$1', [`s-${id}`]);
     await pool.query('DELETE FROM "project" WHERE "id"=$1', [`p-${id}`]);
     await pool.query('DELETE FROM "organization" WHERE "id"=$1', [id]);
   });

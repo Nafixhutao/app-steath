@@ -427,7 +427,12 @@ export async function runDeployment(
     throw new Error(`Deployment ${deploymentId} no longer exists.`);
   }
   if (deployment.serviceStatus === "suspended") {
-    return { status: "failed", message: "The Service is suspended by the Platform Admin." };
+    const message = "The Service is suspended by the Platform Admin.";
+    // Leave the Deployment in a terminal state so the worker's Job outcome and
+    // the row never disagree. markDeploymentFailed only re-derives a Service
+    // that is `deploying`, so it cannot overwrite the suspended status.
+    await markDeploymentFailed(deploymentId, message);
+    return { status: "failed", message };
   }
   // A cancel that landed between the Build finishing and this call must not
   // start a container for a Deployment the user already abandoned.

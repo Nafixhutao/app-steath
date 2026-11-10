@@ -50,14 +50,20 @@ export async function suspendService(serviceId: string) {
         [serviceId],
       );
     }
+    // Install the 503 before COMMIT. A Node Agent failure must roll the row
+    // back so an admin can retry, instead of leaving a Service marked
+    // suspended while its old route still serves traffic. A 404 means the
+    // Service has no container yet, so there is no route to suspend; that is
+    // safe to accept. This is an infrequent admin action, so holding the row
+    // lock across one Agent call is acceptable.
+    await setNodeSuspension(serviceId, true);
     await client.query("COMMIT");
   } catch (error) {
-    await client.query("ROLLBACK");
+    await client.query("ROLLBACK").catch(() => undefined);
     throw error;
   } finally {
     client.release();
   }
-  await setNodeSuspension(serviceId, true);
 }
 
 export async function unsuspendService(serviceId: string, organizationOverride = false) {
