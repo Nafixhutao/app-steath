@@ -23,6 +23,7 @@ import {
   recoverStaleRestores,
   runRestoreJob,
 } from "../lib/platform/restores.ts";
+import { SCAN_JOB_TYPE, runScanJob } from "../lib/platform/scans.ts";
 
 /**
  * Deployment worker. It runs as its own process from the same codebase, claims
@@ -99,6 +100,19 @@ async function runJob(job: JobRow): Promise<void> {
       const message = error instanceof Error ? error.message : String(error);
       await failJob(job.id, message);
       console.error(`[worker] restore job failed: ${message}`);
+    }
+    return;
+  }
+
+  if (job.type === SCAN_JOB_TYPE) {
+    try {
+      const result = await runScanJob(job);
+      await completeJob(job.id, result.status === "failed" ? "failed" : "succeeded");
+      console.log(`[worker] scan ${job.payload.deploymentId ?? job.id} ${result.status}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await failJob(job.id, message);
+      console.error(`[worker] scan job failed: ${message}`);
     }
     return;
   }
@@ -224,7 +238,12 @@ async function loop(): Promise<void> {
     }
 
     try {
-      job = await claimBuildJob([BUILD_JOB_TYPE, BACKUP_JOB_TYPE, RESTORE_JOB_TYPE]);
+      job = await claimBuildJob([
+        BUILD_JOB_TYPE,
+        BACKUP_JOB_TYPE,
+        RESTORE_JOB_TYPE,
+        SCAN_JOB_TYPE,
+      ]);
     } catch (error) {
       console.error("[worker] could not claim a job", error);
       await sleep(POLL_INTERVAL_MS);

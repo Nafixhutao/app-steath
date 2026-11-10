@@ -256,6 +256,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scan a built image for vulnerabilities, secrets, and malware
+         * @description Runs Trivy (vulnerabilities, secrets, and misconfigurations) and ClamAV
+         *     (malware on the image filesystem) against a built image. Scanning is
+         *     advisory: a scanner that cannot run produces a finding that says so
+         *     instead of failing the request, so the Control Plane always learns what
+         *     happened. Calling this again with the same `deploymentId` returns the
+         *     existing findings rather than scanning twice.
+         */
+        post: operations["scanImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/services/{serviceId}": {
         parameters: {
             query?: never;
@@ -567,6 +592,26 @@ export interface components {
             restoreId: string;
             /** @enum {string} */
             status: "completed";
+        };
+        ScanRequest: {
+            /** @description Deployment id; makes Scan creation idempotent. */
+            deploymentId: string;
+            /** @description Local image reference produced by the Build. */
+            imageRef: string;
+        };
+        ScanFinding: {
+            /** @enum {string} */
+            scanner: "trivy" | "clamav";
+            /** @enum {string} */
+            severity: "critical" | "high" | "medium" | "low" | "info" | "unknown";
+            title: string;
+            details?: {
+                [key: string]: unknown;
+            };
+        };
+        ScanReport: {
+            deploymentId: string;
+            findings: components["schemas"]["ScanFinding"][];
         };
         BuildRequest: {
             /** @description Deployment id; makes Build creation idempotent. */
@@ -1303,6 +1348,48 @@ export interface operations {
                 };
             };
             /** @description Invalid cancel request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    scanImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanRequest"];
+            };
+        };
+        responses: {
+            /** @description Scan finished */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanReport"];
+                };
+            };
+            /** @description Invalid Scan request */
             400: {
                 headers: {
                     [name: string]: unknown;

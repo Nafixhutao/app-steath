@@ -1,14 +1,17 @@
 package api
 
 import (
+	"context"
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"stealth/agent/internal/build"
+	"stealth/agent/internal/scanner"
 )
 
 // NodeInfoProvider reports the node details shown in the Control Plane.
@@ -16,11 +19,19 @@ type NodeInfoProvider interface {
 	NodeInfo() NodeInfo
 }
 
+// ImageScanner inspects a built image and returns what it found. The Node Agent
+// exposes this instead of a Docker detail so the API stays independent of how the
+// scan is performed.
+type ImageScanner interface {
+	Scan(ctx context.Context, imageRef string) []scanner.Finding
+}
+
 // server implements the generated ServerInterface.
 type server struct {
 	builds   *build.Manager
 	nodeInfo NodeInfoProvider
 	runtime  RuntimeDeployer
+	scanner  ImageScanner
 }
 
 // NewHandler returns the versioned Node Agent API guarded by a bearer token.
@@ -29,12 +40,54 @@ func NewHandler(
 	builds *build.Manager,
 	nodeInfo NodeInfoProvider,
 	runtimeDeployer RuntimeDeployer,
+	imageScanner ImageScanner,
 ) http.Handler {
 	return authMiddleware(token, Handler(server{
 		builds:   builds,
 		nodeInfo: nodeInfo,
 		runtime:  runtimeDeployer,
+		scanner:  imageScanner,
 	}))
+}
+
+// ScanImage runs Trivy and ClamAV against a built image. Scanning is advisory,
+// so the answer is always a report: a scanner that cannot run becomes an
+// informational finding rather than an error the Control Plane has to retry.
+func (s server) ScanImage(w http.ResponseWriter, r *http.Request) {
+	if s.scanner == nil {
+		writeError(w, http.StatusServiceUnavailable, "scanner_unavailable", "The image scanner is not configured.")
+		return
+	}
+
+	var request ScanRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_body", "The Scan request is not valid JSON.")
+		return
+	}
+	if strings.TrimSpace(request.DeploymentId) == "" || strings.TrimSpace(request.ImageRef) == "" {
+		writeError(w, http.StatusBadRequest, "invalid_scan_request", "deploymentId and imageRef are required.")
+		return
+	}
+
+	findings := s.scanner.Scan(r.Context(), request.ImageRef)
+	report := ScanReport{
+		DeploymentId: request.DeploymentId,
+		Findings:     make([]ScanFinding, 0, len(findings)),
+	}
+	for _, finding := range findings {
+		var details *map[string]interface{}
+		if finding.Details != nil {
+			details = &finding.Details
+		}
+		report.Findings = append(report.Findings, ScanFinding{
+			Scanner:  ScanFindingScanner(finding.Scanner),
+			Severity: ScanFindingSeverity(finding.Severity),
+			Title:    finding.Title,
+			Details:  details,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, report)
 }
 
 // GetHealth reports that the agent process is up. It never touches Docker, so

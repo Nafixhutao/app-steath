@@ -11,6 +11,7 @@ import {
   type Transition,
 } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { getAdminStatus } from "@/lib/admin-client";
 import { authClient, signOut, useListOrganizations, useSession } from "@/lib/auth-client";
 import {
   defaultOrganization,
@@ -70,7 +71,8 @@ type IconName =
   | "databases"
   | "domains"
   | "gauge"
-  | "backups";
+  | "backups"
+  | "admin";
 
 type Theme = "light" | "dark" | "system";
 
@@ -87,6 +89,11 @@ const primaryItems: Array<{ label: string; icon: IconName; href: string }> = [
 const secondaryItems: Array<{ label: string; icon: IconName; href: string }> = [
   { label: "Members", icon: "face", href: "/dashboard/members" },
   { label: "Organization settings", icon: "settings", href: "/dashboard/settings" },
+];
+
+/** The Platform Admin link, shown only when `/api/admin/status` says so. */
+const adminItems: Array<{ label: string; icon: IconName; href: string }> = [
+  { label: "Scan findings", icon: "admin", href: "/dashboard/admin/findings" },
 ];
 
 const searchItems = ["Go to Projects", "Go to Services", "Go to Databases", "Log out"];
@@ -140,6 +147,7 @@ const iconMap: Record<Exclude<IconName, "slack">, LucideIcon> = {
   domains: ExternalLink,
   gauge: Gauge,
   backups: Archive,
+  admin: ShieldCheck,
 };
 
 function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
@@ -365,6 +373,7 @@ export function Sidebar({
   const [organizationSwitcherOpen, setOrganizationSwitcherOpen] = useState(false);
   const [createOrganizationOpen, setCreateOrganizationOpen] = useState(false);
   const [organizationName, setOrganizationName] = useState("");
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [organizationError, setOrganizationError] = useState("");
   const [organizationBusy, setOrganizationBusy] = useState(false);
 
@@ -460,6 +469,22 @@ export function Sidebar({
       root.style.overscrollBehavior = previousOverscroll;
     };
   }, [mobileOpen, searchOpen]);
+
+  // Platform Admin is defined by an environment email list, so the only way to
+  // know is to ask the Control Plane. A failure just hides the link.
+  useEffect(() => {
+    let cancelled = false;
+
+    getAdminStatus()
+      .then((status) => {
+        if (!cancelled) setIsPlatformAdmin(status.platformAdmin);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
 
   const choose = (label: string) => {
     setMobileOpen(false);
@@ -621,6 +646,18 @@ export function Sidebar({
               onClick={() => choose(item.label)}
             />
           ))}
+          {isPlatformAdmin
+            ? adminItems.map((item) => (
+                <NavRow
+                  key={item.label}
+                  {...item}
+                  collapsed={collapsed && !mobile}
+                  mobile={mobile}
+                  active={pathname.startsWith(item.href)}
+                  onClick={() => choose(item.label)}
+                />
+              ))
+            : null}
         </nav>
         <div className="sidebar-divider" />
         <div className={`profile-area ${collapsed && !mobile ? "is-collapsed" : ""}`}>

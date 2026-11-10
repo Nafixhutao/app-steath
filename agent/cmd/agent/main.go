@@ -16,6 +16,7 @@ import (
 	"stealth/agent/internal/heartbeat"
 	"stealth/agent/internal/node"
 	"stealth/agent/internal/runtime"
+	"stealth/agent/internal/scanner"
 )
 
 // heartbeatInterval matches the platform spec: the Control Plane treats a node
@@ -94,6 +95,13 @@ func main() {
 		os.Getenv("CADDY_CONTAINER_NAME"),
 	))
 
+	// Scans run after a Deployment and stage the exported image filesystem under
+	// the work root. Trivy and ClamAV are host binaries; an installation that
+	// keeps them elsewhere points these variables at them.
+	scans := scanner.New(filepath.Join(workRoot, "scans"), executor)
+	scans.SetTrivyBinary(os.Getenv("TRIVY_BIN"))
+	scans.SetClamAVBinary(os.Getenv("CLAMSCAN_BIN"))
+
 	// Reconcile before serving so containers that outlived the agent get their
 	// network alias and route back. A failure is logged, not fatal: the agent is
 	// still useful for Builds, and the next restart retries.
@@ -162,7 +170,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:              address,
-		Handler:           api.NewHandler(token, builds, nodeInfo, services),
+		Handler:           api.NewHandler(token, builds, nodeInfo, services, scans),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

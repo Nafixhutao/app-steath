@@ -149,6 +149,54 @@ func (e RestoreResultStatus) Valid() bool {
 	}
 }
 
+// Defines values for ScanFindingScanner.
+const (
+	Clamav ScanFindingScanner = "clamav"
+	Trivy  ScanFindingScanner = "trivy"
+)
+
+// Valid indicates whether the value is a known member of the ScanFindingScanner enum.
+func (e ScanFindingScanner) Valid() bool {
+	switch e {
+	case Clamav:
+		return true
+	case Trivy:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ScanFindingSeverity.
+const (
+	Critical ScanFindingSeverity = "critical"
+	High     ScanFindingSeverity = "high"
+	Info     ScanFindingSeverity = "info"
+	Low      ScanFindingSeverity = "low"
+	Medium   ScanFindingSeverity = "medium"
+	Unknown  ScanFindingSeverity = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the ScanFindingSeverity enum.
+func (e ScanFindingSeverity) Valid() bool {
+	switch e {
+	case Critical:
+		return true
+	case High:
+		return true
+	case Info:
+		return true
+	case Low:
+		return true
+	case Medium:
+		return true
+	case Unknown:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ServiceStateStatus.
 const (
 	ServiceStateStatusAbsent  ServiceStateStatus = "absent"
@@ -465,6 +513,35 @@ type RuntimeLogEvent struct {
 	Timestamp *time.Time `json:"timestamp,omitempty"`
 }
 
+// ScanFinding defines model for ScanFinding.
+type ScanFinding struct {
+	Details  *map[string]interface{} `json:"details,omitempty"`
+	Scanner  ScanFindingScanner      `json:"scanner"`
+	Severity ScanFindingSeverity     `json:"severity"`
+	Title    string                  `json:"title"`
+}
+
+// ScanFindingScanner defines model for ScanFinding.Scanner.
+type ScanFindingScanner string
+
+// ScanFindingSeverity defines model for ScanFinding.Severity.
+type ScanFindingSeverity string
+
+// ScanReport defines model for ScanReport.
+type ScanReport struct {
+	DeploymentId string        `json:"deploymentId"`
+	Findings     []ScanFinding `json:"findings"`
+}
+
+// ScanRequest defines model for ScanRequest.
+type ScanRequest struct {
+	// DeploymentId Deployment id; makes Scan creation idempotent.
+	DeploymentId string `json:"deploymentId"`
+
+	// ImageRef Local image reference produced by the Build.
+	ImageRef string `json:"imageRef"`
+}
+
 // ServiceHostnameState defines model for ServiceHostnameState.
 type ServiceHostnameState struct {
 	Hostname string `json:"hostname"`
@@ -626,6 +703,9 @@ type DeployServiceJSONRequestBody = DeployRequest
 // CancelDeploymentJSONRequestBody defines body for CancelDeployment for application/json ContentType.
 type CancelDeploymentJSONRequestBody = CancelDeploymentRequest
 
+// ScanImageJSONRequestBody defines body for ScanImage for application/json ContentType.
+type ScanImageJSONRequestBody = ScanRequest
+
 // EnsureVolumeJSONRequestBody defines body for EnsureVolume for application/json ContentType.
 type EnsureVolumeJSONRequestBody = VolumeRequest
 
@@ -688,6 +768,9 @@ type ServerInterface interface {
 	// RestoreBackup Restore a Database or Volume from a Backup artifact
 	// (POST /v1/restores/{restoreId})
 	RestoreBackup(w http.ResponseWriter, r *http.Request, restoreId RestoreId, params RestoreBackupParams)
+	// ScanImage Scan a built image for vulnerabilities, secrets, and malware
+	// (POST /v1/scans)
+	ScanImage(w http.ResponseWriter, r *http.Request)
 	// RemoveService Remove a Service container and its route
 	// (DELETE /v1/services/{serviceId})
 	RemoveService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
@@ -1230,6 +1313,20 @@ func (siw *ServerInterfaceWrapper) RestoreBackup(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// ScanImage operation middleware
+func (siw *ServerInterfaceWrapper) ScanImage(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ScanImage(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveService operation middleware
 func (siw *ServerInterfaceWrapper) RemoveService(w http.ResponseWriter, r *http.Request) {
 
@@ -1713,6 +1810,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}/logs", wrapper.StreamBuildLogs)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/deployments", wrapper.DeployService)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/deployments/{deploymentId}/cancel", wrapper.CancelDeployment)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/scans", wrapper.ScanImage)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/services/{serviceId}", wrapper.RemoveService)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/services/{serviceId}", wrapper.GetService)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/stop", wrapper.StopService)

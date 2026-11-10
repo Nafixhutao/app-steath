@@ -11,6 +11,7 @@ import { loadDeploymentDatabaseUrl } from "./databases.ts";
 import { loadDeploymentEnvironment } from "./environment-variables.ts";
 import { nodeConfig, requireHealthyNode } from "./nodes.ts";
 import { QUOTAS } from "./quota-limits.ts";
+import { enqueueScanJob } from "./scans.ts";
 import { loadDeploymentVolume } from "./volumes.ts";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -672,6 +673,13 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
     // pinned commit keeps a redeploy's history accurate even if the agent omits
     // it.
     commitSha: build.commitSha || deployment.commitSha || "",
+  });
+
+  // Every successful Build is scanned, whether or not the later runtime
+  // Deployment succeeds. Scanning is advisory and queued separately, so a
+  // scanner outage never changes the Build result.
+  await enqueueScanJob(deploymentId).catch((error) => {
+    console.error(`could not queue the image scan for Deployment ${deploymentId}`, error);
   });
 
   return { status: "deploying" as const, message: "" };

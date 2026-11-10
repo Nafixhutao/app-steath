@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.10.0
+  version: 0.11.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
     only caller: it authenticates with a bearer token, starts Builds, runs the
@@ -411,6 +411,44 @@ paths:
                 $ref: "#/components/schemas/DeploymentAbort"
         "400":
           description: Invalid cancel request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/scans:
+    post:
+      operationId: scanImage
+      summary: Scan a built image for vulnerabilities, secrets, and malware
+      description: |
+        Runs Trivy (vulnerabilities, secrets, and misconfigurations) and ClamAV
+        (malware on the image filesystem) against a built image. Scanning is
+        advisory: a scanner that cannot run produces a finding that says so
+        instead of failing the request, so the Control Plane always learns what
+        happened. Calling this again with the same `deploymentId` returns the
+        existing findings rather than scanning twice.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanRequest"
+      responses:
+        "200":
+          description: Scan finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanReport"
+        "400":
+          description: Invalid Scan request
           content:
             application/json:
               schema:
@@ -1189,6 +1227,56 @@ components:
           type: string
           enum:
             - completed
+    ScanRequest:
+      type: object
+      required:
+        - deploymentId
+        - imageRef
+      properties:
+        deploymentId:
+          type: string
+          description: Deployment id; makes Scan creation idempotent.
+        imageRef:
+          type: string
+          description: Local image reference produced by the Build.
+    ScanFinding:
+      type: object
+      required:
+        - scanner
+        - severity
+        - title
+      properties:
+        scanner:
+          type: string
+          enum:
+            - trivy
+            - clamav
+        severity:
+          type: string
+          enum:
+            - critical
+            - high
+            - medium
+            - low
+            - info
+            - unknown
+        title:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    ScanReport:
+      type: object
+      required:
+        - deploymentId
+        - findings
+      properties:
+        deploymentId:
+          type: string
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScanFinding"
     BuildRequest:
       type: object
       required:

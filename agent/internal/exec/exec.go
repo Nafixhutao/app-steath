@@ -86,9 +86,11 @@ func (SystemExecutor) Stream(ctx context.Context, options Options, onLine func(s
 	return cmd.Wait()
 }
 
-// Output runs the command and returns the trimmed standard output. On failure the
+// Output runs the command and returns its standard output. On failure the
 // error carries both streams, because a command like `docker run` reports the
-// reason a probe failed on its standard output, not its standard error.
+// reason a probe failed on its standard output, not its standard error. The
+// captured standard output is returned even when the command fails, because
+// `clamscan` prints the infected files it found and then exits non-zero.
 func (SystemExecutor) Output(ctx context.Context, options Options) (string, error) {
 	cmd := exec.CommandContext(ctx, options.Name, options.Args...)
 	cmd.Dir = options.Dir
@@ -103,7 +105,7 @@ func (SystemExecutor) Output(ctx context.Context, options Options) (string, erro
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf(
+		return stdout.String(), fmt.Errorf(
 			"%s: %w: %s",
 			options.Name,
 			err,

@@ -528,8 +528,8 @@ describe("Deployment Build pipeline", () => {
 
     // A successful Build keeps the Job succeeded and the Service deploying.
     const finishedJobs = await queryRows<{ status: string }>(
-      'SELECT "status" FROM "job" WHERE "payload"->>\'deploymentId\' = $1',
-      [deployment.id],
+      'SELECT "status" FROM "job" WHERE "type" = $1 AND "payload"->>\'deploymentId\' = $2',
+      ["build", deployment.id],
     );
     expect(finishedJobs[0].status).toBe("succeeded");
 
