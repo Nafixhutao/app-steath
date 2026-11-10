@@ -595,6 +595,17 @@ func (f *fakeRouter) PutRoute(_ context.Context, route Route) error {
 	return nil
 }
 
+func (f *fakeRouter) SetSuspendedRoute(_ context.Context, route Route) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if route.Suspended {
+		f.routes[route.Hostname] = route
+	} else {
+		delete(f.routes, route.Hostname)
+	}
+	return nil
+}
+
 func (f *fakeRouter) DeleteRoute(_ context.Context, hostname string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -1085,6 +1096,29 @@ func TestReconcileLeavesStoppedServicesWithoutARoute(t *testing.T) {
 
 	if _, ok := router.route("web-abc123.127.0.0.1.nip.io"); ok {
 		t.Fatal("expected a stopped Service to have no route")
+	}
+}
+
+func TestReconcilePreservesSuspension503Route(t *testing.T) {
+	docker := newFakeDocker()
+	router := newFakeRouter()
+	docker.containers[serviceContainerName("service-1")] = &fakeContainer{
+		ID: "container-1", Name: serviceContainerName("service-1"), State: "running",
+		Labels: map[string]string{
+			LabelType: ResourceTypeService, LabelServiceID: "service-1", LabelProjectID: "project-1",
+			LabelHostname: "service.example.test", LabelAlias: "svc-one", LabelPort: "3000",
+		},
+	}
+	if err := router.SetSuspendedRoute(context.Background(), Route{Hostname: "service.example.test", Suspended: true}); err != nil {
+		t.Fatal(err)
+	}
+	manager := NewManager(docker, router)
+	if err := manager.Reconcile(context.Background()); err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+	route, ok := router.route("service.example.test")
+	if !ok || !route.Suspended {
+		t.Fatalf("suspension route was not preserved: %#v, %v", route, ok)
 	}
 }
 

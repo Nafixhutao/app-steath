@@ -94,6 +94,7 @@ const secondaryItems: Array<{ label: string; icon: IconName; href: string }> = [
 /** The Platform Admin link, shown only when `/api/admin/status` says so. */
 const adminItems: Array<{ label: string; icon: IconName; href: string }> = [
   { label: "Scan findings", icon: "admin", href: "/dashboard/admin/findings" },
+  { label: "Abuse reports", icon: "admin", href: "/dashboard/admin/abuse-reports" },
 ];
 
 const searchItems = ["Go to Projects", "Go to Services", "Go to Databases", "Log out"];

@@ -27,12 +27,7 @@ export const MAX_BUILD_ATTEMPTS = 3;
 export const LOG_RETENTION_DAYS = QUOTAS.logRetentionDays;
 
 export type DeploymentStatus =
-  | "queued"
-  | "building"
-  | "deploying"
-  | "running"
-  | "failed"
-  | "cancelled";
+  "queued" | "building" | "deploying" | "running" | "failed" | "cancelled";
 
 export type DeploymentSummary = {
   id: string;
@@ -232,10 +227,9 @@ export async function triggerDeployment(input: {
       ],
     );
 
-    await client.query(
-      'UPDATE "service" SET "status" = \'deploying\' WHERE "id" = $1',
-      [input.serviceId],
-    );
+    await client.query('UPDATE "service" SET "status" = \'deploying\' WHERE "id" = $1', [
+      input.serviceId,
+    ]);
 
     await client.query("COMMIT");
 
@@ -257,9 +251,7 @@ export async function triggerDeployment(input: {
  * one per node: the second worker finds nothing claimable instead of waiting on
  * a row lock. Backup Jobs share the same queue, so the worker asks for both.
  */
-export async function claimBuildJob(
-  types: string[] = [BUILD_JOB_TYPE],
-): Promise<JobRow | null> {
+export async function claimBuildJob(types: string[] = [BUILD_JOB_TYPE]): Promise<JobRow | null> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -300,7 +292,10 @@ export async function claimBuildJob(
  * terminal failure that must not be retried. Transient errors use `failJob`,
  * which re-queues the Job with backoff instead.
  */
-export async function completeJob(jobId: string, outcome: "succeeded" | "failed" = "succeeded"): Promise<void> {
+export async function completeJob(
+  jobId: string,
+  outcome: "succeeded" | "failed" = "succeeded",
+): Promise<void> {
   await pool.query('UPDATE "job" SET "status" = $2, "lockedAt" = NULL WHERE "id" = $1', [
     jobId,
     outcome,
@@ -366,7 +361,11 @@ export async function markDeploymentFailed(deploymentId: string, message: string
  * Marks a Deployment failed after its Build did not succeed, so the Job outcome
  * and the Deployment state never disagree.
  */
-export async function failDeployment(jobId: string, deploymentId: string, message: string): Promise<void> {
+export async function failDeployment(
+  jobId: string,
+  deploymentId: string,
+  message: string,
+): Promise<void> {
   await markDeploymentFailed(deploymentId, message);
   await completeJob(jobId, "failed");
 }
@@ -403,6 +402,7 @@ export async function runDeployment(
     deploymentId: string;
     serviceId: string;
     status: DeploymentStatus;
+    serviceStatus: string;
     imageRef: string | null;
     projectId: string;
     organizationId: string;
@@ -412,7 +412,7 @@ export async function runDeployment(
     cpuLimit: string | number;
     memoryLimitMb: number;
   }>(
-    `SELECT d."id" AS "deploymentId", d."serviceId", d."status", d."imageRef",
+    `SELECT d."id" AS "deploymentId", d."serviceId", d."status", s."status" AS "serviceStatus", d."imageRef",
             s."projectId", p."organizationId", s."platformHostname",
             s."containerPort", s."healthPath", s."cpuLimit", s."memoryLimitMb"
      FROM "deployment" d
@@ -425,6 +425,9 @@ export async function runDeployment(
   const deployment = details.rows[0];
   if (!deployment) {
     throw new Error(`Deployment ${deploymentId} no longer exists.`);
+  }
+  if (deployment.serviceStatus === "suspended") {
+    return { status: "failed", message: "The Service is suspended by the Platform Admin." };
   }
   // A cancel that landed between the Build finishing and this call must not
   // start a container for a Deployment the user already abandoned.
@@ -525,7 +528,8 @@ export async function markDeploymentRunning(deploymentId: string): Promise<void>
   await pool.query(
     `UPDATE "service" s
      SET "status" = 'running', "updatedAt" = now()
-     WHERE s."id" = (SELECT "serviceId" FROM "deployment" WHERE "id" = $1)`,
+     WHERE s."id" = (SELECT "serviceId" FROM "deployment" WHERE "id" = $1)
+       AND s."status" <> 'suspended'`,
     [deploymentId],
   );
 }
@@ -536,7 +540,7 @@ export async function markDeploymentRunning(deploymentId: string): Promise<void>
  */
 export async function markServiceStopped(serviceId: string): Promise<void> {
   await pool.query(
-    `UPDATE "service" SET "status" = 'stopped', "updatedAt" = now() WHERE "id" = $1`,
+    `UPDATE "service" SET "status" = 'stopped', "updatedAt" = now() WHERE "id" = $1 AND "status" <> 'suspended'`,
     [serviceId],
   );
 }
@@ -546,7 +550,7 @@ export async function markServiceStopped(serviceId: string): Promise<void> {
  */
 export async function markServiceRunning(serviceId: string): Promise<void> {
   await pool.query(
-    `UPDATE "service" SET "status" = 'running', "updatedAt" = now() WHERE "id" = $1`,
+    `UPDATE "service" SET "status" = 'running', "updatedAt" = now() WHERE "id" = $1 AND "status" <> 'suspended'`,
     [serviceId],
   );
 }
@@ -737,7 +741,8 @@ export async function cancelDeployment(input: {
     );
   }
 
-  const client = input.options?.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
+  const client =
+    input.options?.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
 
   // The image tag is deterministic, so the Control Plane can name the image even
   // when the Build was cancelled before it reported one. Without this the image a

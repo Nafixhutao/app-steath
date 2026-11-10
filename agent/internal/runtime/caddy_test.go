@@ -53,6 +53,18 @@ func TestConfigureOnDemandTLSCreatesThePolicyAndPermission(t *testing.T) {
 	}
 }
 
+func TestSuspensionRouteReturns503AndIsVisibleToReconcile(t *testing.T) {
+	route := caddyRoute(Route{Hostname: "app.example.test", Suspended: true})
+	if !isSuspensionRoute(route) {
+		t.Fatalf("expected suspension route, got %#v", route)
+	}
+	handlers := route["handle"].([]any)
+	first := handlers[0].(map[string]any)
+	if first["status_code"] != 503 {
+		t.Fatalf("expected 503 response, got %#v", first["status_code"])
+	}
+}
+
 func TestConfigureOnDemandTLSKeepsExistingPolicies(t *testing.T) {
 	var putBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

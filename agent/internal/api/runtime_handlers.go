@@ -20,6 +20,8 @@ import (
 type RuntimeDeployer interface {
 	Deploy(ctx context.Context, request runtime.DeployRequest) (runtime.DeployResult, error)
 	Stop(ctx context.Context, serviceID string) (runtime.ServiceState, error)
+	Suspend(ctx context.Context, serviceID string) (runtime.ServiceState, error)
+	Unsuspend(ctx context.Context, serviceID string, restore bool) error
 	Start(ctx context.Context, serviceID string) (runtime.ServiceState, error)
 	Restart(ctx context.Context, serviceID string) (runtime.ServiceState, error)
 	Remove(ctx context.Context, serviceID string) (runtime.ServiceState, error)
@@ -63,6 +65,51 @@ type RuntimeDeployer interface {
 		follow bool,
 		onLine func(writtenAt time.Time, line string),
 	) error
+}
+
+func (s server) SuspendService(w http.ResponseWriter, r *http.Request, serviceID ServiceId) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+	state, err := s.runtime.Suspend(r.Context(), serviceID)
+	if errors.Is(err, runtime.ErrUnknownService) {
+		writeError(w, http.StatusNotFound, "service_not_running", "The Service has no container on this node.")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "service_suspend_failed", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, toServiceState(state))
+}
+
+func (s server) UnsuspendService(w http.ResponseWriter, r *http.Request, serviceID ServiceId) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+	var request struct {
+		Restore bool `json:"restore"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_body", "The unsuspend request is not valid JSON.")
+		return
+	}
+	if err := s.runtime.Unsuspend(r.Context(), serviceID, request.Restore); err != nil {
+		if errors.Is(err, runtime.ErrUnknownService) {
+			writeError(w, http.StatusNotFound, "service_not_running", "The Service has no container on this node.")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "service_unsuspend_failed", err.Error())
+		return
+	}
+	state, err := s.runtime.State(r.Context(), serviceID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "service_state_failed", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, toServiceState(state))
 }
 
 // DeployService runs a built image as the Service container and answers once the
@@ -116,6 +163,10 @@ func (s server) DeployService(w http.ResponseWriter, r *http.Request) {
 	})
 	if errors.Is(err, runtime.ErrInvalidDeploy) {
 		writeError(w, http.StatusBadRequest, "invalid_deploy_request", err.Error())
+		return
+	}
+	if errors.Is(err, runtime.ErrServiceSuspended) {
+		writeError(w, http.StatusConflict, "service_suspended", "The Service is suspended by the platform administrator.")
 		return
 	}
 	if err != nil {

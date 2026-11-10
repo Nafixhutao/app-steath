@@ -3,6 +3,7 @@ package runtime
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,6 +23,7 @@ type Route struct {
 	// container a route belongs to.
 	ServiceID    string
 	DeploymentID string
+	Suspended    bool
 }
 
 // Router programs Caddy's reverse proxy. The admin API is used instead of
@@ -68,7 +70,17 @@ func NewCaddyRouter(adminURL string) *CaddyRouter {
 
 // caddyRoute is the Caddy JSON for one reverse proxy route.
 func caddyRoute(route Route) map[string]any {
+	routeID := encodeRouteID(route)
+	if route.Suspended {
+		return map[string]any{
+			"@id":      routeID,
+			"match":    []any{map[string]any{"host": []string{route.Hostname}}},
+			"handle":   []any{map[string]any{"handler": "static_response", "status_code": 503, "body": "Service suspended by the platform administrator.\n"}},
+			"terminal": true,
+		}
+	}
 	return map[string]any{
+		"@id": routeID,
 		"match": []any{
 			map[string]any{
 				"host": []string{route.Hostname},
@@ -171,12 +183,102 @@ func (r *CaddyRouter) ListRoutes(ctx context.Context) ([]Route, error) {
 		}
 
 		routes = append(routes, Route{
-			Hostname: hostname,
-			Upstream: upstreamOf(entry),
+			Hostname:     hostname,
+			Upstream:     upstreamOf(entry),
+			Suspended:    isSuspensionRoute(entry),
+			ServiceID:    serviceIDOf(entry),
+			DeploymentID: deploymentIDOf(entry),
 		})
 	}
 
 	return routes, nil
+}
+
+type routeIdentity struct {
+	ServiceID    string `json:"s"`
+	DeploymentID string `json:"d"`
+	Hostname     string `json:"h"`
+	Upstream     string `json:"u"`
+}
+
+func encodeRouteID(route Route) string {
+	encoded, _ := json.Marshal(routeIdentity{ServiceID: route.ServiceID, DeploymentID: route.DeploymentID, Hostname: route.Hostname, Upstream: route.Upstream})
+	return "stealth-" + base64.RawURLEncoding.EncodeToString(encoded)
+}
+
+func routeIdentityOf(route map[string]any) routeIdentity {
+	id, _ := route["@id"].(string)
+	encoded := strings.TrimPrefix(id, "stealth-")
+	data, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil {
+		return routeIdentity{}
+	}
+	var identity routeIdentity
+	if json.Unmarshal(data, &identity) != nil {
+		return routeIdentity{}
+	}
+	return identity
+}
+
+func serviceIDOf(route map[string]any) string    { return routeIdentityOf(route).ServiceID }
+func deploymentIDOf(route map[string]any) string { return routeIdentityOf(route).DeploymentID }
+
+func isSuspensionRoute(route map[string]any) bool {
+	handlers, ok := route["handle"].([]any)
+	if !ok || len(handlers) == 0 {
+		return false
+	}
+	first, ok := handlers[0].(map[string]any)
+	if !ok {
+		return false
+	}
+	status, ok := first["status_code"].(float64)
+	if !ok {
+		integer, integerOK := first["status_code"].(int)
+		status = float64(integer)
+		ok = integerOK
+	}
+	return first["handler"] == "static_response" && ok && status == 503
+}
+
+// SetSuspendedRoute atomically replaces the hostname route with a fixed 503 or
+// removes that response so the caller can restore the original proxy route.
+func (r *CaddyRouter) SetSuspendedRoute(ctx context.Context, route Route) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	routes, exists, err := r.readRoutes(ctx)
+	if err != nil {
+		return err
+	}
+	updated := make([]map[string]any, 0, len(routes)+1)
+	matched := false
+	for _, existing := range routes {
+		identity := routeIdentityOf(existing)
+		matches := hostnameOf(existing) == route.Hostname ||
+			(route.ServiceID != "" && identity.ServiceID == route.ServiceID) ||
+			(route.Upstream != "" && upstreamOf(existing) == route.Upstream)
+		if !matches {
+			updated = append(updated, existing)
+			continue
+		}
+		matched = true
+		identityRoute := Route{Hostname: hostnameOf(existing), Upstream: upstreamOf(existing), ServiceID: identity.ServiceID, DeploymentID: identity.DeploymentID}
+		if identityRoute.ServiceID == "" {
+			identityRoute.ServiceID = route.ServiceID
+		}
+		if identityRoute.Upstream == "" {
+			identityRoute.Upstream = route.Upstream
+		}
+		identityRoute.Suspended = route.Suspended
+		if !route.Suspended && identityRoute.Upstream == "" {
+			continue
+		}
+		updated = append(updated, caddyRoute(identityRoute))
+	}
+	if route.Suspended && !matched {
+		updated = append(updated, caddyRoute(route))
+	}
+	return r.writeRoutes(ctx, updated, exists)
 }
 
 // readRoutes returns the raw route list. The boolean reports whether the route

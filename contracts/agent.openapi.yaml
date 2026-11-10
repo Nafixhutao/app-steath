@@ -582,6 +582,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/suspend:
+    post:
+      operationId: suspendService
+      summary: Stop a Service and serve an administrative 503 response
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service suspension route installed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/unsuspend:
+    post:
+      operationId: unsuspendService
+      summary: Remove an administrative 503 response
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [restore]
+              properties:
+                restore:
+                  type: boolean
+                  description: Start the container and restore routes only if it was running before suspension.
+      responses:
+        "200":
+          description: Service suspension route removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /v1/services/{serviceId}/hostnames/{hostname}:
     put:
       operationId: addServiceHostname

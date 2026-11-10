@@ -76,6 +76,13 @@ func (m *Manager) AddHostname(
 	if err != nil {
 		return ServiceHostnameState{}, ErrUnknownService
 	}
+	if routes, routeErr := m.router.ListRoutes(ctx); routeErr == nil {
+		for _, route := range routes {
+			if route.Suspended && route.ServiceID == serviceID {
+				return ServiceHostnameState{}, ErrServiceSuspended
+			}
+		}
+	}
 	if !info.Running() {
 		return ServiceHostnameState{}, ErrServiceNotRunning
 	}

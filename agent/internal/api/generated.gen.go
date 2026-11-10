@@ -676,6 +676,12 @@ type StreamServiceLogsParams struct {
 	Tail *int `form:"tail,omitempty" json:"tail,omitempty"`
 }
 
+// UnsuspendServiceJSONBody defines parameters for UnsuspendService.
+type UnsuspendServiceJSONBody struct {
+	// Restore Start the container and restore routes only if it was running before suspension.
+	Restore bool `json:"restore"`
+}
+
 // GetVolumeParams defines parameters for GetVolume.
 type GetVolumeParams struct {
 	// SizeMb The Volume's configured limit, echoed back in the response.
@@ -705,6 +711,9 @@ type CancelDeploymentJSONRequestBody = CancelDeploymentRequest
 
 // ScanImageJSONRequestBody defines body for ScanImage for application/json ContentType.
 type ScanImageJSONRequestBody = ScanRequest
+
+// UnsuspendServiceJSONRequestBody defines body for UnsuspendService for application/json ContentType.
+type UnsuspendServiceJSONRequestBody UnsuspendServiceJSONBody
 
 // EnsureVolumeJSONRequestBody defines body for EnsureVolume for application/json ContentType.
 type EnsureVolumeJSONRequestBody = VolumeRequest
@@ -795,6 +804,12 @@ type ServerInterface interface {
 	// StopService Stop a Service container
 	// (POST /v1/services/{serviceId}/stop)
 	StopService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// SuspendService Stop a Service and serve an administrative 503 response
+	// (POST /v1/services/{serviceId}/suspend)
+	SuspendService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
+	// UnsuspendService Remove an administrative 503 response
+	// (POST /v1/services/{serviceId}/unsuspend)
+	UnsuspendService(w http.ResponseWriter, r *http.Request, serviceId ServiceId)
 	// GetUsage Measure CPU, memory, and storage usage on the node
 	// (GET /v1/usage)
 	GetUsage(w http.ResponseWriter, r *http.Request)
@@ -1569,6 +1584,58 @@ func (siw *ServerInterfaceWrapper) StopService(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// SuspendService operation middleware
+func (siw *ServerInterfaceWrapper) SuspendService(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SuspendService(w, r, serviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnsuspendService operation middleware
+func (siw *ServerInterfaceWrapper) UnsuspendService(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "serviceId" -------------
+	var serviceId ServiceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serviceId", r.PathValue("serviceId"), &serviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnsuspendService(w, r, serviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetUsage operation middleware
 func (siw *ServerInterfaceWrapper) GetUsage(w http.ResponseWriter, r *http.Request) {
 
@@ -1816,6 +1883,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/stop", wrapper.StopService)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/start", wrapper.StartService)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/restart", wrapper.RestartService)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/suspend", wrapper.SuspendService)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/services/{serviceId}/unsuspend", wrapper.UnsuspendService)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/services/{serviceId}/hostnames/{hostname}", wrapper.RemoveServiceHostname)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/v1/services/{serviceId}/hostnames/{hostname}", wrapper.AddServiceHostname)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/services/{serviceId}/logs", wrapper.StreamServiceLogs)

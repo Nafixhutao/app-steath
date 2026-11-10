@@ -27,6 +27,7 @@ const deployTimeout = 5 * time.Minute
 
 // ErrUnknownService is returned when a Service has no container on this node.
 var ErrUnknownService = errors.New("unknown service")
+var ErrServiceSuspended = errors.New("service is suspended")
 
 // ErrInvalidDeploy is returned for a Deploy request that cannot be honoured.
 var ErrInvalidDeploy = errors.New("invalid deploy request")
@@ -157,13 +158,19 @@ func (m *Manager) Deploy(ctx context.Context, request DeployRequest) (DeployResu
 	if err := request.validate(); err != nil {
 		return DeployResult{}, err
 	}
-
 	if existing, ok := m.finishedDeploy(request); ok {
 		return existing, nil
 	}
 
 	unlock := m.lockService(request.ServiceID)
 	defer unlock()
+	if routes, err := m.router.ListRoutes(ctx); err == nil {
+		for _, route := range routes {
+			if route.Suspended && route.ServiceID == request.ServiceID {
+				return DeployResult{}, ErrServiceSuspended
+			}
+		}
+	}
 
 	// Another caller may have finished this Deployment while this one waited.
 	if existing, ok := m.finishedDeploy(request); ok {
@@ -572,6 +579,140 @@ func (m *Manager) Stop(ctx context.Context, serviceID string) (ServiceState, err
 	return m.state(ctx, serviceID)
 }
 
+// SetSuspendedRoute installs or removes the durable Caddy 503 response for a
+// Service. The Control Plane separately stops/restores the container according
+// to the pre-suspension status.
+func (m *Manager) SetSuspendedRoute(ctx context.Context, serviceID string, suspended bool) error {
+	info, err := m.docker.InspectContainer(ctx, serviceContainerName(serviceID))
+	if err != nil {
+		return ErrUnknownService
+	}
+	hostname := info.Labels[LabelHostname]
+	if hostname == "" {
+		return nil
+	}
+	router, ok := m.router.(interface {
+		SetSuspendedRoute(context.Context, Route) error
+	})
+	if !ok {
+		return errors.New("router does not support suspension routes")
+	}
+	port, _ := containerPortOf(info)
+	return router.SetSuspendedRoute(ctx, Route{
+		Hostname:     hostname,
+		Upstream:     upstream(info.Labels[LabelAlias], port),
+		ServiceID:    serviceID,
+		DeploymentID: info.Labels[LabelDeploymentID],
+		Suspended:    suspended,
+	})
+}
+
+func (m *Manager) Suspend(ctx context.Context, serviceID string) (ServiceState, error) {
+	info, err := m.docker.InspectContainer(ctx, serviceContainerName(serviceID))
+	if err != nil {
+		return ServiceState{}, ErrUnknownService
+	}
+	unlock := m.lockService(serviceID)
+	defer unlock()
+	state, err := m.state(ctx, serviceID)
+	if err != nil {
+		return ServiceState{}, err
+	}
+	// Install the 503 on every hostname before stopping the container, avoiding
+	// any window where a live Service remains publicly reachable after suspension.
+	if routeErr := m.SetSuspendedRoute(ctx, serviceID, true); routeErr != nil {
+		return ServiceState{}, routeErr
+	}
+	if info.Running() {
+		if err := m.docker.StopContainer(ctx, info.ID); err != nil {
+			return ServiceState{}, err
+		}
+	}
+	return state, nil
+}
+
+func (m *Manager) Unsuspend(ctx context.Context, serviceID string, restore bool) error {
+	unlock := m.lockService(serviceID)
+	defer unlock()
+	info, err := m.docker.InspectContainer(ctx, serviceContainerName(serviceID))
+	if err != nil {
+		return ErrUnknownService
+	}
+	if restore && !info.Running() {
+		if err := m.docker.StartContainer(ctx, info.ID); err != nil {
+			return err
+		}
+	}
+	if restore {
+		if err := m.restoreServiceRoutes(ctx, serviceID, info); err != nil {
+			return err
+		}
+	}
+	routes, err := m.router.ListRoutes(ctx)
+	if err != nil {
+		return err
+	}
+	for _, route := range routes {
+		if !route.Suspended || route.ServiceID != serviceID {
+			continue
+		}
+		if restore {
+			route.Suspended = false
+			router, ok := m.router.(interface {
+				SetSuspendedRoute(context.Context, Route) error
+			})
+			if !ok {
+				return errors.New("router does not support suspension routes")
+			}
+			if err := router.SetSuspendedRoute(ctx, route); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := m.router.DeleteRoute(ctx, route.Hostname); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *Manager) restoreServiceRoutes(ctx context.Context, serviceID string, info ContainerInfo) error {
+	router, ok := m.router.(interface {
+		SetSuspendedRoute(context.Context, Route) error
+	})
+	if !ok {
+		return errors.New("router does not support suspension routes")
+	}
+	port, err := containerPortOf(info)
+	if err != nil {
+		return err
+	}
+	base := Route{Upstream: upstream(info.Labels[LabelAlias], port), ServiceID: serviceID, DeploymentID: info.Labels[LabelDeploymentID]}
+	if hostname := info.Labels[LabelHostname]; hostname != "" {
+		base.Hostname = hostname
+		if err := router.SetSuspendedRoute(ctx, base); err != nil {
+			return err
+		}
+	}
+	routes, err := m.router.ListRoutes(ctx)
+	if err != nil {
+		return err
+	}
+	for _, route := range routes {
+		if !route.Suspended || route.ServiceID != serviceID {
+			continue
+		}
+		route.Suspended = false
+		if route.Upstream == "" {
+			route.Upstream = base.Upstream
+		}
+		if err := router.SetSuspendedRoute(ctx, route); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Start starts a previously stopped container and restores its route.
 func (m *Manager) Start(ctx context.Context, serviceID string) (ServiceState, error) {
 	unlock := m.lockService(serviceID)
@@ -580,6 +721,13 @@ func (m *Manager) Start(ctx context.Context, serviceID string) (ServiceState, er
 	info, err := m.docker.InspectContainer(ctx, serviceContainerName(serviceID))
 	if err != nil {
 		return ServiceState{}, ErrUnknownService
+	}
+	if routes, routeErr := m.router.ListRoutes(ctx); routeErr == nil {
+		for _, route := range routes {
+			if route.Suspended && route.ServiceID == serviceID {
+				return ServiceState{}, ErrServiceSuspended
+			}
+		}
 	}
 
 	if err := m.docker.StartContainer(ctx, info.ID); err != nil {
@@ -725,6 +873,12 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 	// so it counts as live while it dials a running container's alias.
 	live := make(map[string]bool, len(containers))
 	liveUpstreams := make(map[string]bool, len(containers))
+	suspended := make(map[string]bool)
+	for _, route := range existing {
+		if route.Suspended {
+			suspended[route.Hostname] = true
+		}
+	}
 	for _, container := range containers {
 		if !container.Running() {
 			continue
@@ -739,6 +893,9 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 		}
 	}
 	for _, route := range existing {
+		if route.Suspended {
+			continue
+		}
 		if live[route.Hostname] || liveUpstreams[route.Upstream] {
 			continue
 		}
@@ -759,6 +916,9 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 
 		serviceID := container.Labels[LabelServiceID]
 		hostname := container.Labels[LabelHostname]
+		if suspended[hostname] {
+			continue
+		}
 		projectID := container.Labels[LabelProjectID]
 		alias := container.Labels[LabelAlias]
 		if serviceID == "" || hostname == "" || projectID == "" || alias == "" {
