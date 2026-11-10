@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Stealth Node Agent API
-  version: 0.8.0
+  version: 0.9.0
   description: |
     Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
     only caller: it authenticates with a bearer token, starts Builds, runs the
@@ -67,6 +67,91 @@ paths:
                 $ref: "#/components/schemas/UsageReport"
         "401":
           description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/backups:
+    post:
+      operationId: createBackup
+      summary: Produce a Backup artifact on the node
+      description: |
+        Creates the artifact for one Backup: `pg_dump --format=custom` for a
+        Database or the platform PostgreSQL, and a gzip compressed tar archive
+        for a Volume. The artifact stays in the agent work directory until the
+        Control Plane downloads and removes it.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BackupRequest"
+      responses:
+        "200":
+          description: Backup artifact metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupArtifact"
+        "400":
+          description: Invalid Backup request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Backup target not found on this node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Backup could not be produced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/backups/{backupId}:
+    delete:
+      operationId: removeBackup
+      summary: Remove a Backup artifact from the node
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BackupId"
+      responses:
+        "200":
+          description: Removal result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupRemoval"
+        "404":
+          description: Unknown Backup artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/backups/{backupId}/content:
+    get:
+      operationId: getBackupContent
+      summary: Download a Backup artifact
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BackupId"
+      responses:
+        "200":
+          description: Backup artifact bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Unknown Backup artifact
           content:
             application/json:
               schema:
@@ -851,6 +936,12 @@ components:
       type: http
       scheme: bearer
   parameters:
+    BackupId:
+      name: backupId
+      in: path
+      required: true
+      schema:
+        type: string
     BuildId:
       name: buildId
       in: path
@@ -970,6 +1061,54 @@ components:
           type: string
         usageMb:
           type: integer
+    BackupRequest:
+      type: object
+      required:
+        - backupId
+        - targetType
+      properties:
+        backupId:
+          type: string
+          description: Control Plane Backup id; makes artifact creation idempotent.
+        targetType:
+          type: string
+          enum:
+            - database
+            - volume
+            - platform
+        targetId:
+          type: string
+          description: Database id or Docker Volume name, depending on targetType.
+        containerName:
+          type: string
+          description: Container to dump for a platform Backup.
+        databaseName:
+          type: string
+          description: Database name to dump for a platform Backup.
+        username:
+          type: string
+          description: Role to connect as for a platform Backup.
+    BackupArtifact:
+      type: object
+      required:
+        - backupId
+        - sizeBytes
+      properties:
+        backupId:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+    BackupRemoval:
+      type: object
+      required:
+        - backupId
+        - removed
+      properties:
+        backupId:
+          type: string
+        removed:
+          type: boolean
     BuildRequest:
       type: object
       required:

@@ -78,7 +78,7 @@ const PREFIXED_DEPLOYMENT_COLUMNS = DEPLOYMENT_FIELDS.map((field) => `d."${field
 export type JobRow = {
   id: string;
   type: string;
-  payload: { deploymentId?: string; serviceId?: string };
+  payload: { deploymentId?: string; serviceId?: string; backupId?: string };
   attempts: number;
 };
 
@@ -246,22 +246,25 @@ export async function triggerDeployment(input: {
 }
 
 /**
- * Claims the next Build Job. `FOR UPDATE SKIP LOCKED` plus the single-worker
- * design gives the spec's Build concurrency of one per node: the second worker
- * finds nothing claimable instead of waiting on a row lock.
+ * Claims the next queued Job of one of the given types. `FOR UPDATE SKIP
+ * LOCKED` plus the single-worker design gives the spec's Build concurrency of
+ * one per node: the second worker finds nothing claimable instead of waiting on
+ * a row lock. Backup Jobs share the same queue, so the worker asks for both.
  */
-export async function claimBuildJob(): Promise<JobRow | null> {
+export async function claimBuildJob(
+  types: string[] = [BUILD_JOB_TYPE],
+): Promise<JobRow | null> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     const job = await client.query<JobRow>(
       `SELECT "id", "type", "payload", "attempts" FROM "job"
-       WHERE "status" = 'queued' AND "type" = $1 AND "runAt" <= now()
+       WHERE "status" = 'queued' AND "type" = ANY($1::text[]) AND "runAt" <= now()
        ORDER BY "createdAt"
        FOR UPDATE SKIP LOCKED
        LIMIT 1`,
-      [BUILD_JOB_TYPE],
+      [types],
     );
 
     const row = job.rows[0];

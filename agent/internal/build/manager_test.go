@@ -60,6 +60,12 @@ func (f *fakeExecutor) Output(ctx context.Context, options exec.Options) (string
 	return "deadbeef\n", nil
 }
 
+func (f *fakeExecutor) OutputToFile(ctx context.Context, options exec.Options, path string) error {
+	f.record(options)
+
+	return os.WriteFile(path, []byte("backup-bytes"), 0o600)
+}
+
 func (f *fakeExecutor) record(options exec.Options) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

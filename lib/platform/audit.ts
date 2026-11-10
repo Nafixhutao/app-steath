@@ -4,12 +4,14 @@ const auditPool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 /**
  * Persists an AuditEvent for membership, role, and Organization changes.
- * Shared by the Better Auth organization hooks and custom API routes.
+ * Shared by the Better Auth organization hooks and custom API routes. A system
+ * action such as a scheduled Backup has no signed-in actor, so `actorUserId`
+ * may be null.
  */
 export async function recordAudit(
   action: string,
   organizationId: string,
-  actorUserId: string,
+  actorUserId: string | null,
   targetUserId?: string,
   details: Record<string, unknown> = {},
 ): Promise<void> {

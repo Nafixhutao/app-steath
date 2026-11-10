@@ -14,6 +14,27 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for BackupRequestTargetType.
+const (
+	Database BackupRequestTargetType = "database"
+	Platform BackupRequestTargetType = "platform"
+	Volume   BackupRequestTargetType = "volume"
+)
+
+// Valid indicates whether the value is a known member of the BackupRequestTargetType enum.
+func (e BackupRequestTargetType) Valid() bool {
+	switch e {
+	case Database:
+		return true
+	case Platform:
+		return true
+	case Volume:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BuildStatus.
 const (
 	BuildStatusCancelled BuildStatus = "cancelled"
@@ -136,6 +157,40 @@ func (e ServiceStateStatus) Valid() bool {
 		return false
 	}
 }
+
+// BackupArtifact defines model for BackupArtifact.
+type BackupArtifact struct {
+	BackupId  string `json:"backupId"`
+	SizeBytes int64  `json:"sizeBytes"`
+}
+
+// BackupRemoval defines model for BackupRemoval.
+type BackupRemoval struct {
+	BackupId string `json:"backupId"`
+	Removed  bool   `json:"removed"`
+}
+
+// BackupRequest defines model for BackupRequest.
+type BackupRequest struct {
+	// BackupId Control Plane Backup id; makes artifact creation idempotent.
+	BackupId string `json:"backupId"`
+
+	// ContainerName Container to dump for a platform Backup.
+	ContainerName *string `json:"containerName,omitempty"`
+
+	// DatabaseName Database name to dump for a platform Backup.
+	DatabaseName *string `json:"databaseName,omitempty"`
+
+	// TargetId Database id or Docker Volume name, depending on targetType.
+	TargetId   *string                 `json:"targetId,omitempty"`
+	TargetType BackupRequestTargetType `json:"targetType"`
+
+	// Username Role to connect as for a platform Backup.
+	Username *string `json:"username,omitempty"`
+}
+
+// BackupRequestTargetType defines model for BackupRequest.TargetType.
+type BackupRequestTargetType string
 
 // Build defines model for Build.
 type Build struct {
@@ -449,6 +504,9 @@ type VolumeRequest struct {
 	SizeMb int `json:"sizeMb"`
 }
 
+// BackupId defines model for BackupId.
+type BackupId = string
+
 // BuildId defines model for BuildId.
 type BuildId = string
 
@@ -491,6 +549,9 @@ type GetVolumeParams struct {
 	SizeMb *int `form:"sizeMb,omitempty" json:"sizeMb,omitempty"`
 }
 
+// CreateBackupJSONRequestBody defines body for CreateBackup for application/json ContentType.
+type CreateBackupJSONRequestBody = BackupRequest
+
 // StartBuildJSONRequestBody defines body for StartBuild for application/json ContentType.
 type StartBuildJSONRequestBody = BuildRequest
 
@@ -514,6 +575,15 @@ type EnsureVolumeJSONRequestBody = VolumeRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// CreateBackup Produce a Backup artifact on the node
+	// (POST /v1/backups)
+	CreateBackup(w http.ResponseWriter, r *http.Request)
+	// RemoveBackup Remove a Backup artifact from the node
+	// (DELETE /v1/backups/{backupId})
+	RemoveBackup(w http.ResponseWriter, r *http.Request, backupId BackupId)
+	// GetBackupContent Download a Backup artifact
+	// (GET /v1/backups/{backupId}/content)
+	GetBackupContent(w http.ResponseWriter, r *http.Request, backupId BackupId)
 	// StartBuild Start a Build for a Deployment
 	// (POST /v1/builds)
 	StartBuild(w http.ResponseWriter, r *http.Request)
@@ -605,6 +675,72 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// CreateBackup operation middleware
+func (siw *ServerInterfaceWrapper) CreateBackup(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBackup(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveBackup operation middleware
+func (siw *ServerInterfaceWrapper) RemoveBackup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "backupId" -------------
+	var backupId BackupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "backupId", r.PathValue("backupId"), &backupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "backupId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveBackup(w, r, backupId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBackupContent operation middleware
+func (siw *ServerInterfaceWrapper) GetBackupContent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "backupId" -------------
+	var backupId BackupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "backupId", r.PathValue("backupId"), &backupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "backupId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBackupContent(w, r, backupId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // StartBuild operation middleware
 func (siw *ServerInterfaceWrapper) StartBuild(w http.ResponseWriter, r *http.Request) {
@@ -1453,6 +1589,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/health", wrapper.GetHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/node", wrapper.GetNode)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/usage", wrapper.GetUsage)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/backups", wrapper.CreateBackup)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/backups/{backupId}", wrapper.RemoveBackup)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/backups/{backupId}/content", wrapper.GetBackupContent)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/builds", wrapper.StartBuild)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.CancelBuild)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/builds/{buildId}", wrapper.GetBuild)

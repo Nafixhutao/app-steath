@@ -111,6 +111,10 @@ type Manager struct {
 	// cleanupStatePath is where the last Build-cache prune is recorded, so the
 	// weekly prune survives an agent restart. Empty disables the prune.
 	cleanupStatePath string
+	// backupDir is where Backup artifacts are written; empty disables Backup.
+	backupDir string
+	// backupArtifacts maps a Backup id to the file it produced.
+	backupArtifacts backupArtifacts
 }
 
 // NewManager returns a Manager that runs containers with docker and routes them
@@ -124,6 +128,9 @@ func NewManager(docker Docker, router Router) *Manager {
 		pollInterval:  1 * time.Second,
 		deploys:       make(map[string]DeployResult),
 		locks:         make(map[string]*sync.Mutex),
+		backupArtifacts: backupArtifacts{
+			paths: make(map[string]string),
+		},
 	}
 }
 

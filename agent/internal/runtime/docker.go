@@ -216,6 +216,11 @@ type Docker interface {
 	// ContainerStats reports the live CPU and memory usage of one container.
 	// Stopped containers are not sampled; the caller treats them as zero.
 	ContainerStats(ctx context.Context, containerID string) (ContainerStats, error)
+	// DumpDatabase writes a custom-format pg_dump of one container to destPath.
+	// The container must already run PostgreSQL.
+	DumpDatabase(ctx context.Context, containerName, databaseName, username, destPath string) error
+	// ArchiveVolume writes a gzip compressed tar of one Volume to destPath.
+	ArchiveVolume(ctx context.Context, volumeName, destPath string) error
 	// RemoveVolume deletes a Volume and its data, reporting whether it existed.
 	// A missing Volume is not an error, because removal must be safe to retry.
 	RemoveVolume(ctx context.Context, name string) (bool, error)
@@ -774,6 +779,39 @@ func (d *CLIDocker) ContainerStats(ctx context.Context, containerID string) (Con
 		CPUUsage:      parseCPUPercent(raw.CPUPerc),
 		MemoryUsageMB: parseMemoryMB(raw.MemUsage),
 	}, nil
+}
+
+// DumpDatabase runs pg_dump inside the Database container. The container's
+// local socket trusts its own OS user, so no password crosses the command line
+// or the agent process.
+func (d *CLIDocker) DumpDatabase(
+	ctx context.Context,
+	containerName, databaseName, username, destPath string,
+) error {
+	return d.runner.OutputToFile(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"exec", containerName,
+			"pg_dump", "--format=custom", "--no-password",
+			"--username", username, "--dbname", databaseName,
+		},
+	}, destPath)
+}
+
+// ArchiveVolume streams a gzip compressed tar of the Volume to destPath through
+// a throwaway container. Streaming avoids mounting the agent work directory into
+// the helper, which would only work when the agent runs on the host.
+func (d *CLIDocker) ArchiveVolume(ctx context.Context, volumeName, destPath string) error {
+	return d.runner.OutputToFile(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"run", "--rm", "--network", "none",
+			"--mount", "type=volume,source=" + volumeName + ",target=/volume,readonly",
+			"--entrypoint", "tar",
+			d.probeImage,
+			"-czf", "-", "-C", "/volume", ".",
+		},
+	}, destPath)
 }
 
 // parseCPUPercent turns Docker's `12.50%` into vCPU.

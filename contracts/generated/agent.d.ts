@@ -61,6 +61,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Produce a Backup artifact on the node
+         * @description Creates the artifact for one Backup: `pg_dump --format=custom` for a
+         *     Database or the platform PostgreSQL, and a gzip compressed tar archive
+         *     for a Volume. The artifact stays in the agent work directory until the
+         *     Control Plane downloads and removes it.
+         */
+        post: operations["createBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/backups/{backupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a Backup artifact from the node */
+        delete: operations["removeBackup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/backups/{backupId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a Backup artifact */
+        get: operations["getBackupContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/builds": {
         parameters: {
             query?: never;
@@ -458,6 +515,29 @@ export interface components {
             databaseId: string;
             usageMb: number;
         };
+        BackupRequest: {
+            /** @description Control Plane Backup id; makes artifact creation idempotent. */
+            backupId: string;
+            /** @enum {string} */
+            targetType: "database" | "volume" | "platform";
+            /** @description Database id or Docker Volume name, depending on targetType. */
+            targetId?: string;
+            /** @description Container to dump for a platform Backup. */
+            containerName?: string;
+            /** @description Database name to dump for a platform Backup. */
+            databaseName?: string;
+            /** @description Role to connect as for a platform Backup. */
+            username?: string;
+        };
+        BackupArtifact: {
+            backupId: string;
+            /** Format: int64 */
+            sizeBytes: number;
+        };
+        BackupRemoval: {
+            backupId: string;
+            removed: boolean;
+        };
         BuildRequest: {
             /** @description Deployment id; makes Build creation idempotent. */
             buildId: string;
@@ -677,6 +757,7 @@ export interface components {
     };
     responses: never;
     parameters: {
+        BackupId: string;
         /** @description Deployment id that owns the Build. */
         BuildId: string;
         /** @description Service id that owns the container. */
@@ -774,6 +855,119 @@ export interface operations {
             };
             /** @description Missing or invalid token */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BackupRequest"];
+            };
+        };
+        responses: {
+            /** @description Backup artifact metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupArtifact"];
+                };
+            };
+            /** @description Invalid Backup request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Backup target not found on this node */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Backup could not be produced */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                backupId: components["parameters"]["BackupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removal result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupRemoval"];
+                };
+            };
+            /** @description Unknown Backup artifact */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getBackupContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                backupId: components["parameters"]["BackupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Backup artifact bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description Unknown Backup artifact */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

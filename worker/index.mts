@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import {
+  BUILD_JOB_TYPE,
   claimBuildJob,
   completeJob,
   failJob,
@@ -10,6 +11,13 @@ import {
 } from "../lib/platform/deployments.ts";
 import { createAgentClient } from "../lib/agent-client.ts";
 import { refreshAllOrganizationsUsage } from "../lib/platform/usage.ts";
+import {
+  BACKUP_JOB_TYPE,
+  DAILY_BACKUP_UTC_HOUR,
+  pruneBackups,
+  runBackupJob,
+  scheduleDailyBackups,
+} from "../lib/platform/backups.ts";
 
 /**
  * Deployment worker. It runs as its own process from the same codebase, claims
@@ -34,6 +42,22 @@ const LOG_PRUNE_INTERVAL_MS = 60 * 60 * 1_000;
  */
 const USAGE_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 
+/**
+ * When the next daily Backup pass is due. Backups run at 02.00 UTC; the first
+ * pass after a worker start runs immediately so a restart after 02.00 still
+ * schedules that day, and `scheduleDailyBackups` itself is idempotent per day.
+ */
+function nextDailyBackupAt(now: Date): number {
+  const next = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), DAILY_BACKUP_UTC_HOUR),
+  );
+  if (next.getTime() <= now.getTime()) {
+    next.setUTCDate(next.getUTCDate() + 1);
+  }
+
+  return next.getTime();
+}
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 let stopping = false;
@@ -48,6 +72,24 @@ function sleep(ms: number): Promise<void> {
  * really failed, so a restart never fails a Deployment by accident.
  */
 async function runJob(job: JobRow): Promise<void> {
+  if (job.type === BACKUP_JOB_TYPE) {
+    try {
+      const result = await runBackupJob(job);
+      await completeJob(job.id, result.status === "failed" ? "failed" : "succeeded");
+      console.log(`[worker] backup ${job.payload.backupId ?? job.id} ${result.status}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await failJob(job.id, message);
+      console.error(`[worker] backup job failed: ${message}`);
+    }
+    return;
+  }
+
+  if (job.type !== BUILD_JOB_TYPE) {
+    await completeJob(job.id, "failed");
+    return;
+  }
+
   const deploymentId = job.payload.deploymentId;
   if (!deploymentId) {
     await failJob(job.id, "Build Job is missing its deploymentId.");
@@ -105,6 +147,7 @@ async function runJob(job: JobRow): Promise<void> {
 async function loop(): Promise<void> {
   let lastLogPrune = 0;
   let lastUsageRefresh = 0;
+  let nextBackupMaintenance = 0;
 
   while (!stopping) {
     if (Date.now() - lastUsageRefresh >= USAGE_REFRESH_INTERVAL_MS) {
@@ -138,8 +181,32 @@ async function loop(): Promise<void> {
 
     let job: JobRow | null = null;
 
+    // Backups are scheduled once a day at 02.00 UTC and pruned after seven days.
+    // The first pass after a start runs immediately, and both calls are
+    // idempotent, so a restart never schedules the same day twice.
+    if (Date.now() >= nextBackupMaintenance) {
+      nextBackupMaintenance = nextDailyBackupAt(new Date());
+      try {
+        const scheduled = await scheduleDailyBackups();
+        if (scheduled.scheduled > 0) {
+          console.log(`[worker] queued ${scheduled.scheduled} daily Backups`);
+        }
+      } catch (error) {
+        console.error("[worker] could not schedule daily Backups", error);
+      }
+
+      try {
+        const pruned = await pruneBackups();
+        if (pruned.removed > 0) {
+          console.log(`[worker] pruned ${pruned.removed} Backups older than seven days`);
+        }
+      } catch (error) {
+        console.error("[worker] could not prune expired Backups", error);
+      }
+    }
+
     try {
-      job = await claimBuildJob();
+      job = await claimBuildJob([BUILD_JOB_TYPE, BACKUP_JOB_TYPE]);
     } catch (error) {
       console.error("[worker] could not claim a job", error);
       await sleep(POLL_INTERVAL_MS);

@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -35,6 +36,10 @@ type Executor interface {
 	Stream(ctx context.Context, options Options, onLine func(string)) error
 	// Output runs the command and returns its standard output.
 	Output(ctx context.Context, options Options) (string, error)
+	// OutputToFile runs the command and writes its standard output to path. It
+	// exists for Backup artifacts, which are binary and can be large, so they
+	// never have to fit in a string.
+	OutputToFile(ctx context.Context, options Options, path string) error
 }
 
 // SystemExecutor runs commands on the host.
@@ -103,6 +108,47 @@ func (SystemExecutor) Output(ctx context.Context, options Options) (string, erro
 	}
 
 	return stdout.String(), nil
+}
+
+// OutputToFile runs the command and streams its standard output into path. A
+// failed command removes the partial file, so a caller never uploads a truncated
+// Backup. Standard error is kept for the error message.
+func (SystemExecutor) OutputToFile(ctx context.Context, options Options, path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("create %s: %w", path, err)
+	}
+
+	cmd := exec.CommandContext(ctx, options.Name, options.Args...)
+	cmd.Dir = options.Dir
+	if len(options.Env) > 0 {
+		cmd.Env = append(cmd.Environ(), options.Env...)
+	}
+	if options.Stdin != "" {
+		cmd.Stdin = strings.NewReader(options.Stdin)
+	}
+
+	var stderr bytes.Buffer
+	cmd.Stdout = file
+	cmd.Stderr = &stderr
+
+	runErr := cmd.Run()
+	closeErr := file.Close()
+	if runErr != nil {
+		_ = os.Remove(path)
+		return fmt.Errorf(
+			"%s: %w: %s",
+			options.Name,
+			runErr,
+			strings.TrimSpace(stderr.String()),
+		)
+	}
+	if closeErr != nil {
+		_ = os.Remove(path)
+		return fmt.Errorf("close %s: %w", path, closeErr)
+	}
+
+	return nil
 }
 
 func forwardLines(stream io.Reader, onLine func(string)) {

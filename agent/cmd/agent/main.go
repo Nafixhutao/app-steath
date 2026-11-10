@@ -81,6 +81,9 @@ func main() {
 	// The weekly Build-cache prune is recorded here, so a restart does not prune
 	// again and a node that keeps restarting still gets pruned every week.
 	services.SetCleanupStatePath(filepath.Join(workRoot, "cleanup.json"))
+	// Backup artifacts are staged here between creation and the Control Plane's
+	// download. The Control Plane removes each file once it is stored.
+	services.SetBackupDir(filepath.Join(workRoot, "backups"))
 	// Caddy runs as a container on this node, so it must join each Project
 	// network to resolve the alias a route dials.
 	services.SetNetworkAttacher(runtime.NewCaddyAttacher(

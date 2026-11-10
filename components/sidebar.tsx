@@ -20,6 +20,7 @@ import {
   type UserIdentity,
 } from "./identity";
 import {
+  Archive,
   Bell,
   ChartPie,
   ChevronDown,
@@ -68,7 +69,8 @@ type IconName =
   | "services"
   | "databases"
   | "domains"
-  | "gauge";
+  | "gauge"
+  | "backups";
 
 type Theme = "light" | "dark" | "system";
 
@@ -78,6 +80,7 @@ const primaryItems: Array<{ label: string; icon: IconName; href: string }> = [
   { label: "Projects", icon: "projects", href: "/dashboard/projects" },
   { label: "Services", icon: "services", href: "/dashboard/services" },
   { label: "Databases", icon: "databases", href: "/dashboard/databases" },
+  { label: "Backups", icon: "backups", href: "/dashboard/backups" },
   { label: "Domains", icon: "domains", href: "/dashboard/domains" },
 ];
 
@@ -136,6 +139,7 @@ const iconMap: Record<Exclude<IconName, "slack">, LucideIcon> = {
   databases: ShieldCheck,
   domains: ExternalLink,
   gauge: Gauge,
+  backups: Archive,
 };
 
 function Icon({ name, size = 16 }: { name: IconName; size?: number }) {

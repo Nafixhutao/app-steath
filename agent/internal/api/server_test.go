@@ -62,6 +62,10 @@ func (s *stubExecutor) Output(ctx context.Context, options exec.Options) (string
 	return "abc123\n", nil
 }
 
+func (s *stubExecutor) OutputToFile(ctx context.Context, options exec.Options, path string) error {
+	return os.WriteFile(path, []byte("backup-bytes"), 0o600)
+}
+
 type stubNodeInfo struct{ info NodeInfo }
 
 func (s stubNodeInfo) NodeInfo() NodeInfo { return s.info }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -57,6 +58,13 @@ type fakeDocker struct {
 	// ready or a failed rotation is simulated.
 	execErr   error
 	execCalls []fakeExec
+
+	// dumpErr and archiveErr simulate a Backup that cannot be produced. The
+	// recorded calls let the Backup tests assert the container and Volume names.
+	dumpErr    error
+	archiveErr error
+	dumped     []string
+	archived   []string
 }
 
 type fakeExec struct {
@@ -421,6 +429,33 @@ func (f *fakeDocker) ContainerStats(_ context.Context, containerID string) (Cont
 	defer f.mu.Unlock()
 
 	return f.stats[containerID], nil
+}
+
+func (f *fakeDocker) DumpDatabase(
+	_ context.Context,
+	containerName, databaseName, username, destPath string,
+) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.dumpErr != nil {
+		return f.dumpErr
+	}
+	f.dumped = append(f.dumped, containerName+" "+databaseName+" "+username)
+
+	return os.WriteFile(destPath, []byte("custom-format-dump"), 0o600)
+}
+
+func (f *fakeDocker) ArchiveVolume(_ context.Context, volumeName, destPath string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.archiveErr != nil {
+		return f.archiveErr
+	}
+	f.archived = append(f.archived, volumeName)
+
+	return os.WriteFile(destPath, []byte("compressed-tar"), 0o600)
 }
 
 func (f *fakeDocker) RemoveVolume(_ context.Context, name string) (bool, error) {

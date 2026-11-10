@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,6 +41,9 @@ type RuntimeDeployer interface {
 	) (runtime.DatabaseProxyState, error)
 	GetDatabaseProxy(ctx context.Context, databaseID string) (runtime.DatabaseProxyState, error)
 	RemoveDatabaseProxy(ctx context.Context, databaseID string) (bool, error)
+	Backup(ctx context.Context, request runtime.BackupRequest) (runtime.BackupArtifact, error)
+	BackupContent(backupID string) (string, int64, error)
+	RemoveBackup(backupID string) (bool, error)
 	AddHostname(
 		ctx context.Context,
 		serviceID string,
@@ -536,6 +542,94 @@ func (s server) GetUsage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, toUsageReport(report))
+}
+
+// CreateBackup produces the artifact for one Backup target. The bytes are
+// downloaded separately so a large dump never travels inside JSON.
+func (s server) CreateBackup(w http.ResponseWriter, r *http.Request) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	var request BackupRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_body", "The Backup request is not valid JSON.")
+		return
+	}
+
+	artifact, err := s.runtime.Backup(r.Context(), runtime.BackupRequest{
+		BackupID:      request.BackupId,
+		TargetType:    string(request.TargetType),
+		TargetID:      deref(request.TargetId),
+		ContainerName: deref(request.ContainerName),
+		DatabaseName:  deref(request.DatabaseName),
+		Username:      deref(request.Username),
+	})
+	switch {
+	case errors.Is(err, runtime.ErrInvalidBackup):
+		writeError(w, http.StatusBadRequest, "invalid_backup_request", err.Error())
+		return
+	case errors.Is(err, runtime.ErrUnknownBackup):
+		writeError(w, http.StatusNotFound, "backup_target_not_found", err.Error())
+		return
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, "backup_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, BackupArtifact{
+		BackupId:  artifact.BackupID,
+		SizeBytes: artifact.SizeBytes,
+	})
+}
+
+// GetBackupContent streams a Backup artifact the Control Plane is storing.
+func (s server) GetBackupContent(w http.ResponseWriter, _ *http.Request, backupID BackupId) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	path, size, err := s.runtime.BackupContent(string(backupID))
+	if errors.Is(err, runtime.ErrUnknownBackup) {
+		writeError(w, http.StatusNotFound, "backup_not_found", "Backup artifact not found.")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "backup_read_failed", err.Error())
+		return
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "backup_not_found", "Backup artifact not found.")
+		return
+	}
+	defer file.Close()
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", strconv.FormatInt(size, 10))
+	w.WriteHeader(http.StatusOK)
+	if _, err := io.Copy(w, file); err != nil {
+		log.Printf("stream Backup %s: %v", backupID, err)
+	}
+}
+
+// RemoveBackup deletes an artifact once the Control Plane stored it.
+func (s server) RemoveBackup(w http.ResponseWriter, _ *http.Request, backupID BackupId) {
+	if s.runtime == nil {
+		writeError(w, http.StatusServiceUnavailable, "runtime_unavailable", "The runtime is not configured.")
+		return
+	}
+
+	removed, err := s.runtime.RemoveBackup(string(backupID))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "backup_remove_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, BackupRemoval{BackupId: string(backupID), Removed: removed})
 }
 
 // RemoveService deletes the container and its route.
