@@ -1,0 +1,17 @@
+# Caddy for the production single-node deployment.
+#
+# This file deliberately declares no site. The Node Agent owns the only HTTP
+# server (id "stealth", listening on :443) and rewrites its routes through the
+# admin API on every Deploy. Caddy rejects a second server on the same :443
+# listener, so the dashboard is not declared here: the Cloudflare Tunnel points
+# `console.<domain>` straight at `http://control-plane:3000` and sends every
+# Platform Subdomain to `https://caddy:443`.
+#
+# `local_certs` keeps the certificates Caddy issues internal. The tunnel origin
+# is configured with "No TLS Verify" and Cloudflare terminates the public TLS
+# session, so Caddy never needs port 80/443 reachable for an ACME challenge.
+
+{
+	admin 0.0.0.0:2019
+	local_certs
+}
