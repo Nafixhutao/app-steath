@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * Palette (deliberate, semantic). Neutrals: #0f0f0f / #121014 / #17171a ...
+ * #232127 for surface, #edecf1 text, grey stops for secondary text/borders.
+ * One interactive accent: purple #b5a8ff (links, service URLs, volume, focus).
+ * Semantic hues tied to a meaning, not decoration: blue #186cee (primary
+ * action on auth), green #00734b (create / success), gold #d8c783
+ * (organization / warning), red (danger / destructive).
+ */
+
 :root {
   --background: #0f0f0f;
   --foreground: #ffffff;
@@ -560,8 +569,7 @@ a:hover {
 }
 .sidebar-toggle:hover,
 .sidebar-close:hover,
-.profile-button:hover,
-.notification-button:hover {
+.profile-button:hover {
   background: rgb(255 255 255 / 5%);
   color: #edecf1;
 }
@@ -801,20 +809,7 @@ a:hover {
   flex: 0 0 auto;
   color: #7e7a84;
 }
-.notification-button {
-  display: inline-flex;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: #b5b2b9;
-  cursor: pointer;
-}
+
 .profile-menu {
   position: absolute;
   right: 12px;
@@ -878,50 +873,14 @@ a:hover {
 .profile-menu-row.logout-row {
   color: #f2708a;
 }
-.theme-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  color: #b3b0ba;
-  font-size: 13px;
-}
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid #3a373f;
-  border-radius: 999px;
-  background: #1a181d;
-}
-.theme-toggle button {
-  display: flex;
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: #aaa6ae;
-  cursor: pointer;
-}
-.theme-toggle button:hover,
-.theme-toggle button.is-selected {
-  background: #fff;
-  color: #1a181d;
-}
+
 .sidebar-row:focus-visible,
 .sidebar-search:focus-visible,
 .org-switcher:focus-visible,
 .sidebar-toggle:focus-visible,
 .sidebar-close:focus-visible,
 .profile-button:focus-visible,
-.notification-button:focus-visible,
 .profile-menu-row:focus-visible,
-.theme-toggle button:focus-visible,
 .user-org-switcher:focus-visible,
 .mobile-topbar-actions button:focus-visible,
 .mobile-brand:focus-visible,
@@ -1695,8 +1654,8 @@ a:hover {
   }
   .mobile-brand {
     display: inline-flex;
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     align-items: center;
     justify-content: center;
     border-radius: 8px;
@@ -1713,8 +1672,8 @@ a:hover {
   }
   .mobile-topbar-actions button {
     display: inline-flex;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     align-items: center;
     justify-content: center;
     padding: 0;

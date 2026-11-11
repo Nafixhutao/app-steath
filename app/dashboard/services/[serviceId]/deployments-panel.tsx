@@ -24,12 +24,12 @@ function getError(error: unknown) {
 }
 
 function formatTime(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "N/A";
   return new Date(value).toLocaleString();
 }
 
 function shortCommit(sha: string | null): string {
-  return sha ? sha.slice(0, 7) : "—";
+  return sha ? sha.slice(0, 7) : "N/A";
 }
 
 /**
@@ -164,7 +164,7 @@ export function DeploymentsPanel({
       {node ? (
         <p className={`deployment-node is-${node.status}`}>
           Node <strong>{node.name}</strong>:{" "}
-          {nodeHealthy ? "healthy" : "unavailable — Deployments are blocked"}
+          {nodeHealthy ? "healthy" : "unavailable: Deployments are blocked"}
           {node.lastSeenAt ? ` (last heartbeat ${formatTime(node.lastSeenAt)})` : null}
         </p>
       ) : (
@@ -221,7 +221,7 @@ export function DeploymentsPanel({
                     </td>
                     <td>{formatTime(deployment.startedAt)}</td>
                     <td>{formatTime(deployment.finishedAt)}</td>
-                    <td>{deploymentDuration(deployment) ?? "—"}</td>
+                    <td>{deploymentDuration(deployment) ?? "N/A"}</td>
                     <td>
                       <button
                         className="dashboard-link-button"

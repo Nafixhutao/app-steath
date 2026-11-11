@@ -155,7 +155,7 @@ export function RuntimePanel({
         <div>
           <dt>Container ID</dt>
           <dd>
-            <code>{runtime?.containerId ? runtime.containerId.slice(0, 12) : "—"}</code>
+            <code>{runtime?.containerId ? runtime.containerId.slice(0, 12) : "N/A"}</code>
           </dd>
         </div>
       </dl>

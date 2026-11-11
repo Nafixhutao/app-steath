@@ -22,7 +22,7 @@ function formatTime(value: string): string {
 
 function usageLabel(database: DatabaseSummary): string {
   if (database.usageMb === null) {
-    return "Unavailable — the node did not answer";
+    return "Unavailable: the node did not answer";
   }
 
   return `${database.usageMb} MB of ${database.storageLimitMb} MB`;
@@ -186,7 +186,7 @@ export function DatabasePanel({
 
       {redeployNeeded ? (
         <p className="environment-redeploy-banner" role="status">
-          Database changes are saved but not live yet — redeploy this Project&apos;s Services to
+          Database changes are saved but not live yet. Redeploy this Project&apos;s Services to
           apply them.
         </p>
       ) : null}
@@ -258,7 +258,7 @@ export function DatabasePanel({
                     </div>
                     {database.overQuota ? (
                       <small className="dashboard-alert is-error">
-                        Over the storage limit — the Database was stopped.
+                        Over the storage limit: the Database was stopped.
                       </small>
                     ) : null}
                   </td>

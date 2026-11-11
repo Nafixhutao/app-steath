@@ -236,7 +236,7 @@ export function CustomDomainPanel({
                     {domain.instructions.a.value ? (
                       <code className="environment-key">{domain.instructions.a.value}</code>
                     ) : (
-                      <span>Not configured — use the CNAME instead</span>
+                      <span>Not configured. Use the CNAME instead</span>
                     )}
                   </td>
                 </tr>

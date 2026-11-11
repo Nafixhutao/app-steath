@@ -290,32 +290,16 @@ export default function Home() {
         {!isSignUp && (
           <p className="support-copy compact">
             Forgot your{" "}
-            <a href="#email" onClick={(event) => event.preventDefault()}>
+            <a href="#email">
               email
             </a>{" "}
             or{" "}
-            <a href="#password" onClick={(event) => event.preventDefault()}>
+            <a href="#password">
               password
             </a>
             ?
           </p>
         )}
-
-        <p className="legal-copy">
-          By continuing, I agree to Stealth&apos;s{" "}
-          <a href="#terms" onClick={(event) => event.preventDefault()}>
-            terms
-          </a>
-          ,{" "}
-          <a href="#privacy" onClick={(event) => event.preventDefault()}>
-            privacy policy
-          </a>{" "}
-          and{" "}
-          <a href="#cookies" onClick={(event) => event.preventDefault()}>
-            cookie policy
-          </a>
-          .
-        </p>
       </div>
     </main>
   );

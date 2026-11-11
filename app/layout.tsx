@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+// Typeface: Geist + Geist Mono, chosen for developer-tool legibility (crisp
+// tabular data, compact numerals) while staying visually neutral so the
+// "Stealth" mascot and kurama avatar carry the brand personality.
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

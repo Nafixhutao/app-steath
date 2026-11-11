@@ -135,7 +135,7 @@ export function EnvironmentPanel({
 
       {redeployNeeded ? (
         <p className="environment-redeploy-banner" role="status">
-          Environment changes are saved but not live yet — redeploy this Service to apply them.
+          Environment changes are saved but not live yet. Redeploy this Service to apply them.
         </p>
       ) : null}
 

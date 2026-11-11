@@ -21,7 +21,7 @@ function usageLabel(volume: VolumeSummary): string {
     return "Created on the next Deployment";
   }
   if (volume.usageMb === null) {
-    return "Unavailable — the node did not answer";
+    return "Unavailable: the node did not answer";
   }
 
   return `${volume.usageMb} MB of ${volume.sizeMb} MB`;
@@ -118,7 +118,7 @@ export function VolumePanel({
 
       {redeployNeeded ? (
         <p className="environment-redeploy-banner" role="status">
-          Volume changes are saved but not live yet — redeploy this Service to apply them.
+          Volume changes are saved but not live yet. Redeploy this Service to apply them.
         </p>
       ) : null}
 

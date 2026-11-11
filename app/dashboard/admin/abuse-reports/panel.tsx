@@ -165,7 +165,7 @@ export function AbuseAdminPanel() {
         {resources.map((r, i) => (
           <article className="dashboard-card" key={`${r.organizationId}-${r.serviceId ?? i}`}>
             <strong>{r.organizationName}</strong> ({r.organizationSlug}){" "}
-            {r.suspendedAt ? "— Organization suspended" : ""}
+            {r.suspendedAt ? "Organization suspended" : ""}
             <button
               onClick={() =>
                 void suspend(
