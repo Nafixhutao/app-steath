@@ -4,13 +4,13 @@
 
 **Blocked by:** 10, 11
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Backup berjalan otomatis setiap hari pukul 02.00 UTC untuk Database, Volume, dan PostgreSQL platform.
-- [ ] Database memakai `pg_dump` format custom; Volume memakai arsip terkompresi; platform memakai `pg_dump`.
-- [ ] Backup diunggah ke S3-compatible dengan server-side encryption.
-- [ ] Jika kredensial S3 tidak tersedia, Backup disimpan lokal dan dashboard menampilkan peringatan.
-- [ ] Daftar Backup menampilkan target, waktu, ukuran, dan status.
-- [ ] Backup dan metadata lebih dari tujuh hari dihapus otomatis.
-- [ ] Kegagalan Backup terlihat di dashboard dan tercatat sebagai AuditEvent.
-- [ ] Tes mencakup penjadwalan, upload, fallback lokal, dan retensi.
+- [x] Backup berjalan otomatis setiap hari pukul 02.00 UTC untuk Database, Volume, dan PostgreSQL platform.
+- [x] Database memakai `pg_dump` format custom; Volume memakai arsip terkompresi; platform memakai `pg_dump`.
+- [x] Backup diunggah ke S3-compatible dengan server-side encryption.
+- [x] Jika kredensial S3 tidak tersedia, Backup disimpan lokal dan dashboard menampilkan peringatan.
+- [x] Daftar Backup menampilkan target, waktu, ukuran, dan status.
+- [x] Backup dan metadata lebih dari tujuh hari dihapus otomatis.
+- [x] Kegagalan Backup terlihat di dashboard dan tercatat sebagai AuditEvent.
+- [x] Tes mencakup penjadwalan, upload, fallback lokal, dan retensi.

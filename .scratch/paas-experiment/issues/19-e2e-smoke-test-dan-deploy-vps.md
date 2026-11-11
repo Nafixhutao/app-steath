@@ -4,17 +4,17 @@
 
 **Blocked by:** 01-18 (semua tiket sebelumnya)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Docker Compose menjalankan Control Plane, worker, Node Agent, Caddy, dan PostgreSQL platform.
-- [ ] Node Agent tidak diekspos ke internet dan memakai token; Control Plane tidak memegang Docker socket.
-- [ ] Migrasi database berjalan dengan advisory lock dan service menunggu Control Plane siap.
-- [ ] Health endpoint Control Plane dan Node Agent berfungsi.
-- [ ] Restart Control Plane tidak menghentikan Service user; restart Node Agent merekonsiliasi container dan route.
-- [ ] Smoke test berjalan: signup -> Organization -> Project -> Service -> Deployment -> URL HTTPS -> Database -> koneksi dari Service -> Public Database Proxy -> cleanup.
-- [ ] Custom Domain diuji di environment yang memiliki DNS; jika tidak tersedia, verifikasi route diuji di Node Agent.
-- [ ] Runbook VPS mencakup setup Docker, Caddy, environment, backup, dan troubleshooting.
-- [ ] Semua test Control Plane, Node Agent, dan smoke test lulus.
+- [x] Docker Compose menjalankan Control Plane, worker, Node Agent, Caddy, dan PostgreSQL platform.
+- [x] Node Agent tidak diekspos ke internet dan memakai token; Control Plane tidak memegang Docker socket.
+- [x] Migrasi database berjalan dengan advisory lock dan service menunggu Control Plane siap.
+- [x] Health endpoint Control Plane dan Node Agent berfungsi.
+- [x] Restart Control Plane tidak menghentikan Service user; restart Node Agent merekonsiliasi container dan route.
+- [x] Smoke test berjalan: signup -> Organization -> Project -> Service -> Deployment -> URL HTTPS -> Database -> koneksi dari Service -> Public Database Proxy -> cleanup.
+- [x] Custom Domain diuji di environment yang memiliki DNS; jika tidak tersedia, verifikasi route diuji di Node Agent.
+- [x] Runbook VPS mencakup setup Docker, Caddy, environment, backup, dan troubleshooting.
+- [x] Semua test Control Plane, Node Agent, dan smoke test lulus.
 
 ## Comments
 

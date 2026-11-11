@@ -4,14 +4,14 @@
 
 **Blocked by:** 07, 17
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Formulir Abuse Report publik menerima URL target, kategori, deskripsi, dan email pelapor opsional.
-- [ ] Formulir memakai rate limit dan challenge sederhana untuk mengurangi spam.
-- [ ] Platform Admin memiliki antrean laporan dengan status new, triaged, resolved, dan dismissed.
-- [ ] Suspension Service menghentikan container dan menampilkan halaman 503.
-- [ ] Suspension Organization menghentikan semua Service di Organization.
-- [ ] Unsuspend memulihkan Service yang sebelumnya berjalan; Service yang stopped tetap stopped.
-- [ ] Platform Admin dapat mencari Organization dan Service lintas tenant.
-- [ ] Setiap tindakan admin tercatat sebagai AuditEvent tanpa secret.
-- [ ] Tes mencakup alur laporan, suspension, unsuspend, dan isolasi data.
+- [x] Formulir Abuse Report publik menerima URL target, kategori, deskripsi, dan email pelapor opsional.
+- [x] Formulir memakai rate limit dan challenge sederhana untuk mengurangi spam.
+- [x] Platform Admin memiliki antrean laporan dengan status new, triaged, resolved, dan dismissed.
+- [x] Suspension Service menghentikan container dan menampilkan halaman 503.
+- [x] Suspension Organization menghentikan semua Service di Organization.
+- [x] Unsuspend memulihkan Service yang sebelumnya berjalan; Service yang stopped tetap stopped.
+- [x] Platform Admin dapat mencari Organization dan Service lintas tenant.
+- [x] Setiap tindakan admin tercatat sebagai AuditEvent tanpa secret.
+- [x] Tes mencakup alur laporan, suspension, unsuspend, dan isolasi data.
