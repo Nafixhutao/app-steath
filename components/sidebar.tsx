@@ -20,6 +20,9 @@ import {
   type OrganizationIdentity,
   type UserIdentity,
 } from "./identity";
+
+// lucide-react: one consistent 1.7pt-stroke icon language across the console;
+// each glyph maps to a real destination (Inbox -> Inbox, ChartPie -> Overview).
 import {
   Archive,
   Bell,
@@ -73,8 +76,6 @@ type IconName =
   | "gauge"
   | "backups"
   | "admin";
-
-type Theme = "light" | "dark" | "system";
 
 const primaryItems: Array<{ label: string; icon: IconName; href: string }> = [
   { label: "Overview", icon: "chart", href: "/dashboard" },
@@ -370,7 +371,6 @@ export function Sidebar({
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>("dark");
   const [organizationSwitcherOpen, setOrganizationSwitcherOpen] = useState(false);
   const [createOrganizationOpen, setCreateOrganizationOpen] = useState(false);
   const [organizationName, setOrganizationName] = useState("");
@@ -678,35 +678,7 @@ export function Sidebar({
                 </div>
               </div>
               <div className="sidebar-divider" />
-              <div className="theme-row">
-                <span>Theme</span>
-                <div className="theme-toggle" role="group" aria-label="Theme">
-                  {(["light", "dark", "system"] as Theme[]).map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={theme === value ? "is-selected" : ""}
-                      onClick={() => setTheme(value)}
-                      aria-label={`${value} mode`}
-                      aria-pressed={theme === value}
-                    >
-                      <Icon
-                        name={value === "light" ? "sun" : value === "dark" ? "moon" : "monitor"}
-                        size={14}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="sidebar-divider" />
-              <button type="button" className="profile-menu-row">
-                <Icon name="user" size={15} />
-                Profile Settings
-              </button>
-              <button type="button" className="profile-menu-row">
-                <Icon name="external" size={15} />
-                Refer and Earn
-              </button>
+              
               <button
                 type="button"
                 className="profile-menu-row logout-row"
@@ -743,17 +715,7 @@ export function Sidebar({
                 </>
               ) : null}
             </button>
-            {!collapsed || mobile ? (
-              <button
-                type="button"
-                className="notification-button"
-                aria-label="Notifications"
-                onClick={() => setProfileOpen(false)}
-              >
-                <Icon name="bell" />
-              </button>
-            ) : null}
-          </div>
+            </div>
         </div>
       </div>
     </div>
