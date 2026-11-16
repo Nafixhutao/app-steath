@@ -17,7 +17,7 @@
     "contract:generate:go": "cd agent && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.2 -config ../contracts/oapi-codegen.yaml ../contracts/agent.openapi.yaml",
     "contract:check": "npm run contract:generate && git diff --exit-code -- contracts/generated agent/internal/api/generated.gen.go",
     "contract:breaking": "node scripts/check-contract-breaking.mjs",
-    "ci": "npm run typecheck && npm run test:all",
+    "ci": "next typegen && npm run typecheck && npm run test:all",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docker:up": "docker compose up -d",
