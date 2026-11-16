@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Flag, RefreshCw, SearchX } from "lucide-react";
-import { AdminHeader, AdminPageBody, AdminPanel, AdminPanelHeader, Mono } from "@/features/admin/components/admin-panel";
+import { useResource } from "@/lib/resource";
+import {
+  AdminHeader,
+  AdminPageBody,
+  AdminPanel,
+  AdminPanelHeader,
+  Mono,
+} from "@/features/admin/components/admin-panel";
 import { LiveIndicator } from "@/features/admin/components/live-indicator";
 import { StatTile } from "@/features/admin/components/stat-tile";
 import { StatusBadge } from "@/features/admin/components/status-badge";
@@ -51,41 +58,31 @@ function statusTone(status: string): "warning" | "info" | "success" | "neutral" 
 
 const TH_CLASS =
   "px-3 py-2.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-[var(--projects-muted)] first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
-const TD_CLASS =
-  "px-3 py-3.5 align-middle first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
+const TD_CLASS = "px-3 py-3.5 align-middle first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
 
 /**
  * Platform Admin queue of public abuse reports across every Organization,
  * with the cross-organization suspend/unsuspend actions beside it.
  */
 export function AbuseReportsPanel() {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [resources, setResources] = useState<Resource[]>([]);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  // Search and suspend failures share the reports load error's slot.
+  const [actionError, setActionError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  // The manual refresh keeps spinning the button like before; the hook's
+  // loading only covers the first load.
+  const [refreshing, setRefreshing] = useState(false);
 
-  const refreshReports = useCallback(async () => {
-    setLoading(true);
-    try {
-      setReports(await json<Report[]>("/api/admin/abuse-reports"));
-      setError("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load reports.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void Promise.resolve().then(refreshReports);
-  }, [refreshReports]);
+  const reports = useResource(() => json<Report[]>("/api/admin/abuse-reports"), []);
+  const reportList: Report[] = useMemo(() => reports.data ?? [], [reports.data]);
+  const resources = useResource<Resource[]>(async () => [], []);
+  const resourceList: Resource[] = resources.data ?? [];
+  const loading = reports.loading || refreshing;
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return reports.filter((report) => {
+    return reportList.filter((report) => {
       if (status !== "all" && report.status !== status) return false;
       if (!term) return true;
       return (
@@ -95,20 +92,30 @@ export function AbuseReportsPanel() {
         (report.reporterEmail ?? "").toLowerCase().includes(term)
       );
     });
-  }, [reports, query, status]);
+  }, [reportList, query, status]);
 
-  const openCount = reports.filter((report) => report.status === "new").length;
+  const openCount = reportList.filter((report) => report.status === "new").length;
+
+  async function refreshReports() {
+    setRefreshing(true);
+    try {
+      await reports.refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function updateStatus(id: string, value: string) {
     setBusyId(id);
+    setActionError("");
     try {
       await json(`/api/admin/abuse-reports/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: value }),
       });
-      await refreshReports();
+      await reports.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed.");
+      setActionError(e instanceof Error ? e.message : "Update failed.");
     } finally {
       setBusyId(null);
     }
@@ -116,11 +123,13 @@ export function AbuseReportsPanel() {
 
   async function search(event: React.FormEvent) {
     event.preventDefault();
+    setActionError("");
     try {
-      setResources(await json<Resource[]>(`/api/admin/resources?q=${encodeURIComponent(query)}`));
-      setError("");
+      resources.setData(
+        await json<Resource[]>(`/api/admin/resources?q=${encodeURIComponent(query)}`),
+      );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Search failed.");
+      setActionError(e instanceof Error ? e.message : "Search failed.");
     }
   }
 
@@ -135,9 +144,11 @@ export function AbuseReportsPanel() {
         body: JSON.stringify({ action }),
       });
       if (query.length >= 2)
-        setResources(await json<Resource[]>(`/api/admin/resources?q=${encodeURIComponent(query)}`));
+        resources.setData(
+          await json<Resource[]>(`/api/admin/resources?q=${encodeURIComponent(query)}`),
+        );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Action failed.");
+      setActionError(e instanceof Error ? e.message : "Action failed.");
     }
   }
 
@@ -147,7 +158,7 @@ export function AbuseReportsPanel() {
         title="Abuse reports"
         subtitle="Review public reports and manage Services across Organizations."
       >
-        <LiveIndicator live={!error} />
+        <LiveIndicator live={!(reports.error || actionError)} />
         <button
           type="button"
           onClick={() => void refreshReports()}
@@ -164,9 +175,9 @@ export function AbuseReportsPanel() {
         </button>
       </AdminHeader>
 
-      {error ? (
+      {reports.error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {reports.error || actionError}
         </p>
       ) : null}
 
@@ -174,7 +185,7 @@ export function AbuseReportsPanel() {
         <StatTile
           icon={Flag}
           label="Total reports"
-          value={String(reports.length)}
+          value={String(reportList.length)}
           className="bg-[var(--projects-card-bg)]"
         />
         <StatTile
@@ -216,7 +227,7 @@ export function AbuseReportsPanel() {
             ]}
           />
         </div>
-        {loading && reports.length === 0 ? (
+        {loading && reportList.length === 0 ? (
           <div className="pb-4">
             <PanelRowsSkeleton />
           </div>
@@ -224,17 +235,17 @@ export function AbuseReportsPanel() {
           <div className="px-4 pb-10 pt-6 text-center">
             <div className="flex flex-col items-center text-center">
               <span className="flex size-10 items-center justify-center rounded-lg border border-[var(--projects-border)] bg-[var(--projects-control)] text-[var(--projects-muted)]">
-                {reports.length === 0 ? (
+                {reportList.length === 0 ? (
                   <Flag size={18} strokeWidth={1.8} aria-hidden="true" />
                 ) : (
                   <SearchX size={18} strokeWidth={1.8} aria-hidden="true" />
                 )}
               </span>
               <h2 className="m-0 mt-3 text-[15px] font-semibold tracking-[-0.01em] text-[var(--projects-text)]">
-                {reports.length === 0 ? "No reports yet" : "No reports match these filters"}
+                {reportList.length === 0 ? "No reports yet" : "No reports match these filters"}
               </h2>
               <p className="m-0 mt-1 max-w-[42ch] text-[13px] leading-5 text-[var(--projects-muted)]">
-                {reports.length === 0
+                {reportList.length === 0
                   ? "Public abuse reports appear here as they arrive."
                   : "Try a different search term or clear the status filter."}
               </p>
@@ -244,8 +255,8 @@ export function AbuseReportsPanel() {
           <div className="overflow-x-auto admin-scrollbar">
             <table className="admin-table">
               <caption className="sr-only">
-                Public abuse reports with category, description, reporter,
-                status, and the moderation actions.
+                Public abuse reports with category, description, reporter, status, and the
+                moderation actions.
               </caption>
               <thead>
                 <tr>
@@ -331,9 +342,9 @@ export function AbuseReportsPanel() {
             Search
           </button>
         </form>
-        {resources.length > 0 ? (
+        {resourceList.length > 0 ? (
           <div className="mt-3 flex flex-col gap-2">
-            {resources.map((r, i) => (
+            {resourceList.map((r, i) => (
               <div
                 key={`${r.organizationId}-${r.serviceId ?? i}`}
                 className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-[var(--projects-border)] bg-[var(--projects-control)] px-3.5 py-3"
@@ -344,9 +355,7 @@ export function AbuseReportsPanel() {
                     <Mono className="shrink-0 text-[11px] font-normal text-[var(--projects-muted)]">
                       ({r.organizationSlug})
                     </Mono>
-                    {r.suspendedAt ? (
-                      <StatusBadge tone="danger" label="Org suspended" />
-                    ) : null}
+                    {r.suspendedAt ? <StatusBadge tone="danger" label="Org suspended" /> : null}
                   </p>
                   {r.serviceId ? (
                     <Mono className="m-0 mt-1 block truncate text-[12px] text-[var(--projects-muted)]">

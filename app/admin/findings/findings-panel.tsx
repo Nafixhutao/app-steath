@@ -1,17 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
-import {
-  getScanFindings,
-  type ScanFindingList,
-  type ScanFindingSummary,
-} from "@/lib/admin-client";
-import {
-  AdminHeader,
-  AdminPageBody,
-  Mono,
-} from "@/features/admin/components/admin-panel";
+import { getScanFindings, type ScanFindingSummary } from "@/lib/admin-client";
+import { useResource } from "@/lib/resource";
+import { AdminHeader, AdminPageBody, Mono } from "@/features/admin/components/admin-panel";
 import { LiveIndicator } from "@/features/admin/components/live-indicator";
 import { StatTile } from "@/features/admin/components/stat-tile";
 import { StatusBadge } from "@/features/admin/components/status-badge";
@@ -26,10 +19,6 @@ function severityTone(severity: string): "danger" | "warning" | "info" | "neutra
   if (severity === "medium") return "warning";
   if (severity === "low") return "info";
   return "neutral";
-}
-
-function getError(error: unknown): string {
-  return error instanceof Error ? error.message : "The request could not be completed.";
 }
 
 function scannerLabel(scanner: string): string {
@@ -52,8 +41,7 @@ function findingNote(finding: ScanFindingSummary): string | null {
 
 const TH_CLASS =
   "px-3 py-2.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-[var(--projects-muted)] first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
-const TD_CLASS =
-  "px-3 py-3.5 align-middle first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
+const TD_CLASS = "px-3 py-3.5 align-middle first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
 
 /**
  * Platform Admin queue of ScanFindings across every Organization. Urgent
@@ -61,30 +49,24 @@ const TD_CLASS =
  * the queue.
  */
 export function FindingsPanel() {
-  const [list, setList] = useState<ScanFindingList | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [severity, setSeverity] = useState<SeverityFilter>("all");
+  // The manual refresh keeps spinning the button like before; the hook's
+  // loading only covers the first load.
+  const [refreshing, setRefreshing] = useState(false);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const list = useResource(() => getScanFindings(), []);
+  const findings = useMemo(() => list.data?.findings ?? [], [list.data]);
+  const loading = list.loading || refreshing;
+
+  async function refresh() {
+    setRefreshing(true);
     try {
-      const next = await getScanFindings();
-      setList(next);
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
+      await list.refresh();
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
-  }, []);
-
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
-
-  const findings = useMemo(() => list?.findings ?? [], [list]);
+  }
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -103,7 +85,7 @@ export function FindingsPanel() {
     });
   }, [findings, query, severity]);
 
-  const urgentCount = list?.urgent ?? 0;
+  const urgentCount = list.data?.urgent ?? 0;
 
   return (
     <AdminPageBody>
@@ -111,7 +93,7 @@ export function FindingsPanel() {
         title="Scan findings"
         subtitle="Image scan results across every Organization. Urgent findings are high-severity malware."
       >
-        <LiveIndicator live={!error} />
+        <LiveIndicator live={!list.error} />
         <button
           type="button"
           onClick={() => void refresh()}
@@ -128,9 +110,9 @@ export function FindingsPanel() {
         </button>
       </AdminHeader>
 
-      {error ? (
+      {list.error ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {list.error}
         </p>
       ) : null}
 
@@ -147,7 +129,7 @@ export function FindingsPanel() {
         <StatTile
           icon={ShieldCheck}
           label="Total findings"
-          value={String(list?.total ?? 0)}
+          value={String(list.data?.total ?? 0)}
           className="bg-[var(--projects-card-bg)]"
         />
         <StatTile
@@ -199,9 +181,7 @@ export function FindingsPanel() {
                 <ShieldCheck size={18} strokeWidth={1.8} aria-hidden="true" />
               </span>
               <h2 className="m-0 mt-3 text-[15px] font-semibold tracking-[-0.01em] text-[var(--projects-text)]">
-                {findings.length === 0
-                  ? "No findings"
-                  : "No findings match these filters"}
+                {findings.length === 0 ? "No findings" : "No findings match these filters"}
               </h2>
               <p className="m-0 mt-1 max-w-[42ch] text-[13px] leading-5 text-[var(--projects-muted)]">
                 {findings.length === 0
@@ -214,8 +194,7 @@ export function FindingsPanel() {
           <div className="overflow-x-auto admin-scrollbar">
             <table className="admin-table">
               <caption className="sr-only">
-                Image scan findings with severity, scanner, workload, and the
-                time they were found.
+                Image scan findings with severity, scanner, workload, and the time they were found.
               </caption>
               <thead>
                 <tr>
@@ -269,7 +248,7 @@ export function FindingsPanel() {
                       </span>
                     </td>
                     <td className={TD_CLASS}>
-                      <Mono className="block max-w-[180px] truncate text-[12px] text-[var(--projects-muted)]" >
+                      <Mono className="block max-w-[180px] truncate text-[12px] text-[var(--projects-muted)]">
                         {finding.imageRef ?? "—"}
                       </Mono>
                     </td>

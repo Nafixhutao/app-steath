@@ -8,6 +8,7 @@ import {
   useActiveMember,
   useListOrganizations,
 } from "@/lib/auth-client";
+import { getError } from "@/lib/resource";
 
 type MemberRow = {
   id: string;
@@ -26,10 +27,6 @@ type InvitationRow = {
 };
 
 type InviteRole = "member" | "admin";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
 
 export default function MembersPage() {
   const router = useRouter();
