@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   addServiceCustomDomain,
   deleteServiceCustomDomain,
@@ -8,10 +8,7 @@ import {
   verifyServiceCustomDomain,
   type CustomDomainSummary,
 } from "@/lib/custom-domains-client";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
+import { getError, useResource } from "@/lib/resource";
 
 function formatTime(value: string): string {
   return new Date(value).toLocaleString();
@@ -40,40 +37,26 @@ export function CustomDomainPanel({
   serviceId: string;
   canManage: boolean;
 }) {
-  const [domain, setDomain] = useState<CustomDomainSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
   const [hostname, setHostname] = useState("");
-  const [error, setError] = useState("");
+  // Add, verify, and delete failures share one slot next to the load error.
+  const [actionError, setActionError] = useState("");
 
-  const load = useCallback(async () => {
-    try {
-      const result = await getServiceCustomDomain(serviceId);
-      setDomain(result);
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [serviceId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
+  const domain = useResource(() => getServiceCustomDomain(serviceId), [serviceId]);
+  const domainData: CustomDomainSummary | null = domain.data;
 
   async function add(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       await addServiceCustomDomain(serviceId, hostname.trim());
       setHostname("");
       setAdding(false);
-      await load();
+      await domain.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -81,28 +64,31 @@ export function CustomDomainPanel({
 
   async function verify() {
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
-      setDomain(await verifyServiceCustomDomain(serviceId));
+      // Verify returns the updated domain; adopt it without a round trip.
+      domain.setData(await verifyServiceCustomDomain(serviceId));
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
   }
 
   async function remove() {
-    if (!window.confirm("Delete this Custom Domain? Its route and certificate status are removed.")) {
+    if (
+      !window.confirm("Delete this Custom Domain? Its route and certificate status are removed.")
+    ) {
       return;
     }
 
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       await deleteServiceCustomDomain(serviceId);
-      setDomain(null);
+      domain.setData(null);
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -112,7 +98,7 @@ export function CustomDomainPanel({
     <section className="dashboard-section" aria-labelledby="custom-domain-heading">
       <div className="dashboard-section-heading">
         <h2 id="custom-domain-heading">Custom Domain</h2>
-        {canManage && !domain ? (
+        {canManage && !domainData ? (
           <button
             className="create-project-button"
             type="button"
@@ -124,9 +110,9 @@ export function CustomDomainPanel({
         ) : null}
       </div>
 
-      {error ? (
+      {domain.error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {domain.error || actionError}
         </p>
       ) : null}
 
@@ -159,11 +145,11 @@ export function CustomDomainPanel({
         </form>
       ) : null}
 
-      {loading ? (
+      {domain.loading ? (
         <p className="dashboard-table-empty" role="status">
           Loading Custom Domain...
         </p>
-      ) : !domain ? (
+      ) : !domainData ? (
         <div className="dashboard-empty-state">
           <h3>No Custom Domain</h3>
           <p>
@@ -176,39 +162,41 @@ export function CustomDomainPanel({
           <dl className="service-meta">
             <div>
               <dt>Hostname</dt>
-              <dd>{domain.hostname}</dd>
+              <dd>{domainData.hostname}</dd>
             </div>
             <div>
               <dt>Status</dt>
-              <dd>{statusLabel(domain.status)}</dd>
+              <dd>{statusLabel(domainData.status)}</dd>
             </div>
             <div>
               <dt>Certificate</dt>
               <dd>
-                {domain.certificateStatus === "issued"
+                {domainData.certificateStatus === "issued"
                   ? "Issued"
-                  : domain.certificateStatus === "failed"
+                  : domainData.certificateStatus === "failed"
                     ? "Not issued"
                     : "Waiting for verification"}
               </dd>
             </div>
-            {domain.verifiedAt ? (
+            {domainData.verifiedAt ? (
               <div>
                 <dt>Verified</dt>
-                <dd>{formatTime(domain.verifiedAt)}</dd>
+                <dd>{formatTime(domainData.verifiedAt)}</dd>
               </div>
             ) : null}
           </dl>
 
-          {domain.lastError ? (
+          {domainData.lastError ? (
             <p className="dashboard-alert is-error" role="alert">
-              {domain.lastError}
+              {domainData.lastError}
             </p>
           ) : null}
 
           <div className="custom-domain-records">
             <h3>DNS records</h3>
-            <p>Add these records at your DNS provider, then verify. DNS changes can take a while.</p>
+            <p>
+              Add these records at your DNS provider, then verify. DNS changes can take a while.
+            </p>
             <table className="organization-table">
               <thead>
                 <tr>
@@ -221,20 +209,20 @@ export function CustomDomainPanel({
                 <tr>
                   <td>TXT</td>
                   <td>
-                    <code className="environment-key">{domain.instructions.txt.name}</code>
+                    <code className="environment-key">{domainData.instructions.txt.name}</code>
                   </td>
                   <td>
-                    <code className="environment-key">{domain.instructions.txt.value}</code>
+                    <code className="environment-key">{domainData.instructions.txt.value}</code>
                   </td>
                 </tr>
                 <tr>
                   <td>A</td>
                   <td>
-                    <code className="environment-key">{domain.instructions.a.name}</code>
+                    <code className="environment-key">{domainData.instructions.a.name}</code>
                   </td>
                   <td>
-                    {domain.instructions.a.value ? (
-                      <code className="environment-key">{domain.instructions.a.value}</code>
+                    {domainData.instructions.a.value ? (
+                      <code className="environment-key">{domainData.instructions.a.value}</code>
                     ) : (
                       <span>Not configured. Use the CNAME instead</span>
                     )}
@@ -243,10 +231,10 @@ export function CustomDomainPanel({
                 <tr>
                   <td>CNAME</td>
                   <td>
-                    <code className="environment-key">{domain.instructions.cname.name}</code>
+                    <code className="environment-key">{domainData.instructions.cname.name}</code>
                   </td>
                   <td>
-                    <code className="environment-key">{domain.instructions.cname.value}</code>
+                    <code className="environment-key">{domainData.instructions.cname.value}</code>
                   </td>
                 </tr>
               </tbody>

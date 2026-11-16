@@ -1,41 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useActiveOrganization } from "@/lib/auth-client";
 import { QUOTAS } from "@/lib/platform/quota-limits";
+import { useResource } from "@/lib/resource";
 import {
   listOrganizationServices,
   serviceStatusLabel,
   type OrganizationService,
 } from "@/lib/services-client";
 
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
-
 export default function ServicesPage() {
   const { data: organization } = useActiveOrganization();
-  const [services, setServices] = useState<OrganizationService[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const organizationId = organization?.id;
 
-  const refresh = useCallback(async () => {
-    if (!organizationId) return;
-    try {
-      setServices(await listOrganizationServices());
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [organizationId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
+  const services = useResource(() => listOrganizationServices(), [organizationId], {
+    enabled: Boolean(organizationId),
+  });
+  const serviceList: OrganizationService[] = services.data ?? [];
 
   return (
     <div className="dashboard-content">
@@ -45,29 +27,29 @@ export default function ServicesPage() {
           <p>Deploy web Services from public Git repositories.</p>
         </div>
         <span className="project-quota">
-          {services.length} of {QUOTAS.servicesPerOrganization} Services
+          {serviceList.length} of {QUOTAS.servicesPerOrganization} Services
         </span>
       </div>
 
-      {error ? (
+      {services.error ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {services.error}
         </p>
       ) : null}
 
       <section className="dashboard-section" aria-labelledby="services-list-heading">
         <div className="dashboard-section-heading">
           <h2 id="services-list-heading">
-            Services <span className="dashboard-count">{services.length}</span>
+            Services <span className="dashboard-count">{serviceList.length}</span>
           </h2>
           <Link href="/dashboard/projects">View Projects</Link>
         </div>
 
-        {loading ? (
+        {services.loading ? (
           <p className="dashboard-table-empty" role="status">
             Loading Services...
           </p>
-        ) : services.length === 0 ? (
+        ) : serviceList.length === 0 ? (
           <div className="dashboard-empty-state">
             <h3>No Services yet</h3>
             <p>Open a Project and create a Service from a public repository.</p>
@@ -84,7 +66,7 @@ export default function ServicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {services.map((service) => (
+                {serviceList.map((service) => (
                   <tr key={service.id}>
                     <td>
                       <strong>

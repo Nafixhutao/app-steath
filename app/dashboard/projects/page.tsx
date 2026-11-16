@@ -1,15 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
 import { createProject, listProjects, type ProjectSummary } from "@/lib/projects-client";
 import { QUOTAS } from "@/lib/platform/quota-limits";
+import { getError, useResource } from "@/lib/resource";
 import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
 
 function statusLabel(project: ProjectSummary) {
   const total = project.serviceCount + project.databaseCount;
@@ -20,46 +17,33 @@ function statusLabel(project: ProjectSummary) {
 export default function ProjectsPage() {
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
-  const [projects, setProjects] = useState<ProjectSummary[]>([]);
-  const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const organizationId = organization?.id;
   const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
   const limit = QUOTAS.projectsPerOrganization;
-  const atLimit = projects.length >= limit;
 
-  const refresh = useCallback(async () => {
-    if (!organizationId) return;
-    try {
-      setProjects(await listProjects());
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [organizationId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
+  const projects = useResource(() => listProjects(), [organizationId], {
+    enabled: Boolean(organizationId),
+  });
+  const projectList: ProjectSummary[] = projects.data ?? [];
+  const atLimit = projectList.length >= limit;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
-    setError("");
+    setFormError("");
     try {
       await createProject({ name: name.trim(), slug: slug.trim() || undefined });
       setName("");
       setSlug("");
       setSlugEdited(false);
-      await refresh();
+      await projects.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setFormError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -76,13 +60,13 @@ export default function ProjectsPage() {
           </p>
         </div>
         <span className="project-quota">
-          {projects.length} of {limit} Projects
+          {projectList.length} of {limit} Projects
         </span>
       </div>
 
-      {error ? (
+      {projects.error || formError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {projects.error || formError}
         </p>
       ) : null}
 
@@ -137,18 +121,18 @@ export default function ProjectsPage() {
       <section className="dashboard-section" aria-labelledby="project-list-heading">
         <div className="dashboard-section-heading">
           <h2 id="project-list-heading">
-            Projects <span className="dashboard-count">{projects.length}</span>
+            Projects <span className="dashboard-count">{projectList.length}</span>
           </h2>
         </div>
 
-        {loading ? (
+        {projects.loading ? (
           <div className="project-grid" role="status" aria-label="Loading projects">
             {[0, 1, 2].map((index) => (
               <div className="project-card project-card-skeleton" key={index} aria-hidden="true" />
             ))}
             <span className="sr-only">Loading Projects…</span>
           </div>
-        ) : projects.length === 0 ? (
+        ) : projectList.length === 0 ? (
           <div className="dashboard-empty-state">
             <h3>No Projects yet</h3>
             <p>
@@ -159,7 +143,7 @@ export default function ProjectsPage() {
           </div>
         ) : (
           <div className="project-grid">
-            {projects.map((project) => (
+            {projectList.map((project) => (
               <Link
                 key={project.id}
                 className="project-card project-card-link"

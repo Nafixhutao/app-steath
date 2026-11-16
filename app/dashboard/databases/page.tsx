@@ -1,18 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useActiveOrganization } from "@/lib/auth-client";
 import { QUOTAS } from "@/lib/platform/quota-limits";
+import { useResource } from "@/lib/resource";
 import {
   databaseStatusLabel,
   listOrganizationDatabases,
   type OrganizationDatabaseSummary,
 } from "@/lib/databases-client";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
 
 function usageLabel(database: OrganizationDatabaseSummary): string {
   if (database.usageMb === null) {
@@ -24,26 +20,12 @@ function usageLabel(database: OrganizationDatabaseSummary): string {
 
 export default function DatabasesPage() {
   const { data: organization } = useActiveOrganization();
-  const [databases, setDatabases] = useState<OrganizationDatabaseSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const organizationId = organization?.id;
 
-  const refresh = useCallback(async () => {
-    if (!organizationId) return;
-    try {
-      setDatabases(await listOrganizationDatabases());
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [organizationId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
+  const databases = useResource(() => listOrganizationDatabases(), [organizationId], {
+    enabled: Boolean(organizationId),
+  });
+  const databasesList: OrganizationDatabaseSummary[] = databases.data ?? [];
 
   return (
     <div className="dashboard-content">
@@ -53,29 +35,29 @@ export default function DatabasesPage() {
           <p>Private PostgreSQL Databases, one per Project.</p>
         </div>
         <span className="project-quota">
-          {databases.length} of {QUOTAS.databasesPerProject} per Project
+          {databasesList.length} of {QUOTAS.databasesPerProject} per Project
         </span>
       </div>
 
-      {error ? (
+      {databases.error ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {databases.error}
         </p>
       ) : null}
 
       <section className="dashboard-section" aria-labelledby="databases-list-heading">
         <div className="dashboard-section-heading">
           <h2 id="databases-list-heading">
-            Databases <span className="dashboard-count">{databases.length}</span>
+            Databases <span className="dashboard-count">{databasesList.length}</span>
           </h2>
           <Link href="/dashboard/projects">View Projects</Link>
         </div>
 
-        {loading ? (
+        {databases.loading ? (
           <p className="dashboard-table-empty" role="status">
             Loading Databases...
           </p>
-        ) : databases.length === 0 ? (
+        ) : databasesList.length === 0 ? (
           <div className="dashboard-empty-state">
             <h3>No Databases yet</h3>
             <p>Open a Project and create its private PostgreSQL Database.</p>
@@ -93,7 +75,7 @@ export default function DatabasesPage() {
                 </tr>
               </thead>
               <tbody>
-                {databases.map((database) => (
+                {databasesList.map((database) => (
                   <tr key={database.id}>
                     <td>
                       <strong>PostgreSQL {database.version}</strong>

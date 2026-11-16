@@ -1,16 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   createServiceVolume,
   deleteServiceVolume,
   getServiceVolume,
   type VolumeSummary,
 } from "@/lib/volumes-client";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
+import { getError, useResource } from "@/lib/resource";
 
 function formatTime(value: string): string {
   return new Date(value).toLocaleString();
@@ -42,42 +39,34 @@ export function VolumePanel({
   needsRedeploy: boolean;
   canManage: boolean;
 }) {
-  const [volume, setVolume] = useState<VolumeSummary | null>(null);
-  const [redeployNeeded, setRedeployNeeded] = useState(needsRedeploy);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
   const [mountPath, setMountPath] = useState("/data");
   const [sizeMb, setSizeMb] = useState(1024);
-  const [error, setError] = useState("");
+  // Create and delete failures share one slot next to the load error.
+  const [actionError, setActionError] = useState("");
 
-  const load = useCallback(async () => {
-    try {
+  const panel = useResource(
+    useCallback(async () => {
       const result = await getServiceVolume(serviceId);
-      setVolume(result.volume);
-      setRedeployNeeded(result.needsRedeploy);
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [serviceId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
+      return { volume: result.volume, needsRedeploy: result.needsRedeploy };
+    }, [serviceId]),
+    [serviceId],
+  );
+  const volume: VolumeSummary | null = panel.data?.volume ?? null;
+  const redeployNeeded = panel.data?.needsRedeploy ?? needsRedeploy;
+  const loading = panel.loading;
 
   async function create(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       await createServiceVolume(serviceId, { mountPath, sizeMb });
       setCreating(false);
-      await load();
+      await panel.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -89,12 +78,12 @@ export function VolumePanel({
     }
 
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       await deleteServiceVolume(serviceId);
-      await load();
+      await panel.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -122,9 +111,9 @@ export function VolumePanel({
         </p>
       ) : null}
 
-      {error ? (
+      {panel.error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {panel.error || actionError}
         </p>
       ) : null}
 

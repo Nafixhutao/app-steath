@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   cancelDeployment,
   deploymentDuration,
@@ -16,12 +16,9 @@ import {
   type DeploymentSummary,
   type NodeSummary,
 } from "@/lib/deployments-client";
+import { getError, useResource } from "@/lib/resource";
 
 const POLL_INTERVAL_MS = 3_000;
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
 
 function formatTime(value: string | null): string {
   if (!value) return "N/A";
@@ -45,38 +42,28 @@ export function DeploymentsPanel({
   canDeploy: boolean;
   canManage: boolean;
 }) {
-  const [deployments, setDeployments] = useState<DeploymentSummary[]>([]);
-  const [node, setNode] = useState<NodeSummary | null>(null);
   const [selected, setSelected] = useState<BuildLog | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [actingOn, setActingOn] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  // Deploy, redeploy, and cancel failures share one slot next to the load error.
+  const [actionError, setActionError] = useState("");
 
-  const load = useCallback(async () => {
-    try {
-      const [history, nodes] = await Promise.all([listDeployments(serviceId), listNodes()]);
-      setDeployments(history);
-      setNode(nodes[0] ?? null);
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
+  const history = useResource(async () => {
+    const [deployments, nodes] = await Promise.all([listDeployments(serviceId), listNodes()]);
+    return { deployments, node: nodes[0] ?? null };
   }, [serviceId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
+  const deployments: DeploymentSummary[] = history.data?.deployments ?? [];
+  const node: NodeSummary | null = history.data?.node ?? null;
+  const loading = history.loading;
 
   // Poll only while something is moving, so an idle Service makes no requests.
   const active = deployments.some((deployment) => isDeploymentActive(deployment.status));
+  const refreshHistory = history.refresh;
   useEffect(() => {
     if (!active) return;
 
     const timer = setInterval(() => {
-      void load();
+      void refreshHistory();
       setSelected((current) => {
         if (!current || !isDeploymentActive(current.deployment.status)) return current;
         void getBuildLog(current.deployment.id)
@@ -87,17 +74,16 @@ export function DeploymentsPanel({
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [active, load]);
+  }, [active, refreshHistory]);
 
   async function deploy() {
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
-      const deployment = await triggerDeployment(serviceId);
-      setDeployments((current) => [deployment, ...current]);
-      await load();
+      await triggerDeployment(serviceId);
+      await history.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -106,21 +92,20 @@ export function DeploymentsPanel({
   async function openLog(deployment: DeploymentSummary) {
     try {
       setSelected(await getBuildLog(deployment.id));
-      setError("");
+      setActionError("");
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     }
   }
 
   async function redeploy(deployment: DeploymentSummary) {
     setActingOn(deployment.id);
-    setError("");
+    setActionError("");
     try {
-      const created = await redeployDeployment(deployment.id);
-      setDeployments((current) => [created, ...current]);
-      await load();
+      await redeployDeployment(deployment.id);
+      await history.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setActingOn(null);
     }
@@ -128,15 +113,12 @@ export function DeploymentsPanel({
 
   async function cancel(deployment: DeploymentSummary) {
     setActingOn(deployment.id);
-    setError("");
+    setActionError("");
     try {
-      const result = await cancelDeployment(deployment.id);
-      setDeployments((current) =>
-        current.map((entry) => (entry.id === result.deployment.id ? result.deployment : entry)),
-      );
-      await load();
+      await cancelDeployment(deployment.id);
+      await history.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setActingOn(null);
     }
@@ -173,9 +155,9 @@ export function DeploymentsPanel({
         </p>
       )}
 
-      {error ? (
+      {history.error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {history.error || actionError}
         </p>
       ) : null}
 
@@ -275,7 +257,9 @@ export function DeploymentsPanel({
               Close
             </button>
           </div>
-          <pre>{selected.lines.length > 0 ? selected.lines.join("\n") : "No Build output yet."}</pre>
+          <pre>
+            {selected.lines.length > 0 ? selected.lines.join("\n") : "No Build output yet."}
+          </pre>
         </div>
       ) : null}
     </section>

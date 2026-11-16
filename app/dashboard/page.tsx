@@ -1,36 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useActiveOrganization } from "@/lib/auth-client";
 import { listNodes, type NodeSummary } from "@/lib/deployments-client";
+import { useResource } from "@/lib/resource";
 import { listProjects, type ProjectSummary } from "@/lib/projects-client";
 
 export default function DashboardPage() {
   const { data: organization } = useActiveOrganization();
-  const [projects, setProjects] = useState<ProjectSummary[]>([]);
-  const [nodes, setNodes] = useState<NodeSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const organizationId = organization?.id;
 
-  const refresh = useCallback(async () => {
-    if (!organizationId) return;
-    try {
+  const overview = useResource(
+    async () => {
       const [projectList, nodeList] = await Promise.all([listProjects(), listNodes()]);
-      setProjects(projectList);
-      setNodes(nodeList);
-      setError("");
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load Projects.");
-    } finally {
-      setLoading(false);
-    }
-  }, [organizationId]);
+      return { projects: projectList, nodes: nodeList };
+    },
+    [organizationId],
+    { enabled: Boolean(organizationId) },
+  );
 
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
+  const projects: ProjectSummary[] = overview.data?.projects ?? [];
+  const nodes: NodeSummary[] = overview.data?.nodes ?? [];
+  const { loading, error } = overview;
 
   const node = nodes[0];
   const nodeHealthy = node?.status === "healthy";

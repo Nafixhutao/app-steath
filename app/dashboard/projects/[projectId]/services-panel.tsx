@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   createService,
@@ -10,10 +10,7 @@ import {
   type ServiceSummary,
 } from "@/lib/services-client";
 import { QUOTAS } from "@/lib/platform/quota-limits";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
+import { getError, useResource } from "@/lib/resource";
 
 const EMPTY_FORM = {
   name: "",
@@ -33,30 +30,18 @@ export function ServicesPanel({
   canManage: boolean;
   onChanged?: () => void;
 }) {
-  const [services, setServices] = useState<ServiceSummary[]>([]);
-  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  // Create and delete failures share one slot next to the load error.
+  const [actionError, setActionError] = useState("");
   const [confirmations, setConfirmations] = useState<Record<string, string>>({});
 
   const limit = QUOTAS.servicesPerProject;
+
+  const panel = useResource(() => listServices(projectId), [projectId]);
+  const services: ServiceSummary[] = panel.data ?? [];
+  const loading = panel.loading;
   const atLimit = services.length >= limit;
-
-  const refresh = useCallback(async () => {
-    try {
-      setServices(await listServices(projectId));
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
 
   function update<K extends keyof typeof EMPTY_FORM>(key: K, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -65,7 +50,7 @@ export function ServicesPanel({
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       await createService(projectId, {
         name: form.name.trim(),
@@ -76,10 +61,10 @@ export function ServicesPanel({
         healthPath: form.healthPath.trim() || undefined,
       });
       setForm(EMPTY_FORM);
-      await refresh();
+      await panel.refresh();
       onChanged?.();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -87,14 +72,14 @@ export function ServicesPanel({
 
   async function remove(service: ServiceSummary) {
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       await deleteService(service.id, confirmations[service.id] ?? "");
       setConfirmations((current) => ({ ...current, [service.id]: "" }));
-      await refresh();
+      await panel.refresh();
       onChanged?.();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -111,9 +96,9 @@ export function ServicesPanel({
         </span>
       </div>
 
-      {error ? (
+      {panel.error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {panel.error || actionError}
         </p>
       ) : null}
 

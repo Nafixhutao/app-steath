@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActiveMember } from "@/lib/auth-client";
@@ -11,60 +11,48 @@ import {
   serviceStatusLabel,
   type ServiceSummary,
 } from "@/lib/services-client";
+import { getError, useResource } from "@/lib/resource";
 import { DeploymentsPanel } from "./deployments-panel";
 import { EnvironmentPanel } from "./environment-panel";
 import { CustomDomainPanel } from "./custom-domain-panel";
 import { RuntimePanel } from "./runtime-panel";
 import { VolumePanel } from "./volume-panel";
 
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
-
 export function ServiceDetail({ serviceId }: { serviceId: string }) {
   const router = useRouter();
   const { data: activeMember } = useActiveMember();
-  const [service, setService] = useState<ServiceSummary | null>(null);
-  const [projectName, setProjectName] = useState("");
-  const [loading, setLoading] = useState(true);
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  // Delete failures share one slot next to the load error.
+  const [actionError, setActionError] = useState("");
   const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
   // Members are read-only for resources but may still trigger a Deployment.
   const canDeploy = Boolean(activeMember?.role);
 
-  const load = useCallback(async () => {
-    try {
-      const result = await getService(serviceId);
-      setService(result);
-      setError("");
-      // The Project name only decorates the breadcrumb; a failure here must not
-      // hide the Service itself.
-      void getProject(result.projectId)
-        .then((project) => setProjectName(project.name))
-        .catch(() => undefined);
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
+  const panel = useResource(async () => {
+    const service = await getService(serviceId);
+    // The Project name only decorates the breadcrumb; a failure here must not
+    // hide the Service itself.
+    const projectName = await getProject(service.projectId)
+      .then((project) => project.name)
+      .catch(() => "");
+    return { service, projectName };
   }, [serviceId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
+  const service: ServiceSummary | null = panel.data?.service ?? null;
+  const projectName = panel.data?.projectName ?? "";
+  const loading = panel.loading;
+  const error = panel.error;
 
   async function remove(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!service) return;
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       await deleteService(service.id, confirmation);
       router.push(`/dashboard/projects/${service.projectId}`);
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
       setBusy(false);
     }
   }
@@ -88,9 +76,9 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
             <p>This Service does not exist in the active Organization.</p>
           </div>
         </div>
-        {error ? (
+        {error || actionError ? (
           <p className="dashboard-alert is-error" role="alert">
-            {error}
+            {error || actionError}
           </p>
         ) : null}
         <p className="dashboard-back-link">
@@ -121,9 +109,9 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         <span className="role-label">{serviceStatusLabel(service.status)}</span>
       </div>
 
-      {error ? (
+      {error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {error || actionError}
         </p>
       ) : null}
 

@@ -1,21 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getServiceRuntime,
   runServiceAction,
   serviceRuntimeLabel,
   streamRuntimeLog,
   type ServiceRuntimeAction,
-  type ServiceRuntimeState,
 } from "@/lib/deployments-client";
+import { getError, useResource } from "@/lib/resource";
 
 const LOG_TAIL = 200;
 const MAX_LOG_LINES = 500;
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
 
 /**
  * Runtime controls for one Service: stop, start, restart, and the live container
@@ -31,37 +27,21 @@ export function RuntimePanel({
   canManage: boolean;
   hostname: string;
 }) {
-  const [runtime, setRuntime] = useState<ServiceRuntimeState | null>(null);
-  const [loading, setLoading] = useState(true);
+  const runtime = useResource(() => getServiceRuntime(serviceId), [serviceId]);
   const [busy, setBusy] = useState<ServiceRuntimeAction | null>(null);
-  const [error, setError] = useState("");
   const [logLines, setLogLines] = useState<string[]>([]);
   const [logOpen, setLogOpen] = useState(false);
   const [logError, setLogError] = useState("");
   const logRef = useRef<HTMLPreElement | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      setRuntime(await getServiceRuntime(serviceId));
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [serviceId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
-
   async function act(action: ServiceRuntimeAction) {
     setBusy(action);
-    setError("");
     try {
-      setRuntime(await runServiceAction(serviceId, action));
+      // The action returns the new state; adopt it instead of refetching.
+      runtime.setData(await runServiceAction(serviceId, action));
     } catch (cause) {
-      setError(getError(cause));
+      console.error(cause);
+      await runtime.refresh();
     } finally {
       setBusy(null);
     }
@@ -100,7 +80,7 @@ export function RuntimePanel({
     }
   }, [logLines]);
 
-  const status = runtime?.status ?? "absent";
+  const status = runtime.data?.status ?? "absent";
   const running = status === "running";
 
   return (
@@ -113,15 +93,21 @@ export function RuntimePanel({
               className="create-project-button"
               type="button"
               onClick={() => void act(running ? "stop" : "start")}
-              disabled={busy !== null || loading || status === "absent"}
+              disabled={busy !== null || runtime.loading || status === "absent"}
             >
-              {busy === "stop" ? "Stopping..." : busy === "start" ? "Starting..." : running ? "Stop" : "Start"}
+              {busy === "stop"
+                ? "Stopping..."
+                : busy === "start"
+                  ? "Starting..."
+                  : running
+                    ? "Stop"
+                    : "Start"}
             </button>
             <button
               className="dashboard-link-button"
               type="button"
               onClick={() => void act("restart")}
-              disabled={busy !== null || loading || !running}
+              disabled={busy !== null || runtime.loading || !running}
             >
               {busy === "restart" ? "Restarting..." : "Restart"}
             </button>
@@ -129,22 +115,27 @@ export function RuntimePanel({
         ) : null}
       </div>
 
-      {error ? (
+      {runtime.error ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {runtime.error}
         </p>
       ) : null}
 
       <dl className="service-meta">
         <div>
           <dt>Container</dt>
-          <dd>{loading ? "Checking..." : serviceRuntimeLabel(status)}</dd>
+          <dd>{runtime.loading ? "Checking..." : serviceRuntimeLabel(status)}</dd>
         </div>
         <div>
           <dt>Platform Subdomain</dt>
           <dd>
             {status === "running" ? (
-              <a className="service-url" href={`https://${hostname}`} target="_blank" rel="noreferrer">
+              <a
+                className="service-url"
+                href={`https://${hostname}`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 https://{hostname}
               </a>
             ) : (
@@ -155,12 +146,12 @@ export function RuntimePanel({
         <div>
           <dt>Container ID</dt>
           <dd>
-            <code>{runtime?.containerId ? runtime.containerId.slice(0, 12) : "N/A"}</code>
+            <code>{runtime.data?.containerId ? runtime.data.containerId.slice(0, 12) : "N/A"}</code>
           </dd>
         </div>
       </dl>
 
-      {status === "absent" && !loading ? (
+      {status === "absent" && !runtime.loading ? (
         <p className="dashboard-table-empty">
           This Service has no container yet. Deploy it to start one.
         </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   createProjectDatabase,
   databaseStatusLabel,
@@ -11,10 +11,7 @@ import {
   rotateProjectDatabaseCredentials,
   type DatabaseSummary,
 } from "@/lib/databases-client";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
+import { getError, useResource } from "@/lib/resource";
 
 function formatTime(value: string): string {
   return new Date(value).toLocaleString();
@@ -43,45 +40,38 @@ export function DatabasePanel({
   projectName: string;
   canManage: boolean;
 }) {
-  const [database, setDatabase] = useState<DatabaseSummary | null>(null);
-  const [redeployNeeded, setRedeployNeeded] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState("");
-  const [allowlist, setAllowlist] = useState("");
-  const [error, setError] = useState("");
+  // Null means the draft follows the server value; typing detaches it until a
+  // proxy change reloads the panel.
+  const [allowlistDraft, setAllowlistDraft] = useState<string | null>(null);
+  // Every action failure shares one slot next to the load error.
+  const [actionError, setActionError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const load = useCallback(async () => {
-    try {
+  const panel = useResource(
+    useCallback(async () => {
       const result = await getProjectDatabase(projectId);
-      setDatabase(result.database);
-      setRedeployNeeded(result.needsRedeploy);
-      if (result.database?.proxy.enabled) {
-        setAllowlist(result.database.proxy.allowlist.join("\n"));
-      }
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
+      return { database: result.database, needsRedeploy: result.needsRedeploy };
+    }, [projectId]),
+    [projectId],
+  );
+  const database: DatabaseSummary | null = panel.data?.database ?? null;
+  const redeployNeeded = panel.data?.needsRedeploy ?? false;
+  const loading = panel.loading;
+  const allowlist =
+    allowlistDraft ?? (database?.proxy.enabled ? database.proxy.allowlist.join("\n") : "");
 
   async function create() {
     setBusy(true);
-    setError("");
+    setActionError("");
     setNotice("");
     try {
       await createProjectDatabase(projectId);
-      await load();
+      await panel.refresh();
       setNotice("Database created.");
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -97,14 +87,14 @@ export function DatabasePanel({
     }
 
     setBusy(true);
-    setError("");
+    setActionError("");
     setNotice("");
     try {
       await rotateProjectDatabaseCredentials(projectId);
-      await load();
+      await panel.refresh();
       setNotice("Credentials rotated. Redeploy the Services to apply the new DATABASE_URL.");
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -112,15 +102,15 @@ export function DatabasePanel({
 
   async function remove() {
     setBusy(true);
-    setError("");
+    setActionError("");
     setNotice("");
     try {
       await deleteProjectDatabase(projectId, confirmation);
       setConfirmation("");
-      await load();
+      await panel.refresh();
       setNotice("Database deleted.");
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -135,15 +125,15 @@ export function DatabasePanel({
 
   async function enableProxy() {
     setBusy(true);
-    setError("");
+    setActionError("");
     setNotice("");
     try {
-      const proxy = await enableProjectDatabaseProxy(projectId, parseAllowlist(allowlist));
-      await load();
-      setAllowlist(proxy.allowlist.join("\n"));
+      await enableProjectDatabaseProxy(projectId, parseAllowlist(allowlist));
+      await panel.refresh();
+      setAllowlistDraft(null);
       setNotice("Public proxy enabled. Only the listed CIDRs can connect over TLS.");
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -155,14 +145,14 @@ export function DatabasePanel({
     }
 
     setBusy(true);
-    setError("");
+    setActionError("");
     setNotice("");
     try {
       await disableProjectDatabaseProxy(projectId);
-      await load();
+      await panel.refresh();
       setNotice("Public proxy disabled and its endpoint revoked.");
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -191,9 +181,9 @@ export function DatabasePanel({
         </p>
       ) : null}
 
-      {error ? (
+      {panel.error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {panel.error || actionError}
         </p>
       ) : null}
       {notice ? (
@@ -337,7 +327,7 @@ export function DatabasePanel({
                   Allowlist CIDRs (one per line)
                   <textarea
                     value={allowlist}
-                    onChange={(event) => setAllowlist(event.target.value)}
+                    onChange={(event) => setAllowlistDraft(event.target.value)}
                     placeholder="203.0.113.0/24"
                     rows={3}
                     spellCheck={false}

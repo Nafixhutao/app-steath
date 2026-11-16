@@ -2,12 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
-import { getBackups, type BackupList, type BackupSummary } from "@/lib/backups-client";
-import { getRestores, requestRestore, type RestoreList } from "@/lib/restores-client";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
+import { getError, useResource } from "@/lib/resource";
+import { getBackups, type BackupSummary } from "@/lib/backups-client";
+import { getRestores, requestRestore } from "@/lib/restores-client";
 
 function formatTime(value: string): string {
   return new Date(value).toLocaleString();
@@ -44,45 +41,38 @@ type RestoreTarget = Pick<BackupSummary, "id" | "targetType" | "targetName" | "p
 export default function BackupsPage() {
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
-  const [list, setList] = useState<BackupList | null>(null);
-  const [restores, setRestores] = useState<RestoreList | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [target, setTarget] = useState<RestoreTarget | null>(null);
   const [confirmation, setConfirmation] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const organizationId = organization?.id;
   const canRestore = activeMember?.role === "owner" || activeMember?.role === "admin";
 
-  const refresh = useCallback(async () => {
-    if (!organizationId) return;
-    try {
+  const board = useResource(
+    useCallback(async () => {
       const [nextList, nextRestores] = await Promise.all([getBackups(), getRestores()]);
-      setList(nextList);
-      setRestores(nextRestores);
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [organizationId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
+      return { backups: nextList, restores: nextRestores };
+    }, []),
+    [organizationId],
+    { enabled: Boolean(organizationId) },
+  );
+  const list = board.data?.backups ?? null;
+  const restores = board.data?.restores ?? null;
+  const loading = board.loading;
+  const error = board.error;
 
   // A Restore runs in the worker, so the page polls while one is in flight to
   // show the final status without a manual refresh.
   const restoring = restores?.restores.some((restore) => isActive(restore.status)) ?? false;
+  const refreshBoard = board.refresh;
   useEffect(() => {
     if (!restoring) return;
 
-    const timer = setInterval(() => void refresh(), 5_000);
+    const timer = setInterval(() => void refreshBoard(), 5_000);
 
     return () => clearInterval(timer);
-  }, [restoring, refresh]);
+  }, [restoring, refreshBoard]);
 
   function activeRestoreFor(backup: BackupSummary) {
     return restores?.restores.find(
@@ -98,7 +88,6 @@ export default function BackupsPage() {
     setTarget(backup);
     setConfirmation("");
     setNotice("");
-    setError("");
   }
 
   function cancelRestore() {
@@ -118,9 +107,11 @@ export default function BackupsPage() {
       );
       setTarget(null);
       setConfirmation("");
-      await refresh();
+      await board.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      // The submit failure shares the page's error banner; the board's own
+      // error slot stays reserved for load failures.
+      setSubmitError(getError(cause));
     } finally {
       setSubmitting(false);
     }
@@ -146,14 +137,18 @@ export default function BackupsPage() {
             and the platform PostgreSQL is copied at 02.00 UTC and kept for seven days.
           </p>
         </div>
-        <button className="dashboard-link-button" type="button" onClick={() => void refresh()}>
+        <button
+          className="dashboard-link-button"
+          type="button"
+          onClick={() => void board.refresh()}
+        >
           Refresh
         </button>
       </div>
 
-      {error ? (
+      {error || submitError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {error || submitError}
         </p>
       ) : null}
 
@@ -251,9 +246,7 @@ export default function BackupsPage() {
                       <td>{backup.targetName}</td>
                       <td>{backup.projectName ?? "Platform"}</td>
                       <td>{formatTime(backup.createdAt)}</td>
-                      <td>
-                        {backup.status === "completed" ? formatSize(backup.sizeBytes) : "-"}
-                      </td>
+                      <td>{backup.status === "completed" ? formatSize(backup.sizeBytes) : "-"}</td>
                       <td>
                         <span className="role-label">
                           {backup.storageProvider === "s3"

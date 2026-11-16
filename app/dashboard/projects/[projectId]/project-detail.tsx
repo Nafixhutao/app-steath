@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActiveMember } from "@/lib/auth-client";
@@ -10,73 +10,52 @@ import {
   updateProject,
   type ProjectSummary,
 } from "@/lib/projects-client";
+import { getError, useResource } from "@/lib/resource";
 import { ServicesPanel } from "./services-panel";
 import { DatabasePanel } from "./database-panel";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
 
 export function ProjectDetail({ projectId }: { projectId: string }) {
   const router = useRouter();
   const { data: activeMember } = useActiveMember();
-  const [project, setProject] = useState<ProjectSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  // Rename and delete failures share one slot next to the load error.
+  const [actionError, setActionError] = useState("");
+  // Null means the edit form follows the server values; typing detaches it.
+  const [draft, setDraft] = useState<{ name: string; slug: string } | null>(null);
   const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
 
-  const load = useCallback(async () => {
-    try {
-      const result = await getProject(projectId);
-      setProject(result);
-      setName(result.name);
-      setSlug(result.slug);
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
+  const panel = useResource(() => getProject(projectId), [projectId]);
+  const project: ProjectSummary | null = panel.data;
+  const loading = panel.loading;
+  const error = panel.error;
+  const name = draft?.name ?? project?.name ?? "";
+  const slug = draft?.slug ?? project?.slug ?? "";
 
   /**
    * Refreshes only the Project summary so Service counts stay accurate after a
    * Service is created or deleted, without resetting the edit form.
    */
-  const refreshSummary = useCallback(async () => {
-    try {
-      setProject(await getProject(projectId));
-    } catch {
-      // The Service panel already reports its own errors; a stale summary is
-      // harmless compared with replacing the page with an error state.
-    }
-  }, [projectId]);
+  const refreshSummary = panel.refresh;
 
   async function rename(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
-    setError("");
     setNotice("");
+    setActionError("");
     try {
       const updated = await updateProject(projectId, {
         name: name.trim(),
         slug: slug.trim(),
       });
-      setProject(updated);
-      setName(updated.name);
-      setSlug(updated.slug);
+      // Adopt the saved values and re-attach the form to the server state.
+      panel.setData(updated);
+      setDraft(null);
       setNotice("Project updated.");
     } catch (cause) {
-      setError(getError(cause));
+      setNotice("");
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -85,13 +64,12 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   async function remove(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
-    setError("");
-    setNotice("");
+    setActionError("");
     try {
       await deleteProject(projectId, confirmation);
       router.push("/dashboard/projects");
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
       setBusy(false);
     }
   }
@@ -122,9 +100,9 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             <p>This Project does not exist in the active Organization.</p>
           </div>
         </div>
-        {error ? (
+        {error || actionError ? (
           <p className="dashboard-alert is-error" role="alert">
-            {error}
+            {error || actionError}
           </p>
         ) : null}
         <p className="dashboard-back-link">
@@ -146,15 +124,17 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             <code className="project-slug">{project.slug}</code>
           </p>
         </div>
-        <span className={`dashboard-status ${project.status === "empty" ? "is-idle" : "is-active"}`}>
+        <span
+          className={`dashboard-status ${project.status === "empty" ? "is-idle" : "is-active"}`}
+        >
           <span className="dashboard-status-dot" aria-hidden="true" />
           {project.status === "empty" ? "Empty" : "Active"}
         </span>
       </div>
 
-      {error ? (
+      {error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {error || actionError}
         </p>
       ) : null}
       {notice ? (
@@ -199,7 +179,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 value={name}
                 maxLength={80}
                 required
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => setDraft({ name: event.target.value, slug })}
               />
             </label>
             <label>
@@ -208,7 +188,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 value={slug}
                 maxLength={40}
                 required
-                onChange={(event) => setSlug(event.target.value)}
+                onChange={(event) => setDraft({ name, slug: event.target.value })}
               />
             </label>
             <button

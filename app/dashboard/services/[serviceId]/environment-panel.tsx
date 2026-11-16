@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   createEnvironmentVariable,
   deleteEnvironmentVariable,
@@ -9,10 +9,7 @@ import {
   updateEnvironmentVariable,
   type EnvironmentVariableSummary,
 } from "@/lib/environment-variables-client";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
+import { getError, useResource } from "@/lib/resource";
 
 function formatTime(value: string): string {
   return new Date(value).toLocaleString();
@@ -41,36 +38,28 @@ export function EnvironmentPanel({
   serviceId: string;
   needsRedeploy: boolean;
 }) {
-  const [variables, setVariables] = useState<EnvironmentVariableSummary[]>([]);
-  const [redeployNeeded, setRedeployNeeded] = useState(needsRedeploy);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [revealed, setRevealed] = useState<{ id: string; value: string } | null>(null);
-  const [error, setError] = useState("");
+  // Save, remove, and reveal failures share one slot next to the load error.
+  const [actionError, setActionError] = useState("");
 
-  const load = useCallback(async () => {
-    try {
+  const environment = useResource(
+    useCallback(async () => {
       const result = await listEnvironmentVariables(serviceId);
-      setVariables(result.variables);
-      setRedeployNeeded(result.needsRedeploy);
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [serviceId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
+      return { variables: result.variables, needsRedeploy: result.needsRedeploy };
+    }, [serviceId]),
+    [serviceId],
+  );
+  const variables: EnvironmentVariableSummary[] = environment.data?.variables ?? [];
+  const redeployNeeded = environment.data?.needsRedeploy ?? needsRedeploy;
+  const loading = environment.loading;
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!draft) return;
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       if (draft.mode === "create") {
         await createEnvironmentVariable(serviceId, { key: draft.key, value: draft.value });
@@ -81,9 +70,9 @@ export function EnvironmentPanel({
         });
       }
       setDraft(null);
-      await load();
+      await environment.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
@@ -91,20 +80,20 @@ export function EnvironmentPanel({
 
   async function remove(variable: EnvironmentVariableSummary) {
     setBusy(true);
-    setError("");
+    setActionError("");
     try {
       await deleteEnvironmentVariable(serviceId, variable.id);
       setRevealed((current) => (current?.id === variable.id ? null : current));
-      await load();
+      await environment.refresh();
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     } finally {
       setBusy(false);
     }
   }
 
   async function reveal(variable: EnvironmentVariableSummary) {
-    setError("");
+    setActionError("");
     // Revealing again collapses the value, so a secret is never left on screen.
     if (revealed?.id === variable.id) {
       setRevealed(null);
@@ -115,7 +104,7 @@ export function EnvironmentPanel({
       const result = await revealEnvironmentVariable(serviceId, variable.id);
       setRevealed({ id: result.id, value: result.value });
     } catch (cause) {
-      setError(getError(cause));
+      setActionError(getError(cause));
     }
   }
 
@@ -139,9 +128,9 @@ export function EnvironmentPanel({
         </p>
       ) : null}
 
-      {error ? (
+      {environment.error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
-          {error}
+          {environment.error || actionError}
         </p>
       ) : null}
 

@@ -1,13 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
-import { getOrganizationUsage, type OrganizationUsage } from "@/lib/usage-client";
-
-function getError(error: unknown) {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
+import { useResource } from "@/lib/resource";
+import { getOrganizationUsage } from "@/lib/usage-client";
 
 function formatTime(value: string): string {
   return new Date(value).toLocaleString();
@@ -59,27 +55,15 @@ function QuotaRow({
 export default function UsagePage() {
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
-  const [usage, setUsage] = useState<OrganizationUsage | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const organizationId = organization?.id;
   const canSeeLimitDetail = activeMember?.role === "owner" || activeMember?.role === "admin";
 
-  const refresh = useCallback(async () => {
-    if (!organizationId) return;
-    try {
-      setUsage(await getOrganizationUsage());
-      setError("");
-    } catch (cause) {
-      setError(getError(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [organizationId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
+  const usage = useResource(() => getOrganizationUsage(), [organizationId], {
+    enabled: Boolean(organizationId),
+  });
+  const usageData = usage.data;
+  const loading = usage.loading;
+  const error = usage.error;
 
   if (loading) {
     return (
@@ -92,9 +76,9 @@ export default function UsagePage() {
   }
 
   const maxServicesPerProject =
-    usage?.projects.reduce((max, project) => Math.max(max, project.serviceCount), 0) ?? 0;
+    usageData?.projects.reduce((max, project) => Math.max(max, project.serviceCount), 0) ?? 0;
   const maxDatabasesPerProject =
-    usage?.projects.reduce((max, project) => Math.max(max, project.databaseCount), 0) ?? 0;
+    usageData?.projects.reduce((max, project) => Math.max(max, project.databaseCount), 0) ?? 0;
 
   return (
     <div className="dashboard-content">
@@ -106,8 +90,8 @@ export default function UsagePage() {
             Volume, and Database storage are refreshed every five minutes and when this page opens.
           </p>
         </div>
-        {usage?.capturedAt ? (
-          <span className="project-quota">Measured {formatTime(usage.capturedAt)}</span>
+        {usageData?.capturedAt ? (
+          <span className="project-quota">Measured {formatTime(usageData.capturedAt)}</span>
         ) : null}
       </div>
 
@@ -117,7 +101,7 @@ export default function UsagePage() {
         </p>
       ) : null}
 
-      {!usage ? (
+      {!usageData ? (
         <div className="dashboard-empty-state">
           <h3>Quota unavailable</h3>
           <p>The Organization Quota could not be loaded. Try again in a moment.</p>
@@ -127,7 +111,11 @@ export default function UsagePage() {
           <section className="dashboard-section" aria-labelledby="quota-heading">
             <div className="dashboard-section-heading">
               <h2 id="quota-heading">Quota</h2>
-              <button className="dashboard-link-button" type="button" onClick={() => void refresh()}>
+              <button
+                className="dashboard-link-button"
+                type="button"
+                onClick={() => void usage.refresh()}
+              >
                 Refresh
               </button>
             </div>
@@ -145,23 +133,23 @@ export default function UsagePage() {
                 <tbody>
                   <QuotaRow
                     label="Projects"
-                    used={usage.counts.projects.used}
-                    limit={usage.counts.projects.limit}
+                    used={usageData.counts.projects.used}
+                    limit={usageData.counts.projects.limit}
                   />
                   <QuotaRow
                     label="Services in this Organization"
-                    used={usage.counts.services.used}
-                    limit={usage.counts.services.limit}
+                    used={usageData.counts.services.used}
+                    limit={usageData.counts.services.limit}
                   />
                   <QuotaRow
                     label="Services in the busiest Project"
                     used={maxServicesPerProject}
-                    limit={usage.limits.servicesPerProject}
+                    limit={usageData.limits.servicesPerProject}
                   />
                   <QuotaRow
                     label="Databases in the busiest Project"
                     used={maxDatabasesPerProject}
-                    limit={usage.limits.databasesPerProject}
+                    limit={usageData.limits.databasesPerProject}
                   />
                 </tbody>
               </table>
@@ -176,23 +164,23 @@ export default function UsagePage() {
             <dl className="service-meta">
               <div>
                 <dt>CPU</dt>
-                <dd>{usage.totals.cpu.toFixed(2)} vCPU</dd>
+                <dd>{usageData.totals.cpu.toFixed(2)} vCPU</dd>
               </div>
               <div>
                 <dt>Memory</dt>
-                <dd>{megabytes(usage.totals.memoryMb)}</dd>
+                <dd>{megabytes(usageData.totals.memoryMb)}</dd>
               </div>
               <div>
                 <dt>Volume</dt>
-                <dd>{megabytes(usage.totals.volumeMb)}</dd>
+                <dd>{megabytes(usageData.totals.volumeMb)}</dd>
               </div>
               <div>
                 <dt>Database storage</dt>
-                <dd>{megabytes(usage.totals.databaseMb)}</dd>
+                <dd>{megabytes(usageData.totals.databaseMb)}</dd>
               </div>
             </dl>
 
-            {usage.services.length === 0 ? (
+            {usageData.services.length === 0 ? (
               <p className="dashboard-table-empty">No Services yet.</p>
             ) : (
               <div className="organization-table-wrap">
@@ -208,7 +196,7 @@ export default function UsagePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {usage.services.map((service) => (
+                    {usageData.services.map((service) => (
                       <tr key={service.id}>
                         <td>
                           <Link href={`/dashboard/services/${service.id}`}>{service.name}</Link>
@@ -242,7 +230,7 @@ export default function UsagePage() {
               </div>
             )}
 
-            {usage.databases.length > 0 ? (
+            {usageData.databases.length > 0 ? (
               <div className="organization-table-wrap">
                 <table className="organization-table">
                   <thead>
@@ -254,7 +242,7 @@ export default function UsagePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {usage.databases.map((database) => (
+                    {usageData.databases.map((database) => (
                       <tr key={database.id}>
                         <td>PostgreSQL</td>
                         <td>
@@ -268,7 +256,9 @@ export default function UsagePage() {
                             : megabytes(database.usageMb)}
                         </td>
                         <td>
-                          <span className={`role-label is-${database.overQuota ? "failed" : "running"}`}>
+                          <span
+                            className={`role-label is-${database.overQuota ? "failed" : "running"}`}
+                          >
                             {database.overQuota ? "Over Quota" : database.status}
                           </span>
                         </td>
@@ -297,27 +287,27 @@ export default function UsagePage() {
                   <tbody>
                     <tr>
                       <td>CPU per Service</td>
-                      <td>{usage.limits.cpuPerService} vCPU</td>
+                      <td>{usageData.limits.cpuPerService} vCPU</td>
                     </tr>
                     <tr>
                       <td>RAM per Service</td>
-                      <td>{megabytes(usage.limits.memoryMbPerService)}</td>
+                      <td>{megabytes(usageData.limits.memoryMbPerService)}</td>
                     </tr>
                     <tr>
                       <td>Volume per Service</td>
-                      <td>{megabytes(usage.limits.volumeMbPerService)}</td>
+                      <td>{megabytes(usageData.limits.volumeMbPerService)}</td>
                     </tr>
                     <tr>
                       <td>Storage per Database</td>
-                      <td>{megabytes(usage.limits.databaseStorageMb)}</td>
+                      <td>{megabytes(usageData.limits.databaseStorageMb)}</td>
                     </tr>
                     <tr>
                       <td>Build concurrency per node</td>
-                      <td>{usage.limits.buildConcurrencyPerNode}</td>
+                      <td>{usageData.limits.buildConcurrencyPerNode}</td>
                     </tr>
                     <tr>
                       <td>Log retention</td>
-                      <td>{usage.limits.logRetentionDays} days</td>
+                      <td>{usageData.limits.logRetentionDays} days</td>
                     </tr>
                   </tbody>
                 </table>
