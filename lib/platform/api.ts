@@ -38,3 +38,16 @@ export function apiError(error: unknown): Response {
     { status: 500 },
   );
 }
+
+/**
+ * Parses the request body as JSON, answering 400 invalid_body when it is
+ * missing or malformed. Every route that requires a JSON body starts here, so
+ * a broken body can never surface as a 500.
+ */
+export async function readJson<T>(request: Request): Promise<T> {
+  try {
+    return (await request.json()) as T;
+  } catch {
+    throw new ApiError(400, "invalid_body", "Invalid request body.");
+  }
+}

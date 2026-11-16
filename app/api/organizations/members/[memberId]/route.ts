@@ -1,6 +1,6 @@
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError, apiData, apiError, readJson } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
@@ -10,7 +10,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { memberId } = await context.params;
-    const input = (await request.json()) as { role?: string };
+    const input = await readJson<{ role?: string }>(request);
     if (input.role !== "admin" && input.role !== "member") {
       return apiError(
         new ApiError(400, "invalid_role", "Only admin and member roles can be assigned here."),

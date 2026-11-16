@@ -1,4 +1,4 @@
-import { apiData, apiError } from "@/lib/platform/api";
+import { apiData, apiError, readJson } from "@/lib/platform/api";
 import { createAbuseReport } from "@/lib/platform/abuse";
 
 // The trusted reverse proxy (Caddy in front of the Control Plane) MUST
@@ -14,7 +14,7 @@ function clientIp(headers: Headers): string {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as Record<string, unknown>;
+    const body = await readJson<Record<string, unknown>>(request);
     const ip = clientIp(request.headers);
     return apiData(
       await createAbuseReport({
