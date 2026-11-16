@@ -26,7 +26,8 @@ export type IncidentRow = {
     kind: string;
     message: string;
     actor_account_id: string | null;
-    created_at: Date;
+    /** jsonb_agg serializes to an ISO string, not a Date. */
+    created_at: string | Date;
   }[];
 };
 
@@ -111,14 +112,19 @@ export async function listIncidents(
       started_at: row.started_at.toISOString(),
       ...(row.resolved_at ? { resolved_at: row.resolved_at.toISOString() } : {}),
       ...(row.created_by_account_id ? { created_by_account_id: row.created_by_account_id } : {}),
-      events: (row.events ?? []).map((event) => ({
-        id: event.id,
-        incident_id: event.incident_id,
-        kind: event.kind,
-        message: event.message,
-        ...(event.actor_account_id ? { actor_account_id: event.actor_account_id } : {}),
-        created_at: event.created_at.toISOString(),
-      })),
+      events: (row.events ?? []).map((event) => {
+        // jsonb_agg hands the timestamps back as ISO strings; accept both so a
+        // future refactor to a real JOIN cannot silently break the wire shape.
+        const eventCreatedAt = new Date(event.created_at).toISOString();
+        return {
+          id: event.id,
+          incident_id: event.incident_id,
+          kind: event.kind,
+          message: event.message,
+          ...(event.actor_account_id ? { actor_account_id: event.actor_account_id } : {}),
+          created_at: eventCreatedAt,
+        };
+      }),
       created_at: row.created_at.toISOString(),
       updated_at: row.updated_at.toISOString(),
       admin_email: adminEmail,
@@ -376,7 +382,7 @@ export async function listErrorGroups(window: ErrorGroupWindow): Promise<{
   SELECT * FROM (
     SELECT
       'deployment' AS kind,
-      d."id",
+      'deployment' AS id,
       COALESCE(d."errorMessage", 'Deployment failed') AS message,
       min(d."startedAt") AS "first_seen",
       max(d."finishedAt") AS "last_seen",
@@ -390,7 +396,7 @@ export async function listErrorGroups(window: ErrorGroupWindow): Promise<{
     UNION ALL
     SELECT
       'job' AS kind,
-      j."type" AS "id",
+      'job' AS id,
       COALESCE(j."lastError", 'Job failed') AS message,
       min(j."createdAt") AS "first_seen",
       max(j."updatedAt") AS "last_seen",

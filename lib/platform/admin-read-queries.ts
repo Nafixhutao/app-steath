@@ -288,7 +288,8 @@ export async function getAdminDbMetrics(windowMinutes: number): Promise<DbMetric
 
   const historyResult = await pool.query<DbMetricSample>(
     `
-  SELECT "timestamp", "connections", "maxConnections" AS "max_connections",
+  SELECT "capturedAt" AS "timestamp", "connections",
+         "maxConnections" AS "max_connections",
          "activeQueries" AS "active_queries",
          "cacheHitRatioKnown" AS "cache_hit_ratio_known",
          "cacheHitRatioPercent"::float8 AS "cache_hit_ratio_percent",
@@ -426,7 +427,8 @@ export async function getAdminRedisMetrics(windowMinutes: number): Promise<Redis
 
   const historyResult = await pool.query<RedisMetricSample>(
     `
-  SELECT "timestamp", "connections", "maxClients" AS "max_clients",
+  SELECT "capturedAt" AS "timestamp", "connections",
+         "maxClients" AS "max_clients",
          "opsPerSec"::float8 AS "ops_per_sec",
          "hitRateKnown" AS "hit_rate_known",
          "hitRatePercent"::float8 AS "hit_rate_percent",
