@@ -38,12 +38,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [session]);
 
   useEffect(() => {
-    // A Platform Admin is not required to own an Organization, so instead of
-    // the onboarding gate they land on the standalone admin console, the way
-    // instance admins do in stealth-forge.
-    if (!isPlatformAdmin || !needsOrganization) return;
+    // A Platform Admin is admin-only: the admin console is their whole
+    // surface, so the user dashboard never renders for them even if a
+    // leftover Organization membership exists.
+    if (!isPlatformAdmin) return;
     router.replace("/admin");
-  }, [isPlatformAdmin, needsOrganization, router]);
+  }, [isPlatformAdmin, router]);
 
   useEffect(() => {
     // Leaving or deleting an Organization clears the active id. Fall back to a
