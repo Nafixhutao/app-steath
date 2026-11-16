@@ -1,5 +1,5 @@
-import { pool } from "@/lib/platform/db";
 import { apiData, withAdmin } from "@/lib/platform/api";
+import { getAdminDbMetrics } from "@/lib/platform/admin-read-queries";
 
 /**
  * Admin DB metrics — mirrors stealth-forge's `/v1/admin/db-metrics`: one
@@ -10,22 +10,7 @@ import { apiData, withAdmin } from "@/lib/platform/api";
  * capped at 24 hours to match the retention pass.
  */
 
-const MAX_WINDOW_MINUTES = 24 * 60;
 const CURRENT_WINDOW_MINUTES = 5;
-
-type SampleRow = {
-  timestamp: Date;
-  connections: number;
-  max_connections: number;
-  active_queries: number;
-  cache_hit_ratio_known: boolean;
-  cache_hit_ratio_percent: number;
-  transactions_per_sec: number;
-  query_latency_ms: number;
-  replication_standbys: number;
-  database_size_bytes: number;
-  uptime_seconds: number;
-};
 
 export async function GET(request: Request) {
   return withAdmin(request, async () => {
@@ -38,38 +23,7 @@ export async function GET(request: Request) {
         windowMinutes = CURRENT_WINDOW_MINUTES;
       }
     }
-    windowMinutes = Math.min(windowMinutes, MAX_WINDOW_MINUTES);
 
-    const historyResult = await pool.query<SampleRow>(
-      `
-  SELECT "timestamp", "connections", "maxConnections" AS "max_connections",
-         "activeQueries" AS "active_queries",
-         "cacheHitRatioKnown" AS "cache_hit_ratio_known",
-         "cacheHitRatioPercent"::float8 AS "cache_hit_ratio_percent",
-         "transactionsPerSec"::float8 AS "transactions_per_sec",
-         "queryLatencyMs"::float8 AS "query_latency_ms",
-         "replicationStandbys" AS "replication_standbys",
-         "databaseSizeBytes"::float8 AS "database_size_bytes",
-         "uptimeSeconds"::float8 AS "uptime_seconds"
-  FROM "admin_db_metric"
-  WHERE "capturedAt" >= now() - ($1 || ' minutes')::interval
-  ORDER BY "capturedAt" ASC
-  `,
-      [String(windowMinutes)],
-    );
-
-    const history: SampleRow[] = historyResult.rows;
-    const current = history[history.length - 1];
-    const reachable = current !== undefined;
-
-    const versionResult = await pool.query<{ version: string }>("SELECT version() AS version");
-    const serverVersion = reachable ? (versionResult.rows[0]?.version ?? "") : "";
-
-    return apiData({
-      current: current ?? null,
-      history,
-      server_version: serverVersion,
-      reachable,
-    });
+    return apiData(await getAdminDbMetrics(windowMinutes));
   });
 }
