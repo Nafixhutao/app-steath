@@ -48,6 +48,19 @@ services:
       timeout: 5s
       retries: 12
 
+  # The admin Cache component and its metric samples. A pure cache: no
+  # persistence, no published port, and an LRU ceiling so it can never crowd
+  # the VPS. Restarting it only clears samples, which refill within a minute.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   # Runs once per `up`. The migration runner takes a PostgreSQL advisory lock, so
   # a second invocation (or a restart loop) cannot apply the same migration twice.
   migrate:
