@@ -38,6 +38,25 @@ cakupan, keduanya diperbaiki di commit `edcb783`:
   `megabytes`, `shortCommit` masing-masing satu copy. Bagian di
   `features/admin/**` tidak disentuh (guard ADR-0008).
 
+## Kandidat kecil (tindak lanjut 16 November)
+
+Dua dari tiga item "Kandidat kecil" dieksekusi setelah laporan diarsipkan:
+
+1. `QUOTAS` diimpor langsung dari `quota-limits` di `services.ts` dan
+   `projects.ts` — satu jalur untuk satu konstanta (`685b417`).
+2. Re-export `ApiError` di `api.ts` dihapus; semua 25 route file impor
+   langsung dari `api-error.ts` (`7ea3ec1`).
+
+Item ketiga (barrel `features/admin/data/admin-read-model/queries.ts`)
+tetap di tempatnya karena guard ADR-0008.
+
+## Perbaikan CI
+
+CI merah pada 11 run berturut-turut sebelum sesi ini: `tsc --noEmit`
+dijalankan pada tree bersih tanpa tipe route `RouteContext` (global yang
+baru ada setelah `next dev`/`next build`/`next typegen`). Solusi:
+`next typegen` disisipkan di awal script `ci` (`cc29c8b`); CI hijau kembali.
+
 ## Batas yang dijaga
 
 `features/admin/**` dan `app/globals.css` tetap byte-identical dengan
