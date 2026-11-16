@@ -26,6 +26,10 @@ _Avoid_: Permission level, rank
 User dengan akses lintas Organization untuk menangani abuse, Suspension, dan operasi platform.
 _Avoid_: Superadmin, root
 
+**Admin Console**:
+Permukaan lintas Organization untuk Platform Admin — overview, infrastructure, logs, traces, errors, runs, workers, incidents, users, providers, usage, status, settings, plus Scan Findings dan Abuse Report.
+_Avoid_: Dashboard admin, panel admin
+
 ### Delivery
 
 **Project**:

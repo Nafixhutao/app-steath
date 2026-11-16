@@ -11,13 +11,13 @@ import {
   AdminHeader,
   AdminPageBody,
   Mono,
-} from "@/components/admin/admin-panel";
-import { LiveIndicator } from "@/components/admin/live-indicator";
-import { StatTile } from "@/components/admin/stat-tile";
-import { StatusBadge } from "@/components/admin/status-badge";
-import { AdminSelect } from "@/components/admin/admin-select";
-import { ToolbarSearch } from "@/components/admin/toolbar-search";
-import { PanelRowsSkeleton } from "@/components/admin/admin-skeletons";
+} from "@/features/admin/components/admin-panel";
+import { LiveIndicator } from "@/features/admin/components/live-indicator";
+import { StatTile } from "@/features/admin/components/stat-tile";
+import { StatusBadge } from "@/features/admin/components/status-badge";
+import { AdminSelect } from "@/features/admin/components/admin-select";
+import { ToolbarSearch } from "@/features/admin/components/toolbar-search";
+import { PanelRowsSkeleton } from "@/features/admin/components/admin-skeletons";
 
 type SeverityFilter = "all" | "urgent" | "critical" | "high" | "medium" | "low";
 
@@ -148,17 +148,20 @@ export function FindingsPanel() {
           icon={ShieldCheck}
           label="Total findings"
           value={String(list?.total ?? 0)}
+          className="bg-[var(--projects-card-bg)]"
         />
         <StatTile
           icon={TriangleAlert}
           label="Urgent"
           value={String(urgentCount)}
           tone={urgentCount > 0 ? "danger" : "neutral"}
+          className="bg-[var(--projects-card-bg)]"
         />
         <StatTile
           label="Shown"
           value={String(filtered.length)}
           hint="after filters"
+          className="bg-[var(--projects-card-bg)]"
         />
       </div>
 

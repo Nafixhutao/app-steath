@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Flag, RefreshCw, SearchX } from "lucide-react";
-import { AdminHeader, AdminPageBody, AdminPanel, AdminPanelHeader, Mono } from "@/components/admin/admin-panel";
-import { LiveIndicator } from "@/components/admin/live-indicator";
-import { StatTile } from "@/components/admin/stat-tile";
-import { StatusBadge } from "@/components/admin/status-badge";
-import { AdminSelect } from "@/components/admin/admin-select";
-import { ToolbarSearch } from "@/components/admin/toolbar-search";
-import { PanelRowsSkeleton } from "@/components/admin/admin-skeletons";
+import { AdminHeader, AdminPageBody, AdminPanel, AdminPanelHeader, Mono } from "@/features/admin/components/admin-panel";
+import { LiveIndicator } from "@/features/admin/components/live-indicator";
+import { StatTile } from "@/features/admin/components/stat-tile";
+import { StatusBadge } from "@/features/admin/components/status-badge";
+import { AdminSelect } from "@/features/admin/components/admin-select";
+import { ToolbarSearch } from "@/features/admin/components/toolbar-search";
+import { PanelRowsSkeleton } from "@/features/admin/components/admin-skeletons";
 
 type Report = {
   id: string;
@@ -171,13 +171,24 @@ export function AbuseReportsPanel() {
       ) : null}
 
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
-        <StatTile icon={Flag} label="Total reports" value={String(reports.length)} />
+        <StatTile
+          icon={Flag}
+          label="Total reports"
+          value={String(reports.length)}
+          className="bg-[var(--projects-card-bg)]"
+        />
         <StatTile
           label="New"
           value={String(openCount)}
           tone={openCount > 0 ? "warning" : "neutral"}
+          className="bg-[var(--projects-card-bg)]"
         />
-        <StatTile label="Shown" value={String(filtered.length)} hint="after filters" />
+        <StatTile
+          label="Shown"
+          value={String(filtered.length)}
+          hint="after filters"
+          className="bg-[var(--projects-card-bg)]"
+        />
       </div>
 
       <AdminPanel flush>
