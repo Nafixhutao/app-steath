@@ -1,0 +1,3 @@
+# Platform Admin bersifat admin-only
+
+Akun Platform Admin — email yang terdaftar di `PLATFORM_ADMIN_EMAILS` — adalah peran tersendiri, bukan User biasa: ia tidak memiliki Organization, tidak menjadi Member, dan tidak memakai dashboard user. Setiap permintaan ke `/dashboard` dialihkan ke `/admin`, dan membership yang tersisa dihapus dari data. Kami memilih pemisahan ini agar akun dengan akses lintas tenant tidak sekaligus menjadi tenant, sehingga tidak ada Project, kuota, atau data user yang menempel padanya dan permukaan kebocorannya lebih kecil. Konsekuensinya, admin tidak bisa mencoba alur user dengan akun yang sama; pengujian alur itu memakai akun uji terpisah.

@@ -1,0 +1,3 @@
+# Redis sebagai cache opsional
+
+Redis dipakai hanya sebagai cache: komponen Cache di Overview dan Status Page melaporkan kesehatan nyata lewat PING, dan worker menyimpan sampel INFO ke `admin_redis_metric`. Service produksi berjalan tanpa persistensi (`--save ""`), tanpa port publish, dengan plafon `256mb` dan kebijakan `allkeys-lru`, sehingga ia tidak pernah tumbuh melewati batas VPS dan restart hanya mengosongkan cache. Tanpa `REDIS_URL`, semua konsumen menjawab `unavailable` secara jujur; cache bukan syarat berjalannya control plane. Konsekuensinya, hit rate tidak diturunkan (sampler menulis nilai netral) sampai ada kebutuhan nyata, dan cache tidak boleh menyimpan satu-satunya salinan data apa pun.

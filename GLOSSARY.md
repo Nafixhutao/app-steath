@@ -23,8 +23,8 @@ Peran yang menentukan izin seorang Member di dalam Organization.
 _Avoid_: Permission level, rank
 
 **Platform Admin**:
-User dengan akses lintas Organization untuk menangani abuse, Suspension, dan operasi platform.
-_Avoid_: Superadmin, root
+Akun admin-only dengan akses lintas Organization untuk menangani abuse, Suspension, dan operasi platform; tidak memiliki Organization dan tidak memakai dashboard user.
+_Avoid_: Superadmin, root, admin user
 
 **Admin Console**:
 Permukaan lintas Organization untuk Platform Admin — overview, infrastructure, logs, traces, errors, runs, workers, incidents, users, providers, usage, status, settings, plus Scan Findings dan Abuse Report.
