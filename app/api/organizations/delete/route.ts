@@ -1,4 +1,5 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError } from "@/lib/platform/api-error";
+import { apiData, apiError } from "@/lib/platform/api";
 import {
   deleteOrganizationWithConfirmation,
   requireOrganizationRole,

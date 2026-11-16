@@ -1,4 +1,5 @@
-import { apiData, ApiError, readJson, withAdmin } from "@/lib/platform/api";
+import { ApiError } from "@/lib/platform/api-error";
+import { apiData, readJson, withAdmin } from "@/lib/platform/api";
 import { updateAbuseReport } from "@/lib/platform/abuse";
 import { recordPlatformAudit } from "@/lib/platform/audit";
 

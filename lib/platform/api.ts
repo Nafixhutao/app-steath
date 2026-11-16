@@ -9,9 +9,9 @@ import { requirePlatformAdmin, type PlatformAdminContext } from "@/lib/platform/
 /**
  * Control Plane JSON API envelope. Successful responses carry `{ data }` and
  * failures carry `{ error: { code, message, details? } }`, as defined in the
- * platform spec, so every resource endpoint behaves the same way.
+ * platform spec, so every resource endpoint behaves the same way. `ApiError`
+ * lives in `api-error.ts` and is imported from there directly.
  */
-export { ApiError };
 
 export function apiData(data: unknown, status = 200): Response {
   return Response.json({ data }, { status });

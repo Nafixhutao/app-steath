@@ -1,6 +1,7 @@
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError } from "@/lib/platform/api-error";
+import { apiData, apiError } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 
 type LeaveOrganizationInput = {

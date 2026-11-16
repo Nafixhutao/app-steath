@@ -1,4 +1,5 @@
-import { ApiError, apiData, withAdmin } from "@/lib/platform/api";
+import { ApiError } from "@/lib/platform/api-error";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin error group status — mirrors stealth-forge's
@@ -7,7 +8,10 @@ import { ApiError, apiData, withAdmin } from "@/lib/platform/api";
  * status on yet; the endpoint validates and acknowledges the transition, and
  * the UI keeps its optimistic value until a store exists.
  */
-export async function PUT(request: Request, context: RouteContext<'/api/admin/telemetry/errors/[fingerprint]/status'>) {
+export async function PUT(
+  request: Request,
+  context: RouteContext<"/api/admin/telemetry/errors/[fingerprint]/status">,
+) {
   return withAdmin(request, async () => {
     const { fingerprint } = await context.params;
     if (!fingerprint) {

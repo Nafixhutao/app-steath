@@ -1,6 +1,6 @@
+import { ApiError } from "@/lib/platform/api-error";
 import { apiData, withAdmin } from "@/lib/platform/api";
 import { listAbuseReports } from "@/lib/platform/abuse";
-import { ApiError } from "@/lib/platform/api";
 
 export async function GET(request: Request) {
   return withAdmin(request, async () => {

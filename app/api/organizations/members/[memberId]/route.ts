@@ -1,6 +1,7 @@
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
-import { ApiError, apiData, apiError, readJson } from "@/lib/platform/api";
+import { ApiError } from "@/lib/platform/api-error";
+import { apiData, apiError, readJson } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 

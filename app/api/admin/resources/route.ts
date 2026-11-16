@@ -1,4 +1,5 @@
-import { apiData, ApiError, withAdmin } from "@/lib/platform/api";
+import { ApiError } from "@/lib/platform/api-error";
+import { apiData, withAdmin } from "@/lib/platform/api";
 import { listAdminResources } from "@/lib/platform/suspensions";
 
 export async function GET(request: Request) {

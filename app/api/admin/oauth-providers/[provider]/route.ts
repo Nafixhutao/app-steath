@@ -1,4 +1,5 @@
-import { ApiError, withAdmin } from "@/lib/platform/api";
+import { ApiError } from "@/lib/platform/api-error";
+import { withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin one OAuth provider — mirrors stealth-forge's
@@ -8,7 +9,10 @@ import { ApiError, withAdmin } from "@/lib/platform/api";
 
 const VALID = new Set(["github", "google"]);
 
-export async function PUT(request: Request, context: RouteContext<'/api/admin/oauth-providers/[provider]'>) {
+export async function PUT(
+  request: Request,
+  context: RouteContext<"/api/admin/oauth-providers/[provider]">,
+) {
   return withAdmin(request, async () => {
     const { provider } = await context.params;
     if (!VALID.has(provider)) {
@@ -22,7 +26,10 @@ export async function PUT(request: Request, context: RouteContext<'/api/admin/oa
   });
 }
 
-export async function DELETE(request: Request, context: RouteContext<'/api/admin/oauth-providers/[provider]'>) {
+export async function DELETE(
+  request: Request,
+  context: RouteContext<"/api/admin/oauth-providers/[provider]">,
+) {
   return withAdmin(request, async () => {
     const { provider } = await context.params;
     if (!VALID.has(provider)) {
