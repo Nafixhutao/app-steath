@@ -1,3 +1,5 @@
+import { request } from "@/lib/platform/http";
+
 export type BackupTargetType = "database" | "volume" | "platform";
 export type BackupStatus = "pending" | "running" | "completed" | "failed";
 export type BackupStorageProvider = "s3" | "local";
@@ -21,19 +23,6 @@ export type BackupList = {
   storageProvider: BackupStorageProvider;
 };
 
-type ApiFailure = {
-  error?: { code?: string; message?: string; details?: Record<string, unknown> };
-};
-
-export async function getBackups(): Promise<BackupList> {
-  const response = await fetch("/api/backups");
-  const payload = (await response.json().catch(() => ({}))) as {
-    data?: BackupList;
-  } & ApiFailure;
-
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? "The request could not be completed.");
-  }
-
-  return payload.data as BackupList;
+export function getBackups(): Promise<BackupList> {
+  return request<BackupList>("/api/backups");
 }

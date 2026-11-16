@@ -1,3 +1,5 @@
+import { request } from "@/lib/platform/http";
+
 export type QuotaCount = { used: number; limit: number };
 
 export type UsageTotals = {
@@ -65,19 +67,6 @@ export type OrganizationUsage = {
   databases: DatabaseUsageSummary[];
 };
 
-type ApiFailure = {
-  error?: { code?: string; message?: string; details?: Record<string, unknown> };
-};
-
-export async function getOrganizationUsage(): Promise<OrganizationUsage> {
-  const response = await fetch("/api/usage");
-  const payload = (await response.json().catch(() => ({}))) as {
-    data?: OrganizationUsage;
-  } & ApiFailure;
-
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? "The request could not be completed.");
-  }
-
-  return payload.data as OrganizationUsage;
+export function getOrganizationUsage(): Promise<OrganizationUsage> {
+  return request<OrganizationUsage>("/api/usage");
 }

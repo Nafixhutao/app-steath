@@ -1,3 +1,5 @@
+import { request } from "@/lib/platform/http";
+
 export type EnvironmentVariableSummary = {
   id: string;
   serviceId: string;
@@ -18,29 +20,6 @@ export type RevealedEnvironmentVariable = {
   key: string;
   value: string;
 };
-
-type ApiFailure = {
-  error?: { code?: string; message?: string; details?: Record<string, unknown> };
-};
-
-async function request<T>(
-  path: string,
-  init: { method?: string; body?: unknown } = {},
-): Promise<T> {
-  const response = await fetch(path, {
-    method: init.method ?? "GET",
-    headers: init.body === undefined ? undefined : { "content-type": "application/json" },
-    body: init.body === undefined ? undefined : JSON.stringify(init.body),
-  });
-
-  const payload = (await response.json().catch(() => ({}))) as { data?: T } & ApiFailure;
-
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? "The request could not be completed.");
-  }
-
-  return payload.data as T;
-}
 
 function serviceVariablesPath(serviceId: string): string {
   return `/api/services/${encodeURIComponent(serviceId)}/environment-variables`;

@@ -1,10 +1,7 @@
+import { request } from "@/lib/platform/http";
+
 export type DeploymentStatus =
-  | "queued"
-  | "building"
-  | "deploying"
-  | "running"
-  | "failed"
-  | "cancelled";
+  "queued" | "building" | "deploying" | "running" | "failed" | "cancelled";
 
 export type DeploymentSummary = {
   id: string;
@@ -31,32 +28,14 @@ export type NodeSummary = {
   };
 };
 
-type ApiFailure = {
-  error?: { code?: string; message?: string; details?: Record<string, unknown> };
-};
-
-async function request<T>(path: string, init: { method?: string } = {}): Promise<T> {
-  const response = await fetch(path, { method: init.method ?? "GET" });
-  const payload = (await response.json().catch(() => ({}))) as { data?: T } & ApiFailure;
-
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? "The request could not be completed.");
-  }
-
-  return payload.data as T;
-}
-
 export function listDeployments(serviceId: string): Promise<DeploymentSummary[]> {
-  return request<DeploymentSummary[]>(
-    `/api/services/${encodeURIComponent(serviceId)}/deployments`,
-  );
+  return request<DeploymentSummary[]>(`/api/services/${encodeURIComponent(serviceId)}/deployments`);
 }
 
 export function triggerDeployment(serviceId: string): Promise<DeploymentSummary> {
-  return request<DeploymentSummary>(
-    `/api/services/${encodeURIComponent(serviceId)}/deployments`,
-    { method: "POST" },
-  );
+  return request<DeploymentSummary>(`/api/services/${encodeURIComponent(serviceId)}/deployments`, {
+    method: "POST",
+  });
 }
 
 /** Rebuilds the same commit as a past Deployment, creating a new Deployment. */
@@ -114,10 +93,9 @@ export function runServiceAction(
   serviceId: string,
   action: ServiceRuntimeAction,
 ): Promise<ServiceRuntimeState> {
-  return request<ServiceRuntimeState>(
-    `/api/services/${encodeURIComponent(serviceId)}/${action}`,
-    { method: "POST" },
-  );
+  return request<ServiceRuntimeState>(`/api/services/${encodeURIComponent(serviceId)}/${action}`, {
+    method: "POST",
+  });
 }
 
 /**
@@ -130,10 +108,9 @@ export async function streamRuntimeLog(
   onLine: (line: string) => void,
   signal: AbortSignal,
 ): Promise<void> {
-  const response = await fetch(
-    `/api/services/${encodeURIComponent(serviceId)}/logs?tail=${tail}`,
-    { signal },
-  );
+  const response = await fetch(`/api/services/${encodeURIComponent(serviceId)}/logs?tail=${tail}`, {
+    signal,
+  });
 
   if (!response.ok || !response.body) {
     const payload = (await response.json().catch(() => ({}))) as {
@@ -209,7 +186,8 @@ export function deploymentDuration(
 ): string | null {
   if (!deployment.startedAt || !deployment.finishedAt) return null;
 
-  const millis = new Date(deployment.finishedAt).getTime() - new Date(deployment.startedAt).getTime();
+  const millis =
+    new Date(deployment.finishedAt).getTime() - new Date(deployment.startedAt).getTime();
   if (!Number.isFinite(millis) || millis < 0) return null;
 
   const seconds = Math.round(millis / 1_000);
