@@ -1,5 +1,5 @@
-import { pool } from "@/lib/platform/db";
 import { apiData, withAdmin } from "@/lib/platform/api";
+import { BUILD_LOG_LEVELS, tailBuildLogs } from "@/lib/platform/admin-work-queries";
 
 /**
  * Admin log tail — mirrors stealth-forge's `/v1/admin/telemetry/logs`. Forge
@@ -10,20 +10,6 @@ import { apiData, withAdmin } from "@/lib/platform/api";
  * level is derived from the message the same way Forge's adapter normalizes
  * collector severities.
  */
-
-const LEVELS = new Set(["INFO", "WARN", "ERROR", "DEBUG"]);
-
-type BuildLogRow = {
-  timestamp: Date;
-  message: string;
-};
-
-function normalizeLogLevel(message: string): string {
-  if (/\berror\b|\bfatal\b/i.test(message)) return "ERROR";
-  if (/\bwarn(ing)?\b/i.test(message)) return "WARN";
-  if (/\bdebug\b/i.test(message)) return "DEBUG";
-  return "INFO";
-}
 
 export async function GET(request: Request) {
   return withAdmin(request, async () => {
@@ -41,44 +27,12 @@ export async function GET(request: Request) {
     }
     limit = Math.min(limit, 1000);
 
-    const conditions: string[] = [];
-    const params: (string | number)[] = [];
+    const { items } = await tailBuildLogs({ from, to, service, search, limit });
 
-    if (from) {
-      params.push(from);
-      conditions.push(`"createdAt" >= $${params.length}::timestamptz`);
-    }
-    if (to) {
-      params.push(to);
-      conditions.push(`"createdAt" <= $${params.length}::timestamptz`);
-    }
-    if (search) {
-      params.push(`%${search}%`);
-      conditions.push(`"message" ILIKE $${params.length}`);
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
-    const result = await pool.query<BuildLogRow>(
-      `SELECT "createdAt" AS "timestamp", "message"
-   FROM "build_log"
-   ${whereClause}
-   ORDER BY "createdAt" DESC
-   LIMIT ${limit}`,
-      params,
-    );
-
-    const items = result.rows
-      .map((row) => ({
-        timestamp: row.timestamp.toISOString(),
-        level: normalizeLogLevel(row.message),
-        // The Build log is one stream; the console reads it as the control
-        // plane's own, so every line reports the build service.
-        service: service ?? "build",
-        message: row.message,
-      }))
-      .filter((item) => (level ? LEVELS.has(level) && item.level === level : true));
-
-    return apiData({ items });
+    return apiData({
+      items: level
+        ? items.filter((item) => BUILD_LOG_LEVELS.has(level) && item.level === level)
+        : items,
+    });
   });
 }
