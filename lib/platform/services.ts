@@ -4,6 +4,8 @@ import { ApiError } from "./api-error.ts";
 import { buildPlatformHostname } from "@/lib/platform/platform-domain";
 import { QUOTAS, QuotaExceededError } from "@/lib/platform/quota";
 import { removeServiceRuntime } from "@/lib/platform/runtime";
+import { requireProject } from "@/lib/platform/ownership";
+import { SERVICE_NEEDS_REDEPLOY } from "@/lib/platform/revisions";
 import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
 
 const MAX_NAME_LENGTH = 80;
@@ -84,21 +86,6 @@ const SERVICE_FIELDS = [
 
 const SERVICE_COLUMNS = SERVICE_FIELDS.map((field) => `"${field}"`).join(", ");
 const PREFIXED_SERVICE_COLUMNS = SERVICE_FIELDS.map((field) => `s."${field}"`).join(", ");
-
-/**
- * Computes `needsRedeploy` from the environment revisions: a Service that has a
- * running Deployment needs a redeploy when its revision is newer than the
- * revision the newest running Deployment recorded. Without a running
- * Deployment the flag is false, because nothing is live to be stale yet.
- */
-const NEEDS_REDEPLOY_COLUMN = `
-  EXISTS (
-    SELECT 1 FROM "deployment" rd
-    WHERE rd."serviceId" = s."id" AND rd."status" = 'running'
-  ) AND s."envRevision" > COALESCE((
-    SELECT max(rd."envRevision") FROM "deployment" rd
-    WHERE rd."serviceId" = s."id" AND rd."status" = 'running'
-  ), 0) AS "needsRedeploy"`.trim();
 
 /**
  * Public URL of a Service. Platform Subdomains are served over HTTPS in every
@@ -301,17 +288,6 @@ function randomShortId(): string {
  * Confirms the Project belongs to the Organization, so a Service can never be
  * created in or read from another organization.
  */
-async function requireProject(organizationId: string, projectId: string): Promise<void> {
-  const result = await pool.query(
-    'SELECT 1 FROM "project" WHERE "organizationId" = $1 AND "id" = $2',
-    [organizationId, projectId],
-  );
-
-  if (!result.rowCount) {
-    throw new ApiError(404, "project_not_found", "Project not found.");
-  }
-}
-
 export async function listServices(
   organizationId: string,
   projectId: string,
@@ -319,7 +295,7 @@ export async function listServices(
   await requireProject(organizationId, projectId);
 
   const result = await pool.query<ServiceRow>(
-    `SELECT ${SERVICE_COLUMNS}, ${NEEDS_REDEPLOY_COLUMN} FROM "service" s
+    `SELECT ${SERVICE_COLUMNS}, ${SERVICE_NEEDS_REDEPLOY} AS "needsRedeploy" FROM "service" s
      WHERE s."projectId" = $1 ORDER BY s."createdAt", s."id"`,
     [projectId],
   );
@@ -337,7 +313,8 @@ export async function listOrganizationServices(
   organizationId: string,
 ): Promise<OrganizationServiceSummary[]> {
   const result = await pool.query<ServiceRow & { projectName: string }>(
-    `SELECT ${PREFIXED_SERVICE_COLUMNS}, ${NEEDS_REDEPLOY_COLUMN}, p."name" AS "projectName"
+    `SELECT ${PREFIXED_SERVICE_COLUMNS}, ${SERVICE_NEEDS_REDEPLOY} AS "needsRedeploy",
+            p."name" AS "projectName"
      FROM "service" s JOIN "project" p ON p."id" = s."projectId"
      WHERE p."organizationId" = $1
      ORDER BY p."createdAt", s."createdAt", s."id"`,
@@ -352,7 +329,7 @@ export async function getService(
   serviceId: string,
 ): Promise<ServiceSummary> {
   const result = await pool.query<ServiceRow>(
-    `SELECT ${PREFIXED_SERVICE_COLUMNS}, ${NEEDS_REDEPLOY_COLUMN}
+    `SELECT ${PREFIXED_SERVICE_COLUMNS}, ${SERVICE_NEEDS_REDEPLOY} AS "needsRedeploy"
      FROM "service" s JOIN "project" p ON p."id" = s."projectId"
      WHERE p."organizationId" = $1 AND s."id" = $2`,
     [organizationId, serviceId],

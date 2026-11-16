@@ -7,6 +7,8 @@ import { nodeConfig } from "./nodes.ts";
 import { getPlatformDomain } from "./platform-domain.ts";
 import { QUOTAS } from "./quota-limits.ts";
 import { decryptSecret, encryptSecret } from "./secrets.ts";
+import { requireProject } from "./ownership.ts";
+import { bumpProjectRevisions, projectNeedsRedeploy } from "./revisions.ts";
 
 /**
  * A Project's one PostgreSQL Database. The Control Plane owns the row with the
@@ -116,26 +118,6 @@ type Measurement = {
   usageMb: number | null;
   overQuota: boolean;
 };
-
-/**
- * Confirms the Project is visible to the caller's Organization before any read
- * or write, so a Project id from another organization always answers 404.
- */
-async function requireProject(
-  organizationId: string,
-  projectId: string,
-): Promise<{ id: string; name: string }> {
-  const result = await pool.query<{ id: string; name: string }>(
-    'SELECT "id", "name" FROM "project" WHERE "organizationId" = $1 AND "id" = $2',
-    [organizationId, projectId],
-  );
-
-  if (!result.rowCount) {
-    throw new ApiError(404, "project_not_found", "Project not found.");
-  }
-
-  return result.rows[0];
-}
 
 async function loadDatabaseRow(projectId: string): Promise<DatabaseRow | null> {
   const result = await pool.query<DatabaseRow>(
@@ -397,42 +379,6 @@ function toSummary(
 }
 
 /**
- * True when at least one running Service in the Project was deployed before the
- * newest credential change. The Database panel repeats the redeploy banner so a
- * rotated password is not silently stale in a running container.
- */
-async function loadNeedsRedeploy(projectId: string): Promise<boolean> {
-  const result = await pool.query<{ needsRedeploy: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM "service" s
-       WHERE s."projectId" = $1
-         AND EXISTS (
-           SELECT 1 FROM "deployment" rd
-           WHERE rd."serviceId" = s."id" AND rd."status" = 'running'
-         )
-         AND s."envRevision" > COALESCE((
-           SELECT max(rd."envRevision") FROM "deployment" rd
-           WHERE rd."serviceId" = s."id" AND rd."status" = 'running'
-         ), 0)
-     ) AS "needsRedeploy"`,
-    [projectId],
-  );
-
-  return result.rows[0]?.needsRedeploy ?? false;
-}
-
-/**
- * Bumps the configuration revision of every Service in the Project, so the
- * dashboard shows that a Database change needs a redeploy to take effect.
- */
-async function bumpProjectRevisions(projectId: string): Promise<void> {
-  await pool.query(
-    'UPDATE "service" SET "envRevision" = "envRevision" + 1 WHERE "projectId" = $1',
-    [projectId],
-  );
-}
-
-/**
  * Returns the Project's Database with the health the node reports. A Project
  * without a Database answers `database: null` rather than 404, so the dashboard
  * can render the empty state.
@@ -445,7 +391,7 @@ export async function getProjectDatabase(input: {
   await requireProject(input.organizationId, input.projectId);
 
   const row = await loadDatabaseRow(input.projectId);
-  const needsRedeploy = await loadNeedsRedeploy(input.projectId);
+  const needsRedeploy = await projectNeedsRedeploy(input.projectId);
 
   if (!row) {
     return { database: null, needsRedeploy };

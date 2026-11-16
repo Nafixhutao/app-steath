@@ -67,14 +67,3 @@ export async function requireProject(
 
   return row;
 }
-
-/**
- * Bumps the Service's configuration revision, which is what `needsRedeploy`
- * compares against the newest running Deployment. Shared by Volumes and
- * Environment Variables so one redeploy applies every pending change.
- */
-export async function bumpRevision(serviceId: string): Promise<void> {
-  await pool.query('UPDATE "service" SET "envRevision" = "envRevision" + 1 WHERE "id" = $1', [
-    serviceId,
-  ]);
-}

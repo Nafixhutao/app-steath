@@ -1,7 +1,8 @@
 import { pool } from "./db.ts";
 import { ApiError } from "./api-error.ts";
 import { MASKED_VALUE, decryptSecret, encryptSecret } from "./secrets.ts";
-import { bumpRevision, requireService } from "./ownership.ts";
+import { requireService } from "./ownership.ts";
+import { bumpRevision, serviceNeedsRedeploy } from "./revisions.ts";
 
 /**
  * Environment Variables for a Service. The values are secrets: they are sealed
@@ -154,21 +155,11 @@ export async function listEnvironmentVariables(
     [serviceId],
   );
 
-  const revision = await pool.query<{ applied: number | null; current: number }>(
-    `SELECT s."envRevision" AS "current",
-            (SELECT d."envRevision" FROM "deployment" d
-             WHERE d."serviceId" = s."id" AND d."status" = 'running'
-             ORDER BY d."createdAt" DESC LIMIT 1) AS "applied"
-     FROM "service" s WHERE s."id" = $1`,
-    [serviceId],
-  );
-
-  const current = revision.rows[0]?.current ?? 0;
-  const applied = revision.rows[0]?.applied;
+  const needsRedeploy = await serviceNeedsRedeploy(serviceId);
 
   return {
     variables: rows.rows.map(toSummary),
-    needsRedeploy: applied !== null && applied < current,
+    needsRedeploy,
   };
 }
 

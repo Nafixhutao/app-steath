@@ -3,7 +3,8 @@ import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { nodeConfig } from "./nodes.ts";
 import { QUOTAS } from "./quota-limits.ts";
-import { bumpRevision, requireService } from "./ownership.ts";
+import { requireService } from "./ownership.ts";
+import { bumpRevision, serviceNeedsRedeploy } from "./revisions.ts";
 
 /**
  * A Service's persistent Volume. The Control Plane owns the row that records the
@@ -159,22 +160,6 @@ function toSummary(
   };
 }
 
-async function loadNeedsRedeploy(serviceId: string): Promise<boolean> {
-  const result = await pool.query<{ needsRedeploy: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM "deployment" rd
-       WHERE rd."serviceId" = s."id" AND rd."status" = 'running'
-     ) AND s."envRevision" > COALESCE((
-       SELECT max(rd."envRevision") FROM "deployment" rd
-       WHERE rd."serviceId" = s."id" AND rd."status" = 'running'
-     ), 0) AS "needsRedeploy"
-     FROM "service" s WHERE s."id" = $1`,
-    [serviceId],
-  );
-
-  return result.rows[0]?.needsRedeploy ?? false;
-}
-
 /**
  * Returns the Service's Volume with the usage the node measures. A Service that
  * has no Volume answers `volume: null` rather than 404, so the dashboard can
@@ -187,7 +172,7 @@ export async function getServiceVolume(
   await requireService(organizationId, serviceId);
 
   const row = await loadVolumeRow(serviceId);
-  const needsRedeploy = await loadNeedsRedeploy(serviceId);
+  const needsRedeploy = await serviceNeedsRedeploy(serviceId);
 
   if (!row) {
     return { volume: null, needsRedeploy };
