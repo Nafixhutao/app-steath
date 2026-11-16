@@ -1,0 +1,15 @@
+# Caddy for local development and the single-node experiment.
+#
+# The admin API is the only thing configured here: the Node Agent programs every
+# Platform Subdomain through it, so this file deliberately declares no site of its
+# own. `local_certs` issues certificates from Caddy's internal CA, which is what
+# makes `<ip>.nip.io` hostnames work over HTTPS without public DNS or an ACME
+# account. The Node Agent also turns on on-demand TLS through the admin API and
+# points its `ask` endpoint at the Control Plane, so a certificate is only issued
+# for a Platform Subdomain or an active Custom Domain.
+{
+	admin 0.0.0.0:2019
+	local_certs
+	# The Node Agent writes routes into a server it creates itself, so the config
+	# starts empty and stays empty until the first Deploy.
+}

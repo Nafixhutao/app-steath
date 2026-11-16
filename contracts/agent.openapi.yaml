@@ -1,0 +1,1855 @@
+openapi: 3.0.3
+info:
+  title: Stealth Node Agent API
+  version: 0.11.0
+  description: |
+    Versioned HTTP API exposed by the Go Node Agent. The Control Plane is the
+    only caller: it authenticates with a bearer token, starts Builds, runs the
+    resulting image as a container, and manages the Service lifecycle. Operations
+    that receive a Deployment or Service identifier are idempotent, so a retried
+    request never starts a second Build or a second container.
+paths:
+  /v1/health:
+    get:
+      operationId: getHealth
+      summary: Check whether the Node Agent is healthy
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Node Agent is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/node:
+    get:
+      operationId: getNode
+      summary: Read node info and capacity
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Node info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodeInfo"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/usage:
+    get:
+      operationId: getUsage
+      summary: Measure CPU, memory, and storage usage on the node
+      description: |
+        Reports the current usage of every Service and Database the agent owns.
+        CPU and memory come from Docker stats; Volume and Database storage are
+        measured on disk. The Control Plane stores the report as UsageSnapshots
+        for the Quota dashboard, so the node is only asked once per refresh.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usage report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageReport"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/host-metrics:
+    get:
+      operationId: getHostMetrics
+      summary: Report the node's own CPU, memory, and storage usage
+      description: |
+        Reports how loaded the node itself is, sampled from the kernel instead
+        of from Docker stats: CPU from /proc/stat, memory from /proc/meminfo,
+        and storage from statfs on the agent work root. The Control Plane stores
+        the report as NodeHostMetrics for the Platform Admin host dashboard, so
+        the node is only asked once per collection pass. The collector samples
+        in the background and keeps short in-memory history for charts.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Host metrics snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostMetricsSnapshot"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: The collector is not running on the agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/backups:
+    post:
+      operationId: createBackup
+      summary: Produce a Backup artifact on the node
+      description: |
+        Creates the artifact for one Backup: `pg_dump --format=custom` for a
+        Database or the platform PostgreSQL, and a gzip compressed tar archive
+        for a Volume. The artifact stays in the agent work directory until the
+        Control Plane downloads and removes it.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BackupRequest"
+      responses:
+        "200":
+          description: Backup artifact metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupArtifact"
+        "400":
+          description: Invalid Backup request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Backup target not found on this node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Backup could not be produced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/backups/{backupId}:
+    delete:
+      operationId: removeBackup
+      summary: Remove a Backup artifact from the node
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BackupId"
+      responses:
+        "200":
+          description: Removal result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupRemoval"
+        "404":
+          description: Unknown Backup artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/backups/{backupId}/content:
+    get:
+      operationId: getBackupContent
+      summary: Download a Backup artifact
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BackupId"
+      responses:
+        "200":
+          description: Backup artifact bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Unknown Backup artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/restores/{restoreId}:
+    post:
+      operationId: restoreBackup
+      summary: Restore a Database or Volume from a Backup artifact
+      description: |
+        The request body is the Backup artifact itself. A Database restore loads
+        the custom-format dump into a temporary database and only swaps it into
+        place after the load succeeds, so a failed restore leaves the original
+        data untouched. A Volume restore extracts the archive into a staging
+        directory and only replaces the Volume contents after extraction
+        succeeds.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RestoreId"
+        - name: targetType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - database
+              - volume
+        - name: targetId
+          in: query
+          required: true
+          description: Database id or Docker Volume name, matching the Backup.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Restore finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestoreResult"
+        "400":
+          description: Invalid Restore request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Restore target not found on this node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Restore failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/builds:
+    post:
+      operationId: startBuild
+      summary: Start a Build for a Deployment
+      description: |
+        Clones the repository at the requested branch and builds the Dockerfile
+        with BuildKit. Calling this again with the same `buildId` returns the
+        existing Build instead of starting a second one.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuildRequest"
+      responses:
+        "202":
+          description: Build accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Build"
+        "400":
+          description: Invalid Build request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/builds/{buildId}:
+    get:
+      operationId: getBuild
+      summary: Read Build status
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BuildId"
+      responses:
+        "200":
+          description: Build status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Build"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: cancelBuild
+      summary: Cancel a running Build
+      description: Cancelling a finished Build returns its final status unchanged.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BuildId"
+      responses:
+        "200":
+          description: Build cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Build"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/builds/{buildId}/logs:
+    get:
+      operationId: streamBuildLogs
+      summary: Stream Build logs
+      description: |
+        Streams newline-delimited `BuildLogEvent` JSON objects, one per line, and
+        closes when the Build finishes. `after` replays the log from a sequence
+        number so a reconnecting Control Plane never loses or duplicates lines.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BuildId"
+        - name: after
+          in: query
+          required: false
+          description: Return events with a sequence greater than this value.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Newline-delimited Build log events
+          content:
+            application/x-ndjson:
+              schema:
+                $ref: "#/components/schemas/BuildLogEvent"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/deployments:
+    post:
+      operationId: deployService
+      summary: Run a built image as the Service container
+      description: |
+        Starts a candidate container on the Project network, waits for it to pass
+        the health check, and only then points the Service route at it. When the
+        candidate never becomes healthy it is removed and the previously running
+        container keeps serving. Calling this again with the same `deploymentId`
+        returns the existing result instead of starting a second container.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeployRequest"
+      responses:
+        "200":
+          description: Deployment finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Invalid Deploy request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/deployments/{deploymentId}/cancel:
+    post:
+      operationId: cancelDeployment
+      summary: Abort a Deployment and remove its leftovers
+      description: |
+        Cancels the Build if it is still running, removes any container started
+        for this Deployment, and deletes the image it produced when no running
+        container uses it. A Deployment that already took traffic is left alone,
+        so cancelling never takes a working Service down. Calling this again is
+        safe: a Deployment with nothing left to abort answers with zero counts.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DeploymentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelDeploymentRequest"
+      responses:
+        "200":
+          description: Deployment aborted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentAbort"
+        "400":
+          description: Invalid cancel request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/scans:
+    post:
+      operationId: scanImage
+      summary: Scan a built image for vulnerabilities, secrets, and malware
+      description: |
+        Runs Trivy (vulnerabilities, secrets, and misconfigurations) and ClamAV
+        (malware on the image filesystem) against a built image. Scanning is
+        advisory: a scanner that cannot run produces a finding that says so
+        instead of failing the request, so the Control Plane always learns what
+        happened. Calling this again with the same `deploymentId` returns the
+        existing findings rather than scanning twice.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanRequest"
+      responses:
+        "200":
+          description: Scan finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanReport"
+        "400":
+          description: Invalid Scan request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}:
+    get:
+      operationId: getService
+      summary: Read the runtime state of a Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service runtime state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeService
+      summary: Remove a Service container and its route
+      description: |
+        Stops and removes the Service container and its route. Used when a Service
+        is deleted, so nothing is left orphaned on the node.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/stop:
+    post:
+      operationId: stopService
+      summary: Stop a Service container
+      description: |
+        Stops the container without removing it, so a later start brings the same
+        container and its writable state back.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/start:
+    post:
+      operationId: startService
+      summary: Start a stopped Service container
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Service has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/restart:
+    post:
+      operationId: restartService
+      summary: Restart a Service container
+      description: Restarts the container without changing its configuration.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service restarted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Service has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/suspend:
+    post:
+      operationId: suspendService
+      summary: Stop a Service and serve an administrative 503 response
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service suspension route installed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/unsuspend:
+    post:
+      operationId: unsuspendService
+      summary: Remove an administrative 503 response
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [restore]
+              properties:
+                restore:
+                  type: boolean
+                  description: Start the container and restore routes only if it was running before suspension.
+      responses:
+        "200":
+          description: Service suspension route removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/hostnames/{hostname}:
+    put:
+      operationId: addServiceHostname
+      summary: Route an extra hostname to a running Service
+      description: |
+        Points a Custom Domain at the running Service container. The Service must
+        already have a container that is running; the Control Plane only calls this
+        after DNS verification succeeded. Calling it again is idempotent.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+        - $ref: "#/components/parameters/Hostname"
+      responses:
+        "200":
+          description: Hostname routed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceHostnameState"
+        "400":
+          description: Invalid hostname
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Service has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Service container is not running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeServiceHostname
+      summary: Stop routing an extra hostname to a Service
+      description: |
+        Removes the route for a Custom Domain. Removing an unknown hostname
+        succeeds, so the Control Plane can retry a delete safely.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+        - $ref: "#/components/parameters/Hostname"
+      responses:
+        "200":
+          description: Hostname removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceHostnameState"
+        "400":
+          description: Invalid hostname
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/services/{serviceId}/logs:
+    get:
+      operationId: streamServiceLogs
+      summary: Stream runtime logs
+      description: |
+        Streams the container's combined output as newline-delimited
+        `RuntimeLogEvent` objects. The stream follows the container, so the
+        dashboard sees new lines as the application writes them. Docker merges
+        stdout and stderr into one stream, so events do not claim which one a
+        line came from.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ServiceId"
+        - name: tail
+          in: query
+          required: false
+          description: Number of already-written lines to replay first.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1000
+            default: 200
+      responses:
+        "200":
+          description: Newline-delimited runtime log events
+          content:
+            application/x-ndjson:
+              schema:
+                $ref: "#/components/schemas/RuntimeLogEvent"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Service has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/volumes/{name}:
+    put:
+      operationId: ensureVolume
+      summary: Create a Volume or refresh its labels
+      description: |
+        Creates the named Volume when it does not exist and labels it with the
+        Organization, Project, Service, and Deployment that own it. Calling this
+        again for an existing Volume is a no-op, so a retried Deploy never
+        replaces the data.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VolumeName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolumeRequest"
+      responses:
+        "200":
+          description: Volume ensured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeInfo"
+        "400":
+          description: Invalid Volume request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: getVolume
+      summary: Read a Volume and its usage
+      description: |
+        Reports the Volume's size limit and the space it currently uses. Usage is
+        measured on the node, so the Control Plane never has to reach into the
+        Docker daemon.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VolumeName"
+        - name: sizeMb
+          in: query
+          required: false
+          description: The Volume's configured limit, echoed back in the response.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1024
+            default: 1024
+      responses:
+        "200":
+          description: Volume information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeInfo"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Volume
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeVolume
+      summary: Remove a Volume
+      description: |
+        Deletes the Volume and everything stored in it. Used when a Service's
+        Volume is deleted or the Service itself is removed, so no data is left
+        orphaned. Removing a Volume that is already gone is not an error.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VolumeName"
+      responses:
+        "200":
+          description: Volume removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeRemoval"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/databases/{databaseId}:
+    put:
+      operationId: ensureDatabase
+      summary: Create or start a Project Database
+      description: |
+        Creates the Database container on the Project network with its own Volume,
+        or starts it when it already exists. The container publishes no host port,
+        so it is reachable only from the Project network. Calling this again with
+        the same `databaseId` is idempotent.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabaseRequest"
+      responses:
+        "200":
+          description: Database running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseState"
+        "400":
+          description: Invalid Database request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: getDatabase
+      summary: Read Database health and storage usage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+        - name: storageLimitMb
+          in: query
+          required: false
+          description: The Database's configured storage limit, echoed back.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1024
+            default: 1024
+      responses:
+        "200":
+          description: Database state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Unknown Database
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeDatabase
+      summary: Remove a Database container and its Volume
+      description: |
+        Stops and removes the Database container and deletes its Volume, so a
+        deleted Database leaves nothing behind on the node. Removing a Database
+        that is already gone is not an error.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      responses:
+        "200":
+          description: Database removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseRemoval"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/databases/{databaseId}/rotate:
+    post:
+      operationId: rotateDatabasePassword
+      summary: Replace the Database password
+      description: |
+        Runs `ALTER ROLE` inside the running Database so the new password takes
+        effect immediately. The password travels in the request body only and is
+        never logged. Services must be redeployed to pick up the new
+        `DATABASE_URL`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabasePasswordRequest"
+      responses:
+        "200":
+          description: Password rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseState"
+        "400":
+          description: Invalid rotation request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Database has no container yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/databases/{databaseId}/proxy:
+    put:
+      operationId: ensureDatabaseProxy
+      summary: Enable or update the Database's public TLS proxy
+      description: |
+        Starts an nginx TCP proxy that terminates TLS on a unique public port in
+        the 20000-29999 range and forwards to the Database over the Project
+        network. The proxy accepts only the source CIDRs in `allowlist`; an empty
+        allowlist is rejected. Calling this again with the same `databaseId`
+        reuses the existing port and replaces the allowlist.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabaseProxyRequest"
+      responses:
+        "200":
+          description: Public proxy enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseProxyState"
+        "400":
+          description: Invalid proxy request or allowlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Database has no running container
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: getDatabaseProxy
+      summary: Read the Database's public proxy state
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      responses:
+        "200":
+          description: Public proxy state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseProxyState"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeDatabaseProxy
+      summary: Disable the Database's public proxy
+      description: |
+        Stops the public listener, removes its container and certificate Volume,
+        and revokes the public endpoint. Disabling a proxy that is already gone
+        is not an error.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DatabaseId"
+      responses:
+        "200":
+          description: Public proxy removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseProxyRemoval"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    RestoreId:
+      name: restoreId
+      in: path
+      required: true
+      description: Control Plane Restore id; makes the operation idempotent.
+      schema:
+        type: string
+    BackupId:
+      name: backupId
+      in: path
+      required: true
+      schema:
+        type: string
+    BuildId:
+      name: buildId
+      in: path
+      required: true
+      description: Deployment id that owns the Build.
+      schema:
+        type: string
+    ServiceId:
+      name: serviceId
+      in: path
+      required: true
+      description: Service id that owns the container.
+      schema:
+        type: string
+    DeploymentId:
+      name: deploymentId
+      in: path
+      required: true
+      description: Deployment id that owns the Build and the container.
+      schema:
+        type: string
+    VolumeName:
+      name: name
+      in: path
+      required: true
+      description: Docker Volume name the agent created for a Service.
+      schema:
+        type: string
+    DatabaseId:
+      name: databaseId
+      in: path
+      required: true
+      description: Database id that owns the container and Volume.
+      schema:
+        type: string
+    Hostname:
+      name: hostname
+      in: path
+      required: true
+      description: Bare DNS hostname of the Custom Domain, without a scheme or port.
+      schema:
+        type: string
+  schemas:
+    Health:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+    NodeInfo:
+      type: object
+      required:
+        - status
+        - dockerVersion
+        - buildkitAvailable
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - ok
+            - error
+        dockerVersion:
+          type: string
+        buildkitAvailable:
+          type: boolean
+        cpuCount:
+          type: integer
+        memoryMb:
+          type: integer
+    UsageReport:
+      type: object
+      required:
+        - capturedAt
+        - services
+        - databases
+      properties:
+        capturedAt:
+          type: string
+          format: date-time
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceUsage"
+        databases:
+          type: array
+          items:
+            $ref: "#/components/schemas/DatabaseUsage"
+    ServiceUsage:
+      type: object
+      required:
+        - serviceId
+        - cpuUsage
+        - memoryUsageMb
+        - volumeUsageMb
+      properties:
+        serviceId:
+          type: string
+        cpuUsage:
+          type: number
+          description: CPU used in vCPU, measured from Docker stats.
+        memoryUsageMb:
+          type: integer
+        volumeUsageMb:
+          type: integer
+    DatabaseUsage:
+      type: object
+      required:
+        - databaseId
+        - usageMb
+      properties:
+        databaseId:
+          type: string
+        usageMb:
+          type: integer
+    HostMetricsSample:
+      type: object
+      required:
+        - capturedAt
+        - cpuPercent
+        - memoryUsedMb
+        - memoryTotalMb
+        - storageUsedMb
+        - storageTotalMb
+      properties:
+        capturedAt:
+          type: string
+          format: date-time
+        cpuPercent:
+          type: number
+          description: Busy CPU share across all cores, from the /proc/stat delta.
+        memoryUsedMb:
+          type: integer
+          description: MemTotal minus MemAvailable, in whole MiB.
+        memoryTotalMb:
+          type: integer
+        storageUsedMb:
+          type: integer
+          description: Used space on the agent work root filesystem, in whole MiB.
+        storageTotalMb:
+          type: integer
+    HostMetricsSnapshot:
+      type: object
+      required:
+        - current
+        - history
+      properties:
+        current:
+          $ref: "#/components/schemas/HostMetricsSample"
+        history:
+          type: array
+          description: Bounded recent samples, oldest first, for the history charts.
+          items:
+            $ref: "#/components/schemas/HostMetricsSample"
+    BackupRequest:
+      type: object
+      required:
+        - backupId
+        - targetType
+      properties:
+        backupId:
+          type: string
+          description: Control Plane Backup id; makes artifact creation idempotent.
+        targetType:
+          type: string
+          enum:
+            - database
+            - volume
+            - platform
+        targetId:
+          type: string
+          description: Database id or Docker Volume name, depending on targetType.
+        containerName:
+          type: string
+          description: Container to dump for a platform Backup.
+        databaseName:
+          type: string
+          description: Database name to dump for a platform Backup.
+        username:
+          type: string
+          description: Role to connect as for a platform Backup.
+    BackupArtifact:
+      type: object
+      required:
+        - backupId
+        - sizeBytes
+      properties:
+        backupId:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+    BackupRemoval:
+      type: object
+      required:
+        - backupId
+        - removed
+      properties:
+        backupId:
+          type: string
+        removed:
+          type: boolean
+    RestoreResult:
+      type: object
+      required:
+        - restoreId
+        - status
+      properties:
+        restoreId:
+          type: string
+        status:
+          type: string
+          enum:
+            - completed
+    ScanRequest:
+      type: object
+      required:
+        - deploymentId
+        - imageRef
+      properties:
+        deploymentId:
+          type: string
+          description: Deployment id; makes Scan creation idempotent.
+        imageRef:
+          type: string
+          description: Local image reference produced by the Build.
+    ScanFinding:
+      type: object
+      required:
+        - scanner
+        - severity
+        - title
+      properties:
+        scanner:
+          type: string
+          enum:
+            - trivy
+            - clamav
+        severity:
+          type: string
+          enum:
+            - critical
+            - high
+            - medium
+            - low
+            - info
+            - unknown
+        title:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    ScanReport:
+      type: object
+      required:
+        - deploymentId
+        - findings
+      properties:
+        deploymentId:
+          type: string
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScanFinding"
+    BuildRequest:
+      type: object
+      required:
+        - buildId
+        - repoUrl
+        - branch
+        - dockerfilePath
+        - imageTag
+      properties:
+        buildId:
+          type: string
+          description: Deployment id; makes Build creation idempotent.
+        repoUrl:
+          type: string
+        branch:
+          type: string
+        dockerfilePath:
+          type: string
+        imageTag:
+          type: string
+        commitSha:
+          type: string
+          description: |
+            Exact commit to build. A redeploy sets this so the new Deployment
+            builds the same code as the one it replaces instead of whatever the
+            branch points at now. Omitted means "the branch tip".
+    Build:
+      type: object
+      required:
+        - buildId
+        - status
+      properties:
+        buildId:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - succeeded
+            - failed
+            - cancelled
+        imageRef:
+          type: string
+        commitSha:
+          type: string
+        error:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+    BuildLogEvent:
+      type: object
+      required:
+        - sequence
+        - message
+      properties:
+        sequence:
+          type: integer
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    EnvironmentVariable:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+          description: |
+            Sent in the request body only. The Node Agent passes it to the
+            container and never writes it to a log or to disk.
+    VolumeMount:
+      type: object
+      required:
+        - name
+        - mountPath
+        - sizeMb
+      properties:
+        name:
+          type: string
+          description: Docker Volume name the agent creates for this Service.
+        mountPath:
+          type: string
+          description: Absolute path inside the container that the Volume is mounted at.
+        sizeMb:
+          type: integer
+          description: Size limit in MB. The platform caps a Service Volume at 1024.
+    VolumeRequest:
+      type: object
+      required:
+        - serviceId
+        - projectId
+        - organizationId
+        - sizeMb
+      properties:
+        serviceId:
+          type: string
+        projectId:
+          type: string
+        organizationId:
+          type: string
+        deploymentId:
+          type: string
+          description: Deployment that most recently asked for the Volume.
+        sizeMb:
+          type: integer
+          description: Size limit in MB, enforced by the agent.
+    VolumeInfo:
+      type: object
+      required:
+        - name
+        - sizeMb
+        - usageMb
+        - exists
+      properties:
+        name:
+          type: string
+        sizeMb:
+          type: integer
+        usageMb:
+          type: integer
+          format: int64
+          description: Space the Volume currently uses, measured on the node.
+        exists:
+          type: boolean
+          description: False when the Volume has not been created yet.
+    VolumeRemoval:
+      type: object
+      required:
+        - name
+        - removed
+      properties:
+        name:
+          type: string
+        removed:
+          type: boolean
+          description: True when this call actually deleted the Volume.
+    DatabaseRequest:
+      type: object
+      required:
+        - databaseId
+        - projectId
+        - organizationId
+        - databaseName
+        - username
+        - password
+        - storageLimitMb
+      properties:
+        databaseId:
+          type: string
+        projectId:
+          type: string
+        organizationId:
+          type: string
+        databaseName:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          description: |
+            Sent in the request body only. The Node Agent passes it to the
+            container on first start and never writes it to a log or to disk.
+        storageLimitMb:
+          type: integer
+          minimum: 1
+          maximum: 1024
+    DatabasePasswordRequest:
+      type: object
+      required:
+        - databaseName
+        - username
+        - password
+      properties:
+        databaseName:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          description: |
+            The new password. It is sent in the body only and is never logged.
+    DatabaseState:
+      type: object
+      required:
+        - databaseId
+        - status
+        - storageLimitMb
+        - usageMb
+        - healthy
+      properties:
+        databaseId:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - stopped
+            - absent
+            - failed
+        containerId:
+          type: string
+        hostname:
+          type: string
+          description: Network alias Services in the same Project connect to.
+        storageLimitMb:
+          type: integer
+        usageMb:
+          type: integer
+          format: int64
+          description: Space the Database Volume currently uses, measured on the node.
+        healthy:
+          type: boolean
+          description: True when PostgreSQL answers `pg_isready`.
+        overQuota:
+          type: boolean
+          description: True when the Database Volume is over its storage limit.
+    DatabaseRemoval:
+      type: object
+      required:
+        - databaseId
+        - removed
+      properties:
+        databaseId:
+          type: string
+        removed:
+          type: boolean
+          description: True when this call actually removed a container or Volume.
+    DatabaseProxyRequest:
+      type: object
+      required:
+        - databaseId
+        - projectId
+        - allowlist
+      properties:
+        databaseId:
+          type: string
+        projectId:
+          type: string
+        allowlist:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+          description: |
+            Source CIDRs allowed to reach the public port. An empty list is
+            rejected, because a public Database must never be open to everyone
+            by accident.
+        port:
+          type: integer
+          minimum: 20000
+          maximum: 29999
+          description: |
+            Optional port to reuse. Omit it on the first enable so the agent
+            allocates a free port in the public range.
+    DatabaseProxyState:
+      type: object
+      required:
+        - databaseId
+        - enabled
+        - allowlist
+      properties:
+        databaseId:
+          type: string
+        enabled:
+          type: boolean
+        port:
+          type: integer
+          minimum: 20000
+          maximum: 29999
+        allowlist:
+          type: array
+          items:
+            type: string
+    DatabaseProxyRemoval:
+      type: object
+      required:
+        - databaseId
+        - removed
+      properties:
+        databaseId:
+          type: string
+        removed:
+          type: boolean
+          description: True when this call actually removed a listener or Volume.
+    DeployRequest:
+      type: object
+      required:
+        - deploymentId
+        - serviceId
+        - projectId
+        - organizationId
+        - hostname
+        - imageRef
+        - containerPort
+        - cpuLimit
+        - memoryLimitMb
+      properties:
+        deploymentId:
+          type: string
+          description: Deployment id; makes Deploy idempotent.
+        serviceId:
+          type: string
+        projectId:
+          type: string
+        organizationId:
+          type: string
+        hostname:
+          type: string
+          description: Platform Subdomain the route is created for.
+        imageRef:
+          type: string
+        containerPort:
+          type: integer
+        healthPath:
+          type: string
+          description: Path that must answer 2xx before the route is switched.
+        cpuLimit:
+          type: number
+          description: CPU limit in vCPU.
+        memoryLimitMb:
+          type: integer
+        environmentVariables:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnvironmentVariable"
+        volume:
+          $ref: "#/components/schemas/VolumeMount"
+    Deployment:
+      type: object
+      required:
+        - deploymentId
+        - serviceId
+        - status
+      properties:
+        deploymentId:
+          type: string
+        serviceId:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - failed
+        containerId:
+          type: string
+        hostname:
+          type: string
+        error:
+          type: string
+    ServiceState:
+      type: object
+      required:
+        - serviceId
+        - status
+      properties:
+        serviceId:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - stopped
+            - failed
+            - absent
+        containerId:
+          type: string
+        deploymentId:
+          type: string
+        hostname:
+          type: string
+    ServiceHostnameState:
+      type: object
+      required:
+        - serviceId
+        - hostname
+        - routed
+      properties:
+        serviceId:
+          type: string
+        hostname:
+          type: string
+        routed:
+          type: boolean
+          description: |
+            True when a route for the hostname now points at the Service. A
+            removal reports false because no route remains.
+    CancelDeploymentRequest:
+      type: object
+      required:
+        - serviceId
+      properties:
+        serviceId:
+          type: string
+          description: |
+            Service that owns the Deployment. The agent uses it to find the
+            container and image names, so a cancel never has to guess.
+        imageRef:
+          type: string
+          description: |
+            Image the Build produced, when the Control Plane already knows it.
+            The agent removes it only when no running container uses it.
+    DeploymentAbort:
+      type: object
+      required:
+        - deploymentId
+        - serviceId
+        - buildCancelled
+        - containersRemoved
+        - imageRemoved
+      properties:
+        deploymentId:
+          type: string
+        serviceId:
+          type: string
+        buildCancelled:
+          type: boolean
+          description: True when a running Build was stopped by this call.
+        containersRemoved:
+          type: integer
+          description: Number of containers started for this Deployment that were removed.
+        imageRemoved:
+          type: boolean
+          description: True when the image was deleted because nothing used it.
+    RuntimeLogEvent:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        code:
+          type: string

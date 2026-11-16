@@ -1,0 +1,5 @@
+-- Better Auth is the source of truth for its authentication schema.
+-- Generate/apply schema changes with the official CLI from the project root:
+--   npm run auth:generate
+--   npm run auth:migrate
+-- Do not apply a hand-written auth schema here; it can drift from the installed version/plugins.

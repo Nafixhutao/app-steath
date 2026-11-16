@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: stealth-postgres
+    environment:
+      POSTGRES_USER: stealth
+      POSTGRES_PASSWORD: stealth_dev_password
+      POSTGRES_DB: stealth_hosting
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stealth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Caddy serves every Platform Subdomain. The Node Agent programs it through the
+  # admin API and joins it to each Project network, which is how it resolves the
+  # `svc-...` alias of a Service. `local_certs` uses Caddy's internal CA so the
+  # `<ip>.nip.io` hostnames get HTTPS without public DNS or an ACME account.
+  caddy:
+    image: caddy:2-alpine
+    container_name: stealth-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2019:2019"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    # Caddy asks the Control Plane before issuing a certificate. On Docker
+    # Desktop this name already exists; the mapping makes it work on Linux too.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:2019/config/"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
