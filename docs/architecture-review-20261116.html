@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture review — paas control plane</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .chip { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+      <header class="space-y-3">
+        <h1 class="text-3xl font-serif font-bold">Architecture review — <span class="font-mono text-2xl">paas</span> control plane</h1>
+        <p class="text-sm text-slate-500">16 November 2026 · cabang <span class="font-mono">architecture-review</span> · baseline <span class="font-mono">8ad972f</span></p>
+        <div class="flex flex-wrap gap-4 text-xs text-slate-600 pt-1">
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block w-4 h-3 border-2 border-slate-700 bg-white"></span> module</span>
+          <span class="inline-flex items-center gap-1.5"><svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="#334155" stroke-width="2" class="seam"/></svg> seam</span>
+          <span class="inline-flex items-center gap-1.5"><svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="#dc2626" stroke-width="2"/></svg> leakage</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block w-4 h-3 deep rounded-sm"></span> deep module</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block w-4 h-3 bg-slate-200 rounded-sm"></span> dihapus</span>
+        </div>
+        <p class="text-xs text-slate-500">Metode: tanpa riwayat git, hot-spot dibobot dari mtime — 127 file berubah 15 Nov (port admin stealth-forge). Kosakata mengikuti <span class="font-mono">codebase-design</span>: module, interface, implementation, depth, seam, adapter, leverage, locality.</p>
+      </header>
+
+      <section id="candidates" class="space-y-10">
+
+        <!-- ============ A ============ -->
+        <article id="cand-a" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif font-bold">A · Satu transport untuk envelope <span class="font-mono text-base">{data}/{error}</span></h2>
+            <div class="flex gap-2 shrink-0">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">Strong</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">in-process</span>
+            </div>
+          </div>
+          <p class="font-mono text-sm text-slate-600">lib/projects-client.ts · services-client.ts · deployments-client.ts · databases-client.ts · backups-client.ts · restores-client.ts · volumes-client.ts · environment-variables-client.ts · custom-domains-client.ts · usage-client.ts · admin-client.ts · lib/admin/queries.ts</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — 13 decoder</p>
+              <pre class="mermaid">
+flowchart LR
+  P[projects-client] --> R1[request]
+  S[services-client] --> R2[request]
+  D[databases-client] --> R3[request]
+  X[... 8 client lain] --> R4[request]
+  A[admin-client] --> R5[parse]
+  Q[admin/queries] --> R6[adminGet]
+  R1 -.leak.-> E[envelope {data}/{error}]
+  R2 -.leak.-> E
+  R3 -.leak.-> E
+  R4 -.leak.-> E
+  R5 -.leak.-> E
+  R6 -.leak.-> E
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class R1,R2,R3,R4,R5,R6 leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — satu seam</p>
+              <pre class="mermaid">
+flowchart LR
+  P[projects-client] --> H
+  S[services-client] --> H
+  D[databases-client] --> H
+  X[... 8 client lain] --> H
+  Q[admin/queries] --> H
+  H["http transport<br/>decode + error + retry"]
+  H --> E[envelope {data}/{error}]
+  classDef deep fill:#0f172a,color:#f8fafc,stroke:#0f172a;
+  class H deep
+              </pre>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> tiga belas module masing-masing mendekode envelope yang sama — interface transportnya nyaris selebar implementasinya (shallow), dan 38 nama type diketik dua kali dengan semantik timestamp berbeda (<span class="font-mono text-xs">Date</span> vs <span class="font-mono text-xs">string</span>).</p>
+          <p><span class="font-semibold">Solution:</span> satu module transport (decode envelope, normalisasi error, tipe wire) di belakang seam tunggal; client resource menjadi binding tipis di atasnya.</p>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li>locality: decode + error di satu tempat</li>
+            <li>leverage: satu interface, 13 caller</li>
+            <li>interface menyusut; implementation menyerap decoder</li>
+            <li>type kembar <span class="font-mono text-xs">Date</span>/<span class="font-mono text-xs">string</span> menyatu</li>
+          </ul>
+          <p class="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded px-3 py-2">Catatan: menggabungkan 11 client tanpa memperdalam transportnya hanya <em>memindahkan</em> 1.229 baris. Perdalam transportnya dulu; kontrak REST terbuka (OpenAPI) menyusul sebagai keputusan terpisah.</p>
+        </article>
+
+        <!-- ============ B ============ -->
+        <article id="cand-b" class="rounded-xl border-2 border-emerald-300 bg-white p-6 space-y-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif font-bold">B · Satu console admin, bukan dua</h2>
+            <div class="flex gap-2 shrink-0">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">Strong</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">in-process</span>
+            </div>
+          </div>
+          <p class="font-mono text-sm text-slate-600">components/admin/* (14 file) · features/admin/components/* (19 file) · app/admin/{overview,users,infrastructure,findings,abuse-reports}/* · app/admin/host-metrics/page.tsx</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">Before — dua pustaka, 13 nama kembar</p>
+              <div class="grid grid-cols-2 gap-3 text-[11px]">
+                <div class="space-y-1">
+                  <p class="font-semibold text-slate-500">components/admin <span class="font-normal">(paas, lama)</span></p>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">admin-shell</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">admin-sidebar</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">admin-topbar · admin-nav</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">admin-select <span class="text-red-600">△98</span></div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">admin-skeletons <span class="text-red-600">△52</span></div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">toolbar-search <span class="text-red-600">△40</span></div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">overview-panel (301)</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">users-panel (514)†</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">infra-panel (192)†</div>
+                </div>
+                <div class="space-y-1">
+                  <p class="font-semibold text-slate-500">features/admin/components <span class="font-normal">(Forge)</span></p>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">admin-shell · sidebar · topbar</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">admin-select (189)</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">admin-skeletons (103)</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">toolbar-search (93)</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">detail-drawer · resource-bar</div>
+                  <div class="chip border border-slate-300 rounded px-1.5 py-0.5 bg-white">telemetry-chart · time-range</div>
+                  <div class="chip deep text-white rounded px-1.5 py-0.5">admin-overview (live)</div>
+                  <div class="chip deep text-white rounded px-1.5 py-0.5">users-page (667, live)</div>
+                  <div class="chip deep text-white rounded px-1.5 py-0.5">infrastructure-page (live)</div>
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-2">△ = baris menyimpang dari kembarannya · † = unreachable dari route mana pun</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">After — satu pustaka</p>
+              <div class="space-y-1 text-[11px]">
+                <div class="chip deep text-white rounded px-1.5 py-1">features/admin/components — satu interface untuk 13 halaman admin</div>
+                <div class="chip border border-slate-200 rounded px-1.5 py-0.5 bg-slate-100 text-slate-400 line-through">components/admin/* — dihapus</div>
+                <div class="chip border border-slate-200 rounded px-1.5 py-0.5 bg-slate-100 text-slate-400 line-through">app/admin/overview/overview-panel + gate</div>
+                <div class="chip border border-slate-200 rounded px-1.5 py-0.5 bg-slate-100 text-slate-400 line-through">app/admin/users/*panel + gate (514+29)</div>
+                <div class="chip border border-slate-200 rounded px-1.5 py-0.5 bg-slate-100 text-slate-400 line-through">app/admin/infrastructure/*panel + gate</div>
+                <div class="chip border border-slate-200 rounded px-1.5 py-0.5 bg-slate-100 text-slate-400 line-through">app/admin/host-metrics (duplikat route)</div>
+              </div>
+              <p class="text-xs text-slate-500 mt-3">/admin/overview → redirect ke /admin. Halaman findings & abuse-reports migrasi ke primitif Forge, lalu masuk nav (Instance).</p>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> dua console admin hidup paralel untuk satu konsep — 13 primitif kembar dengan 11 sudah menyimpang, dua implementasi Overview yang live, 706 baris panel tak terjangkau, dan 5 gate halaman yang mengulang session lookup milik layout.</p>
+          <p><span class="font-semibold">Solution:</span> migrasikan halaman sisi paas ke <span class="font-mono text-xs">features/admin/components</span>, hapus <span class="font-mono text-xs">components/admin</span> beserta panel/gate legacy, satukan Overview, buang route duplikat.</p>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li>~1.100 baris hilang tanpa ubah perilaku</li>
+            <li>drift 11 primitif berhenti</li>
+            <li>locality: perbaikan UI sekali untuk semua</li>
+            <li>nav jujur: tak ada halaman tersembunyi</li>
+          </ul>
+          <p class="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded px-3 py-2">Constraint: <span class="font-mono">features/admin/**</span> wajib verbatim stealth-forge — arah migrasi hanya dari sisi paas ke Forge, tidak pernah sebaliknya. Constraint ini layak dicatat sebagai ADR.</p>
+        </article>
+
+        <!-- ============ C ============ -->
+        <article id="cand-c" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif font-bold">C · State machine load/mutate dashboard</h2>
+            <div class="flex gap-2 shrink-0">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">Strong</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">in-process</span>
+            </div>
+          </div>
+          <p class="font-mono text-sm text-slate-600">app/dashboard/** (19 file dengan getError) · 21 useEffect(...then(load)) · 14 [busy, setBusy]</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">Before — interface selebar implementation, 19× </p>
+              <div class="flex items-end gap-6 h-48">
+                <div class="text-center">
+                  <div class="w-24 h-40 border-2 border-slate-700 bg-white flex flex-col justify-end text-[10px] text-slate-500">
+                    <div class="border-t-2 border-slate-700 bg-rose-50 h-32 flex items-center justify-center">interface: load+busy+error+abort, ditulis ulang 19×</div>
+                    <div class="h-8 flex items-center justify-center">per-halaman</div>
+                  </div>
+                  <p class="text-[10px] mt-1 text-slate-400">shallow</p>
+                </div>
+                <div class="text-center">
+                  <div class="w-24 h-40 border-l-4 border-red-500 pl-2 flex flex-col justify-center gap-1 text-[10px] text-slate-600">
+                    <p>19 × getError</p>
+                    <p>21 × useEffect load</p>
+                    <p>14 × busy state</p>
+                    <p class="text-red-600 font-semibold">1/18 membatalkan respons basi → race nyata</p>
+                  </div>
+                  <p class="text-[10px] mt-1 text-slate-400">leakage</p>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">After — satu deep module</p>
+              <div class="flex items-end gap-6 h-48">
+                <div class="text-center">
+                  <div class="w-24 h-40 border-2 border-slate-700 flex flex-col text-[10px]">
+                    <div class="h-8 bg-white flex items-center justify-center border-b-2 border-slate-700">useResource(key, fn)</div>
+                    <div class="deep text-white flex-1 flex items-center justify-center text-center px-1">load · busy · error · abort · refetch</div>
+                  </div>
+                  <p class="text-[10px] mt-1 text-slate-400">deep</p>
+                </div>
+                <div class="text-center">
+                  <div class="w-24 h-40 flex flex-col justify-center gap-1 text-[10px] text-slate-600">
+                    <p>18 panel → 1 panggilan hook</p>
+                    <p>race basi: abort internal</p>
+                    <p>test di satu interface</p>
+                  </div>
+                  <p class="text-[10px] mt-1 text-slate-400">leverage</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> pola load/busy/error ditulis ulang di 19 tempat tanpa pembatalan respons basi, sehingga navigasi cepat antar Project/Service bisa menyetel state dari respons lama.</p>
+          <p><span class="font-semibold">Solution:</span> satu module <span class="font-mono text-xs">useResource</span> (load, busy, error, abort, refetch) di belakang interface tunggal; panel tinggal memanggil.</p>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li>race respons basi hilang</li>
+            <li>19 getError terhapus</li>
+            <li>leverage: satu hook, 18 panel</li>
+            <li>interface = test surface</li>
+          </ul>
+        </article>
+
+        <!-- ============ D ============ -->
+        <article id="cand-d" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif font-bold">D · Envelope + policy di seam route</h2>
+            <div class="flex gap-2 shrink-0">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">Worth exploring</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">in-process</span>
+            </div>
+          </div>
+          <p class="font-mono text-sm text-slate-600">app/api/**/route.ts (62 file, 83 handler, 3.178 baris) · lib/platform/api.ts · organization-management.ts</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">Before — 6 lapis tipis × 82 handler</p>
+              <div class="space-y-1 text-[11px]">
+                <div class="h-8 border-l-4 border-slate-400 bg-white flex items-center px-2">try {</div>
+                <div class="h-8 border-l-4 border-slate-400 bg-white flex items-center px-2">requireOrganizationRole(...)</div>
+                <div class="h-8 border-l-4 border-slate-400 bg-white flex items-center px-2">await context.params</div>
+                <div class="h-8 border-l-4 border-slate-700 bg-emerald-50 flex items-center px-2 font-medium">← satu panggilan domain (satunya yang unik)</div>
+                <div class="h-8 border-l-4 border-slate-400 bg-white flex items-center px-2">recordAudit(...)</div>
+                <div class="h-8 border-l-4 border-slate-400 bg-white flex items-center px-2">return apiData(...) } catch → apiError</div>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-2">82 epilog catch identik · 82 panggilan gate · 51 requirePlatformAdmin · ~500–700 baris duplikat</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">After — policy di seam, handler tinggal isi</p>
+              <div class="space-y-2 text-[11px]">
+                <div class="deep text-white h-16 rounded flex items-center justify-center text-center px-2">withOrgRoute(["owner","admin"], handler)<br/>gate + params + envelope + audit</div>
+                <div class="h-10 border-2 border-slate-700 bg-emerald-50 flex items-center px-2">handler: satu panggilan domain + audit helper</div>
+                <div class="h-8 border border-slate-300 bg-slate-50 flex items-center px-2 text-slate-500">start/stop/restart: 3×32 baris identik → satu dispatch</div>
+              </div>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> module route shallow — 82 dari 83 handler mengulang try/gate/audit/envelope yang sama, dan satu-satunya bagian berbeda justru tenggelam di dalamnya.</p>
+          <p><span class="font-semibold">Solution:</span> <span class="font-mono text-xs">withOrgRoute(roles, handler)</span> dan <span class="font-mono text-xs">withAdminRoute(handler)</span> menyerap gate + envelope; perilaku unik tetap terbaca di handler.</p>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li>~500–700 baris duplikat hilang</li>
+            <li>404 vs 403 seragam</li>
+            <li>policy keamanan satu tempat</li>
+            <li>tests/api tetap hijau (uji via HTTP)</li>
+          </ul>
+        </article>
+
+        <!-- ============ E ============ -->
+        <article id="cand-e" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif font-bold">E · Scheduler + dispatcher worker</h2>
+            <div class="flex gap-2 shrink-0">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">Worth exploring</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">in-process</span>
+            </div>
+          </div>
+          <p class="font-mono text-sm text-slate-600">worker/index.mts (330 baris, satu file)</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — loop monolitik</p>
+              <pre class="mermaid">
+flowchart TD
+  L[while !stopping] --> T1[lastUsageRefresh 5m]
+  L --> T2[lastHostMetrics 1m]
+  L --> T3[lastLogPrune 1h]
+  L --> T4[nextBackupMaintenance]
+  L --> C[claimBuildJob]
+  C --> D{dispatch type}
+  D --> B1[backup]
+  D --> B2[restore]
+  D --> B3[scan]
+  D --> B4[build + kasus khusus]
+  T1 -.leak.-> E[try/catch + console.error ×8]
+  T2 -.leak.-> E
+  T3 -.leak.-> E
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class E leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — registry + every()</p>
+              <pre class="mermaid">
+flowchart TD
+  L[loop] --> EV[every interval, task]
+  L --> Q[claim + dispatch via registry]
+  EV --> R[usage · hostMetrics · adminMetrics · prune · backup]
+  Q --> H1[backup handler]
+  Q --> H2[restore handler]
+  Q --> H3[scan handler]
+  Q --> H4[build handler]
+  EV -.seam.-> R
+  classDef deep fill:#0f172a,color:#f8fafc,stroke:#0f172a;
+  class EV,Q deep
+              </pre>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> interface loop dan implementation-nya sama panjangnya — lima timer manual, delapan blok try/catch/log identik, dan dispatch empat tipe Job bercampur dalam satu fungsi.</p>
+          <p><span class="font-semibold">Solution:</span> helper <span class="font-mono text-xs">every(interval, task)</span> + registry handler Job; interval, error log, dan dispatch terkonsentrasi, handler menjadi data.</p>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li>interval & retensi satu tempat</li>
+            <li>error log otomatis, seragam</li>
+            <li>handler Job bisa dites terpisah</li>
+            <li>tipe Job baru = entri registry</li>
+          </ul>
+        </article>
+
+        <!-- ============ F ============ -->
+        <article id="cand-f" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif font-bold">F · Seam ownership Service + <span class="font-mono text-base">needsRedeploy</span></h2>
+            <div class="flex gap-2 shrink-0">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">Strong</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">local-substitutable</span>
+            </div>
+          </div>
+          <p class="font-mono text-sm text-slate-600">lib/platform/ownership.ts · runtime.ts:24 · custom-domains.ts:156 · services.ts:304 · databases.ts:124 · volumes.ts:162 · environment-variables.ts:157</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — 4 implementasi, 3 kontrak</p>
+              <pre class="mermaid">
+flowchart LR
+  O[ownership.requireService<br/>→ void] 
+  R[runtime.requireService<br/>→ 4 kolom]
+  CD[custom-domains.requireService<br/>→ ServiceRow]
+  S[services.requireProject<br/>→ void]
+  DB[databases.requireProject<br/>→ id,name]
+  O -.leak.-> S404["404 service_not_found ×4"]
+  R -.leak.-> S404
+  CD -.leak.-> S404
+  S -.leak.-> S404
+  DB -.leak.-> S404
+  NR[needsRedeploy: 3× SQL + 1× TS, 2 semantik]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class S404,NR leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — satu module</p>
+              <pre class="mermaid">
+flowchart LR
+  OWN["ownership<br/>requireServiceRow · requireProjectRow<br/>bumpRevision · needsRedeploySql"]
+  D1[deployments] --> OWN
+  D2[volumes] --> OWN
+  D3[env-vars] --> OWN
+  D4[runtime] --> OWN
+  D5[custom-domains] --> OWN
+  D6[databases] --> OWN
+  classDef deep fill:#0f172a,color:#f8fafc,stroke:#0f172a;
+  class OWN deep
+              </pre>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> konsep ownership Service punya empat implementasi dengan tiga kontrak balik, dan <span class="font-mono text-xs">needsRedeploy</span> dihitung empat kali dengan dua semantik berbeda — versi TypeScript mengembalikan <span class="font-mono text-xs">false</span> saat belum ada Deployment, versi SQL memakai <span class="font-mono text-xs">COALESCE(max,0)</span>.</p>
+          <p><span class="font-semibold">Solution:</span> <span class="font-mono text-xs">requireServiceRow</span>/<span class="font-mono text-xs">requireProjectRow</span> + <span class="font-mono text-xs">needsRedeploySql(scope)</span> tinggal di ownership.ts, di samping <span class="font-mono text-xs">bumpRevision</span> yang memang separuh dari konsep yang sama.</p>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li>drift 404 dan semantik hilang</li>
+            <li>leverage: satu seam, 6 caller</li>
+            <li>test via TEST_DATABASE_URL</li>
+            <li>bug needsRedeploy jadi mustahil</li>
+          </ul>
+        </article>
+
+        <!-- ============ G ============ -->
+        <article id="cand-g" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif font-bold">G · SQL admin keluar dari route handler</h2>
+            <div class="flex gap-2 shrink-0">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">Worth exploring</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">local-substitutable</span>
+            </div>
+          </div>
+          <p class="font-mono text-sm text-slate-600">app/api/admin/{incidents,operations,telemetry/*,overview,db-metrics,host-metrics,oauth-providers,status-page,accounts,redis-metrics}/route.ts — 12 file, 1.539 baris</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — route = repository</p>
+              <pre class="mermaid">
+flowchart TD
+  R1[incidents 248 brs] --> P[(pool)]
+  R2[overview 118] --> P
+  R3[telemetry/logs] --> P
+  R4[operations 134] --> P
+  R5[... 8 route lain] --> P
+  LP[lib/platform] -.tidak dilalui.-> P
+  linkStyle 5 stroke:#dc2626,stroke-width:2px;
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — module query admin</p>
+              <pre class="mermaid">
+flowchart TD
+  R1[route tipis] --> M["lib/platform/admin-read-queries<br/>incidents · telemetry · overview · accounts"]
+  R2[route tipis] --> M
+  M --> P[(pool)]
+  classDef deep fill:#0f172a,color:#f8fafc,stroke:#0f172a;
+  class M deep
+              </pre>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> setengah API admin menulis SQL langsung di route — proyeksi tak terjangkau caller lain dan hanya teruji lewat handler 248 baris; 23 route admin tanpa tes.</p>
+          <p><span class="font-semibold">Solution:</span> satu kelompok module query admin di <span class="font-mono text-xs">lib/platform</span> memiliki semua proyeksi; route kembali menjadi adapter tipis dan <span class="font-mono text-xs">tests/</span> bisa memanggil module-nya langsung.</p>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li>SQL jadi testable tanpa handler</li>
+            <li>route kembali tipis</li>
+            <li>locality: proyeksi admin satu tempat</li>
+            <li>23 route admin bisa dites</li>
+          </ul>
+          <p class="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded px-3 py-2">Catatan: memindahkan SQL saja hanya <em>memindahkan</em> kode — nilai barulah muncul karena module-nya satu pintu untuk semua proyeksi admin (dan menjadi basis kontrak REST di kandidat A).</p>
+        </article>
+
+        <!-- ============ H ============ -->
+        <article id="cand-h" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif font-bold">H · Satu module formatter waktu</h2>
+            <div class="flex gap-2 shrink-0">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">Worth exploring</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">in-process</span>
+            </div>
+          </div>
+          <p class="font-mono text-sm text-slate-600">lib/format.ts · features/admin/lib/format.ts · 13 file app/dashboard (16 definisi lokal)</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">Before — module bersama tak dipakai dashboard</p>
+              <div class="flex items-end gap-8 h-40">
+                <div class="text-center">
+                  <div class="w-28 h-28 border-2 border-slate-700 bg-white flex items-center justify-center text-[10px] text-slate-500 text-center px-1">16 salinan lokal formatTime / relativeTime / mebibytes</div>
+                  <p class="text-[10px] mt-1 text-slate-400">app/dashboard: 0 import lib/format</p>
+                </div>
+                <div class="text-center">
+                  <div class="w-28 h-16 border-2 border-slate-300 bg-slate-50 flex items-center justify-center text-[10px] text-slate-400">lib/format.ts (12 pemakai, semua features/admin)</div>
+                  <p class="text-[10px] mt-1 text-slate-400">+ features/admin/lib/format.ts (lokasi ke-3)</p>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">After</p>
+              <div class="flex items-end gap-8 h-40">
+                <div class="text-center">
+                  <div class="w-28 h-32 deep text-white rounded-sm flex items-center justify-center text-[10px] text-center px-1">lib/format.ts — formatCount · Date · Relative · Bytes · Duration</div>
+                  <p class="text-[10px] mt-1 text-slate-400">satu interface, semua halaman</p>
+                </div>
+                <div class="text-center">
+                  <div class="w-28 h-6 bg-slate-200 rounded-sm flex items-center justify-center text-[10px] text-slate-400 line-through">16 salinan lokal</div>
+                  <p class="text-[10px] mt-1 text-slate-400">null-handling seragam</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> 16 definisi formatter lokal hidup di dashboard sementara module bersamanya sudah ada dan teruji — duplikasi murni dengan null-handling yang berbeda-beda.</p>
+          <p><span class="font-semibold">Solution:</span> fold <span class="font-mono text-xs">formatDuration</span> ke <span class="font-mono text-xs">lib/format.ts</span>, ganti 16 salinan lokal dengan import.</p>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li>duplikasi murni hilang</li>
+            <li>null-handling seragam</li>
+            <li>locale & format satu tempat</li>
+          </ul>
+        </article>
+
+        <!-- strip kecil -->
+        <article class="rounded-xl border border-dashed border-slate-300 bg-white p-5 space-y-2">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Kandidat kecil — sekali lewat</h2>
+          <ul class="text-sm space-y-1 list-disc list-inside text-slate-700">
+            <li><span class="font-mono text-xs">quota.ts</span> re-export <span class="font-mono text-xs">QUOTAS</span> sementara 8 file mengimpor <span class="font-mono text-xs">quota-limits</span> langsung — satu jalur saja.</li>
+            <li><span class="font-mono text-xs">api.ts</span> re-export <span class="font-mono text-xs">ApiError</span> → tiga jalur import untuk satu class; hapus re-export (1 baris).</li>
+            <li>Barrel <span class="font-mono text-xs">features/admin/data/admin-read-model/queries.ts</span> (43 baris, nol logika) — hanya ada demi transform import verbatim Forge; hapus saat constraint longgar.</li>
+            <li><span class="font-mono text-xs">npm run contract:check</span> memakai <span class="font-mono text-xs">git diff --exit-code</span> — kini hidup setelah <span class="font-mono text-xs">git init</span>.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section id="top-recommendation" class="rounded-xl deep text-white p-8 space-y-3">
+        <p class="text-xs uppercase tracking-wider text-slate-400">Top recommendation</p>
+        <h2 class="text-2xl font-serif font-bold"><a href="#cand-b" class="underline decoration-emerald-400 underline-offset-4">B — Satu console admin</a>, lalu <a href="#cand-d" class="underline decoration-emerald-400 underline-offset-4">D</a></h2>
+        <p class="text-sm text-slate-300 max-w-3xl">B berada di area yang paling baru berubah (port Forge, 15 Nov), menghapus ~1.100 baris tanpa mengubah perilaku, dan menghentikan drift yang sudah terbukti — 11 dari 13 primitif kembar sudah menyimpang. Setelah satu pustaka UI tersisa, D merapikan seam route dengan jaring pengaman <span class="font-mono">tests/api</span> yang sudah ada.</p>
+      </section>
+
+      <footer class="text-xs text-slate-400 pb-8">
+        Laporan ini tidak mengubah kode apa pun · dihasilkan oleh improve-codebase-architecture · sumber: /tmp/opencode/architecture-review-20261116.html
+      </footer>
+    </main>
+  </body>
+</html>
