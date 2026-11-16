@@ -6,6 +6,7 @@ import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { nodeConfig } from "./nodes.ts";
 import { getPlatformDomain } from "./platform-domain.ts";
+import { requireService } from "./ownership.ts";
 
 /**
  * A Custom Domain is the one optional hostname a Service may serve next to its
@@ -38,14 +39,6 @@ export type CustomDomainSummary = {
   instructions: CustomDomainInstructions;
   createdAt: string;
   updatedAt: string;
-};
-
-type ServiceRow = {
-  serviceId: string;
-  projectId: string;
-  platformHostname: string;
-  containerPort: number;
-  status: string;
 };
 
 type CustomDomainRow = {
@@ -153,24 +146,6 @@ function toSummary(row: CustomDomainRow): CustomDomainSummary {
   };
 }
 
-async function requireService(organizationId: string, serviceId: string): Promise<ServiceRow> {
-  const result = await pool.query<ServiceRow>(
-    `SELECT s."id" AS "serviceId", s."projectId", s."platformHostname",
-            s."containerPort", s."status"
-     FROM "service" s
-     JOIN "project" p ON p."id" = s."projectId"
-     WHERE p."organizationId" = $1 AND s."id" = $2`,
-    [organizationId, serviceId],
-  );
-
-  const row = result.rows[0];
-  if (!row) {
-    throw new ApiError(404, "service_not_found", "Service not found.");
-  }
-
-  return row;
-}
-
 async function loadDomain(serviceId: string): Promise<CustomDomainRow | null> {
   const result = await pool.query<CustomDomainRow>(
     `SELECT ${DOMAIN_COLUMNS} FROM "custom_domain" WHERE "serviceId" = $1`,
@@ -213,7 +188,7 @@ export async function getServiceCustomDomain(
   serviceId: string,
 ): Promise<CustomDomainSummary | null> {
   const service = await requireService(organizationId, serviceId);
-  const row = await loadDomain(service.serviceId);
+  const row = await loadDomain(service.id);
 
   return row ? toSummary(row) : null;
 }
@@ -226,21 +201,21 @@ export async function addServiceCustomDomain(input: {
   const service = await requireService(input.organizationId, input.serviceId);
   const hostname = normalizeCustomDomainHostname(input.hostname);
 
-  if (await loadDomain(service.serviceId)) {
+  if (await loadDomain(service.id)) {
     throw new ApiError(
       409,
       "custom_domain_exists",
       "This Service already has a Custom Domain. Delete it before adding another.",
     );
   }
-  await assertHostnameAvailable(hostname, service.serviceId);
+  await assertHostnameAvailable(hostname, service.id);
 
   try {
     const result = await pool.query<CustomDomainRow>(
       `INSERT INTO "custom_domain" ("id", "serviceId", "hostname", "verificationToken")
        VALUES (gen_random_uuid()::text, $1, $2, $3)
        RETURNING ${DOMAIN_COLUMNS}`,
-      [service.serviceId, hostname, randomBytes(16).toString("hex")],
+      [service.id, hostname, randomBytes(16).toString("hex")],
     );
 
     return toSummary(result.rows[0]);
@@ -276,7 +251,7 @@ export async function verifyServiceCustomDomain(input: {
   resolver?: DnsResolver;
 }): Promise<CustomDomainSummary> {
   const service = await requireService(input.organizationId, input.serviceId);
-  const row = await loadDomain(service.serviceId);
+  const row = await loadDomain(service.id);
   if (!row) {
     throw new ApiError(404, "custom_domain_not_found", "This Service has no Custom Domain.");
   }
@@ -292,7 +267,7 @@ export async function verifyServiceCustomDomain(input: {
     });
   }
 
-  const routed = await routeCustomDomain(service.serviceId, row.hostname);
+  const routed = await routeCustomDomain(service.id, row.hostname);
   if (routed === "missing" || routed === "not_running") {
     // DNS is correct but there is nothing to route to yet. Leave the row pending
     // so the owner can deploy and retry without publishing a different token.
@@ -377,7 +352,7 @@ export async function deleteServiceCustomDomain(input: {
   serviceId: string;
 }): Promise<{ id: string; serviceId: string; hostname: string }> {
   const service = await requireService(input.organizationId, input.serviceId);
-  const row = await loadDomain(service.serviceId);
+  const row = await loadDomain(service.id);
   if (!row) {
     throw new ApiError(404, "custom_domain_not_found", "This Service has no Custom Domain.");
   }
@@ -386,11 +361,11 @@ export async function deleteServiceCustomDomain(input: {
   // a cached certificate for a domain the user deleted. A node that cannot be
   // reached fails the delete, so the user can retry instead of leaving an orphan
   // route behind.
-  await removeCustomDomainRoute(service.serviceId, row.hostname);
+  await removeCustomDomainRoute(service.id, row.hostname);
 
   await pool.query('DELETE FROM "custom_domain" WHERE "id" = $1', [row.id]);
 
-  return { id: row.id, serviceId: service.serviceId, hostname: row.hostname };
+  return { id: row.id, serviceId: service.id, hostname: row.hostname };
 }
 
 /**

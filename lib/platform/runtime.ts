@@ -1,4 +1,3 @@
-import { pool } from "./db.ts";
 import {
   createAgentClient,
   type AgentClient,
@@ -7,6 +6,7 @@ import {
 import { ApiError } from "./api-error.ts";
 import { markServiceRunning, markServiceStopped } from "./deployments.ts";
 import { nodeConfig } from "./nodes.ts";
+import { requireService } from "./ownership.ts";
 
 export type ServiceRuntimeState = {
   serviceId: string;
@@ -15,32 +15,6 @@ export type ServiceRuntimeState = {
   deploymentId: string | null;
   hostname: string | null;
 };
-
-/**
- * Loads the Service and checks it belongs to the caller's Organization. Every
- * runtime action goes through this, so a Service id from another organization can never
- * be started or stopped.
- */
-async function requireService(organizationId: string, serviceId: string) {
-  const result = await pool.query<{
-    id: string;
-    name: string;
-    status: string;
-    platformHostname: string;
-  }>(
-    `SELECT s."id", s."name", s."status", s."platformHostname"
-     FROM "service" s JOIN "project" p ON p."id" = s."projectId"
-     WHERE p."organizationId" = $1 AND s."id" = $2`,
-    [organizationId, serviceId],
-  );
-
-  const service = result.rows[0];
-  if (!service) {
-    throw new ApiError(404, "service_not_found", "Service not found.");
-  }
-
-  return service;
-}
 
 function toRuntimeState(state: AgentServiceState): ServiceRuntimeState {
   return {
