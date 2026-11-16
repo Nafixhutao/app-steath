@@ -1,5 +1,7 @@
 import { ApiError } from "@/lib/platform/api-error";
-import { OrganizationAccessError } from "@/lib/platform/organization";
+import { OrganizationAccessError, type ActiveOrganizationContext } from "@/lib/platform/organization";
+import { requireOrganizationRole } from "@/lib/platform/organization-management";
+import { requirePlatformAdmin, type PlatformAdminContext } from "@/lib/platform/platform-admin";
 
 /**
  * Control Plane JSON API envelope. Successful responses carry `{ data }` and
@@ -50,4 +52,43 @@ export async function readJson<T>(request: Request): Promise<T> {
   } catch {
     throw new ApiError(400, "invalid_body", "Invalid request body.");
   }
+}
+
+/**
+ * Wraps a route handler in the shared error envelope: anything the handler
+ * throws is answered by `apiError`, so a route can never forget the epilog.
+ */
+export function withErrors(handler: () => Promise<Response>): Promise<Response> {
+  return handler().catch(apiError);
+}
+
+type OrgHandler = (actor: ActiveOrganizationContext) => Promise<Response>;
+
+/**
+ * Resolves the caller's Organization membership with one of the allowed roles,
+ * then hands the actor to the handler. A failure anywhere — authentication,
+ * role, handler — is answered by the shared envelope.
+ */
+export function withOrg(
+  request: Request,
+  roles: string[],
+  handler: OrgHandler,
+): Promise<Response> {
+  return withErrors(async () => {
+    const actor = await requireOrganizationRole(request.headers, roles);
+    return handler(actor);
+  });
+}
+
+type AdminHandler = (actor: PlatformAdminContext) => Promise<Response>;
+
+/**
+ * Same seam for Platform Admin endpoints: the session is resolved and checked
+ * against the platform admin allowlist before the handler runs.
+ */
+export function withAdmin(request: Request, handler: AdminHandler): Promise<Response> {
+  return withErrors(async () => {
+    const actor = await requirePlatformAdmin(request.headers);
+    return handler(actor);
+  });
 }

@@ -3,9 +3,7 @@ import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { deleteProject, getProject, updateProject } from "@/lib/platform/projects";
 
-type RouteContext = { params: Promise<{ projectId: string }> };
-
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/projects/[projectId]'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { projectId } = await context.params;
@@ -15,7 +13,7 @@ export async function GET(request: Request, context: RouteContext) {
   }
 }
 
-export async function PATCH(request: Request, context: RouteContext) {
+export async function PATCH(request: Request, context: RouteContext<'/api/projects/[projectId]'>) {
   let input: { name?: unknown; slug?: unknown };
   try {
     input = (await request.json()) as { name?: unknown; slug?: unknown };
@@ -45,7 +43,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext<'/api/projects/[projectId]'>) {
   let input: { confirmation?: unknown };
   try {
     input = (await request.json()) as { confirmation?: unknown };

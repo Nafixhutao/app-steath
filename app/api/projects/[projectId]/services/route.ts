@@ -3,9 +3,7 @@ import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { createService, listServices } from "@/lib/platform/services";
 
-type RouteContext = { params: Promise<{ projectId: string }> };
-
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/projects/[projectId]/services'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { projectId } = await context.params;
@@ -15,7 +13,7 @@ export async function GET(request: Request, context: RouteContext) {
   }
 }
 
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/projects/[projectId]/services'>) {
   let input: {
     name?: unknown;
     repoUrl?: unknown;

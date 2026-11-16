@@ -3,15 +3,13 @@ import { recordAudit } from "@/lib/platform/audit";
 import { redeployDeployment } from "@/lib/platform/deployments";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ deploymentId: string }> };
-
 /**
  * Redeploys an existing Deployment: a new Deployment is created that rebuilds the
  * same commit, which is how an owner or admin restores a Service whose container
  * is misbehaving. Members may trigger a fresh Deployment, but only `owner` and
  * `admin` may redeploy a specific past commit.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/deployments/[deploymentId]/redeploy'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { deploymentId } = await context.params;

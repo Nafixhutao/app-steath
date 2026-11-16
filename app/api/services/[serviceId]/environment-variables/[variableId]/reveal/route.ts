@@ -3,15 +3,13 @@ import { recordAudit } from "@/lib/platform/audit";
 import { revealEnvironmentVariable } from "@/lib/platform/environment-variables";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ serviceId: string; variableId: string }> };
-
 /**
  * Reveals one Environment Variable's value. This is the explicit request the
  * masking rule is built around, so it is a deliberate POST (never prefetchable,
  * never cached) and it answers no-store. Only owners and admins may reveal.
  * The AuditEvent records that the value was read, but not the value itself.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/environment-variables/[variableId]/reveal'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { serviceId, variableId } = await context.params;

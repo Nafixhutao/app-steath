@@ -8,13 +8,11 @@ import {
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { getService } from "@/lib/platform/services";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
 /**
  * Reads the Service's Custom Domain. Every role may see the hostname and the DNS
  * instructions; only owners and admins may change them.
  */
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]/custom-domain'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { serviceId } = await context.params;
@@ -28,7 +26,7 @@ export async function GET(request: Request, context: RouteContext) {
  * Adds the one Custom Domain a Service may have. It starts `pending`: the owner
  * must publish the TXT record and point DNS at the platform before verification.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/custom-domain'>) {
   let input: { hostname?: unknown };
   try {
     input = (await request.json()) as { hostname?: unknown };
@@ -70,7 +68,7 @@ export async function POST(request: Request, context: RouteContext) {
  * removed first: a node that cannot be reached fails the delete so an orphan
  * route can never keep serving a domain the user deleted.
  */
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext<'/api/services/[serviceId]/custom-domain'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { serviceId } = await context.params;

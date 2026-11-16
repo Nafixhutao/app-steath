@@ -7,13 +7,11 @@ import {
 } from "@/lib/platform/databases";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ projectId: string }> };
-
 /**
  * Reads a Project's Database, its health, and its usage. Every role may see the
  * state; only owners and admins receive the private connection string.
  */
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/projects/[projectId]/database'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { projectId } = await context.params;
@@ -33,7 +31,7 @@ export async function GET(request: Request, context: RouteContext) {
  * Provisions the Project's one PostgreSQL Database. Owners and admins manage
  * configuration; the Node Agent starts the container on the Project network.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/projects/[projectId]/database'>) {
   let input: { storageLimitMb?: unknown };
   try {
     input = (await request.json().catch(() => ({}))) as { storageLimitMb?: unknown };
@@ -69,7 +67,7 @@ export async function POST(request: Request, context: RouteContext) {
  * The agent removes the container and Volume, then the Project's Services are
  * marked as needing a redeploy so `DATABASE_URL` is dropped from them.
  */
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext<'/api/projects/[projectId]/database'>) {
   let input: { confirmation?: unknown };
   try {
     input = (await request.json()) as { confirmation?: unknown };

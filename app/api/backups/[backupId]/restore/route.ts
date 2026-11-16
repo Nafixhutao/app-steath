@@ -2,14 +2,12 @@ import { ApiError, apiData, apiError } from "@/lib/platform/api";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { createRestore } from "@/lib/platform/restores";
 
-type RouteContext = { params: Promise<{ backupId: string }> };
-
 /**
  * Queues a Restore of one completed Database or Volume Backup. Owners and admins
  * may restore: it stops the affected Services, so it is a configuration change
  * rather than a read. The body must carry the typed confirmation.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/backups/[backupId]/restore'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { backupId } = await context.params;

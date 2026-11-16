@@ -3,9 +3,7 @@ import { recordAudit } from "@/lib/platform/audit";
 import { listDeployments, triggerDeployment } from "@/lib/platform/deployments";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]/deployments'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { serviceId } = await context.params;
@@ -19,7 +17,7 @@ export async function GET(request: Request, context: RouteContext) {
  * Triggers a Deployment. Members may deploy too, as the spec allows, but the
  * AuditEvent still records who did it.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/deployments'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { serviceId } = await context.params;

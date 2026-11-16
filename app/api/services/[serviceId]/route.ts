@@ -3,9 +3,7 @@ import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { deleteService, getService } from "@/lib/platform/services";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { serviceId } = await context.params;
@@ -15,7 +13,7 @@ export async function GET(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext<'/api/services/[serviceId]'>) {
   let input: { confirmation?: unknown };
   try {
     input = (await request.json()) as { confirmation?: unknown };

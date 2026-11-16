@@ -3,13 +3,11 @@ import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { createServiceVolume, deleteServiceVolume, getServiceVolume } from "@/lib/platform/volumes";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
 /**
  * Reads a Service's Volume and its usage. Every role may see it: members need to
  * know how much space the Service is using.
  */
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]/volume'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { serviceId } = await context.params;
@@ -23,7 +21,7 @@ export async function GET(request: Request, context: RouteContext) {
  * Adds the Service's one Volume. Owners and admins manage configuration; the
  * Docker Volume is created by the Node Agent on the next Deployment.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/volume'>) {
   let input: { mountPath?: unknown; sizeMb?: unknown };
   try {
     input = (await request.json()) as { mountPath?: unknown; sizeMb?: unknown };
@@ -59,7 +57,7 @@ export async function POST(request: Request, context: RouteContext) {
  * row disappears and the Service is marked as needing a redeploy so the mount is
  * dropped from the next container.
  */
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext<'/api/services/[serviceId]/volume'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { serviceId } = await context.params;

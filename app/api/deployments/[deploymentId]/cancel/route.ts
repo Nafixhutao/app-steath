@@ -3,15 +3,13 @@ import { recordAudit } from "@/lib/platform/audit";
 import { cancelDeployment } from "@/lib/platform/deployments";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ deploymentId: string }> };
-
 /**
  * Cancels a Deployment that is still queued or building. Only `owner` and `admin`
  * may cancel, because stopping someone else's deployment is a management action.
  * The response reports what the Node Agent actually cleaned up, so the dashboard
  * can tell the user whether a container or image was removed.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/deployments/[deploymentId]/cancel'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { deploymentId } = await context.params;

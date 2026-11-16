@@ -7,14 +7,12 @@ import {
 } from "@/lib/platform/databases";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ projectId: string }> };
-
 /**
  * Reads the public proxy state. Every role may see whether it is enabled and
  * which CIDRs are allowed; only owners and admins receive the public connection
  * string, because it carries the password.
  */
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/projects/[projectId]/database/proxy'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { projectId } = await context.params;
@@ -38,7 +36,7 @@ export async function GET(request: Request, context: RouteContext) {
  * Enables the public proxy or replaces its allowlist. The body must carry at
  * least one CIDR: a public Database is never open to every address by accident.
  */
-export async function PUT(request: Request, context: RouteContext) {
+export async function PUT(request: Request, context: RouteContext<'/api/projects/[projectId]/database/proxy'>) {
   let input: { allowlist?: unknown };
   try {
     input = (await request.json()) as { allowlist?: unknown };
@@ -72,7 +70,7 @@ export async function PUT(request: Request, context: RouteContext) {
  * Disables the public proxy. The agent stops the listener and revokes the port
  * before the Control Plane forgets the endpoint.
  */
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext<'/api/projects/[projectId]/database/proxy'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { projectId } = await context.params;

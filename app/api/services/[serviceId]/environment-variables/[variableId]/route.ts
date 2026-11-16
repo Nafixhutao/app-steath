@@ -6,13 +6,11 @@ import {
 } from "@/lib/platform/environment-variables";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ serviceId: string; variableId: string }> };
-
 /**
  * Updates an Environment Variable's key, value, or both. The AuditEvent records
  * which key changed, never what it changed to.
  */
-export async function PATCH(request: Request, context: RouteContext) {
+export async function PATCH(request: Request, context: RouteContext<'/api/services/[serviceId]/environment-variables/[variableId]'>) {
   let input: { key?: unknown; value?: unknown };
   try {
     input = (await request.json()) as { key?: unknown; value?: unknown };
@@ -46,7 +44,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 /** Removes one Environment Variable. The values it sealed are gone with it. */
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext<'/api/services/[serviceId]/environment-variables/[variableId]'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { serviceId, variableId } = await context.params;

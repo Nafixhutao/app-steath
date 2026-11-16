@@ -4,14 +4,12 @@ import { verifyServiceCustomDomain } from "@/lib/platform/custom-domains";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { getService } from "@/lib/platform/services";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
 /**
  * Checks the TXT record and DNS resolution, then routes the hostname when they
  * match. A failed check is recorded on the domain and returned with 200, so the
  * dashboard can show the reason without treating it as a server error.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/custom-domain/verify'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { serviceId } = await context.params;

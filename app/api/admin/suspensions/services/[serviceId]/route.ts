@@ -3,8 +3,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 import { recordPlatformAudit } from "@/lib/platform/audit";
 import { suspendService, unsuspendService } from "@/lib/platform/suspensions";
 
-type Context = { params: Promise<{ serviceId: string }> };
-export async function POST(request: Request, context: Context) {
+export async function POST(request: Request, context: RouteContext<'/api/admin/suspensions/services/[serviceId]'>) {
   try {
     const actor = await requirePlatformAdmin(request.headers);
     const { action } = await readJson<{ action?: unknown }>(request);

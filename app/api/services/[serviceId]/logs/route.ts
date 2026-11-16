@@ -4,8 +4,6 @@ import { nodeConfig } from "@/lib/platform/nodes";
 import { getServiceRuntime } from "@/lib/platform/runtime";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
 const DEFAULT_TAIL = 200;
 const MAX_TAIL = 1000;
 
@@ -14,7 +12,7 @@ const MAX_TAIL = 1000;
  * container, so new lines arrive as the application writes them. Members may read
  * logs, which the spec allows even though they cannot change the Service.
  */
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]/logs'>) {
   let actor: Awaited<ReturnType<typeof requireOrganizationRole>>;
   let serviceId: string;
 

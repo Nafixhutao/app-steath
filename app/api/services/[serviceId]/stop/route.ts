@@ -4,13 +4,11 @@ import { getService } from "@/lib/platform/services";
 import { stopService } from "@/lib/platform/runtime";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
 /**
  * Stops a Service. The container is kept so its writable state survives, and the
  * Platform Subdomain stops answering until the Service is started again.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/stop'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { serviceId } = await context.params;

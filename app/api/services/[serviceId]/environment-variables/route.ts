@@ -6,14 +6,12 @@ import {
 } from "@/lib/platform/environment-variables";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
 /**
  * Lists a Service's Environment Variables. Every role may see the keys, but the
  * values are always masked here: only an explicit reveal returns a value, and
  * that is limited to owners and admins.
  */
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]/environment-variables'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
     const { serviceId } = await context.params;
@@ -28,7 +26,7 @@ export async function GET(request: Request, context: RouteContext) {
  * The AuditEvent records the key, never the value, so the secret stays out of
  * the audit trail.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/environment-variables'>) {
   let input: { key?: unknown; value?: unknown };
   try {
     input = (await request.json()) as { key?: unknown; value?: unknown };

@@ -4,9 +4,7 @@ import { ApiError, apiData, apiError, readJson } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ memberId: string }> };
-
-export async function PATCH(request: Request, context: RouteContext) {
+export async function PATCH(request: Request, context: RouteContext<'/api/organizations/members/[memberId]'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { memberId } = await context.params;
@@ -47,7 +45,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext<'/api/organizations/members/[memberId]'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner"]);
     const { memberId } = await context.params;

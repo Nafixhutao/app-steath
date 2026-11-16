@@ -4,13 +4,11 @@ import { getService } from "@/lib/platform/services";
 import { startService } from "@/lib/platform/runtime";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-type RouteContext = { params: Promise<{ serviceId: string }> };
-
 /**
  * Starts a stopped Service. The same container comes back, so any data it kept in
  * its writable layer or Volumes is still there.
  */
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/start'>) {
   try {
     const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
     const { serviceId } = await context.params;
