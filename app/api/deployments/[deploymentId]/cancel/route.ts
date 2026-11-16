@@ -1,7 +1,6 @@
-import { apiData, apiError } from "@/lib/platform/api";
+import { apiData, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { cancelDeployment } from "@/lib/platform/deployments";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
 /**
  * Cancels a Deployment that is still queued or building. Only `owner` and `admin`
@@ -9,9 +8,11 @@ import { requireOrganizationRole } from "@/lib/platform/organization-management"
  * The response reports what the Node Agent actually cleaned up, so the dashboard
  * can tell the user whether a container or image was removed.
  */
-export async function POST(request: Request, context: RouteContext<'/api/deployments/[deploymentId]/cancel'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/deployments/[deploymentId]/cancel">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { deploymentId } = await context.params;
 
     const cancelled = await cancelDeployment({
@@ -28,7 +29,5 @@ export async function POST(request: Request, context: RouteContext<'/api/deploym
     });
 
     return apiData({ deployment: cancelled.deployment, aborted: cancelled.aborted });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

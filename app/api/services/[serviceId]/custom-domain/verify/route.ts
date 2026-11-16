@@ -1,7 +1,6 @@
-import { apiData, apiError } from "@/lib/platform/api";
+import { apiData, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { verifyServiceCustomDomain } from "@/lib/platform/custom-domains";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { getService } from "@/lib/platform/services";
 
 /**
@@ -9,9 +8,11 @@ import { getService } from "@/lib/platform/services";
  * match. A failed check is recorded on the domain and returned with 200, so the
  * dashboard can show the reason without treating it as a server error.
  */
-export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/custom-domain/verify'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/custom-domain/verify">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { serviceId } = await context.params;
     const service = await getService(actor.organizationId, serviceId);
     const domain = await verifyServiceCustomDomain({
@@ -20,9 +21,7 @@ export async function POST(request: Request, context: RouteContext<'/api/service
     });
 
     await recordAudit(
-      domain.status === "active"
-        ? "custom_domain.verified"
-        : "custom_domain.verification_failed",
+      domain.status === "active" ? "custom_domain.verified" : "custom_domain.verification_failed",
       actor.organizationId,
       actor.userId,
       undefined,
@@ -37,7 +36,5 @@ export async function POST(request: Request, context: RouteContext<'/api/service
     );
 
     return apiData(domain);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

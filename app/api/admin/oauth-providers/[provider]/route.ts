@@ -9,10 +9,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 
 const VALID = new Set(["github", "google"]);
 
-export async function PUT(
-  request: Request,
-  context: { params: Promise<{ provider: string }> },
-) {
+export async function PUT(request: Request, context: { params: Promise<{ provider: string }> }) {
   try {
     await requirePlatformAdmin(request.headers);
     const { provider } = await context.params;
@@ -29,10 +26,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ provider: string }> },
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ provider: string }> }) {
   try {
     await requirePlatformAdmin(request.headers);
     const { provider } = await context.params;

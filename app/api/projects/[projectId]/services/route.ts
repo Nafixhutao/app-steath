@@ -1,19 +1,22 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError, apiData, apiError, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { createService, listServices } from "@/lib/platform/services";
 
-export async function GET(request: Request, context: RouteContext<'/api/projects/[projectId]/services'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+export async function GET(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/services">,
+) {
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     const { projectId } = await context.params;
     return apiData(await listServices(actor.organizationId, projectId));
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
-export async function POST(request: Request, context: RouteContext<'/api/projects/[projectId]/services'>) {
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/services">,
+) {
   let input: {
     name?: unknown;
     repoUrl?: unknown;

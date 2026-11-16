@@ -1,16 +1,17 @@
-import { apiData, apiError } from "@/lib/platform/api";
+import { apiData, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { getService } from "@/lib/platform/services";
 import { restartService } from "@/lib/platform/runtime";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
 /**
  * Restarts a Service container without changing its configuration. The route
  * stays in place, so the hostname keeps answering once the app is up again.
  */
-export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/restart'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/restart">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { serviceId } = await context.params;
     const service = await getService(actor.organizationId, serviceId);
 
@@ -24,7 +25,5 @@ export async function POST(request: Request, context: RouteContext<'/api/service
     });
 
     return apiData(state);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

@@ -22,8 +22,8 @@ export async function GET(request: Request) {
       // in as the closest concurrent-work counter. The handle accessor is
       // undocumented, so it is read off the process object directly.
       goroutines:
-        (process as unknown as { _getActiveHandles?: () => unknown[] })
-          ._getActiveHandles?.().length ?? 0,
+        (process as unknown as { _getActiveHandles?: () => unknown[] })._getActiveHandles?.()
+          .length ?? 0,
       heap_alloc_bytes: memory.heapUsed,
       heap_objects: 0,
       stack_bytes: memory.rss - memory.heapTotal,

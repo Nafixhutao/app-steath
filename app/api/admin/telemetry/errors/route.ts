@@ -54,7 +54,8 @@ export async function GET(request: Request) {
     };
     const hours = rangeHours[rawRange] ?? 24;
 
-    const result = await pool.query<FailureRow>(`
+    const result = await pool.query<FailureRow>(
+      `
       SELECT * FROM (
         SELECT
           'deployment' AS kind,
@@ -86,19 +87,24 @@ export async function GET(request: Request) {
       ) failures
       ORDER BY "last_seen" DESC
       LIMIT 250
-    `, to ? [from, to] : [from ?? String(hours)]);
+    `,
+      to ? [from, to] : [from ?? String(hours)],
+    );
 
-    const groups = new Map<string, {
-      fingerprint: string;
-      service: string;
-      error_type: string;
-      message: string;
-      status: "open" | "acknowledged" | "resolved" | "ignored";
-      first_seen: Date;
-      last_seen: Date;
-      occurrence_count: number;
-      trace_id?: string;
-    }>();
+    const groups = new Map<
+      string,
+      {
+        fingerprint: string;
+        service: string;
+        error_type: string;
+        message: string;
+        status: "open" | "acknowledged" | "resolved" | "ignored";
+        first_seen: Date;
+        last_seen: Date;
+        occurrence_count: number;
+        trace_id?: string;
+      }
+    >();
 
     for (const row of result.rows) {
       const fingerprint = fingerprintOf(row.kind, row.message);
@@ -126,4 +132,3 @@ export async function GET(request: Request) {
     return apiError(error);
   }
 }
-

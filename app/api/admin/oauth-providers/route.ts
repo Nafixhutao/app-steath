@@ -13,9 +13,7 @@ const PROVIDERS = ["github", "google"] as const;
 
 type ProviderName = (typeof PROVIDERS)[number];
 
-function providerSource(
-  provider: ProviderName,
-): "database" | "environment" | "none" {
+function providerSource(provider: ProviderName): "database" | "environment" | "none" {
   const clientId =
     provider === "github"
       ? (process.env.GITHUB_CLIENT_ID ?? process.env.BETTER_AUTH_GITHUB_CLIENT_ID)
@@ -25,9 +23,7 @@ function providerSource(
 
 function callbackUrl(provider: ProviderName): string {
   const baseURL =
-    process.env.BETTER_AUTH_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000";
+    process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   return `${baseURL.replace(/\/$/, "")}/api/auth/callback/${provider}`;
 }
 

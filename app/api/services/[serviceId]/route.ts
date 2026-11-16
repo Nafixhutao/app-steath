@@ -1,19 +1,16 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError, apiData, apiError, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { deleteService, getService } from "@/lib/platform/services";
 
-export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+export async function GET(request: Request, context: RouteContext<"/api/services/[serviceId]">) {
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     const { serviceId } = await context.params;
     return apiData(await getService(actor.organizationId, serviceId));
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
-export async function DELETE(request: Request, context: RouteContext<'/api/services/[serviceId]'>) {
+export async function DELETE(request: Request, context: RouteContext<"/api/services/[serviceId]">) {
   let input: { confirmation?: unknown };
   try {
     input = (await request.json()) as { confirmation?: unknown };

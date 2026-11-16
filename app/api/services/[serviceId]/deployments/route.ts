@@ -1,25 +1,26 @@
-import { apiData, apiError } from "@/lib/platform/api";
+import { apiData, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { listDeployments, triggerDeployment } from "@/lib/platform/deployments";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
-export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]/deployments'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+export async function GET(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/deployments">,
+) {
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     const { serviceId } = await context.params;
     return apiData(await listDeployments(actor.organizationId, serviceId));
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 /**
  * Triggers a Deployment. Members may deploy too, as the spec allows, but the
  * AuditEvent still records who did it.
  */
-export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/deployments'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/deployments">,
+) {
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     const { serviceId } = await context.params;
     const triggered = await triggerDeployment({
       organizationId: actor.organizationId,
@@ -33,7 +34,5 @@ export async function POST(request: Request, context: RouteContext<'/api/service
     });
 
     return apiData(triggered.deployment, 201);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

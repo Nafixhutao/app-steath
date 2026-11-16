@@ -1,4 +1,4 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError, apiData, apiError, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import {
   createEnvironmentVariable,
@@ -11,14 +11,14 @@ import { requireOrganizationRole } from "@/lib/platform/organization-management"
  * values are always masked here: only an explicit reveal returns a value, and
  * that is limited to owners and admins.
  */
-export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]/environment-variables'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+export async function GET(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/environment-variables">,
+) {
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     const { serviceId } = await context.params;
     return apiData(await listEnvironmentVariables(actor.organizationId, serviceId));
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 /**
@@ -26,7 +26,10 @@ export async function GET(request: Request, context: RouteContext<'/api/services
  * The AuditEvent records the key, never the value, so the secret stays out of
  * the audit trail.
  */
-export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/environment-variables'>) {
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/environment-variables">,
+) {
   let input: { key?: unknown; value?: unknown };
   try {
     input = (await request.json()) as { key?: unknown; value?: unknown };

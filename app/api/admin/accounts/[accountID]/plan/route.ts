@@ -12,10 +12,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 
 const VALID_PLANS = new Set(["free", "go", "plus", "pro"]);
 
-export async function PUT(
-  request: Request,
-  context: { params: Promise<{ accountID: string }> },
-) {
+export async function PUT(request: Request, context: { params: Promise<{ accountID: string }> }) {
   try {
     await requirePlatformAdmin(request.headers);
     const { accountID } = await context.params;

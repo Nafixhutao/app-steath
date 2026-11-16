@@ -60,8 +60,7 @@ export async function GET(request: Request) {
       conditions.push(`"message" ILIKE $${params.length}`);
     }
 
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const result = await pool.query<BuildLogRow>(
       `SELECT "createdAt" AS "timestamp", "message"

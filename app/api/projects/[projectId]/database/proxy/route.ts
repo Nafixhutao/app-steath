@@ -1,4 +1,4 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError, apiData, apiError, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import {
   disableProjectDatabaseProxy,
@@ -12,9 +12,11 @@ import { requireOrganizationRole } from "@/lib/platform/organization-management"
  * which CIDRs are allowed; only owners and admins receive the public connection
  * string, because it carries the password.
  */
-export async function GET(request: Request, context: RouteContext<'/api/projects/[projectId]/database/proxy'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+export async function GET(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/database/proxy">,
+) {
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     const { projectId } = await context.params;
     const state = await getProjectDatabase({
       organizationId: actor.organizationId,
@@ -27,16 +29,17 @@ export async function GET(request: Request, context: RouteContext<'/api/projects
     }
 
     return apiData(state.database.proxy);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 /**
  * Enables the public proxy or replaces its allowlist. The body must carry at
  * least one CIDR: a public Database is never open to every address by accident.
  */
-export async function PUT(request: Request, context: RouteContext<'/api/projects/[projectId]/database/proxy'>) {
+export async function PUT(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/database/proxy">,
+) {
   let input: { allowlist?: unknown };
   try {
     input = (await request.json()) as { allowlist?: unknown };
@@ -70,9 +73,11 @@ export async function PUT(request: Request, context: RouteContext<'/api/projects
  * Disables the public proxy. The agent stops the listener and revokes the port
  * before the Control Plane forgets the endpoint.
  */
-export async function DELETE(request: Request, context: RouteContext<'/api/projects/[projectId]/database/proxy'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function DELETE(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/database/proxy">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { projectId } = await context.params;
     const { databaseId, proxy, changed } = await disableProjectDatabaseProxy({
       organizationId: actor.organizationId,
@@ -80,20 +85,12 @@ export async function DELETE(request: Request, context: RouteContext<'/api/proje
     });
 
     if (changed) {
-      await recordAudit(
-        "database.proxy_disabled",
-        actor.organizationId,
-        actor.userId,
-        undefined,
-        {
-          projectId,
-          databaseId,
-        },
-      );
+      await recordAudit("database.proxy_disabled", actor.organizationId, actor.userId, undefined, {
+        projectId,
+        databaseId,
+      });
     }
 
     return apiData(proxy);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

@@ -8,10 +8,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
  * status on yet; the endpoint validates and acknowledges the transition, and
  * the UI keeps its optimistic value until a store exists.
  */
-export async function PUT(
-  request: Request,
-  context: { params: Promise<{ fingerprint: string }> },
-) {
+export async function PUT(request: Request, context: { params: Promise<{ fingerprint: string }> }) {
   try {
     await requirePlatformAdmin(request.headers);
     const { fingerprint } = await context.params;

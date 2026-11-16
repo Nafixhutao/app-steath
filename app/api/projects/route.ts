@@ -1,15 +1,12 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError, apiData, apiError, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { createProject, listProjects } from "@/lib/platform/projects";
 
 export async function GET(request: Request) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     return apiData(await listProjects(actor.organizationId));
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 export async function POST(request: Request) {

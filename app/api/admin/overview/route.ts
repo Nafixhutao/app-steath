@@ -33,8 +33,7 @@ export async function GET(request: Request) {
 
     const health = healthResult.rows[0];
     const nodeStale =
-      !health.node_last_seen ||
-      Date.now() - new Date(health.node_last_seen).getTime() > 120_000;
+      !health.node_last_seen || Date.now() - new Date(health.node_last_seen).getTime() > 120_000;
 
     const components: { name: string; status: string }[] = [
       { name: "api", status: "healthy" },
@@ -52,18 +51,20 @@ export async function GET(request: Request) {
             ? "healthy"
             : health.node_status === "unhealthy" || nodeStale
               ? "unavailable"
-              // The Forge component-status vocabulary has no "degraded";
-              // an unseen-but-fresh node reports unknown.
-              : "unknown",
+              : // The Forge component-status vocabulary has no "degraded";
+                // an unseen-but-fresh node reports unknown.
+                "unknown",
       },
     ];
 
-    const operationsResult = await pool.query<{ counts: {
-      active_deployments: number;
-      queued_jobs: number;
-      running_jobs: number;
-      failed_jobs: number;
-    } }>(`
+    const operationsResult = await pool.query<{
+      counts: {
+        active_deployments: number;
+        queued_jobs: number;
+        running_jobs: number;
+        failed_jobs: number;
+      };
+    }>(`
       SELECT jsonb_build_object(
         'active_deployments', (
           SELECT count(*) FROM "deployment" d
@@ -96,9 +97,7 @@ export async function GET(request: Request) {
     `);
 
     return apiData({
-      instance_status: components.every((c) => c.status === "healthy")
-        ? "healthy"
-        : "degraded",
+      instance_status: components.every((c) => c.status === "healthy") ? "healthy" : "degraded",
       checked_at: new Date().toISOString(),
       components,
       telemetry: { status: "unavailable" },

@@ -1,5 +1,4 @@
-import { apiData, apiError } from "@/lib/platform/api";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
+import { apiData, withOrg } from "@/lib/platform/api";
 import { getOrganizationUsage, refreshOrganizationUsage } from "@/lib/platform/usage";
 
 /**
@@ -8,13 +7,9 @@ import { getOrganizationUsage, refreshOrganizationUsage } from "@/lib/platform/u
  * five-minute refresh promise; the worker owns the timer.
  */
 export async function GET(request: Request) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
-
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     await refreshOrganizationUsage(actor.organizationId);
 
     return apiData(await getOrganizationUsage(actor.organizationId));
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

@@ -3,7 +3,10 @@ import { updateAbuseReport } from "@/lib/platform/abuse";
 import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 import { recordPlatformAudit } from "@/lib/platform/audit";
 
-export async function PATCH(request: Request, context: RouteContext<'/api/admin/abuse-reports/[reportId]'>) {
+export async function PATCH(
+  request: Request,
+  context: RouteContext<"/api/admin/abuse-reports/[reportId]">,
+) {
   try {
     const actor = await requirePlatformAdmin(request.headers);
     const { status } = await readJson<{ status?: unknown }>(request);

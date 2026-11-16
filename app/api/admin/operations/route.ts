@@ -51,7 +51,8 @@ export async function GET(request: Request) {
       duration_ms: number;
       error: string | null;
       created_at: Date;
-    }>(`
+    }>(
+      `
       SELECT * FROM (
         SELECT
           d."id",
@@ -109,7 +110,9 @@ export async function GET(request: Request) {
       ) operations
       ORDER BY "created_at" DESC
       LIMIT ${limit}
-    `, to ? [from, to] : [from ?? String(windowMinutes)]);
+    `,
+      to ? [from, to] : [from ?? String(windowMinutes)],
+    );
 
     return apiData({
       items: operationsResult.rows.map((row) => ({
@@ -120,9 +123,7 @@ export async function GET(request: Request) {
         ...(row.project_name ? { project_name: row.project_name } : {}),
         status: row.status,
         ...(row.started_at ? { started_at: row.started_at.toISOString() } : {}),
-        ...(row.finished_at
-          ? { finished_at: row.finished_at.toISOString() }
-          : {}),
+        ...(row.finished_at ? { finished_at: row.finished_at.toISOString() } : {}),
         duration_ms: Number(row.duration_ms),
         ...(row.error ? { error: row.error } : {}),
         created_at: row.created_at.toISOString(),

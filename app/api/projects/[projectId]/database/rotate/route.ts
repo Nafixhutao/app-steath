@@ -1,15 +1,16 @@
-import { apiData, apiError } from "@/lib/platform/api";
+import { apiData, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { rotateProjectDatabaseCredentials } from "@/lib/platform/databases";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
 /**
  * Replaces the Database password inside the running cluster. The AuditEvent
  * records that a rotation happened, never the new value.
  */
-export async function POST(request: Request, context: RouteContext<'/api/projects/[projectId]/database/rotate'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/database/rotate">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { projectId } = await context.params;
     const rotated = await rotateProjectDatabaseCredentials({
       organizationId: actor.organizationId,
@@ -25,7 +26,5 @@ export async function POST(request: Request, context: RouteContext<'/api/project
     );
 
     return apiData(rotated);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

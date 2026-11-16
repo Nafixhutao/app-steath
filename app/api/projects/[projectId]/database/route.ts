@@ -1,4 +1,4 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError, apiData, apiError, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import {
   createProjectDatabase,
@@ -11,9 +11,11 @@ import { requireOrganizationRole } from "@/lib/platform/organization-management"
  * Reads a Project's Database, its health, and its usage. Every role may see the
  * state; only owners and admins receive the private connection string.
  */
-export async function GET(request: Request, context: RouteContext<'/api/projects/[projectId]/database'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+export async function GET(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/database">,
+) {
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     const { projectId } = await context.params;
     return apiData(
       await getProjectDatabase({
@@ -22,16 +24,17 @@ export async function GET(request: Request, context: RouteContext<'/api/projects
         includeConnectionString: actor.role !== "member",
       }),
     );
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 /**
  * Provisions the Project's one PostgreSQL Database. Owners and admins manage
  * configuration; the Node Agent starts the container on the Project network.
  */
-export async function POST(request: Request, context: RouteContext<'/api/projects/[projectId]/database'>) {
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/database">,
+) {
   let input: { storageLimitMb?: unknown };
   try {
     input = (await request.json().catch(() => ({}))) as { storageLimitMb?: unknown };
@@ -67,7 +70,10 @@ export async function POST(request: Request, context: RouteContext<'/api/project
  * The agent removes the container and Volume, then the Project's Services are
  * marked as needing a redeploy so `DATABASE_URL` is dropped from them.
  */
-export async function DELETE(request: Request, context: RouteContext<'/api/projects/[projectId]/database'>) {
+export async function DELETE(
+  request: Request,
+  context: RouteContext<"/api/projects/[projectId]/database">,
+) {
   let input: { confirmation?: unknown };
   try {
     input = (await request.json()) as { confirmation?: unknown };

@@ -1,7 +1,6 @@
-import { apiError } from "@/lib/platform/api";
+import { withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { revealEnvironmentVariable } from "@/lib/platform/environment-variables";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
 /**
  * Reveals one Environment Variable's value. This is the explicit request the
@@ -9,9 +8,11 @@ import { requireOrganizationRole } from "@/lib/platform/organization-management"
  * never cached) and it answers no-store. Only owners and admins may reveal.
  * The AuditEvent records that the value was read, but not the value itself.
  */
-export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/environment-variables/[variableId]/reveal'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/environment-variables/[variableId]/reveal">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { serviceId, variableId } = await context.params;
     const revealed = await revealEnvironmentVariable({
       organizationId: actor.organizationId,
@@ -31,7 +32,5 @@ export async function POST(request: Request, context: RouteContext<'/api/service
       status: 200,
       headers: { "content-type": "application/json", "cache-control": "no-store" },
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

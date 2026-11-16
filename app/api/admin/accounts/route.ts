@@ -58,12 +58,8 @@ export async function GET(request: Request) {
         providers: row.providers ?? [],
         ...(row.avatar_url ? { avatar_url: row.avatar_url } : {}),
         ...(row.display_name ? { display_name: row.display_name } : {}),
-        ...(row.last_sign_in_at
-          ? { last_sign_in_at: row.last_sign_in_at.toISOString() }
-          : {}),
-        ...(row.last_sign_in_method
-          ? { last_sign_in_method: row.last_sign_in_method }
-          : {}),
+        ...(row.last_sign_in_at ? { last_sign_in_at: row.last_sign_in_at.toISOString() } : {}),
+        ...(row.last_sign_in_method ? { last_sign_in_method: row.last_sign_in_method } : {}),
       })),
     });
   } catch (error) {

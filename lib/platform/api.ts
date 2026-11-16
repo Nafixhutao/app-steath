@@ -1,5 +1,8 @@
 import { ApiError } from "@/lib/platform/api-error";
-import { OrganizationAccessError, type ActiveOrganizationContext } from "@/lib/platform/organization";
+import {
+  OrganizationAccessError,
+  type ActiveOrganizationContext,
+} from "@/lib/platform/organization";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { requirePlatformAdmin, type PlatformAdminContext } from "@/lib/platform/platform-admin";
 
@@ -69,11 +72,7 @@ type OrgHandler = (actor: ActiveOrganizationContext) => Promise<Response>;
  * then hands the actor to the handler. A failure anywhere — authentication,
  * role, handler — is answered by the shared envelope.
  */
-export function withOrg(
-  request: Request,
-  roles: string[],
-  handler: OrgHandler,
-): Promise<Response> {
+export function withOrg(request: Request, roles: string[], handler: OrgHandler): Promise<Response> {
   return withErrors(async () => {
     const actor = await requireOrganizationRole(request.headers, roles);
     return handler(actor);

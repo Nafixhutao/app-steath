@@ -1,5 +1,4 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
+import { ApiError, apiData, withOrg } from "@/lib/platform/api";
 import { createRestore } from "@/lib/platform/restores";
 
 /**
@@ -7,9 +6,11 @@ import { createRestore } from "@/lib/platform/restores";
  * may restore: it stops the affected Services, so it is a configuration change
  * rather than a read. The body must carry the typed confirmation.
  */
-export async function POST(request: Request, context: RouteContext<'/api/backups/[backupId]/restore'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/backups/[backupId]/restore">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { backupId } = await context.params;
 
     const body = (await request.json().catch(() => ({}))) as {
@@ -31,7 +32,5 @@ export async function POST(request: Request, context: RouteContext<'/api/backups
     });
 
     return apiData(restore, 202);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

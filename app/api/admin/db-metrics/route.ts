@@ -65,12 +65,8 @@ export async function GET(request: Request) {
     const current = history[history.length - 1];
     const reachable = current !== undefined;
 
-    const versionResult = await pool.query<{ version: string }>(
-      "SELECT version() AS version",
-    );
-    const serverVersion = reachable
-      ? (versionResult.rows[0]?.version ?? "")
-      : "";
+    const versionResult = await pool.query<{ version: string }>("SELECT version() AS version");
+    const serverVersion = reachable ? (versionResult.rows[0]?.version ?? "") : "";
 
     return apiData({
       current: current ?? null,

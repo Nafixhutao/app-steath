@@ -1,7 +1,6 @@
-import { apiData, apiError } from "@/lib/platform/api";
+import { apiData, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { redeployDeployment } from "@/lib/platform/deployments";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
 /**
  * Redeploys an existing Deployment: a new Deployment is created that rebuilds the
@@ -9,9 +8,11 @@ import { requireOrganizationRole } from "@/lib/platform/organization-management"
  * is misbehaving. Members may trigger a fresh Deployment, but only `owner` and
  * `admin` may redeploy a specific past commit.
  */
-export async function POST(request: Request, context: RouteContext<'/api/deployments/[deploymentId]/redeploy'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/deployments/[deploymentId]/redeploy">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { deploymentId } = await context.params;
 
     const redeployed = await redeployDeployment({
@@ -27,7 +28,5 @@ export async function POST(request: Request, context: RouteContext<'/api/deploym
     });
 
     return apiData(redeployed.deployment, 201);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

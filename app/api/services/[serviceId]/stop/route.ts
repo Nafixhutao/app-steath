@@ -1,16 +1,17 @@
-import { apiData, apiError } from "@/lib/platform/api";
+import { apiData, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { getService } from "@/lib/platform/services";
 import { stopService } from "@/lib/platform/runtime";
-import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
 /**
  * Stops a Service. The container is kept so its writable state survives, and the
  * Platform Subdomain stops answering until the Service is started again.
  */
-export async function POST(request: Request, context: RouteContext<'/api/services/[serviceId]/stop'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin"]);
+export async function POST(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/stop">,
+) {
+  return withOrg(request, ["owner", "admin"], async (actor) => {
     const { serviceId } = await context.params;
     const service = await getService(actor.organizationId, serviceId);
 
@@ -24,7 +25,5 @@ export async function POST(request: Request, context: RouteContext<'/api/service
     });
 
     return apiData(state);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

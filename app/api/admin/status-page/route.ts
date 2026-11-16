@@ -27,8 +27,7 @@ export async function GET(request: Request) {
 
     const node = healthResult.rows[0];
     const nodeStale =
-      !node?.node_last_seen ||
-      Date.now() - new Date(node.node_last_seen).getTime() > 120_000;
+      !node?.node_last_seen || Date.now() - new Date(node.node_last_seen).getTime() > 120_000;
 
     const incidentResult = await pool.query<{
       title: string;
@@ -41,8 +40,7 @@ export async function GET(request: Request) {
       LIMIT 20
     `);
 
-    const agentHealthy =
-      node?.node_status === "healthy" && !nodeStale;
+    const agentHealthy = node?.node_status === "healthy" && !nodeStale;
 
     const components = [
       { name: "API", status: "operational" },
@@ -58,8 +56,7 @@ export async function GET(request: Request) {
 
     return apiData({
       name: "Stealth PaaS",
-      description:
-        "Live service health for the Stealth platform control plane.",
+      description: "Live service health for the Stealth platform control plane.",
       is_public: false,
       updated_at: new Date().toISOString(),
       components,

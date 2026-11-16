@@ -12,7 +12,10 @@ const MAX_TAIL = 1000;
  * container, so new lines arrive as the application writes them. Members may read
  * logs, which the spec allows even though they cannot change the Service.
  */
-export async function GET(request: Request, context: RouteContext<'/api/services/[serviceId]/logs'>) {
+export async function GET(
+  request: Request,
+  context: RouteContext<"/api/services/[serviceId]/logs">,
+) {
   let actor: Awaited<ReturnType<typeof requireOrganizationRole>>;
   let serviceId: string;
 
@@ -45,9 +48,15 @@ export async function GET(request: Request, context: RouteContext<'/api/services
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        await streamServiceLogs(client, serviceId, tail, (event) => {
-          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
-        }, request.signal);
+        await streamServiceLogs(
+          client,
+          serviceId,
+          tail,
+          (event) => {
+            controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+          },
+          request.signal,
+        );
       } catch (error) {
         // The reader is usually gone by now (the user navigated away), so the
         // error is only logged rather than thrown into a closed stream.

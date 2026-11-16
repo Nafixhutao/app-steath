@@ -1,19 +1,16 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
+import { ApiError, apiData, apiError, withOrg } from "@/lib/platform/api";
 import { recordAudit } from "@/lib/platform/audit";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 import { deleteProject, getProject, updateProject } from "@/lib/platform/projects";
 
-export async function GET(request: Request, context: RouteContext<'/api/projects/[projectId]'>) {
-  try {
-    const actor = await requireOrganizationRole(request.headers, ["owner", "admin", "member"]);
+export async function GET(request: Request, context: RouteContext<"/api/projects/[projectId]">) {
+  return withOrg(request, ["owner", "admin", "member"], async (actor) => {
     const { projectId } = await context.params;
     return apiData(await getProject(actor.organizationId, projectId));
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
-export async function PATCH(request: Request, context: RouteContext<'/api/projects/[projectId]'>) {
+export async function PATCH(request: Request, context: RouteContext<"/api/projects/[projectId]">) {
   let input: { name?: unknown; slug?: unknown };
   try {
     input = (await request.json()) as { name?: unknown; slug?: unknown };
@@ -43,7 +40,7 @@ export async function PATCH(request: Request, context: RouteContext<'/api/projec
   }
 }
 
-export async function DELETE(request: Request, context: RouteContext<'/api/projects/[projectId]'>) {
+export async function DELETE(request: Request, context: RouteContext<"/api/projects/[projectId]">) {
   let input: { confirmation?: unknown };
   try {
     input = (await request.json()) as { confirmation?: unknown };
