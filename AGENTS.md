@@ -21,3 +21,7 @@ Five default triage roles: `needs-triage`, `needs-info`, `ready-for-agent`, `rea
 ### Domain docs
 
 Single-context: `GLOSSARY.md` at the repo root and ADRs under `docs/adr/`. See `docs/agents/domain.md`.
+
+## Pull Request
+
+Setiap kali saya meminta membuat, menulis, atau memperbarui PR (termasuk deskripsi/body PR), WAJIB gunakan skill `pr`. Ikuti template-nya: Summary, Evidence (before/after), dan Merge Danger (Door + Blast Radius). Jangan menulis body PR dengan format lain.

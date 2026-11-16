@@ -130,10 +130,10 @@
     },
     "pr": {
       "source": "mattpocock/skills",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
       "sourceType": "github",
       "skillPath": "skills/engineering/pr/SKILL.md",
-      "computedHash": "",
-      "installMode": "copy"
+      "computedHash": "a66195583d0f9323004cdd4da169f93449071f29023671f3e31a916e740f6861"
     },
     "prototype": {
       "source": "mattpocock/skills",
