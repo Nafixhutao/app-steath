@@ -1,7 +1,5 @@
 import { apiData, withOrg } from "@/lib/platform/api";
-import { recordAudit } from "@/lib/platform/audit";
-import { getService } from "@/lib/platform/services";
-import { stopService } from "@/lib/platform/runtime";
+import { requestServiceLifecycle } from "@/lib/platform/runtime";
 
 /**
  * Stops a Service. The container is kept so its writable state survives, and the
@@ -13,15 +11,11 @@ export async function POST(
 ) {
   return withOrg(request, ["owner", "admin"], async (actor) => {
     const { serviceId } = await context.params;
-    const service = await getService(actor.organizationId, serviceId);
-
-    const state = await stopService(actor.organizationId, serviceId);
-
-    await recordAudit("service.stopped", actor.organizationId, actor.userId, undefined, {
-      projectId: service.projectId,
+    const state = await requestServiceLifecycle({
+      organizationId: actor.organizationId,
+      userId: actor.userId,
       serviceId,
-      name: service.name,
-      hostname: service.platformHostname,
+      action: "stop",
     });
 
     return apiData(state);

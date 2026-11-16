@@ -1,7 +1,5 @@
 import { apiData, withOrg } from "@/lib/platform/api";
-import { recordAudit } from "@/lib/platform/audit";
-import { getService } from "@/lib/platform/services";
-import { startService } from "@/lib/platform/runtime";
+import { requestServiceLifecycle } from "@/lib/platform/runtime";
 
 /**
  * Starts a stopped Service. The same container comes back, so any data it kept in
@@ -13,15 +11,11 @@ export async function POST(
 ) {
   return withOrg(request, ["owner", "admin"], async (actor) => {
     const { serviceId } = await context.params;
-    const service = await getService(actor.organizationId, serviceId);
-
-    const state = await startService(actor.organizationId, serviceId);
-
-    await recordAudit("service.started", actor.organizationId, actor.userId, undefined, {
-      projectId: service.projectId,
+    const state = await requestServiceLifecycle({
+      organizationId: actor.organizationId,
+      userId: actor.userId,
       serviceId,
-      name: service.name,
-      hostname: service.platformHostname,
+      action: "start",
     });
 
     return apiData(state);

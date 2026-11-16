@@ -4,6 +4,7 @@ import {
   type AgentServiceState,
 } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
+import { recordAudit } from "./audit.ts";
 import { markServiceRunning, markServiceStopped } from "./deployments.ts";
 import { nodeConfig } from "./nodes.ts";
 import { requireService } from "./ownership.ts";
@@ -108,6 +109,39 @@ export function stopService(
   options: { client?: AgentClient } = {},
 ): Promise<ServiceRuntimeState> {
   return runLifecycleAction(organizationId, serviceId, "stop", options);
+}
+
+/**
+ * Runs a lifecycle action as a user-driven request: the runtime action itself
+ * plus the AuditEvent that records who did it. The Service row is read once and
+ * reused for both the ownership check and the audit details, so the routes stay
+ * a thin shell and the audit cannot be forgotten. Platform-driven callers
+ * (Restore) use `stopService`/`startService` directly, which write no audit.
+ */
+export async function requestServiceLifecycle(input: {
+  organizationId: string;
+  userId: string;
+  serviceId: string;
+  action: "stop" | "start" | "restart";
+  options?: { client?: AgentClient };
+}): Promise<ServiceRuntimeState> {
+  const service = await requireService(input.organizationId, input.serviceId);
+  const state = await runLifecycleAction(
+    input.organizationId,
+    input.serviceId,
+    input.action,
+    input.options,
+  );
+
+  const action = input.action === "stop" ? "stopped" : input.action === "start" ? "started" : "restarted";
+  await recordAudit(`service.${action}`, input.organizationId, input.userId, undefined, {
+    projectId: service.projectId,
+    serviceId: input.serviceId,
+    name: service.name,
+    hostname: service.platformHostname,
+  });
+
+  return state;
 }
 
 /** Starts a previously stopped Service. */
