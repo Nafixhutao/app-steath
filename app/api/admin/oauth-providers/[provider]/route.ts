@@ -1,5 +1,4 @@
-import { ApiError, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { ApiError, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin one OAuth provider — mirrors stealth-forge's
@@ -9,9 +8,8 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 
 const VALID = new Set(["github", "google"]);
 
-export async function PUT(request: Request, context: { params: Promise<{ provider: string }> }) {
-  try {
-    await requirePlatformAdmin(request.headers);
+export async function PUT(request: Request, context: RouteContext<'/api/admin/oauth-providers/[provider]'>) {
+  return withAdmin(request, async () => {
     const { provider } = await context.params;
     if (!VALID.has(provider)) {
       throw new ApiError(422, "validation_error", "provider is invalid.");
@@ -21,14 +19,11 @@ export async function PUT(request: Request, context: { params: Promise<{ provide
       "not_configured",
       "Storing provider credentials is not configured on this instance yet.",
     );
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
-export async function DELETE(request: Request, context: { params: Promise<{ provider: string }> }) {
-  try {
-    await requirePlatformAdmin(request.headers);
+export async function DELETE(request: Request, context: RouteContext<'/api/admin/oauth-providers/[provider]'>) {
+  return withAdmin(request, async () => {
     const { provider } = await context.params;
     if (!VALID.has(provider)) {
       throw new ApiError(422, "validation_error", "provider is invalid.");
@@ -38,7 +33,5 @@ export async function DELETE(request: Request, context: { params: Promise<{ prov
       "not_configured",
       "Storing provider credentials is not configured on this instance yet.",
     );
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

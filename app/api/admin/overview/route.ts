@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin Overview — mirrors stealth-forge's `/v1/admin/overview` payload shape:
@@ -13,9 +12,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 const RECENT_DEPLOYMENTS_LIMIT = 8;
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const healthResult = await pool.query<{
       db_ok: boolean;
       node_id: string | null;
@@ -23,13 +20,13 @@ export async function GET(request: Request) {
       node_status: string | null;
       node_last_seen: Date | null;
     }>(`
-      SELECT
-        (SELECT to_regclass('public."user"') IS NOT NULL) AS db_ok,
-        n."id" AS node_id, n."name" AS node_name,
-        n."status" AS node_status, n."lastSeenAt" AS node_last_seen
-      FROM (SELECT 1) one
-      LEFT JOIN "node" n ON n."id" = (SELECT "id" FROM "node" ORDER BY "createdAt" LIMIT 1)
-    `);
+  SELECT
+    (SELECT to_regclass('public."user"') IS NOT NULL) AS db_ok,
+    n."id" AS node_id, n."name" AS node_name,
+    n."status" AS node_status, n."lastSeenAt" AS node_last_seen
+  FROM (SELECT 1) one
+  LEFT JOIN "node" n ON n."id" = (SELECT "id" FROM "node" ORDER BY "createdAt" LIMIT 1)
+`);
 
     const health = healthResult.rows[0];
     const nodeStale =
@@ -65,16 +62,16 @@ export async function GET(request: Request) {
         failed_jobs: number;
       };
     }>(`
-      SELECT jsonb_build_object(
-        'active_deployments', (
-          SELECT count(*) FROM "deployment" d
-          WHERE d."status" IN ('queued', 'building', 'deploying')
-        ),
-        'queued_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'queued'),
-        'running_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'running'),
-        'failed_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'failed')
-      ) AS counts
-    `);
+  SELECT jsonb_build_object(
+    'active_deployments', (
+      SELECT count(*) FROM "deployment" d
+      WHERE d."status" IN ('queued', 'building', 'deploying')
+    ),
+    'queued_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'queued'),
+    'running_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'running'),
+    'failed_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'failed')
+  ) AS counts
+`);
 
     const deploymentsResult = await pool.query<{
       id: string;
@@ -84,17 +81,17 @@ export async function GET(request: Request) {
       build_status: string;
       created_at: Date;
     }>(`
-      SELECT d."id",
-             s."name" AS app_name,
-             (row_number() OVER (PARTITION BY d."serviceId" ORDER BY d."createdAt"))::int AS version,
-             d."status",
-             CASE WHEN d."imageRef" IS NOT NULL THEN 'succeeded' ELSE 'pending' END AS build_status,
-             d."createdAt" AS created_at
-      FROM "deployment" d
-      JOIN "service" s ON s."id" = d."serviceId"
-      ORDER BY d."createdAt" DESC
-      LIMIT ${RECENT_DEPLOYMENTS_LIMIT}
-    `);
+  SELECT d."id",
+         s."name" AS app_name,
+         (row_number() OVER (PARTITION BY d."serviceId" ORDER BY d."createdAt"))::int AS version,
+         d."status",
+         CASE WHEN d."imageRef" IS NOT NULL THEN 'succeeded' ELSE 'pending' END AS build_status,
+         d."createdAt" AS created_at
+  FROM "deployment" d
+  JOIN "service" s ON s."id" = d."serviceId"
+  ORDER BY d."createdAt" DESC
+  LIMIT ${RECENT_DEPLOYMENTS_LIMIT}
+`);
 
     return apiData({
       instance_status: components.every((c) => c.status === "healthy") ? "healthy" : "degraded",
@@ -111,7 +108,5 @@ export async function GET(request: Request) {
         created_at: row.created_at.toISOString(),
       })),
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin host metrics — mirrors stealth-forge's `/v1/admin/host-metrics`: one
@@ -28,9 +27,7 @@ function mibToBytes(value: string | number): number {
 }
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const url = new URL(request.url);
     const rawWindow = url.searchParams.get("window_minutes");
     let windowMinutes = CURRENT_WINDOW_MINUTES;
@@ -44,15 +41,15 @@ export async function GET(request: Request) {
 
     const result = await pool.query<SampleRow>(
       `SELECT m."capturedAt" AS "timestamp",
-              m."cpuPercent"::float8 AS "cpu_percent",
-              m."memoryUsedMb" AS "memory_used",
-              m."memoryTotalMb" AS "memory_total",
-              m."storageUsedMb" AS "disk_used",
-              m."storageTotalMb" AS "disk_total"
-       FROM "node_host_metric" m
-       WHERE m."nodeId" = (SELECT "id" FROM "node" ORDER BY "createdAt" LIMIT 1)
-         AND m."capturedAt" >= now() - ($1 || ' minutes')::interval
-       ORDER BY m."capturedAt" ASC`,
+          m."cpuPercent"::float8 AS "cpu_percent",
+          m."memoryUsedMb" AS "memory_used",
+          m."memoryTotalMb" AS "memory_total",
+          m."storageUsedMb" AS "disk_used",
+          m."storageTotalMb" AS "disk_total"
+   FROM "node_host_metric" m
+   WHERE m."nodeId" = (SELECT "id" FROM "node" ORDER BY "createdAt" LIMIT 1)
+     AND m."capturedAt" >= now() - ($1 || ' minutes')::interval
+   ORDER BY m."capturedAt" ASC`,
       [String(windowMinutes)],
     );
 
@@ -73,7 +70,5 @@ export async function GET(request: Request) {
       current: history[history.length - 1] ?? null,
       history,
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

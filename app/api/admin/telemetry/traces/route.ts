@@ -1,5 +1,4 @@
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin trace spans — mirrors stealth-forge's `/v1/admin/telemetry/traces`.
@@ -8,10 +7,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
  * When a collector is added, this endpoint answers from it in the same shape.
  */
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
+  return withAdmin(request, async () => {
     return apiData({ items: [] });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

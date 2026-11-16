@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin status page — mirrors stealth-forge's `/v1/admin/status-page`. The
@@ -12,18 +11,16 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
  */
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const healthResult = await pool.query<{
       node_status: string | null;
       node_last_seen: Date | null;
     }>(`
-      SELECT n."status" AS "node_status", n."lastSeenAt" AS "node_last_seen"
-      FROM "node" n
-      ORDER BY n."createdAt"
-      LIMIT 1
-    `);
+  SELECT n."status" AS "node_status", n."lastSeenAt" AS "node_last_seen"
+  FROM "node" n
+  ORDER BY n."createdAt"
+  LIMIT 1
+`);
 
     const node = healthResult.rows[0];
     const nodeStale =
@@ -33,12 +30,12 @@ export async function GET(request: Request) {
       title: string;
       started_at: Date;
     }>(`
-      SELECT "title", "startedAt" AS "started_at"
-      FROM "admin_incident"
-      WHERE "status" <> 'resolved'
-      ORDER BY "startedAt" DESC
-      LIMIT 20
-    `);
+  SELECT "title", "startedAt" AS "started_at"
+  FROM "admin_incident"
+  WHERE "status" <> 'resolved'
+  ORDER BY "startedAt" DESC
+  LIMIT 20
+`);
 
     const agentHealthy = node?.node_status === "healthy" && !nodeStale;
 
@@ -64,7 +61,5 @@ export async function GET(request: Request) {
       // lists the currently active ones, which is the honest instance state.
       published_incidents: incidentResult.rows.map((row) => row.title),
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

@@ -1,5 +1,4 @@
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 import { listFindings } from "@/lib/platform/scans";
 
 /**
@@ -8,14 +7,10 @@ import { listFindings } from "@/lib/platform/scans";
  * values and Database passwords are never part of the query.
  */
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const url = new URL(request.url);
     const urgentOnly = url.searchParams.get("urgent") === "true";
 
     return apiData(await listFindings({ urgentOnly }));
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

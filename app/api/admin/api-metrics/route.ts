@@ -1,5 +1,4 @@
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin API metrics — mirrors stealth-forge's `/v1/admin/api-metrics`. Forge
@@ -12,9 +11,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 const startedAt = Date.now();
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const memory = process.memoryUsage();
 
     return apiData({
@@ -33,7 +30,5 @@ export async function GET(request: Request) {
       go_version: `Node ${process.version}`,
       process_uptime_seconds: (Date.now() - startedAt) / 1000,
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

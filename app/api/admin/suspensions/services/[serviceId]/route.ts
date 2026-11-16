@@ -1,5 +1,4 @@
-import { apiData, apiError, ApiError, readJson } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, ApiError, readJson, withAdmin } from "@/lib/platform/api";
 import { recordPlatformAudit } from "@/lib/platform/audit";
 import { suspendService, unsuspendService } from "@/lib/platform/suspensions";
 
@@ -7,8 +6,7 @@ export async function POST(
   request: Request,
   context: RouteContext<"/api/admin/suspensions/services/[serviceId]">,
 ) {
-  try {
-    const actor = await requirePlatformAdmin(request.headers);
+  return withAdmin(request, async (actor) => {
     const { action } = await readJson<{ action?: unknown }>(request);
     if (action !== "suspend" && action !== "unsuspend")
       throw new ApiError(400, "invalid_action", "Action must be suspend or unsuspend.");
@@ -17,7 +15,5 @@ export async function POST(
     else await unsuspendService(serviceId);
     await recordPlatformAudit(`platform.service.${action}ed`, actor.userId, { serviceId });
     return apiData({ serviceId, action });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

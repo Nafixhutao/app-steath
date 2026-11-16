@@ -1,5 +1,4 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { ApiError, apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin error group status — mirrors stealth-forge's
@@ -8,9 +7,8 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
  * status on yet; the endpoint validates and acknowledges the transition, and
  * the UI keeps its optimistic value until a store exists.
  */
-export async function PUT(request: Request, context: { params: Promise<{ fingerprint: string }> }) {
-  try {
-    await requirePlatformAdmin(request.headers);
+export async function PUT(request: Request, context: RouteContext<'/api/admin/telemetry/errors/[fingerprint]/status'>) {
+  return withAdmin(request, async () => {
     const { fingerprint } = await context.params;
     if (!fingerprint) {
       throw new ApiError(422, "validation_error", "fingerprint is required.");
@@ -23,7 +21,5 @@ export async function PUT(request: Request, context: { params: Promise<{ fingerp
       throw new ApiError(422, "validation_error", "status is invalid.");
     }
     return apiData({ group: { fingerprint, status: body.status } });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

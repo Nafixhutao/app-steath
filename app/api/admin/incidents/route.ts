@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { pool } from "@/lib/platform/db";
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { ApiError, apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin incidents — mirrors stealth-forge's `/v1/admin/incidents` board: the
@@ -45,9 +44,7 @@ const VALID_EVENT_KINDS = new Set([
 ]);
 
 export async function GET(request: Request) {
-  try {
-    const admin = await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async (admin) => {
     const url = new URL(request.url);
     const rawLimit = url.searchParams.get("limit");
     let limit = 100;
@@ -111,14 +108,11 @@ export async function GET(request: Request) {
         admin_email: admin.email,
       })),
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 export async function POST(request: Request) {
-  try {
-    const admin = await requirePlatformAdmin(request.headers);
+  return withAdmin(request, async (admin) => {
     const body = (await request.json().catch(() => null)) as {
       title?: string;
       severity?: string;
@@ -172,14 +166,11 @@ export async function POST(request: Request) {
     }
 
     return apiData({ incident: { id: incidentId } }, 201);
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 export async function PUT(request: Request) {
-  try {
-    const admin = await requirePlatformAdmin(request.headers);
+  return withAdmin(request, async (admin) => {
     const body = (await request.json().catch(() => null)) as {
       incident_id?: string;
       status?: string;
@@ -224,7 +215,5 @@ export async function PUT(request: Request) {
     }
 
     return apiData({ incident: { id: body.incident_id } });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

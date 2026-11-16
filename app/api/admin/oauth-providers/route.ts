@@ -1,5 +1,4 @@
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { ApiError, apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin OAuth providers — mirrors stealth-forge's `/v1/admin/oauth-providers`.
@@ -28,9 +27,7 @@ function callbackUrl(provider: ProviderName): string {
 }
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     return apiData({
       providers: PROVIDERS.map((provider) => ({
         provider,
@@ -39,14 +36,11 @@ export async function GET(request: Request) {
         source: providerSource(provider),
       })),
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 export async function PUT(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
+  return withAdmin(request, async () => {
     // No credential store yet: the transition is validated and acknowledged,
     // and the panel keeps reporting the environment source until one exists.
     throw new ApiError(
@@ -54,20 +48,15 @@ export async function PUT(request: Request) {
       "not_configured",
       "Storing provider credentials is not configured on this instance yet.",
     );
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
 
 export async function DELETE(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
+  return withAdmin(request, async () => {
     throw new ApiError(
       503,
       "not_configured",
       "Storing provider credentials is not configured on this instance yet.",
     );
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

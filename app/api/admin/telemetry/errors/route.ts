@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin error groups — mirrors stealth-forge's `/v1/admin/telemetry/errors`.
@@ -37,9 +36,7 @@ function errorTypeOf(message: string): string {
 }
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const url = new URL(request.url);
     // The Forge client sends an explicit from/to window; fall back to the
     // range label when only that is present.
@@ -56,38 +53,38 @@ export async function GET(request: Request) {
 
     const result = await pool.query<FailureRow>(
       `
-      SELECT * FROM (
-        SELECT
-          'deployment' AS kind,
-          d."id",
-          COALESCE(d."errorMessage", 'Deployment failed') AS message,
-          min(d."startedAt") AS "first_seen",
-          max(d."finishedAt") AS "last_seen",
-          count(*)::int AS "occurrence_count"
-        FROM "deployment" d
-        WHERE d."status" = 'failed'
-          AND d."errorMessage" IS NOT NULL
-          AND d."createdAt" >= ${from ? `$1::timestamptz` : "now() - ($1 || ' hours')::interval"}
-          ${to ? `AND d."createdAt" <= $2::timestamptz` : ""}
-        GROUP BY COALESCE(d."errorMessage", 'Deployment failed')
-        UNION ALL
-        SELECT
-          'job' AS kind,
-          j."type" AS "id",
-          COALESCE(j."lastError", 'Job failed') AS message,
-          min(j."createdAt") AS "first_seen",
-          max(j."updatedAt") AS "last_seen",
-          count(*)::int AS "occurrence_count"
-        FROM "job" j
-        WHERE j."status" = 'failed'
-          AND j."lastError" IS NOT NULL
-          AND j."createdAt" >= ${from ? `$1::timestamptz` : "now() - ($1 || ' hours')::interval"}
-          ${to ? `AND j."createdAt" <= $2::timestamptz` : ""}
-        GROUP BY j."type", COALESCE(j."lastError", 'Job failed')
-      ) failures
-      ORDER BY "last_seen" DESC
-      LIMIT 250
-    `,
+  SELECT * FROM (
+    SELECT
+      'deployment' AS kind,
+      d."id",
+      COALESCE(d."errorMessage", 'Deployment failed') AS message,
+      min(d."startedAt") AS "first_seen",
+      max(d."finishedAt") AS "last_seen",
+      count(*)::int AS "occurrence_count"
+    FROM "deployment" d
+    WHERE d."status" = 'failed'
+      AND d."errorMessage" IS NOT NULL
+      AND d."createdAt" >= ${from ? `$1::timestamptz` : "now() - ($1 || ' hours')::interval"}
+      ${to ? `AND d."createdAt" <= $2::timestamptz` : ""}
+    GROUP BY COALESCE(d."errorMessage", 'Deployment failed')
+    UNION ALL
+    SELECT
+      'job' AS kind,
+      j."type" AS "id",
+      COALESCE(j."lastError", 'Job failed') AS message,
+      min(j."createdAt") AS "first_seen",
+      max(j."updatedAt") AS "last_seen",
+      count(*)::int AS "occurrence_count"
+    FROM "job" j
+    WHERE j."status" = 'failed'
+      AND j."lastError" IS NOT NULL
+      AND j."createdAt" >= ${from ? `$1::timestamptz` : "now() - ($1 || ' hours')::interval"}
+      ${to ? `AND j."createdAt" <= $2::timestamptz` : ""}
+    GROUP BY j."type", COALESCE(j."lastError", 'Job failed')
+  ) failures
+  ORDER BY "last_seen" DESC
+  LIMIT 250
+`,
       to ? [from, to] : [from ?? String(hours)],
     );
 
@@ -128,7 +125,5 @@ export async function GET(request: Request) {
     }
 
     return apiData({ items: [...groups.values()] });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

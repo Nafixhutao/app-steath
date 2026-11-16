@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin operations — mirrors stealth-forge's `/v1/admin/operations`: a bounded
@@ -18,9 +17,7 @@ const RANGES: Record<string, number> = {
 };
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const url = new URL(request.url);
     // The Forge client sends an explicit from/to window; the range label is
     // the fallback when only that is present.
@@ -53,64 +50,64 @@ export async function GET(request: Request) {
       created_at: Date;
     }>(
       `
-      SELECT * FROM (
-        SELECT
-          d."id",
-          'app_deployment' AS kind,
-          'deploy ' || s."name" AS name,
-          p."id" AS project_id,
-          p."name" AS project_name,
-          d."status",
-          d."startedAt" AS started_at,
-          d."finishedAt" AS finished_at,
-          GREATEST(
-            0,
-            (EXTRACT(EPOCH FROM (COALESCE(d."finishedAt", now()) - d."startedAt")) * 1000)::bigint
-          ) AS duration_ms,
-          d."errorMessage" AS error,
-          d."createdAt" AS created_at
-        FROM "deployment" d
-        JOIN "service" s ON s."id" = d."serviceId"
-        JOIN "project" p ON p."id" = s."projectId"
-        WHERE d."createdAt" >= ${from ? "$1::timestamptz" : "now() - ($1 || ' minutes')::interval"}
-          ${to ? `AND d."createdAt" <= $2::timestamptz` : ""}
-        UNION ALL
-        SELECT
-          j."id",
-          j."type" AS kind,
-          j."type" || ' ' || COALESCE(
-            j."payload"->>'deploymentId',
-            j."payload"->>'backupId',
-            j."payload"->>'restoreId',
-            j."id"
-          ) AS name,
-          NULL::text AS project_id,
-          NULL::text AS project_name,
-          j."status",
-          j."lockedAt" AS started_at,
+  SELECT * FROM (
+    SELECT
+      d."id",
+      'app_deployment' AS kind,
+      'deploy ' || s."name" AS name,
+      p."id" AS project_id,
+      p."name" AS project_name,
+      d."status",
+      d."startedAt" AS started_at,
+      d."finishedAt" AS finished_at,
+      GREATEST(
+        0,
+        (EXTRACT(EPOCH FROM (COALESCE(d."finishedAt", now()) - d."startedAt")) * 1000)::bigint
+      ) AS duration_ms,
+      d."errorMessage" AS error,
+      d."createdAt" AS created_at
+    FROM "deployment" d
+    JOIN "service" s ON s."id" = d."serviceId"
+    JOIN "project" p ON p."id" = s."projectId"
+    WHERE d."createdAt" >= ${from ? "$1::timestamptz" : "now() - ($1 || ' minutes')::interval"}
+      ${to ? `AND d."createdAt" <= $2::timestamptz` : ""}
+    UNION ALL
+    SELECT
+      j."id",
+      j."type" AS kind,
+      j."type" || ' ' || COALESCE(
+        j."payload"->>'deploymentId',
+        j."payload"->>'backupId',
+        j."payload"->>'restoreId',
+        j."id"
+      ) AS name,
+      NULL::text AS project_id,
+      NULL::text AS project_name,
+      j."status",
+      j."lockedAt" AS started_at,
+      CASE
+        WHEN j."status" IN ('succeeded', 'failed', 'cancelled')
+          THEN j."updatedAt"
+      END AS finished_at,
+      GREATEST(
+        0,
+        (EXTRACT(EPOCH FROM (
           CASE
             WHEN j."status" IN ('succeeded', 'failed', 'cancelled')
-              THEN j."updatedAt"
-          END AS finished_at,
-          GREATEST(
-            0,
-            (EXTRACT(EPOCH FROM (
-              CASE
-                WHEN j."status" IN ('succeeded', 'failed', 'cancelled')
-                  THEN j."updatedAt" - COALESCE(j."lockedAt", j."createdAt")
-                ELSE now() - COALESCE(j."lockedAt", j."createdAt")
-              END
-            )) * 1000)::bigint
-          ) AS duration_ms,
-          j."lastError" AS error,
-          j."createdAt" AS created_at
-        FROM "job" j
-        WHERE j."createdAt" >= ${from ? "$1::timestamptz" : "now() - ($1 || ' minutes')::interval"}
-          ${to ? `AND j."createdAt" <= $2::timestamptz` : ""}
-      ) operations
-      ORDER BY "created_at" DESC
-      LIMIT ${limit}
-    `,
+              THEN j."updatedAt" - COALESCE(j."lockedAt", j."createdAt")
+            ELSE now() - COALESCE(j."lockedAt", j."createdAt")
+          END
+        )) * 1000)::bigint
+      ) AS duration_ms,
+      j."lastError" AS error,
+      j."createdAt" AS created_at
+    FROM "job" j
+    WHERE j."createdAt" >= ${from ? "$1::timestamptz" : "now() - ($1 || ' minutes')::interval"}
+      ${to ? `AND j."createdAt" <= $2::timestamptz` : ""}
+  ) operations
+  ORDER BY "created_at" DESC
+  LIMIT ${limit}
+`,
       to ? [from, to] : [from ?? String(windowMinutes)],
     );
 
@@ -129,7 +126,5 @@ export async function GET(request: Request) {
         created_at: row.created_at.toISOString(),
       })),
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

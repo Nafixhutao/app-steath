@@ -1,5 +1,4 @@
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin agent catalog — mirrors stealth-forge's `/v1/admin/agent-catalog`.
@@ -8,8 +7,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
  * page renders.
  */
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
+  return withAdmin(request, async () => {
     return apiData({
       providers: [],
       roles: [],
@@ -21,7 +19,5 @@ export async function GET(request: Request) {
           "Agent execution is not configured on this instance. No agent providers are available.",
       },
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

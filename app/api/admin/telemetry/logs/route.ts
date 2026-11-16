@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin log tail — mirrors stealth-forge's `/v1/admin/telemetry/logs`. Forge
@@ -27,9 +26,7 @@ function normalizeLogLevel(message: string): string {
 }
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const url = new URL(request.url);
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
@@ -64,10 +61,10 @@ export async function GET(request: Request) {
 
     const result = await pool.query<BuildLogRow>(
       `SELECT "createdAt" AS "timestamp", "message"
-       FROM "build_log"
-       ${whereClause}
-       ORDER BY "createdAt" DESC
-       LIMIT ${limit}`,
+   FROM "build_log"
+   ${whereClause}
+   ORDER BY "createdAt" DESC
+   LIMIT ${limit}`,
       params,
     );
 
@@ -83,7 +80,5 @@ export async function GET(request: Request) {
       .filter((item) => (level ? LEVELS.has(level) && item.level === level : true));
 
     return apiData({ items });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

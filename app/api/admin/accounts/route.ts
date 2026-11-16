@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin account directory — mirrors stealth-forge's `/v1/admin/accounts`
@@ -9,9 +8,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
  * the ported Users table renders.
  */
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const result = await pool.query<{
       id: string;
       email: string;
@@ -23,28 +20,28 @@ export async function GET(request: Request) {
       last_sign_in_method: string | null;
       providers: string[];
     }>(`
-      SELECT u."id",
-             u."email",
-             u."emailVerified" AS "email_verified",
-             u."createdAt" AS "created_at",
-             u."image" AS "avatar_url",
-             u."name" AS "display_name",
-             (SELECT max(s."createdAt") FROM "session" s
-              WHERE s."userId" = u."id") AS "last_sign_in_at",
-             -- The newest account row is the provider the account last used.
-             (SELECT a."providerId" FROM "account" a
-              WHERE a."userId" = u."id"
-              ORDER BY a."createdAt" DESC LIMIT 1) AS "last_sign_in_method",
-             COALESCE((
-               SELECT jsonb_agg(DISTINCT a2."providerId")
-               FROM "account" a2
-               WHERE a2."userId" = u."id"
-                 AND a2."providerId" IN ('github', 'google')
-             ), '[]'::jsonb) AS providers
-      FROM "user" u
-      ORDER BY u."createdAt" DESC
-      LIMIT 500
-    `);
+  SELECT u."id",
+         u."email",
+         u."emailVerified" AS "email_verified",
+         u."createdAt" AS "created_at",
+         u."image" AS "avatar_url",
+         u."name" AS "display_name",
+         (SELECT max(s."createdAt") FROM "session" s
+          WHERE s."userId" = u."id") AS "last_sign_in_at",
+         -- The newest account row is the provider the account last used.
+         (SELECT a."providerId" FROM "account" a
+          WHERE a."userId" = u."id"
+          ORDER BY a."createdAt" DESC LIMIT 1) AS "last_sign_in_method",
+         COALESCE((
+           SELECT jsonb_agg(DISTINCT a2."providerId")
+           FROM "account" a2
+           WHERE a2."userId" = u."id"
+             AND a2."providerId" IN ('github', 'google')
+         ), '[]'::jsonb) AS providers
+  FROM "user" u
+  ORDER BY u."createdAt" DESC
+  LIMIT 500
+`);
 
     return apiData({
       items: result.rows.map((row) => ({
@@ -62,7 +59,5 @@ export async function GET(request: Request) {
         ...(row.last_sign_in_method ? { last_sign_in_method: row.last_sign_in_method } : {}),
       })),
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

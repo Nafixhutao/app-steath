@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { ApiError, apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { ApiError, apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin account plan — mirrors stealth-forge's
@@ -12,9 +11,8 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 
 const VALID_PLANS = new Set(["free", "go", "plus", "pro"]);
 
-export async function PUT(request: Request, context: { params: Promise<{ accountID: string }> }) {
-  try {
-    await requirePlatformAdmin(request.headers);
+export async function PUT(request: Request, context: RouteContext<'/api/admin/accounts/[accountID]/plan'>) {
+  return withAdmin(request, async () => {
     const { accountID } = await context.params;
     const body = (await request.json().catch(() => null)) as {
       plan?: string;
@@ -33,8 +31,8 @@ export async function PUT(request: Request, context: { params: Promise<{ account
       name: string | null;
     }>(
       `SELECT u."id", u."email", u."emailVerified", u."createdAt",
-              u."image", u."name"
-       FROM "user" u WHERE u."id" = $1`,
+          u."image", u."name"
+   FROM "user" u WHERE u."id" = $1`,
       [accountID],
     );
 
@@ -58,7 +56,5 @@ export async function PUT(request: Request, context: { params: Promise<{ account
         ...(account.name ? { display_name: account.name } : {}),
       },
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

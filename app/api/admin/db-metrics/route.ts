@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin DB metrics — mirrors stealth-forge's `/v1/admin/db-metrics`: one
@@ -29,9 +28,7 @@ type SampleRow = {
 };
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const url = new URL(request.url);
     const rawWindow = url.searchParams.get("window_minutes");
     let windowMinutes = CURRENT_WINDOW_MINUTES;
@@ -45,19 +42,19 @@ export async function GET(request: Request) {
 
     const historyResult = await pool.query<SampleRow>(
       `
-      SELECT "timestamp", "connections", "maxConnections" AS "max_connections",
-             "activeQueries" AS "active_queries",
-             "cacheHitRatioKnown" AS "cache_hit_ratio_known",
-             "cacheHitRatioPercent"::float8 AS "cache_hit_ratio_percent",
-             "transactionsPerSec"::float8 AS "transactions_per_sec",
-             "queryLatencyMs"::float8 AS "query_latency_ms",
-             "replicationStandbys" AS "replication_standbys",
-             "databaseSizeBytes"::float8 AS "database_size_bytes",
-             "uptimeSeconds"::float8 AS "uptime_seconds"
-      FROM "admin_db_metric"
-      WHERE "capturedAt" >= now() - ($1 || ' minutes')::interval
-      ORDER BY "capturedAt" ASC
-      `,
+  SELECT "timestamp", "connections", "maxConnections" AS "max_connections",
+         "activeQueries" AS "active_queries",
+         "cacheHitRatioKnown" AS "cache_hit_ratio_known",
+         "cacheHitRatioPercent"::float8 AS "cache_hit_ratio_percent",
+         "transactionsPerSec"::float8 AS "transactions_per_sec",
+         "queryLatencyMs"::float8 AS "query_latency_ms",
+         "replicationStandbys" AS "replication_standbys",
+         "databaseSizeBytes"::float8 AS "database_size_bytes",
+         "uptimeSeconds"::float8 AS "uptime_seconds"
+  FROM "admin_db_metric"
+  WHERE "capturedAt" >= now() - ($1 || ' minutes')::interval
+  ORDER BY "capturedAt" ASC
+  `,
       [String(windowMinutes)],
     );
 
@@ -74,7 +71,5 @@ export async function GET(request: Request) {
       server_version: serverVersion,
       reachable,
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }

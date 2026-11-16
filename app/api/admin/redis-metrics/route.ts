@@ -1,6 +1,5 @@
 import { pool } from "@/lib/platform/db";
-import { apiData, apiError } from "@/lib/platform/api";
-import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
+import { apiData, withAdmin } from "@/lib/platform/api";
 
 /**
  * Admin Redis metrics — mirrors stealth-forge's `/v1/admin/redis-metrics`.
@@ -13,9 +12,7 @@ import { requirePlatformAdmin } from "@/lib/platform/platform-admin";
 const MAX_WINDOW_MINUTES = 24 * 60;
 
 export async function GET(request: Request) {
-  try {
-    await requirePlatformAdmin(request.headers);
-
+  return withAdmin(request, async () => {
     const url = new URL(request.url);
     const rawWindow = url.searchParams.get("window_minutes");
     let windowMinutes = 5;
@@ -39,17 +36,17 @@ export async function GET(request: Request) {
 
     const historyResult = await pool.query(
       `
-      SELECT "timestamp", "connections", "maxClients" AS "max_clients",
-             "opsPerSec"::float8 AS "ops_per_sec",
-             "hitRateKnown" AS "hit_rate_known",
-             "hitRatePercent"::float8 AS "hit_rate_percent",
-             "memoryUsedBytes"::float8 AS "memory_used_bytes",
-             "memoryMaxBytes"::float8 AS "memory_max_bytes",
-             "keys", "uptimeSeconds"::float8 AS "uptime_seconds"
-      FROM "admin_redis_metric"
-      WHERE "capturedAt" >= now() - ($1 || ' minutes')::interval
-      ORDER BY "capturedAt" ASC
-      `,
+  SELECT "timestamp", "connections", "maxClients" AS "max_clients",
+         "opsPerSec"::float8 AS "ops_per_sec",
+         "hitRateKnown" AS "hit_rate_known",
+         "hitRatePercent"::float8 AS "hit_rate_percent",
+         "memoryUsedBytes"::float8 AS "memory_used_bytes",
+         "memoryMaxBytes"::float8 AS "memory_max_bytes",
+         "keys", "uptimeSeconds"::float8 AS "uptime_seconds"
+  FROM "admin_redis_metric"
+  WHERE "capturedAt" >= now() - ($1 || ' minutes')::interval
+  ORDER BY "capturedAt" ASC
+  `,
       [String(windowMinutes)],
     );
 
@@ -59,7 +56,5 @@ export async function GET(request: Request) {
       server_version: "",
       reachable: historyResult.rows.length > 0,
     });
-  } catch (error) {
-    return apiError(error);
-  }
+  });
 }
