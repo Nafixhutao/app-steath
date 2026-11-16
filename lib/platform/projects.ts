@@ -1,6 +1,7 @@
 import { pool } from "./db.ts";
 import { ApiError } from "./api-error.ts";
-import { QUOTAS, QuotaExceededError } from "@/lib/platform/quota";
+import { QuotaExceededError } from "@/lib/platform/quota";
+import { QUOTAS } from "@/lib/platform/quota-limits";
 import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
