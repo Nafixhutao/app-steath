@@ -1,4 +1,5 @@
 import { pool } from "./db";
+import { isRedisReachable } from "./redis";
 
 /**
  * Admin read projections. Half of the admin API used to embed its SQL in the
@@ -63,9 +64,7 @@ export async function getAdminOverview(): Promise<AdminOverviewPayload> {
   const components: ComponentStatus[] = [
     { name: "api", status: "healthy" },
     { name: "postgres", status: health.db_ok ? "healthy" : "unavailable" },
-    // Redis is not part of the production stack yet; the panel renders the
-    // honest unavailable state instead of inventing a status.
-    { name: "redis", status: "unavailable" },
+    { name: "redis", status: (await isRedisReachable()) ? "healthy" : "unavailable" },
     {
       name: "agent",
       status:
@@ -180,9 +179,7 @@ export async function getAdminStatusPage(): Promise<StatusPagePayload> {
     components: [
       { name: "API", status: "operational" },
       { name: "Database", status: "operational" },
-      // Redis is not part of the production stack yet; the status page keeps
-      // the honest unavailable state instead of claiming operational.
-      { name: "Cache", status: "unavailable" },
+      { name: "Cache", status: (await isRedisReachable()) ? "operational" : "unavailable" },
       {
         name: "Agents",
         status: agentHealthy ? "operational" : "unavailable",

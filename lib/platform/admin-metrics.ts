@@ -1,4 +1,5 @@
 import { pool } from "./db.ts";
+import { createRedisClient } from "./redis.ts";
 
 /**
  * Admin control-plane metric samples, ported from the stealth-forge admin
@@ -114,39 +115,27 @@ export async function pruneAdminMetrics(): Promise<number> {
 }
 
 /**
- * Samples Redis via INFO when REDIS_URL is configured. The production stack
- * has no Redis service yet, so this is a no-op that keeps the sampler loop
- * honest: the admin API answers reachable:false with empty history.
+ * Samples Redis via INFO when REDIS_URL is configured. Without it this is a
+ * no-op that keeps the sampler loop honest: the admin API answers
+ * reachable:false with empty history.
  */
 export async function recordAdminRedisMetrics(): Promise<void> {
   const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) return;
 
-  const Redis = (await import("ioredis")).default;
-  const client = new Redis(redisUrl, {
-    lazyConnect: true,
-    connectTimeout: 2_000,
-    maxRetriesPerRequest: 0,
-    retryStrategy: () => null,
-  });
+  const client = createRedisClient(redisUrl);
   try {
     await client.connect();
     const info = await client.info();
-    const stats = await info.split("\r\n").reduce<Map<string, string>>(
-      (map, line) => {
-        const separator = line.indexOf(":");
-        if (separator > 0) {
-          map.set(line.slice(0, separator), line.slice(separator + 1));
-        }
-        return map;
-      },
-      new Map(),
-    );
+    const stats = await info.split("\r\n").reduce<Map<string, string>>((map, line) => {
+      const separator = line.indexOf(":");
+      if (separator > 0) {
+        map.set(line.slice(0, separator), line.slice(separator + 1));
+      }
+      return map;
+    }, new Map());
 
-    const maxMemory = Number.parseInt(
-      stats.get("maxmemory") ?? "0",
-      10,
-    );
+    const maxMemory = Number.parseInt(stats.get("maxmemory") ?? "0", 10);
     const keyCount = await client.dbsize();
     await pool.query(
       `INSERT INTO "admin_redis_metric"
