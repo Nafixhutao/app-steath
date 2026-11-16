@@ -1,23 +1,6 @@
-import { Suspense } from "react";
-import { AbuseReportsGate } from "./gate";
+import { AbuseReportsPanel } from "./abuse-reports-panel";
 
-/**
- * The Platform Admin abuse reports console. The gate resolves the session on
- * the server so a non-admin never downloads the page, and the panel loads and
- * polls its data in the client like the rest of the dashboard.
- */
+/** The Platform Admin abuse reports console. Access is gated by the admin layout. */
 export default function AbuseReportsPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="admin-page-body">
-          <p className="admin-empty" role="status">
-            Checking platform access...
-          </p>
-        </div>
-      }
-    >
-      <AbuseReportsGate />
-    </Suspense>
-  );
+  return <AbuseReportsPanel />;
 }
