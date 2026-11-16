@@ -10,10 +10,7 @@ import {
   type EnvironmentVariableSummary,
 } from "@/lib/environment-variables-client";
 import { getError, useResource } from "@/lib/resource";
-
-function formatTime(value: string): string {
-  return new Date(value).toLocaleString();
-}
+import { formatDateTime } from "@/lib/format";
 
 type DraftState = {
   mode: "create" | "edit";
@@ -209,7 +206,7 @@ export function EnvironmentPanel({
                         {isRevealed ? (revealed?.value ?? "") : variable.maskedValue}
                       </code>
                     </td>
-                    <td>{formatTime(variable.updatedAt)}</td>
+                    <td>{formatDateTime(variable.updatedAt)}</td>
                     <td>
                       <div className="deployment-actions">
                         <button

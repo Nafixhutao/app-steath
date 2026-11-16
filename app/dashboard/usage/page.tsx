@@ -4,10 +4,7 @@ import Link from "next/link";
 import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
 import { useResource } from "@/lib/resource";
 import { getOrganizationUsage } from "@/lib/usage-client";
-
-function formatTime(value: string): string {
-  return new Date(value).toLocaleString();
-}
+import { formatDateTime } from "@/lib/format";
 
 function megabytes(value: number): string {
   return `${value} MB`;
@@ -91,7 +88,7 @@ export default function UsagePage() {
           </p>
         </div>
         {usageData?.capturedAt ? (
-          <span className="project-quota">Measured {formatTime(usageData.capturedAt)}</span>
+          <span className="project-quota">Measured {formatDateTime(usageData.capturedAt)}</span>
         ) : null}
       </div>
 

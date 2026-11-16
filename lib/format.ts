@@ -133,3 +133,15 @@ export function formatDuration(value: number | null | undefined) {
   if (value < 1000) return `${value} ms`;
   return `${(value / 1000).toFixed(2)} s`;
 }
+
+/**
+ * The dashboard tables' timestamp: the viewer's locale rendering of one
+ * instant. Seven panels used to carry an identical local `formatTime`; this is
+ * that function, with the deployments panel's null handling ("N/A").
+ */
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return "N/A";
+  return date.toLocaleString();
+}

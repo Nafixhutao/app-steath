@@ -9,10 +9,7 @@ import {
   type CustomDomainSummary,
 } from "@/lib/custom-domains-client";
 import { getError, useResource } from "@/lib/resource";
-
-function formatTime(value: string): string {
-  return new Date(value).toLocaleString();
-}
+import { formatDateTime } from "@/lib/format";
 
 function statusLabel(status: CustomDomainSummary["status"]): string {
   switch (status) {
@@ -181,7 +178,7 @@ export function CustomDomainPanel({
             {domainData.verifiedAt ? (
               <div>
                 <dt>Verified</dt>
-                <dd>{formatTime(domainData.verifiedAt)}</dd>
+                <dd>{formatDateTime(domainData.verifiedAt)}</dd>
               </div>
             ) : null}
           </dl>

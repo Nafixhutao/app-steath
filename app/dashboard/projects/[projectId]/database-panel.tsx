@@ -12,10 +12,7 @@ import {
   type DatabaseSummary,
 } from "@/lib/databases-client";
 import { getError, useResource } from "@/lib/resource";
-
-function formatTime(value: string): string {
-  return new Date(value).toLocaleString();
-}
+import { formatDateTime } from "@/lib/format";
 
 function usageLabel(database: DatabaseSummary): string {
   if (database.usageMb === null) {
@@ -259,7 +256,7 @@ export function DatabasePanel({
                       </small>
                     ) : null}
                   </td>
-                  <td>{formatTime(database.createdAt)}</td>
+                  <td>{formatDateTime(database.createdAt)}</td>
                   {canManage ? (
                     <td>
                       <div className="deployment-actions">

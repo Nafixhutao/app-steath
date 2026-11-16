@@ -8,10 +8,7 @@ import {
   type VolumeSummary,
 } from "@/lib/volumes-client";
 import { getError, useResource } from "@/lib/resource";
-
-function formatTime(value: string): string {
-  return new Date(value).toLocaleString();
-}
+import { formatDateTime } from "@/lib/format";
 
 function usageLabel(volume: VolumeSummary): string {
   if (!volume.exists) {
@@ -201,7 +198,7 @@ export function VolumePanel({
                     ) : null}
                   </div>
                 </td>
-                <td>{formatTime(volume.createdAt)}</td>
+                <td>{formatDateTime(volume.createdAt)}</td>
                 {canManage ? (
                   <td>
                     <div className="deployment-actions">

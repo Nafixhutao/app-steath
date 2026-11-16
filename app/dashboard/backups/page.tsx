@@ -5,10 +5,7 @@ import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
 import { getError, useResource } from "@/lib/resource";
 import { getBackups, type BackupSummary } from "@/lib/backups-client";
 import { getRestores, requestRestore } from "@/lib/restores-client";
-
-function formatTime(value: string): string {
-  return new Date(value).toLocaleString();
-}
+import { formatDateTime } from "@/lib/format";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -245,7 +242,7 @@ export default function BackupsPage() {
                     <tr key={backup.id}>
                       <td>{backup.targetName}</td>
                       <td>{backup.projectName ?? "Platform"}</td>
-                      <td>{formatTime(backup.createdAt)}</td>
+                      <td>{formatDateTime(backup.createdAt)}</td>
                       <td>{backup.status === "completed" ? formatSize(backup.sizeBytes) : "-"}</td>
                       <td>
                         <span className="role-label">
@@ -316,8 +313,8 @@ export default function BackupsPage() {
                   <tr key={restore.id}>
                     <td>{restore.targetName}</td>
                     <td>{restore.projectName ?? "-"}</td>
-                    <td>{formatTime(restore.createdAt)}</td>
-                    <td>{restore.finishedAt ? formatTime(restore.finishedAt) : "-"}</td>
+                    <td>{formatDateTime(restore.createdAt)}</td>
+                    <td>{restore.finishedAt ? formatDateTime(restore.finishedAt) : "-"}</td>
                     <td>
                       <span className={`role-label is-${statusClass(restore.status)}`}>
                         {restore.status}
