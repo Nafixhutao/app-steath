@@ -1,3 +1,5 @@
+import { request } from "@/lib/platform/http";
+
 export type ScanScanner = "trivy" | "clamav";
 export type ScanSeverity = "critical" | "high" | "medium" | "low" | "info" | "unknown";
 
@@ -26,35 +28,15 @@ export type ScanFindingList = {
   total: number;
 };
 
-type ApiFailure = {
-  error?: { code?: string; message?: string; details?: Record<string, unknown> };
-};
-
-async function parse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => ({}))) as { data?: T } & ApiFailure;
-
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? "The request could not be completed.");
-  }
-
-  return payload.data as T;
-}
-
 /** Whether the signed-in user is a Platform Admin, for the sidebar link. */
-export async function getAdminStatus(): Promise<{ platformAdmin: boolean }> {
-  const response = await fetch("/api/admin/status");
-
-  return parse<{ platformAdmin: boolean }>(response);
+export function getAdminStatus(): Promise<{ platformAdmin: boolean }> {
+  return request<{ platformAdmin: boolean }>("/api/admin/status");
 }
 
 /** Lists ScanFindings across every Organization. Admins only. */
-export async function getScanFindings(
-  options: { urgentOnly?: boolean } = {},
-): Promise<ScanFindingList> {
+export function getScanFindings(options: { urgentOnly?: boolean } = {}): Promise<ScanFindingList> {
   const query = options.urgentOnly ? "?urgent=true" : "";
-  const response = await fetch(`/api/admin/findings${query}`);
-
-  return parse<ScanFindingList>(response);
+  return request<ScanFindingList>(`/api/admin/findings${query}`);
 }
 
 /** One host sample of a node's own CPU, memory, and storage usage. */
@@ -81,11 +63,9 @@ export type HostMetricReport = {
 };
 
 /** Reads every node's host metrics. Admins only. */
-export async function getHostMetrics(windowMinutes?: number): Promise<HostMetricReport> {
+export function getHostMetrics(windowMinutes?: number): Promise<HostMetricReport> {
   const query = windowMinutes ? `?window_minutes=${windowMinutes}` : "";
-  const response = await fetch(`/api/admin/host-metrics${query}`);
-
-  return parse<HostMetricReport>(response);
+  return request<HostMetricReport>(`/api/admin/host-metrics${query}`);
 }
 
 /** Component health row of the admin overview. */
@@ -123,10 +103,8 @@ export type AdminOverview = {
 };
 
 /** Reads the whole overview payload. Admins only. */
-export async function getAdminOverview(): Promise<AdminOverview> {
-  const response = await fetch("/api/admin/overview");
-
-  return parse<AdminOverview>(response);
+export function getAdminOverview(): Promise<AdminOverview> {
+  return request<AdminOverview>("/api/admin/overview");
 }
 
 export type AdminAccount = {
@@ -146,8 +124,6 @@ export type AdminAccountList = {
 };
 
 /** Reads every account in the directory. Admins only. */
-export async function getAdminAccounts(): Promise<AdminAccountList> {
-  const response = await fetch("/api/admin/accounts");
-
-  return parse<AdminAccountList>(response);
+export function getAdminAccounts(): Promise<AdminAccountList> {
+  return request<AdminAccountList>("/api/admin/accounts");
 }

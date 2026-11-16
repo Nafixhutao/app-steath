@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { request } from "@/lib/platform/http";
+
 /**
  * Polling cadence and freshness, ported from stealth-forge's `api/polling`.
  * The paas data layer has no TanStack cache, so these are plain constants the
@@ -17,38 +19,18 @@ export const POLL_MEDIUM_MS = 15_000;
 /** Overview, accounts, and incident boards. */
 export const POLL_SLOW_MS = 30_000;
 
-type ApiFailure = { error?: { code?: string; message?: string } };
-
-/** GET one admin endpoint; throws with the API's message on failure. */
-export async function adminGet<T>(path: string): Promise<T> {
-  const response = await fetch(path, { cache: "no-store" });
-  const payload = (await response.json().catch(() => ({}))) as {
-    data?: T;
-  } & ApiFailure;
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? "The Admin API request failed.");
-  }
-  return payload.data as T;
+/** GET one admin endpoint; always fresh, never from the browser cache. */
+export function adminGet<T>(path: string): Promise<T> {
+  return request<T>(path, { cache: "no-store" });
 }
 
 /** POST/PUT/DELETE one admin endpoint with a JSON body. */
-export async function adminSend<T>(
+export function adminSend<T>(
   path: string,
   method: "POST" | "PUT" | "DELETE",
   body: unknown,
 ): Promise<T> {
-  const response = await fetch(path, {
-    method,
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const payload = (await response.json().catch(() => ({}))) as {
-    data?: T;
-  } & ApiFailure;
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? "The Admin API request failed.");
-  }
-  return payload.data as T;
+  return request<T>(path, { method, body });
 }
 
 /**
@@ -94,8 +76,7 @@ export function usePolledQuery<T>(
       if (ticketRef.current !== ticket) return;
       setState((current) => ({
         data: keepPrevious ? current.data : undefined,
-        error:
-          error instanceof Error ? error : new Error("The request failed."),
+        error: error instanceof Error ? error : new Error("The request failed."),
         loading: false,
       }));
     }
