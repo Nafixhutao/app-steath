@@ -1,11 +1,7 @@
 import type { JobRow } from "../lib/platform/deployments.ts";
 
-/**
- * The outcome a job handler reports back to the queue bookkeeping.
- * `jobStatus` feeds `completeJob`: a handler that finished its work but found
- * the underlying operation failed (a broken Build, a failed Restore) marks the
- * Job failed without going through the retry backoff that `failJob` implies.
- */
+export type JobOutcome = "succeeded" | "failed";
+
 export interface JobResult {
   status: string;
   /** What the worker log line shows, e.g. the backup or deployment id. */
@@ -18,11 +14,12 @@ export interface JobResult {
  */
 export type JobHandler = (job: JobRow) => Promise<JobResult>;
 
-export class UnknownJobTypeError extends Error {
-  constructor(readonly jobType: string) {
-    super(`No handler for Job type ${jobType}`);
-  }
-}
+export type JobQueueIo = {
+  completeJob: (id: string, outcome?: JobOutcome) => Promise<void>;
+  failJob: (id: string, message: string) => Promise<void>;
+  log: (message: string) => void;
+  error: (message: string, error: unknown) => void;
+};
 
 /**
  * Dispatches one claimed Job through its handler. The wrapper owns the
@@ -33,12 +30,7 @@ export class UnknownJobTypeError extends Error {
 export async function runJobWithHandler(
   job: JobRow,
   handlers: Record<string, JobHandler>,
-  io: {
-    completeJob: (id: string, status?: string) => Promise<void>;
-    failJob: (id: string, message: string) => Promise<void>;
-    log: (message: string) => void;
-    error: (message: string, error: unknown) => void;
-  },
+  io: JobQueueIo,
 ): Promise<void> {
   const handler = handlers[job.type];
 

@@ -18,10 +18,7 @@ import {
   runBackupJob,
   scheduleDailyBackups,
 } from "../lib/platform/backups.ts";
-import {
-  pruneNodeHostMetrics,
-  recordNodeHostMetrics,
-} from "../lib/platform/host-metrics.ts";
+import { pruneNodeHostMetrics, recordNodeHostMetrics } from "../lib/platform/host-metrics.ts";
 import {
   pruneAdminMetrics,
   recordAdminDBMetrics,
@@ -29,6 +26,13 @@ import {
 } from "../lib/platform/admin-metrics.ts";
 import { RESTORE_JOB_TYPE, recoverStaleRestores, runRestoreJob } from "../lib/platform/restores.ts";
 import { SCAN_JOB_TYPE, runScanJob } from "../lib/platform/scans.ts";
+import {
+  createDailyTask,
+  createIntervalTask,
+  workerLogger,
+  type ScheduledTask,
+} from "./scheduler.ts";
+import { runJobWithHandler, type JobHandler } from "./job-registry.ts";
 
 /**
  * Deployment worker. It runs as its own process from the same codebase, claims
@@ -60,20 +64,140 @@ const USAGE_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
  */
 const HOST_METRICS_INTERVAL_MS = 60 * 1_000;
 
+/** The worker's log line helper, mirroring workerLogger but multi-arg. */
+const log = (message: string, extra?: string) => console.log(`[worker] ${message}`, extra ?? "");
+
+/** Wraps a domain runner into the registry shape with its log subject. */
+function handler(
+  run: (job: JobRow) => Promise<{ status: string }>,
+  subject: (job: JobRow) => string,
+): JobHandler {
+  return async (job) => ({ status: (await run(job)).status, subject: subject(job) });
+}
+
+const JOB_HANDLERS: Record<string, JobHandler> = {
+  [BACKUP_JOB_TYPE]: handler(runBackupJob, (job) => String(job.payload.backupId ?? job.id)),
+  [RESTORE_JOB_TYPE]: handler(runRestoreJob, (job) => String(job.payload.restoreId ?? job.id)),
+  [SCAN_JOB_TYPE]: handler(runScanJob, (job) => String(job.payload.deploymentId ?? job.id)),
+};
+
 /**
- * When the next daily Backup pass is due. Backups run at 02.00 UTC; the first
- * pass after a worker start runs immediately so a restart after 02.00 still
- * schedules that day, and `scheduleDailyBackups` itself is idempotent per day.
+ * The Build handler stays explicit: a Build that failed is terminal (retrying
+ * would rebuild the same broken commit forever), a cancelled Deployment leaves
+ * its Job row alone, and a produced image is run as the Service container.
  */
-function nextDailyBackupAt(now: Date): number {
-  const next = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), DAILY_BACKUP_UTC_HOUR),
-  );
-  if (next.getTime() <= now.getTime()) {
-    next.setUTCDate(next.getUTCDate() + 1);
+const BUILD_HANDLER: JobHandler = async (job) => {
+  const deploymentId = job.payload.deploymentId;
+  if (!deploymentId) {
+    await failJob(job.id, "Build Job is missing its deploymentId.");
+    return { status: "failed", subject: "unknown-deployment" };
   }
 
-  return next.getTime();
+  const current = await pool.query<{ status: string }>(
+    'SELECT "status" FROM "deployment" WHERE "id" = $1',
+    [deploymentId],
+  );
+  if (!current.rowCount || current.rows[0].status === "cancelled") {
+    await completeJob(job.id);
+    return { status: "cancelled", subject: deploymentId };
+  }
+
+  try {
+    const result = await runBuildJob(job);
+
+    if (result.status === "failed") {
+      await completeJob(job.id, "failed");
+      workerLogger.log(`deployment ${deploymentId} build failed - ${result.message}`);
+      return { status: "failed", subject: deploymentId };
+    }
+    if (result.status === "cancelled") {
+      workerLogger.log(`deployment ${deploymentId} build cancelled`);
+      return { status: "cancelled", subject: deploymentId };
+    }
+
+    // The Build produced an image. Run it as the Service container; the
+    // Deployment only becomes `running` once the container answers its health
+    // check, so a broken deployment never replaces a working one.
+    const deployed = await runDeployment(deploymentId);
+    await completeJob(job.id, deployed.status === "failed" ? "failed" : "succeeded");
+    log(
+      `deployment ${deploymentId} ${deployed.status}`,
+      deployed.message ? `- ${deployed.message}` : "",
+    );
+    return { status: deployed.status, subject: deploymentId };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await failJob(job.id, message);
+    workerLogger.error(`deployment ${deploymentId} job failed: ${message}`, error);
+    return { status: "failed", subject: deploymentId };
+  }
+};
+
+JOB_HANDLERS[BUILD_JOB_TYPE] = BUILD_HANDLER;
+
+/**
+ * Every background pass with its cadence. The loop body stays a flat list;
+ * interval bookkeeping, immediate-first-run, and error logging live in the
+ * task implementations.
+ */
+function backgroundTasks(): ScheduledTask[] {
+  return [
+    createIntervalTask("usage snapshots", USAGE_REFRESH_INTERVAL_MS, async () => {
+      const refreshed = await refreshAllOrganizationsUsage();
+      if (refreshed.snapshots > 0) {
+        workerLogger.log(
+          `stored ${refreshed.snapshots} usage snapshots for ${refreshed.organizations} Organizations`,
+        );
+      }
+    }),
+
+    createIntervalTask("host metrics", HOST_METRICS_INTERVAL_MS, async () => {
+      const recorded = await recordNodeHostMetrics();
+      if (recorded > 0) {
+        workerLogger.log(`stored host metrics for ${recorded} node(s)`);
+      }
+
+      // The admin Overview polls in-process DB/Redis samples every 5s in
+      // Forge; paas stores one sample per pass so history survives restarts.
+      await recordAdminDBMetrics();
+      await recordAdminRedisMetrics();
+    }),
+
+    createIntervalTask("retention pass", LOG_PRUNE_INTERVAL_MS, async () => {
+      const logs = await pruneLogs();
+      if (logs.lines > 0) {
+        workerLogger.log(`pruned ${logs.lines} Build log lines older than seven days`);
+      }
+
+      // Host metrics share the hourly pass with the log prune, since a minute
+      // of slack on a 24-hour retention window is harmless.
+      const metrics = await pruneNodeHostMetrics();
+      if (metrics > 0) {
+        workerLogger.log(`pruned ${metrics} host metric rows older than 24 hours`);
+      }
+
+      // Admin metric samples share the same retention pass.
+      const admin = await pruneAdminMetrics();
+      if (admin > 0) {
+        workerLogger.log(`pruned ${admin} admin metric rows older than 24 hours`);
+      }
+    }),
+
+    // Backups are scheduled once a day at 02.00 UTC and pruned after seven
+    // days. The first pass after a start runs immediately, and both calls are
+    // idempotent, so a restart never schedules the same day twice.
+    createDailyTask("daily Backup pass", DAILY_BACKUP_UTC_HOUR, async () => {
+      const scheduled = await scheduleDailyBackups();
+      if (scheduled.scheduled > 0) {
+        workerLogger.log(`queued ${scheduled.scheduled} daily Backups`);
+      }
+
+      const pruned = await pruneBackups();
+      if (pruned.removed > 0) {
+        workerLogger.log(`pruned ${pruned.removed} Backups older than seven days`);
+      }
+    }),
+  ];
 }
 
 let stopping = false;
@@ -82,218 +206,20 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Runs one claimed Job. A transient Node Agent failure is re-queued with backoff
- * by `failJob`; the Deployment itself is only marked failed once the Build
- * really failed, so a restart never fails a Deployment by accident.
- */
-async function runJob(job: JobRow): Promise<void> {
-  if (job.type === BACKUP_JOB_TYPE) {
-    try {
-      const result = await runBackupJob(job);
-      await completeJob(job.id, result.status === "failed" ? "failed" : "succeeded");
-      console.log(`[worker] backup ${job.payload.backupId ?? job.id} ${result.status}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      await failJob(job.id, message);
-      console.error(`[worker] backup job failed: ${message}`);
-    }
-    return;
-  }
-
-  if (job.type === RESTORE_JOB_TYPE) {
-    try {
-      const result = await runRestoreJob(job);
-      await completeJob(job.id, result.status === "failed" ? "failed" : "succeeded");
-      console.log(`[worker] restore ${job.payload.restoreId ?? job.id} ${result.status}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      await failJob(job.id, message);
-      console.error(`[worker] restore job failed: ${message}`);
-    }
-    return;
-  }
-
-  if (job.type === SCAN_JOB_TYPE) {
-    try {
-      const result = await runScanJob(job);
-      await completeJob(job.id, result.status === "failed" ? "failed" : "succeeded");
-      console.log(`[worker] scan ${job.payload.deploymentId ?? job.id} ${result.status}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      await failJob(job.id, message);
-      console.error(`[worker] scan job failed: ${message}`);
-    }
-    return;
-  }
-
-  if (job.type !== BUILD_JOB_TYPE) {
-    await completeJob(job.id, "failed");
-    return;
-  }
-
-  const deploymentId = job.payload.deploymentId;
-  if (!deploymentId) {
-    await failJob(job.id, "Build Job is missing its deploymentId.");
-    return;
-  }
-
-  const current = await pool.query<{ status: string }>(
-    'SELECT "status" FROM "deployment" WHERE "id" = $1',
-    [deploymentId],
-  );
-  if (!current.rowCount) {
-    await completeJob(job.id);
-    return;
-  }
-  if (current.rows[0].status === "cancelled") {
-    await completeJob(job.id);
-    return;
-  }
-
-  try {
-    const result = await runBuildJob(job);
-
-    // A Build that failed is a terminal outcome for this Job; retrying it would
-    // rebuild the same broken commit forever.
-    if (result.status === "failed") {
-      await completeJob(job.id, "failed");
-      console.log(`[worker] deployment ${deploymentId} build failed - ${result.message}`);
-      return;
-    }
-
-    // A cancelled Deployment already has its Job cancelled by the API, so the
-    // worker only has to leave the row alone.
-    if (result.status === "cancelled") {
-      console.log(`[worker] deployment ${deploymentId} build cancelled`);
-      return;
-    }
-
-    // The Build produced an image. Run it as the Service container; the
-    // Deployment only becomes `running` once the container answers its health
-    // check, so a broken deployment never replaces a working one.
-    const deployed = await runDeployment(deploymentId);
-    await completeJob(job.id, deployed.status === "failed" ? "failed" : "succeeded");
-
-    console.log(
-      `[worker] deployment ${deploymentId} ${deployed.status}`,
-      deployed.message ? `- ${deployed.message}` : "",
-    );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    await failJob(job.id, message);
-    console.error(`[worker] deployment ${deploymentId} job failed: ${message}`);
-  }
-}
-
 async function loop(): Promise<void> {
-  let lastLogPrune = 0;
-  let lastUsageRefresh = 0;
-  let lastHostMetrics = 0;
-  let nextBackupMaintenance = 0;
+  const tasks = backgroundTasks();
 
   while (!stopping) {
-    if (Date.now() - lastUsageRefresh >= USAGE_REFRESH_INTERVAL_MS) {
-      lastUsageRefresh = Date.now();
-      try {
-        const refreshed = await refreshAllOrganizationsUsage();
-        if (refreshed.snapshots > 0) {
-          console.log(
-            `[worker] stored ${refreshed.snapshots} usage snapshots for ${refreshed.organizations} Organizations`,
-          );
-        }
-      } catch (error) {
-        console.error("[worker] could not refresh usage snapshots", error);
-      }
-    }
-
-    if (Date.now() - lastHostMetrics >= HOST_METRICS_INTERVAL_MS) {
-      lastHostMetrics = Date.now();
-      try {
-        const recorded = await recordNodeHostMetrics();
-        if (recorded > 0) {
-          console.log(`[worker] stored host metrics for ${recorded} node(s)`);
-        }
-      } catch (error) {
-        console.error("[worker] could not record node host metrics", error);
-      }
-
-      // The admin Overview polls in-process DB/Redis samples every 5s in
-      // Forge; paas stores one sample per pass so history survives restarts.
-      try {
-        await recordAdminDBMetrics();
-        await recordAdminRedisMetrics();
-      } catch (error) {
-        console.error("[worker] could not record admin metric samples", error);
-      }
-
-      // Admin metric samples share the hourly retention pass.
-      try {
-        const pruned = await pruneAdminMetrics();
-        if (pruned > 0) {
-          console.log(`[worker] pruned ${pruned} admin metric rows older than 24 hours`);
-        }
-      } catch (error) {
-        console.error("[worker] could not prune admin metric samples", error);
-      }
-    }
-
-    // The retention pass is time based, so it runs before claiming work and then
-    // at most once an hour. Doing it here keeps the worker a single process with
-    // one responsibility: it owns everything that happens after a Deployment.
-    if (Date.now() - lastLogPrune >= LOG_PRUNE_INTERVAL_MS) {
-      lastLogPrune = Date.now();
-      try {
-        const pruned = await pruneLogs();
-        if (pruned.lines > 0) {
-          console.log(`[worker] pruned ${pruned.lines} Build log lines older than seven days`);
-        }
-      } catch (error) {
-        console.error("[worker] could not prune old Build logs", error);
-      }
-
-      // Host metrics share the hourly pass with the log prune, since a minute
-      // of slack on a 24-hour retention window is harmless.
-      try {
-        const pruned = await pruneNodeHostMetrics();
-        if (pruned > 0) {
-          console.log(`[worker] pruned ${pruned} host metric rows older than 24 hours`);
-        }
-      } catch (error) {
-        console.error("[worker] could not prune old host metrics", error);
-      }
+    for (const task of tasks) {
+      await task.maybeRun(Date.now());
     }
 
     let job: JobRow | null = null;
 
-    // Backups are scheduled once a day at 02.00 UTC and pruned after seven days.
-    // The first pass after a start runs immediately, and both calls are
-    // idempotent, so a restart never schedules the same day twice.
-    if (Date.now() >= nextBackupMaintenance) {
-      nextBackupMaintenance = nextDailyBackupAt(new Date());
-      try {
-        const scheduled = await scheduleDailyBackups();
-        if (scheduled.scheduled > 0) {
-          console.log(`[worker] queued ${scheduled.scheduled} daily Backups`);
-        }
-      } catch (error) {
-        console.error("[worker] could not schedule daily Backups", error);
-      }
-
-      try {
-        const pruned = await pruneBackups();
-        if (pruned.removed > 0) {
-          console.log(`[worker] pruned ${pruned.removed} Backups older than seven days`);
-        }
-      } catch (error) {
-        console.error("[worker] could not prune expired Backups", error);
-      }
-    }
-
     try {
       job = await claimBuildJob([BUILD_JOB_TYPE, BACKUP_JOB_TYPE, RESTORE_JOB_TYPE, SCAN_JOB_TYPE]);
     } catch (error) {
-      console.error("[worker] could not claim a job", error);
+      workerLogger.error("could not claim a job", error);
       await sleep(POLL_INTERVAL_MS);
       continue;
     }
@@ -303,7 +229,12 @@ async function loop(): Promise<void> {
       continue;
     }
 
-    await runJob(job);
+    await runJobWithHandler(job, JOB_HANDLERS, {
+      completeJob,
+      failJob,
+      log: workerLogger.log,
+      error: workerLogger.error,
+    });
   }
 }
 
