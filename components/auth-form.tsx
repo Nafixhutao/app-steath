@@ -48,7 +48,7 @@ function LockMark() {
   );
 }
 
-function EyeMark({ hidden = false }: { hidden?: boolean }) {
+export function EyeMark({ hidden = false }: { hidden?: boolean }) {
   return (
     <svg viewBox="0 0 24 24" className="small-icon" aria-hidden="true">
       {hidden ? (
@@ -276,7 +276,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
         </p>
         {!isSignUp && (
           <p className="support-copy compact">
-            Forgot your <a href="#email">email</a> or <a href="#password">password</a>?
+            Forgot your password? <Link href="/forgot-password">Reset it</Link>
           </p>
         )}
       </div>

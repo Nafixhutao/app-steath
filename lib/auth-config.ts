@@ -3,7 +3,7 @@ import { APIError } from "better-auth/api";
 import { createAccessControl } from "better-auth/plugins/access";
 import { organization, username } from "better-auth/plugins";
 import { Pool } from "pg";
-import { recordAudit } from "@/lib/platform/audit";
+import { recordAudit, recordPlatformAudit } from "@/lib/platform/audit";
 
 const countPool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -47,6 +47,22 @@ export const authConfig = {
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Set to false for development (no email service yet)
+    // The password-reset flow: better-auth generates the token and the link;
+    // delivery records the link in the control-plane log and the audit trail
+    // until an email provider is wired in, so the administrator can hand the
+    // link to the requester. Swapping in an email service means replacing the
+    // body of this callback only.
+    sendResetPassword: async ({ user, url }) => {
+      console.log(`[password-reset] link for ${user.email} (valid 1 hour): ${url}`);
+      try {
+        await recordPlatformAudit("platform.password_reset_requested", user.id, {
+          delivery: "server-log",
+        });
+      } catch {
+        // The reset link is already in the log; an audit failure must not
+        // fail the request.
+      }
+    },
   },
 
   plugins: [

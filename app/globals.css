@@ -3245,6 +3245,23 @@ body {
   margin-top: 0;
 }
 
+/* The one-line lead under the heading on the reset pages. */
+.auth-lead {
+  margin: 8px 0 20px;
+  color: #a5a1ad;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+/* The request form keeps its own notice tone: errors red, the plain notice
+   keeps the gold warning surface which is already the honest "no email yet"
+   signal. */
+.notice.is-error {
+  border-color: #713a44;
+  background: #321a20;
+  color: #ffb9c2;
+}
+
 .admin-select-trigger:hover {
   border-color: var(--projects-border-hover);
 }
