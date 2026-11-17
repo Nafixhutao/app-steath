@@ -3263,146 +3263,151 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
- * Auth pages follow Cloudflare's dashboard palette: a white canvas, #313131
- * copy, #0051c3 links, #056dff primary action and #d9d9d9 hairlines. The
- * values are the light-mode tokens Cloudflare publishes in their design
- * system (@cloudflare/style-const 6.1.5); dash.cloudflare.com/login itself
- * refuses automated readers with a Turnstile interstitial, so this is the
- * token source rather than sampled pixels.
+ * Auth pages follow Cloudflare's dashboard palette in dark mode: a #0a0a0a
+ * canvas, #d9d9d9 copy, #086fff links and #82b6ff primary action, with
+ * #2c2c2c hairlines and #191919 control surfaces. The values are the
+ * dark-mode tokens Cloudflare publishes in their design system
+ * (@cloudflare/style-const 6.1.5); dash.cloudflare.com/login itself refuses
+ * automated readers with a Turnstile interstitial, so this is the token
+ * source rather than sampled pixels.
  *
  * Everything is scoped to .auth-page: the user console and the admin surface
- * keep their own dark tokens (ADR-0008).
+ * keep their own tokens (ADR-0008).
  * ------------------------------------------------------------------------- */
 
 .auth-page {
-  background: #fff;
-  color: #313131;
+  background: #0a0a0a;
+  color: #d9d9d9;
 }
 
 .auth-page h1 {
-  color: #313131;
+  color: #eaeaea;
 }
 
-/* The logo is near-white line art, so it needs a dark chip to stay legible on
-   the light canvas. */
+/* The logo is already light line art; no chip is needed on the dark canvas. */
 .auth-page .brand-mark {
-  border-radius: 14px;
-  background: #313131;
+  background: transparent;
 }
 
 .auth-page .secondary-button {
-  border-color: #d9d9d9;
-  background: #fff;
-  color: #313131;
+  border-color: #2c2c2c;
+  background: #0a0a0a;
+  color: #d9d9d9;
 }
 .auth-page .secondary-button:hover {
-  border-color: #056dff;
-  background: #f2f2f2;
+  border-color: #424242;
+  background: #191919;
 }
 .auth-page .secondary-button:disabled {
-  border-color: #eaeaea;
-  background: #f2f2f2;
-  color: #999999;
+  border-color: #191919;
+  background: #0a0a0a;
+  color: #5a5a5a;
 }
 .auth-page .provider-soon {
-  color: #767676;
+  color: #909090;
 }
 .auth-page .github-mark {
-  fill: #313131;
+  fill: #eaeaea;
 }
 
 .auth-page .divider,
 .auth-page .auth-lead {
-  color: #595959;
+  color: #999999;
 }
 .auth-page .divider span {
-  background: #d9d9d9;
+  background: #2c2c2c;
 }
 
 .auth-page form label,
 .auth-page .remember-row {
-  color: #313131;
+  color: #d9d9d9;
 }
 
 .auth-page form input[type="email"],
 .auth-page form input[type="password"],
 .auth-page form input[type="text"] {
-  border-color: #d9d9d9;
-  background: #fff;
-  color: #313131;
+  border-color: #2c2c2c;
+  background: #191919;
+  color: #eaeaea;
 }
 .auth-page form input::placeholder {
-  color: #767676;
+  color: #666666;
 }
 .auth-page form input[type="email"]:focus,
 .auth-page form input[type="password"]:focus,
 .auth-page form input[type="text"]:focus {
-  border-color: #056dff;
-  box-shadow: 0 0 0 3px rgb(5 109 255 / 22%);
+  border-color: #4693ff;
+  box-shadow: 0 0 0 3px rgb(70 147 255 / 25%);
 }
 
 .auth-page .password-toggle {
-  color: #595959;
+  color: #999999;
 }
 .auth-page .password-toggle:hover {
-  color: #313131;
+  color: #eaeaea;
 }
 
 .auth-page .checkbox-mark {
-  border-color: #056dff;
-  background: #056dff;
+  border-color: #82b6ff;
+  background: #82b6ff;
 }
 .auth-page .remember-row input:not(:checked) + .checkbox-mark {
-  border-color: #999999;
-  background: #fff;
+  border-color: #5a5a5a;
+  background: transparent;
+}
+.auth-page .check-icon {
+  stroke: #0a0a0a;
 }
 
+/* The primary action is the light blue token with black text — Cloudflare's
+   dark-mode button contract. */
 .auth-page .submit-button {
-  background: #056dff;
+  background: #82b6ff;
+  color: #0a0a0a;
 }
 .auth-page .submit-button:hover {
-  background: #0052c6;
+  background: #4693ff;
   filter: none;
 }
 
 .auth-page a {
-  color: #0051c3;
+  color: #086fff;
 }
 .auth-page a:hover {
-  color: #003e93;
+  color: #4693ff;
 }
 
 .auth-page .support-copy {
-  color: #595959;
+  color: #999999;
 }
 .auth-page .legal-copy {
-  color: #767676;
+  color: #666666;
 }
 .auth-page .legal-copy a:hover {
-  color: #313131;
+  color: #eaeaea;
 }
 
 .auth-page .notice {
-  border-color: #fbcda5;
-  background: #fef1e6;
-  color: #763905;
+  border-color: #904506;
+  background: #2a1502;
+  color: #f79847;
 }
 .auth-page .notice.is-error {
-  border-color: #feccc8;
-  background: #ffefee;
-  color: #970d02;
+  border-color: #880c02;
+  background: #3b0501;
+  color: #fd9087;
 }
 
 .auth-page .skip-link {
-  background: #313131;
-  color: #fff;
+  background: #eaeaea;
+  color: #0a0a0a;
 }
 
 .auth-page .secondary-button:focus-visible,
 .auth-page .password-toggle:focus-visible,
 .auth-page .submit-button:focus-visible,
 .auth-page .skip-link:focus-visible {
-  outline-color: #056dff;
+  outline-color: #4693ff;
 }
 
 .admin-select-trigger:hover {
