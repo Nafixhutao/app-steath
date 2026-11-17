@@ -395,7 +395,8 @@ a:hover {
   justify-content: center;
   padding: 56px 16px;
   background:
-    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%), #0f0f0f;
+    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%),
+    #0f0f0f;
   color: #ffffff;
 }
 
@@ -1393,8 +1394,7 @@ a:hover {
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid #29262e;
-}
-.service-danger-row label {
+}.service-danger-row label {
   display: grid;
   flex: 1;
   gap: 7px;
@@ -2409,7 +2409,8 @@ body {
 /* Soft ambient glow behind the auth card instead of a flat black. */
 .auth-page {
   background:
-    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%), #0f0f0f;
+    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%),
+    #0f0f0f;
 }
 
 /* Interactive elements respond to the pointer and the keyboard alike. */
@@ -2707,9 +2708,7 @@ body {
   color: #edecf1;
   font-size: 13px;
   cursor: pointer;
-  transition:
-    background 200ms ease,
-    color 200ms ease;
+  transition: background 200ms ease, color 200ms ease;
 }
 
 .metric-window-option:hover {
@@ -2856,6 +2855,8 @@ body {
   vector-effect: non-scaling-stroke;
 }
 
+
+
 /* Admin console — ported from stealth-forge's styles/admin.css. The [data-admin]
    shell is rendered by the ported AdminShell, so this block scopes the exact
    type, ink, and Tailwind-default restoration the Forge console was authored
@@ -2876,11 +2877,11 @@ body {
     "Noto Color Emoji";
   color: #eeeaf0;
   --font-sans:
-    "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+    "Geist Variable", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono:
-    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", monospace;
+    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", monospace;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -2920,8 +2921,10 @@ body {
   /* Tailwind default shadows. */
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 }
 
@@ -2973,8 +2976,8 @@ body {
 /* Technical metadata font: timestamps, ids, hostnames, stack traces. */
 .admin-mono {
   font-family:
-    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", monospace;
+    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", monospace;
   font-weight: 450;
   font-variant-numeric: tabular-nums;
 }
@@ -3216,442 +3219,4 @@ body {
 
 .admin-select-trigger:hover {
   border-color: var(--projects-border-hover);
-}
-
-/* ============================================================
-   User console redesign: one gray family, one accent, one radius
-   system. Every selector below belongs to the customer console
-   and the auth surfaces — the [data-admin], .admin-*, and
-   .metric-* blocks above stay untouched.
-   ============================================================ */
-
-/* The console reads as one centered canvas instead of an edge-to-edge
-   stretch, with page spacing that breathes at 40px. */
-.dashboard-content {
-  max-width: 1240px;
-  margin-inline: auto;
-  padding: 40px clamp(20px, 4vw, 56px) 80px;
-}
-
-.dashboard-page-heading {
-  padding-bottom: 24px;
-  border-bottom-color: #26262c;
-}
-
-.dashboard-page-heading h1 {
-  color: #f4f3f7;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.022em;
-}
-
-.dashboard-page-heading p {
-  max-width: 62ch;
-  color: #a7a3af;
-  text-wrap: pretty;
-}
-
-.dashboard-section {
-  margin-top: 36px;
-}
-
-.dashboard-section-heading {
-  margin-bottom: 16px;
-  border-bottom-color: #26262c;
-}
-
-.dashboard-section-heading h2 {
-  color: #f4f3f7;
-  font-size: 15px;
-  letter-spacing: -0.01em;
-}
-
-.dashboard-section-heading a {
-  color: #a7a3af;
-}
-
-.dashboard-section-heading a:hover {
-  color: #7bd8a4;
-}
-
-/* The running count reads as a quiet chip, not a stray number. */
-.dashboard-count {
-  padding: 2px 9px;
-  border: 1px solid #2f2f37;
-  border-radius: 999px;
-  background: #1c1c21;
-  color: #a7a3af;
-  font-variant-numeric: tabular-nums;
-}
-
-/* One green accent everywhere the console is interactive or alive:
-   links, focus rings, marks, and the volume bar lose their stray
-   purple/blue/gold copies. */
-.dashboard-back-link a,
-.service-url,
-.dashboard-link-button,
-.invitation-panel a,
-.service-card-head h3 a:hover,
-.deployment-node.is-healthy {
-  color: #7bd8a4;
-}
-
-.dashboard-back-link a:hover,
-.service-url:hover,
-.dashboard-link-button:hover:not(:disabled) {
-  color: #aef0d1;
-}
-
-.deployment-node.is-unhealthy,
-.deployment-node.is-unknown {
-  color: #e8d49a;
-}
-
-.sidebar-row:focus-visible,
-.sidebar-search:focus-visible,
-.org-switcher:focus-visible,
-.sidebar-toggle:focus-visible,
-.sidebar-close:focus-visible,
-.profile-button:focus-visible,
-.profile-menu-row:focus-visible,
-.user-org-switcher:focus-visible,
-.mobile-topbar-actions button:focus-visible,
-.mobile-brand:focus-visible,
-.search-backdrop:focus-visible,
-.search-result:focus-visible,
-.submit-button:focus-visible,
-.secondary-button:focus-visible,
-.password-toggle:focus-visible,
-.skip-link:focus-visible,
-.dashboard-secondary-button:focus-visible,
-.dashboard-danger-button:focus-visible,
-.create-project-button:focus-visible,
-.dashboard-link-button:focus-visible,
-.project-card-link:focus-visible,
-.service-card-head h3 a:focus-visible {
-  outline: 2px solid #3ecf8e;
-  outline-offset: 2px;
-}
-
-.project-search input:focus-visible,
-.search-dialog-input input:focus-visible {
-  outline: 2px solid #3ecf8e;
-  outline-offset: 1px;
-}
-
-/* Controls: one height, one radius, one hover grammar. */
-.create-project-button {
-  height: 38px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #0b8a5c 0%, #00734b 100%);
-  font-size: 13px;
-}
-
-.create-project-button:hover:not(:disabled) {
-  filter: brightness(1.12);
-}
-
-.create-project-button:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px #121014,
-    0 0 0 4px rgb(62 207 142 / 45%);
-}
-
-.dashboard-secondary-button,
-.dashboard-danger-button {
-  min-height: 36px;
-  border-color: #2f2f37;
-  border-radius: 8px;
-  background: #1d1d22;
-  color: #e8e5ed;
-}
-
-.dashboard-secondary-button:hover:not(:disabled) {
-  border-color: #45454b;
-  background: #24242b;
-}
-
-.dashboard-danger-button {
-  border-color: #5a3038;
-  background: #2c161c;
-  color: #ffb9c2;
-}
-
-.dashboard-danger-button:hover:not(:disabled) {
-  border-color: #84404d;
-  background: #3a1c24;
-}
-
-/* Inputs and selects share one surface and one focus ring. */
-.organization-invite-form input,
-.organization-invite-form select,
-.organization-settings-form input,
-.invitation-link-row input,
-.organization-table select,
-.service-danger-row input,
-.service-form input,
-.organization-switcher-create input,
-.auth-form input[type="text"],
-.auth-form input[type="email"],
-.auth-form input[type="url"],
-.auth-form input[type="number"],
-.auth-form select,
-.auth-form textarea {
-  border-color: #2a2a31;
-  border-radius: 8px;
-  background: #141417;
-  color: #f2f1f5;
-}
-
-.organization-invite-form input:focus,
-.organization-invite-form select:focus,
-.organization-settings-form input:focus,
-.invitation-link-row input:focus,
-.organization-table select:focus,
-.service-danger-row input:focus,
-.service-form input:focus,
-.auth-form input:focus,
-.auth-form select:focus,
-.auth-form textarea:focus {
-  border-color: #3ecf8e;
-  box-shadow: 0 0 0 3px rgb(62 207 142 / 16%);
-}
-
-/* Tables: uppercase column heads, aligned numerals, a quiet hover. */
-.organization-table th {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #8f8b97;
-}
-
-.organization-table th,
-.organization-table td {
-  border-bottom-color: #232329;
-}
-
-.organization-table td:first-child strong {
-  color: #f2f1f5;
-  font-weight: 600;
-}
-
-.organization-table tbody tr:hover {
-  background: rgb(255 255 255 / 3%);
-}
-
-/* Cards: shared surface, shared radius, tinted shadow. */
-.project-card,
-.service-card,
-.dashboard-stat {
-  border-radius: 14px;
-}
-
-.project-card,
-.service-card {
-  border-color: #26262c;
-  background: #17171b;
-}
-
-.project-card:hover,
-.service-card:hover {
-  border-color: #3d3d46;
-  box-shadow: 0 12px 32px rgb(0 0 0 / 40%);
-  transform: translateY(-2px);
-}
-
-/* Project marks carry the accent, not three shades of gray. */
-.project-card-mark.green,
-.project-card-mark.purple,
-.project-card-mark.blue {
-  border-radius: 10px;
-  background: rgb(62 207 142 / 13%);
-  color: #8fe3bd;
-}
-
-.project-card-footer {
-  border-top-color: #232329;
-}
-
-.project-card-footer strong {
-  color: #dad7de;
-}
-
-.project-resource-counts {
-  border-bottom-color: #26262c;
-}
-
-/* The segmented list/grid toggle becomes a real pill pair. */
-.view-toggle {
-  border-color: #2a2a31;
-  border-radius: 8px;
-  background: #17171b;
-}
-
-.view-toggle:first-of-type {
-  border-radius: 8px 0 0 8px;
-}
-
-.view-toggle:nth-of-type(2) {
-  border-radius: 0 8px 8px 0;
-}
-
-.view-toggle.active {
-  background: #26262c;
-  color: #f2f1f5;
-}
-
-/* Overview stats: roomier cards with a top accent rule so the value
-   reads before the meta line. */
-.dashboard-stats {
-  gap: 14px;
-  margin-top: 32px;
-}
-
-.dashboard-stat {
-  padding: 18px 20px 20px;
-  border-color: #26262c;
-  background: linear-gradient(180deg, #17171b 0%, #141417 100%);
-  box-shadow: 0 1px 0 rgb(255 255 255 / 2%) inset;
-}
-
-.dashboard-stat::before {
-  display: block;
-  width: 28px;
-  height: 3px;
-  margin-bottom: 14px;
-  border-radius: 999px;
-  background: #3ecf8e;
-  content: "";
-}
-
-.dashboard-stat-value {
-  font-size: 30px;
-}
-
-.dashboard-stat-value.dashboard-node {
-  font-size: 21px;
-}
-
-/* Empty states and banners become composed cards. */
-.dashboard-empty-state {
-  padding: 52px 24px;
-  border: 1px dashed #34343c;
-  border-radius: 14px;
-  background: #131316;
-}
-
-.dashboard-alert {
-  border-radius: 10px;
-}
-
-/* Menus and overlays share the raised surface. */
-.organization-switcher-menu,
-.profile-menu,
-.search-dialog,
-.mobile-account-menu {
-  border-color: #303039;
-  border-radius: 12px;
-  background: #1d1d22;
-  box-shadow: 0 16px 44px rgb(0 0 0 / 50%);
-}
-
-.organization-table-wrap,
-.dashboard-content .organization-table {
-  border-radius: 10px;
-}
-
-/* The volume usage bar follows the accent, like the status dots. */
-.volume-usage-bar {
-  background: #7bd8a4;
-}
-
-/* Project stack zone keeps its danger identity. */
-.organization-danger-zone {
-  border-color: #5a3038;
-  border-radius: 12px;
-  background: rgb(44 22 28 / 40%);
-}
-
-/* Auth surfaces: the login and report forms inherit the same neutral
-   surface, green focus, and green primary instead of the old blue
-   gradient on purple-tinted gray. */
-.auth-card,
-.invitation-panel {
-  border-color: #2a2a31;
-  border-radius: 14px;
-  background: #17161a;
-}
-
-.auth-form input:focus,
-.auth-form select:focus,
-.auth-form textarea:focus {
-  outline: none;
-}
-
-.auth-form button[type="submit"],
-.submit-button {
-  border-radius: 8px;
-  background: linear-gradient(180deg, #0b8a5c 0%, #00734b 100%);
-}
-
-.submit-button:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px #0f0f0f,
-    0 0 0 4px rgb(62 207 142 / 45%);
-}
-
-.secondary-button {
-  border-color: #2f2f37;
-  border-radius: 8px;
-  background: #17171b;
-}
-
-.secondary-button:hover:not(:disabled) {
-  border-color: #45454b;
-  background: #1f1f24;
-}
-
-.auth-form input,
-.auth-form select,
-.auth-form textarea {
-  border-radius: 8px;
-  background: #141417;
-}
-
-/* Mobile paddings re-stated so the wider desktop rhythm above never
-   crowds a phone. */
-@media (max-width: 760px) {
-  .dashboard-content {
-    padding: 24px 16px 56px;
-  }
-
-  .dashboard-page-heading h1 {
-    font-size: 24px;
-  }
-
-  .dashboard-stat {
-    padding: 16px 18px;
-  }
-
-  .dashboard-stat::before {
-    margin-bottom: 10px;
-  }
-
-  .dashboard-stat-value {
-    font-size: 26px;
-  }
-
-  .dashboard-stats {
-    margin-top: 24px;
-  }
-
-  .project-card,
-  .service-card,
-  .dashboard-stat {
-    border-radius: 12px;
-  }
 }
