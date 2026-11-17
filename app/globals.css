@@ -3359,15 +3359,60 @@ body {
   stroke: #0a0a0a;
 }
 
-/* The primary action is the light blue token with black text — Cloudflare's
-   dark-mode button contract. */
+/* The primary action is Kumo's `Button variant="primary" size="lg"`, the
+   component Cloudflare's dashboard is built from (@cloudflare/kumo 2.19.0).
+   The variant paints a gradient overlay on top of the emphasis background and
+   a 1px ring; those resolve to the values below, measured from Kumo's compiled
+   CSS rendered in dark mode: 40px tall, 8px radius, 16px side padding,
+   14px/20px medium white text, #3c87ff -> #056dff gradient over #619eff,
+   1px #045ede ring, and a 1px inset highlight. Hover lifts the gradient top to
+   the emphasis background; disabled is half opacity. */
 .auth-page .submit-button {
-  background: #82b6ff;
-  color: #0a0a0a;
+  display: flex;
+  width: 100%;
+  height: 40px;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #619eff;
+  background-image: linear-gradient(180deg, #3c87ff 0%, #056dff 100%);
+  box-shadow:
+    inset 0 1px 0 0 #619eff,
+    0 0 0 1px #045ede,
+    0 1px 2px rgb(0 0 0 / 5%);
+  color: #ffffff;
+  cursor: pointer;
+  font-family:
+    -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  transition:
+    background-image 120ms ease-out,
+    box-shadow 120ms ease-out;
+  user-select: none;
 }
 .auth-page .submit-button:hover {
-  background: #4693ff;
+  background-image: linear-gradient(180deg, #619eff 0%, #056dff 100%);
+  color: #ffffff;
   filter: none;
+}
+.auth-page .submit-button:active {
+  background-image: linear-gradient(180deg, #619eff 0%, #056dff 100%);
+}
+.auth-page .submit-button:disabled {
+  background: #619eff;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.auth-page .submit-button:focus-visible {
+  outline: 2px solid #056dff;
+  outline-offset: 2px;
 }
 
 .auth-page a {
