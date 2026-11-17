@@ -60,18 +60,18 @@ chmod 600 /home/ubuntu/paas/.env
 
 `.env` wajib berisi minimal:
 
-| Key | Contoh |
-| --- | --- |
-| `DATABASE_URL` | `postgresql://stealth:<password>@postgres:5432/stealth_hosting` |
-| `POSTGRES_PASSWORD` | password yang sama dengan di `DATABASE_URL` |
-| `BETTER_AUTH_SECRET` | 32+ karakter acak |
-| `BETTER_AUTH_URL` | `https://console.<domain>` |
-| `NEXT_PUBLIC_BETTER_AUTH_URL` | sama; **di-inline saat build** |
-| `ENV_ENCRYPTION_KEY` | 32 byte base64 atau 64 hex |
-| `AGENT_TOKEN` | token acak |
-| `AGENT_BASE_URL` | `http://agent:8081` |
-| `PLATFORM_DOMAIN` | `apps.<domain>` |
-| `CLOUDFLARE_TUNNEL_TOKEN` | dari dashboard Cloudflare |
+| Key                           | Contoh                                                          |
+| ----------------------------- | --------------------------------------------------------------- |
+| `DATABASE_URL`                | `postgresql://stealth:<password>@postgres:5432/stealth_hosting` |
+| `POSTGRES_PASSWORD`           | password yang sama dengan di `DATABASE_URL`                     |
+| `BETTER_AUTH_SECRET`          | 32+ karakter acak                                               |
+| `BETTER_AUTH_URL`             | `https://console.<domain>`                                      |
+| `NEXT_PUBLIC_BETTER_AUTH_URL` | sama; **di-inline saat build**                                  |
+| `ENV_ENCRYPTION_KEY`          | 32 byte base64 atau 64 hex                                      |
+| `AGENT_TOKEN`                 | token acak                                                      |
+| `AGENT_BASE_URL`              | `http://agent:8081`                                             |
+| `PLATFORM_DOMAIN`             | `apps.<domain>`                                                 |
+| `CLOUDFLARE_TUNNEL_TOKEN`     | dari dashboard Cloudflare                                       |
 
 `scripts/wizard-vps.sh` membuat nilai acak dan menulis `.env.production`.
 
@@ -87,10 +87,10 @@ chmod 600 /home/ubuntu/paas/.env
    `CLOUDFLARE_TUNNEL_TOKEN`.
 3. Di tab **Public Hostname**, tambahkan dua entri:
 
-| Subdomain | Domain | Path | Service |
-| --- | --- | --- | --- |
-| `console` | `<domain>` | - | `http://control-plane:3000` |
-| `*` | `apps.<domain>` | - | `https://caddy:443` |
+| Subdomain | Domain          | Path | Service                     |
+| --------- | --------------- | ---- | --------------------------- |
+| `console` | `<domain>`      | -    | `http://control-plane:3000` |
+| `*`       | `apps.<domain>` | -    | `https://caddy:443`         |
 
 Untuk entri wildcard, buka **Additional application settings -> TLS** dan aktifkan
 **No TLS Verify** (Caddy memakai CA internal, bukan sertifikat publik).
@@ -120,10 +120,10 @@ Lalu buka `https://console.<domain>`.
 
 ## 5. Health endpoint
 
-| Proses | Endpoint | Catatan |
-| --- | --- | --- |
-| Control Plane | `GET /api/health` | cek DB + tabel migrasi; 503 kalau gagal |
-| Node Agent | `GET /v1/health` | butuh `Authorization: Bearer $AGENT_TOKEN` |
+| Proses        | Endpoint          | Catatan                                    |
+| ------------- | ----------------- | ------------------------------------------ |
+| Control Plane | `GET /api/health` | cek DB + tabel migrasi; 503 kalau gagal    |
+| Node Agent    | `GET /v1/health`  | butuh `Authorization: Bearer $AGENT_TOKEN` |
 
 ```bash
 docker compose -f docker-compose.production.yml exec -T control-plane \
@@ -132,26 +132,26 @@ docker compose -f docker-compose.production.yml exec -T control-plane \
 
 ## 6. Restart
 
-| Aksi | Harapan |
-| --- | --- |
-| `docker compose restart control-plane` | Service user tetap jalan (container-nya tidak dikelola Control Plane) |
-| `docker compose restart agent` | Agent menjalankan `Reconcile`: container yang bertahan mendapat network alias dan route Caddy-nya kembali |
+| Aksi                                   | Harapan                                                                                                   |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `docker compose restart control-plane` | Service user tetap jalan (container-nya tidak dikelola Control Plane)                                     |
+| `docker compose restart agent`         | Agent menjalankan `Reconcile`: container yang bertahan mendapat network alias dan route Caddy-nya kembali |
 
 Agent juga menjalankan housekeeping saat start (container/image/volume yatim dan
 prune cache build mingguan) setelah Reconcile selesai.
 
 ## 7. Troubleshooting
 
-| Gejala | Penyebab umum |
-| --- | --- |
-| `migrate` exit 1 `ENOENT /app/database/migrations` | Image dibuild tanpa folder `database/` |
-| Health `503 database: unavailable` | `DATABASE_URL` salah, atau `postgres` belum healthy |
-| Health `503 migrations: missing` | `migrate` tidak selesai; cek `logs migrate` |
-| Dashboard 502 di Cloudflare | Ingress menunjuk `caddy:443`, bukan `control-plane:3000` |
-| Service user 502 | Ingress wildcard belum **No TLS Verify**, atau route Caddy belum dibuat (agent down) |
-| Sertifikat Caddy gagal | `local_certs` hilang dari Caddyfile produksi |
-| `listener address repeated: tcp/:443` | Caddyfile punya site block; dashboard harus lewat tunnel langsung |
-| Agent tidak bisa `docker` | Socket tidak di-mount, atau user container tidak punya akses grup docker |
+| Gejala                                             | Penyebab umum                                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `migrate` exit 1 `ENOENT /app/database/migrations` | Image dibuild tanpa folder `database/`                                               |
+| Health `503 database: unavailable`                 | `DATABASE_URL` salah, atau `postgres` belum healthy                                  |
+| Health `503 migrations: missing`                   | `migrate` tidak selesai; cek `logs migrate`                                          |
+| Dashboard 502 di Cloudflare                        | Ingress menunjuk `caddy:443`, bukan `control-plane:3000`                             |
+| Service user 502                                   | Ingress wildcard belum **No TLS Verify**, atau route Caddy belum dibuat (agent down) |
+| Sertifikat Caddy gagal                             | `local_certs` hilang dari Caddyfile produksi                                         |
+| `listener address repeated: tcp/:443`              | Caddyfile punya site block; dashboard harus lewat tunnel langsung                    |
+| Agent tidak bisa `docker`                          | Socket tidak di-mount, atau user container tidak punya akses grup docker             |
 
 ### X-Real-IP / X-Forwarded-For
 
@@ -178,3 +178,25 @@ disimpan di volume `agent_work` dan diunduh Control Plane. Untuk produksi, isi
   cloud) atau lewati uji ini.
 - ClamAV tidak dibundel di image agent (database virus butuh ~1 GB RAM/disk).
   Scanner melaporkan ketiadaannya sebagai temuan informasional, bukan kegagalan.
+
+## 10. Perawatan disk
+
+Setiap `docker compose ... up -d --build` meninggalkan build cache. Pada VPS
+kecil ini cache sempat mencapai ~25 GB dan mendorong disk ke 85%; prune
+mingguan menjaga ruang tetap lega tanpa memperlambat deploy berikutnya secara
+berarti:
+
+```
+docker builder prune -f --filter until=168h
+```
+
+Jadwalkan mingguan (contoh cron untuk user yang ada di grup `docker`):
+
+```
+17 4 * * 0 /usr/bin/docker builder prune -f --filter until=168h >/dev/null 2>&1
+```
+
+Jangan prune volume secara buta: volume database bisa sedang tidak terpasang
+ketika Service berhenti, dan `docker volume prune` akan menghapusnya. Untuk
+log sistem, `sudo journalctl --vacuum-size=200M` dan `sudo apt-get clean`
+membebaskan beberapa GB lagi.
