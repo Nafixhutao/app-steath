@@ -172,6 +172,13 @@ disimpan di volume `agent_work` dan diunduh Control Plane. Untuk produksi, isi
 
 ## 9. Batasan yang diketahui
 
+- Kredensial Google/GitHub disimpan lewat **Admin → Settings → Sign-in providers**
+  dan dibaca better-auth saat Control Plane start, jadi perubahan berlaku setelah
+  `docker compose restart control-plane`. Callback URL yang didaftarkan di
+  provider harus cocok dengan yang tampil di panel:
+  `https://<domain-console>/api/auth/callback/{github,google}`. Secret tersimpan
+  terenkripsi dengan `ENV_ENCRYPTION_KEY`; menghapus barisnya (tombol Remove di
+  panel) mengembalikan tombol login ke status "Coming soon" setelah restart.
 - Custom Domain dengan Cloudflare proxy: verifikasi `PLATFORM_IP` membandingkan A
   record dengan IP VPS, sedangkan domain yang di-proxy Cloudflare menunjuk IP
   Cloudflare. Untuk menguji Custom Domain, gunakan record **DNS only** (grey
