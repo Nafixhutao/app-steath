@@ -395,8 +395,7 @@ a:hover {
   justify-content: center;
   padding: 56px 16px;
   background:
-    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%),
-    #0f0f0f;
+    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%), #0f0f0f;
   color: #ffffff;
 }
 
@@ -1394,7 +1393,8 @@ a:hover {
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid #29262e;
-}.service-danger-row label {
+}
+.service-danger-row label {
   display: grid;
   flex: 1;
   gap: 7px;
@@ -2409,8 +2409,7 @@ body {
 /* Soft ambient glow behind the auth card instead of a flat black. */
 .auth-page {
   background:
-    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%),
-    #0f0f0f;
+    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%), #0f0f0f;
 }
 
 /* Interactive elements respond to the pointer and the keyboard alike. */
@@ -2708,7 +2707,9 @@ body {
   color: #edecf1;
   font-size: 13px;
   cursor: pointer;
-  transition: background 200ms ease, color 200ms ease;
+  transition:
+    background 200ms ease,
+    color 200ms ease;
 }
 
 .metric-window-option:hover {
@@ -2855,8 +2856,6 @@ body {
   vector-effect: non-scaling-stroke;
 }
 
-
-
 /* Admin console — ported from stealth-forge's styles/admin.css. The [data-admin]
    shell is rendered by the ported AdminShell, so this block scopes the exact
    type, ink, and Tailwind-default restoration the Forge console was authored
@@ -2877,11 +2876,11 @@ body {
     "Noto Color Emoji";
   color: #eeeaf0;
   --font-sans:
-    "Geist Variable", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+    "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   --font-mono:
-    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", monospace;
+    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -2921,10 +2920,8 @@ body {
   /* Tailwind default shadows. */
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl:
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 }
 
@@ -2976,8 +2973,8 @@ body {
 /* Technical metadata font: timestamps, ids, hostnames, stack traces. */
 .admin-mono {
   font-family:
-    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", monospace;
+    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
   font-weight: 450;
   font-variant-numeric: tabular-nums;
 }
@@ -3215,6 +3212,37 @@ body {
   color: var(--projects-text);
   font-size: 12.5px;
   padding: 0 12px;
+}
+
+/* The auth forms on /login and /signup: every field is one .auth-field grid
+   (label above input) and the form spreads the fields with an even rhythm, so
+   the sign-up stack no longer reads cramped against the provider buttons. */
+.auth-fields {
+  display: grid;
+  gap: 18px;
+}
+
+/* The global form-label rhythm does not apply inside the field grid. */
+.auth-fields label {
+  margin-bottom: 0;
+}
+
+.auth-fields .submit-button {
+  margin-top: 4px;
+}
+
+.auth-fields .auth-field {
+  display: grid;
+  gap: 7px;
+}
+
+.auth-fields .remember-row {
+  margin-top: 2px;
+}
+
+/* The old password-only top margin is superseded by the field rhythm above. */
+.auth-fields .password-label {
+  margin-top: 0;
 }
 
 .admin-select-trigger:hover {
