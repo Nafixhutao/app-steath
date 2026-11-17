@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, signUp } from "@/lib/auth-client";
 
@@ -78,6 +78,9 @@ function CheckMark() {
 /**
  * The sign-in and sign-up form, shared by the /login and /signup pages so each
  * has its own URL, title, and field set instead of one toggle at the root.
+ * The social buttons reflect what the instance actually has credentials for:
+ * configured providers are live and redirect through better-auth, unconfigured
+ * ones keep the honest "Coming soon" disabled state.
  */
 export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
   const router = useRouter();
@@ -89,6 +92,45 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
   const [notice, setNotice] = useState("");
   const isSignUp = initialMode === "signup";
   const [isLoading, setIsLoading] = useState(false);
+  const [socialProviders, setSocialProviders] = useState<{
+    google: boolean;
+    github: boolean;
+  } | null>(null);
+  const [socialBusy, setSocialBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth-providers")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (!cancelled && payload?.data?.providers) setSocialProviders(payload.data.providers);
+      })
+      .catch(() => {
+        // Unknown stays "Coming soon" — the honest default.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function socialSignIn(provider: "google" | "github") {
+    setSocialBusy(provider);
+    try {
+      const result = await signIn.social({
+        provider,
+        callbackURL: "/dashboard",
+        errorCallbackURL: "/login",
+      });
+      if (result?.error) {
+        setNotice(result.error.message || `Could not start sign in with ${provider}.`);
+        setSocialBusy(null);
+      }
+      // No error means better-auth redirects the browser to the provider.
+    } catch {
+      setNotice(`Could not start sign in with ${provider}.`);
+      setSocialBusy(null);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -164,18 +206,30 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
 
         <h1>{isSignUp ? "Sign up" : "Sign in to Stealth"}</h1>
 
-        {/* Google, GitHub, and SSO are not implemented yet: keep them visible but
-            honestly labelled so they are not dead controls. */}
+        {/* Google, GitHub, dan SSO tinggal hidup setelah admin menyimpan
+            kredensialnya di panel Settings: tombol yang terkonfigurasi
+            mengalihkan lewat better-auth, yang belum tetap "Coming soon"
+            supaya tidak ada kontrol setengah jalan. */}
         <div className="provider-grid">
-          <button type="button" className="secondary-button" disabled>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={!socialProviders?.google || socialBusy === "google"}
+            onClick={() => socialSignIn("google")}
+          >
             <GoogleMark />
             Google
-            <span className="provider-soon">Coming soon</span>
+            {!socialProviders?.google ? <span className="provider-soon">Coming soon</span> : null}
           </button>
-          <button type="button" className="secondary-button" disabled>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={!socialProviders?.github || socialBusy === "github"}
+            onClick={() => socialSignIn("github")}
+          >
             <GitHubMark />
             GitHub
-            <span className="provider-soon">Coming soon</span>
+            {!socialProviders?.github ? <span className="provider-soon">Coming soon</span> : null}
           </button>
         </div>
 

@@ -1,9 +1,11 @@
 import type { BetterAuthOptions } from "better-auth";
+import type { GithubOptions, GoogleOptions } from "better-auth/social-providers";
 import { APIError } from "better-auth/api";
 import { createAccessControl } from "better-auth/plugins/access";
 import { organization, username } from "better-auth/plugins";
 import { Pool } from "pg";
 import { recordAudit, recordPlatformAudit } from "@/lib/platform/audit";
+import { socialProviderConfig } from "@/lib/platform/oauth-providers";
 
 const countPool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -43,6 +45,18 @@ const organizationRoles = {
   }),
 };
 
+/**
+ * The "provider absent" marker. better-auth's context builder awaits each
+ * factory, then drops any config whose `enabled === false` before requiring a
+ * clientId — so this shape never reaches the OAuth flow. The declaration type
+ * still demands clientId, hence the assertion: the honest alternative (null)
+ * is not part of the published type even though the runtime handles it.
+ */
+const DISABLED_PROVIDER = { enabled: false } as unknown as GithubOptions;
+
+const DISABLED_GITHUB = DISABLED_PROVIDER;
+const DISABLED_GOOGLE = DISABLED_PROVIDER as unknown as GoogleOptions;
+
 export const authConfig = {
   emailAndPassword: {
     enabled: true,
@@ -61,6 +75,35 @@ export const authConfig = {
       } catch {
         // The reset link is already in the log; an audit failure must not
         // fail the request.
+      }
+    },
+  },
+
+  // External sign-in providers read their stored credentials at boot: the
+  // factory form is awaited once while the auth context is built, and a null
+  // drop marks the provider absent. Admin-saved credentials therefore apply
+  // on the next control-plane restart, and secret storage stays out of the
+  // process environment.
+  socialProviders: {
+    github: async (): Promise<GithubOptions & { enabled?: boolean }> => {
+      try {
+        const stored = await socialProviderConfig("github");
+        // enabled:false is how better-auth drops a provider: the sign-in
+        // endpoint answers "Provider not found" and the login page keeps its
+        // honest "Coming soon" state.
+        return (stored ?? { enabled: false }) as GithubOptions & { enabled?: boolean };
+      } catch (error) {
+        console.warn("[oauth-providers] github store read failed:", error);
+        return DISABLED_GITHUB;
+      }
+    },
+    google: async (): Promise<GoogleOptions & { enabled?: boolean }> => {
+      try {
+        const stored = await socialProviderConfig("google");
+        return (stored ?? { enabled: false }) as GoogleOptions & { enabled?: boolean };
+      } catch (error) {
+        console.warn("[oauth-providers] google store read failed:", error);
+        return DISABLED_GOOGLE;
       }
     },
   },
