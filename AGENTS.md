@@ -8,6 +8,43 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Perintah
+
+- `npm run ci` — gerbang CI yang sebenarnya: `next typegen` → `typecheck` → `test:all`. Pakai ini sebelum push; `npm run lint` dan `npm run format:check` tidak dijalankan CI, jadi panggil sendiri.
+- `npm test` — Vitest untuk `tests/**` dan `worker/**`, serial (`fileParallelism: false`). Butuh PostgreSQL hidup; `tests/helpers/database.ts` membuat database `stealth_hosting_test` sendiri (override lewat `TEST_DATABASE_URL`). Redis hanya dipakai `tests/platform/redis.test.ts`.
+- `npm run test:go` — tes Node Agent; memakai engine Docker sungguhan sehingga `docker version` harus berhasil. Tes build melewati dirinya sendiri bila Docker mati.
+- `npm run contract:generate` setelah mengubah `contracts/agent.openapi.yaml`. Keluarannya `contracts/generated/agent.d.ts` dan `agent/internal/api/generated.gen.go`; jangan diedit tangan, dan commit hasil generate (CI gagal pada drift).
+- Dev: `docker compose up -d postgres`, `npm run db:migrate`, lalu `npm run dev`. Proses terpisah: `npm run worker` dan `npm run agent:run`, keduanya butuh `AGENT_TOKEN`.
+- Node di image produksi `node:24-bookworm-slim` walau CI memakai Node 26 — jangan pakai API yang hanya ada di 26.
+
+## Deploy
+
+Setiap perubahan langsung di-deploy ke produksi (VPS ini, `https://console.nazxf.my.id`) supaya user bisa memverifikasi dan melanjutkan instruksi berikutnya:
+
+```bash
+sg docker -c "docker compose -f docker-compose.production.yml up -d --build control-plane"
+```
+
+- `Dockerfile` harus tetap multi-stage: `deps` → `builder` → `runner`. Runner **bukan** `.next/standalone`; ia menyalin `lib/`, `worker/`, `scripts/migrate.mts`, dan `database/` apa adanya karena worker dan migration runner meng-import `lib/` langsung. Menyederhanakannya jadi standalone akan mematahkan runtime.
+- Service `migrate` jalan sekali tiap `up` dan menerapkan `database/migrations/*.sql` di bawah advisory lock; file migrasi baru otomatis ikut ter-deploy. Jangan menjalankan migrasi manual.
+- `NEXT_PUBLIC_BETTER_AUTH_URL` di-inline saat build. Kalau domain/origin berubah, build ulang tanpa cache, bukan sekadar restart.
+- Verifikasi hasil deploy: `GET /api/health` → `200 {"status":"ok","database":"ok","migrations":"ok"}`.
+- Detail operasional (tunnel, restart, kredensial OAuth provider) ada di `docs/deployment/vps.md`.
+
+## Arsitektur
+
+- `app/` route Next.js App Router; `app/api/**` adalah Control Plane API. `components/` untuk UI bersama, `lib/*-client.ts` untuk pemanggilan API dari klien.
+- `lib/platform/**` adalah service layer server: repository PostgreSQL, state machine Deployment, backup, kuota, audit. Jangan taruh logika domain di route handler.
+- `worker/` proses worker: klaim Build Job (`FOR UPDATE SKIP LOCKED`, satu per node) lalu memanggil Node Agent. Efek samping runtime Docker hanya boleh lewat Agent.
+- `agent/` module Go `stealth/agent` — satu-satunya proses yang memegang `/var/run/docker.sock`; ia juga memprogram Caddy lewat admin API dan join network tiap Project. Kontrak HTTP-nya `contracts/agent.openapi.yaml`.
+- `database/migrations/` bernomor berurutan dan dijalankan `scripts/migrate.mts`; `scripts/generate-auth-schema.mts` hanya mencetak SQL Better Auth, bukan sumber migrasi.
+
+## Konvensi yang mudah dilanggar
+
+- `features/admin/**` adalah salinan verbatim stealth-forge: **jangan diedit** (ADR-0008). Adaptasi hanya di `app/admin/**` lewat import, `className`, atau komposisi; perbedaan yang tak bisa diselesaikan dari call site adalah keputusan produk baru.
+- Override palet halaman auth ada di blok akhir `app/globals.css` dan seluruhnya di-scope `.auth-page`; console user dan panel admin tidak boleh ikut berubah. Token dan komentar di blok itu merujuk design system Cloudflare, bukan nilai acak.
+- `features/admin` dan console memakai token warnanya sendiri; jangan menaikkan selector auth ke level global.
+
 ## Agent skills
 
 ### Issue tracker
