@@ -3,6 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  Boxes,
+  Container,
+  Database,
+  Settings,
+  Copy,
+  Check,
+  ChevronRight,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import { useActiveMember } from "@/lib/auth-client";
 import {
   deleteProject,
@@ -11,15 +22,22 @@ import {
   type ProjectSummary,
 } from "@/lib/projects-client";
 import { getError, useResource } from "@/lib/resource";
+import { useToast } from "@/components/toast-context";
 import { ServicesPanel } from "./services-panel";
 import { DatabasePanel } from "./database-panel";
 
+type ProjectTab = "services" | "database" | "settings";
+
 export function ProjectDetail({ projectId }: { projectId: string }) {
   const router = useRouter();
+  const { toast } = useToast();
   const { data: activeMember } = useActiveMember();
+
+  const [activeTab, setActiveTab] = useState<ProjectTab>("services");
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [copiedSlug, setCopiedSlug] = useState(false);
+
   // Rename and delete failures share one slot next to the load error.
   const [actionError, setActionError] = useState("");
   // Null means the edit form follows the server values; typing detaches it.
@@ -33,28 +51,31 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   const name = draft?.name ?? project?.name ?? "";
   const slug = draft?.slug ?? project?.slug ?? "";
 
-  /**
-   * Refreshes only the Project summary so Service counts stay accurate after a
-   * Service is created or deleted, without resetting the edit form.
-   */
   const refreshSummary = panel.refresh;
+
+  function copySlug(text: string) {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      void navigator.clipboard.writeText(text).then(() => {
+        setCopiedSlug(true);
+        toast.success("Copied slug to clipboard", text);
+        setTimeout(() => setCopiedSlug(false), 2000);
+      });
+    }
+  }
 
   async function rename(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
-    setNotice("");
     setActionError("");
     try {
       const updated = await updateProject(projectId, {
         name: name.trim(),
         slug: slug.trim(),
       });
-      // Adopt the saved values and re-attach the form to the server state.
       panel.setData(updated);
       setDraft(null);
-      setNotice("Project updated.");
+      toast.success("Project updated", "Name and slug changes saved.");
     } catch (cause) {
-      setNotice("");
       setActionError(getError(cause));
     } finally {
       setBusy(false);
@@ -67,6 +88,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     setActionError("");
     try {
       await deleteProject(projectId, confirmation);
+      toast.success("Project deleted", `"${project?.name}" has been removed.`);
       router.push("/dashboard/projects");
     } catch (cause) {
       setActionError(getError(cause));
@@ -76,16 +98,15 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
   if (loading) {
     return (
-      <div className="dashboard-content">
-        <div role="status" aria-label="Loading project">
-          <div className="dashboard-heading-skeleton" />
-          <div className="dashboard-heading-skeleton short" />
-          <div className="dashboard-skeleton">
-            <div className="dashboard-skeleton-row" />
-            <div className="dashboard-skeleton-row" />
-            <div className="dashboard-skeleton-row" />
-          </div>
-          <span className="sr-only">Loading Project…</span>
+      <div className="project-detail-container">
+        <div className="project-detail-header-skeleton" aria-label="Loading project">
+          <div className="supabase-skeleton-box h-4 w-40 rounded mb-4" />
+          <div className="supabase-skeleton-box h-8 w-64 rounded mb-2" />
+          <div className="supabase-skeleton-box h-4 w-32 rounded" />
+        </div>
+        <div className="project-tabs-skeleton mt-6">
+          <div className="supabase-skeleton-box h-10 w-80 rounded-lg mb-6" />
+          <div className="supabase-skeleton-box h-64 w-full rounded-xl" />
         </div>
       </div>
     );
@@ -93,159 +114,277 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
   if (!project) {
     return (
-      <div className="dashboard-content">
-        <div className="dashboard-page-heading">
-          <div>
-            <h1>Project not found</h1>
-            <p>This Project does not exist in the active Organization.</p>
-          </div>
-        </div>
-        {error || actionError ? (
-          <p className="dashboard-alert is-error" role="alert">
-            {error || actionError}
+      <div className="project-detail-container">
+        <div className="project-empty-state">
+          <Boxes className="w-12 h-12 text-zinc-600 mb-3" />
+          <h2>Project not found</h2>
+          <p className="text-zinc-400 text-sm mt-1 mb-4">
+            This project does not exist in the active organization or you do not have permission to view it.
           </p>
-        ) : null}
-        <p className="dashboard-back-link">
-          <Link href="/dashboard/projects">Back to Projects</Link>
-        </p>
+          <Link href="/dashboard/projects" className="supabase-btn-secondary">
+            Back to Projects
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-content">
-      <div className="dashboard-page-heading">
-        <div>
-          <p className="dashboard-breadcrumb">
-            <Link href="/dashboard/projects">Projects</Link> / {project.name}
-          </p>
-          <h1>{project.name}</h1>
-          <p>
-            <code className="project-slug">{project.slug}</code>
-          </p>
-        </div>
-        <span
-          className={`dashboard-status ${project.status === "empty" ? "is-idle" : "is-active"}`}
-        >
-          <span className="dashboard-status-dot" aria-hidden="true" />
-          {project.status === "empty" ? "Empty" : "Active"}
-        </span>
-      </div>
+    <div className="project-detail-container">
+      {/* Top Header */}
+      <header className="project-detail-header">
+        <nav className="project-breadcrumbs" aria-label="Breadcrumb">
+          <Link href="/dashboard/projects" className="project-breadcrumb-link">
+            Projects
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-600" aria-hidden="true" />
+          <span className="project-breadcrumb-current">{project.name}</span>
+        </nav>
 
-      {error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
-          {error || actionError}
-        </p>
-      ) : null}
-      {notice ? (
-        <p className="dashboard-alert is-success" role="status">
-          {notice}
-        </p>
-      ) : null}
+        <div className="project-title-row">
+          <div className="project-title-meta">
+            <div className="project-icon-badge" aria-hidden="true">
+              <Boxes className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="project-name-heading">{project.name}</h1>
+                <span
+                  className={`project-status-pill ${
+                    project.status === "active" ? "is-active" : "is-idle"
+                  }`}
+                >
+                  <span className="project-status-dot" aria-hidden="true" />
+                  {project.status === "active" ? "Active" : "Empty"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="project-slug-code">{project.slug}</code>
+                <button
+                  type="button"
+                  className="project-copy-slug-btn"
+                  onClick={() => copySlug(project.slug)}
+                  title="Copy project slug"
+                  aria-label="Copy project slug"
+                >
+                  {copiedSlug ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-zinc-500" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
 
-      <section className="dashboard-section" aria-labelledby="resources-heading">
-        <div className="dashboard-section-heading">
-          <h2 id="resources-heading">Resources</h2>
+          <div className="project-header-stats">
+            <div className="project-stat-pill">
+              <Container className="w-3.5 h-3.5 text-zinc-400" />
+              <span>{project.serviceCount} Services</span>
+            </div>
+            <div className="project-stat-pill">
+              <Database className="w-3.5 h-3.5 text-zinc-400" />
+              <span>{project.databaseCount > 0 ? "Postgres 16" : "No Database"}</span>
+            </div>
+          </div>
         </div>
-        <div className="project-resource-counts">
-          <div>
-            <strong>{project.serviceCount}</strong>
+
+        {/* Tab Navigation */}
+        <div className="project-tab-bar" role="tablist" aria-label="Project sections">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "services"}
+            aria-controls="panel-services"
+            id="tab-services"
+            className={`project-tab-button ${activeTab === "services" ? "is-active" : ""}`}
+            onClick={() => setActiveTab("services")}
+          >
+            <Container className="w-4 h-4" />
             <span>Services</span>
-          </div>
-          <div>
-            <strong>{project.databaseCount}</strong>
-            <span>Databases</span>
-          </div>
+            <span className="project-tab-count">{project.serviceCount}</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "database"}
+            aria-controls="panel-database"
+            id="tab-database"
+            className={`project-tab-button ${activeTab === "database" ? "is-active" : ""}`}
+            onClick={() => setActiveTab("database")}
+          >
+            <Database className="w-4 h-4" />
+            <span>Database</span>
+            <span
+              className={`project-tab-status-dot ${
+                project.databaseCount > 0 ? "is-live" : "is-none"
+              }`}
+              title={project.databaseCount > 0 ? "Provisioned" : "None"}
+            />
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "settings"}
+            aria-controls="panel-settings"
+            id="tab-settings"
+            className={`project-tab-button ${activeTab === "settings" ? "is-active" : ""}`}
+            onClick={() => setActiveTab("settings")}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
+          </button>
         </div>
-      </section>
+      </header>
 
-      <ServicesPanel
-        projectId={project.id}
-        canManage={canManage}
-        onChanged={() => void refreshSummary()}
-      />
-
-      <DatabasePanel projectId={project.id} projectName={project.name} canManage={canManage} />
-
-      {canManage ? (
-        <section className="dashboard-section" aria-labelledby="settings-heading">
-          <div className="dashboard-section-heading">
-            <h2 id="settings-heading">Settings</h2>
-          </div>
-          <form className="organization-settings-form" onSubmit={rename}>
-            <label>
-              Project name
-              <input
-                value={name}
-                maxLength={80}
-                required
-                onChange={(event) => setDraft({ name: event.target.value, slug })}
-              />
-            </label>
-            <label>
-              Slug
-              <input
-                value={slug}
-                maxLength={40}
-                required
-                onChange={(event) => setDraft({ name, slug: event.target.value })}
-              />
-            </label>
-            <button
-              className="create-project-button"
-              type="submit"
-              disabled={
-                busy ||
-                !name.trim() ||
-                !slug.trim() ||
-                (name.trim() === project.name && slug.trim() === project.slug)
-              }
-            >
-              {busy ? "Saving..." : "Save changes"}
-            </button>
-          </form>
-        </section>
-      ) : (
-        <section className="dashboard-section" aria-labelledby="settings-heading">
-          <div className="dashboard-section-heading">
-            <h2 id="settings-heading">Settings</h2>
-          </div>
-          <p className="settings-readonly">Only an owner or admin can rename this Project.</p>
-        </section>
-      )}
-
-      {canManage ? (
-        <section
-          className="dashboard-section organization-danger-zone"
-          aria-labelledby="danger-heading"
-        >
-          <div className="dashboard-section-heading">
-            <h2 id="danger-heading">Danger zone</h2>
-          </div>
-          <p>
-            Deleting this Project permanently removes its Services, Databases, Volumes, Domains, and
-            Backups.
-          </p>
-          <form className="organization-settings-form" onSubmit={remove}>
-            <label>
-              Type <strong>{project.name}</strong> to confirm
-              <input
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-                autoComplete="off"
-                required
-              />
-            </label>
-            <button
-              className="dashboard-danger-button"
-              type="submit"
-              disabled={busy || confirmation !== project.name}
-            >
-              {busy ? "Deleting..." : "Delete Project"}
-            </button>
-          </form>
-        </section>
+      {/* Global Alerts */}
+      {error || actionError ? (
+        <div className="dashboard-alert is-error my-4" role="alert">
+          {error || actionError}
+        </div>
       ) : null}
+
+      {/* Tab Panels */}
+      <main className="project-tab-content">
+        {activeTab === "services" && (
+          <div id="panel-services" role="tabpanel" aria-labelledby="tab-services">
+            <ServicesPanel
+              projectId={project.id}
+              canManage={canManage}
+              onChanged={() => void refreshSummary()}
+            />
+          </div>
+        )}
+
+        {activeTab === "database" && (
+          <div id="panel-database" role="tabpanel" aria-labelledby="tab-database">
+            <DatabasePanel
+              projectId={project.id}
+              projectName={project.name}
+              canManage={canManage}
+            />
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" className="space-y-6">
+            {/* General Settings */}
+            <div className="project-settings-card">
+              <div className="project-settings-card-head">
+                <div>
+                  <h2 className="project-settings-title">General Settings</h2>
+                  <p className="project-settings-desc">
+                    Update the project display name and unique URL slug identifier.
+                  </p>
+                </div>
+              </div>
+
+              {canManage ? (
+                <form onSubmit={rename} className="project-settings-body">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-project-name" className="project-form-label">
+                        Project Name
+                      </label>
+                      <input
+                        id="edit-project-name"
+                        value={name}
+                        maxLength={80}
+                        required
+                        onChange={(e) => setDraft({ name: e.target.value, slug })}
+                        className="project-form-input"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-project-slug" className="project-form-label">
+                        Project Slug
+                      </label>
+                      <input
+                        id="edit-project-slug"
+                        value={slug}
+                        maxLength={40}
+                        required
+                        onChange={(e) => setDraft({ name, slug: e.target.value })}
+                        className="project-form-input font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="project-settings-card-footer">
+                    <button
+                      type="submit"
+                      className="supabase-btn-green"
+                      disabled={
+                        busy ||
+                        !name.trim() ||
+                        !slug.trim() ||
+                        (name.trim() === project.name && slug.trim() === project.slug)
+                      }
+                    >
+                      {busy ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <p className="text-zinc-500 text-sm p-5">
+                  Only an owner or admin can rename this Project.
+                </p>
+              )}
+            </div>
+
+            {/* Danger Zone */}
+            {canManage && (
+              <div className="project-danger-card">
+                <div className="project-danger-card-head">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-rose-400" />
+                    <h2 className="project-danger-title">Delete Project</h2>
+                  </div>
+                  <p className="project-danger-desc">
+                    Permanently delete this project and all associated services, PostgreSQL database records, persistent volumes, and backups. This action cannot be undone.
+                  </p>
+                </div>
+
+                <form onSubmit={remove} className="project-danger-body">
+                  <div className="max-w-md">
+                    <label htmlFor="delete-confirm-input" className="project-form-label">
+                      Type <strong>{project.name}</strong> to confirm deletion
+                    </label>
+                    <input
+                      id="delete-confirm-input"
+                      value={confirmation}
+                      onChange={(e) => setConfirmation(e.target.value)}
+                      placeholder={project.name}
+                      autoComplete="off"
+                      required
+                      className="project-form-input border-rose-900/50 focus:border-rose-500"
+                    />
+                  </div>
+
+                  <div className="project-danger-card-footer">
+                    <button
+                      type="submit"
+                      className="project-btn-danger"
+                      disabled={busy || confirmation !== project.name}
+                    >
+                      {busy ? "Deleting..." : "Delete Project Permanently"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

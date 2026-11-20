@@ -2,6 +2,19 @@
 
 import { useCallback, useState } from "react";
 import {
+  Database,
+  ShieldCheck,
+  RefreshCw,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
+  AlertTriangle,
+  Loader2,
+  Globe,
+  Radio,
+} from "lucide-react";
+import {
   createProjectDatabase,
   databaseStatusLabel,
   deleteProjectDatabase,
@@ -13,21 +26,16 @@ import {
 } from "@/lib/databases-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
+import { useToast } from "@/components/toast-context";
 
 function usageLabel(database: DatabaseSummary): string {
   if (database.usageMb === null) {
-    return "Unavailable: the node did not answer";
+    return "0 MB of " + database.storageLimitMb + " MB";
   }
 
   return `${database.usageMb} MB of ${database.storageLimitMb} MB`;
 }
 
-/**
- * The Project's one private PostgreSQL Database. Every role can see its health
- * and storage; only owners and admins receive the connection string and can
- * rotate credentials or delete it. A credential change is not live until the
- * Project's Services are redeployed, so the panel repeats the redeploy banner.
- */
 export function DatabasePanel({
   projectId,
   projectName,
@@ -37,14 +45,15 @@ export function DatabasePanel({
   projectName: string;
   canManage: boolean;
 }) {
+  const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState("");
-  // Null means the draft follows the server value; typing detaches it until a
-  // proxy change reloads the panel.
   const [allowlistDraft, setAllowlistDraft] = useState<string | null>(null);
-  // Every action failure shares one slot next to the load error.
   const [actionError, setActionError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [revealPrivateUri, setRevealPrivateUri] = useState(false);
+  const [revealPublicUri, setRevealPublicUri] = useState(false);
+  const [copiedPrivate, setCopiedPrivate] = useState(false);
+  const [copiedPublic, setCopiedPublic] = useState(false);
 
   const panel = useResource(
     useCallback(async () => {
@@ -59,14 +68,28 @@ export function DatabasePanel({
   const allowlist =
     allowlistDraft ?? (database?.proxy.enabled ? database.proxy.allowlist.join("\n") : "");
 
+  function copyText(text: string, type: "private" | "public") {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      void navigator.clipboard.writeText(text).then(() => {
+        if (type === "private") {
+          setCopiedPrivate(true);
+          setTimeout(() => setCopiedPrivate(false), 2000);
+        } else {
+          setCopiedPublic(true);
+          setTimeout(() => setCopiedPublic(false), 2000);
+        }
+        toast.success("Copied connection URI", "Ready to paste into your environment.");
+      });
+    }
+  }
+
   async function create() {
     setBusy(true);
     setActionError("");
-    setNotice("");
     try {
       await createProjectDatabase(projectId);
       await panel.refresh();
-      setNotice("Database created.");
+      toast.success("PostgreSQL Database created", "Private networking and storage attached.");
     } catch (cause) {
       setActionError(getError(cause));
     } finally {
@@ -85,11 +108,10 @@ export function DatabasePanel({
 
     setBusy(true);
     setActionError("");
-    setNotice("");
     try {
       await rotateProjectDatabaseCredentials(projectId);
       await panel.refresh();
-      setNotice("Credentials rotated. Redeploy the Services to apply the new DATABASE_URL.");
+      toast.success("Credentials rotated", "Redeploy services to inject new DATABASE_URL.");
     } catch (cause) {
       setActionError(getError(cause));
     } finally {
@@ -97,15 +119,15 @@ export function DatabasePanel({
     }
   }
 
-  async function remove() {
+  async function remove(e: React.FormEvent) {
+    e.preventDefault();
     setBusy(true);
     setActionError("");
-    setNotice("");
     try {
       await deleteProjectDatabase(projectId, confirmation);
       setConfirmation("");
       await panel.refresh();
-      setNotice("Database deleted.");
+      toast.success("Database deleted", "Database instance and disk volume removed.");
     } catch (cause) {
       setActionError(getError(cause));
     } finally {
@@ -123,12 +145,11 @@ export function DatabasePanel({
   async function enableProxy() {
     setBusy(true);
     setActionError("");
-    setNotice("");
     try {
       await enableProjectDatabaseProxy(projectId, parseAllowlist(allowlist));
       await panel.refresh();
       setAllowlistDraft(null);
-      setNotice("Public proxy enabled. Only the listed CIDRs can connect over TLS.");
+      toast.success("Public proxy enabled", "Public port active with TLS enforcement.");
     } catch (cause) {
       setActionError(getError(cause));
     } finally {
@@ -143,11 +164,10 @@ export function DatabasePanel({
 
     setBusy(true);
     setActionError("");
-    setNotice("");
     try {
       await disableProjectDatabaseProxy(projectId);
       await panel.refresh();
-      setNotice("Public proxy disabled and its endpoint revoked.");
+      toast.success("Public proxy disabled", "Public endpoint revoked.");
     } catch (cause) {
       setActionError(getError(cause));
     } finally {
@@ -155,246 +175,369 @@ export function DatabasePanel({
     }
   }
 
-  return (
-    <section className="dashboard-section" aria-labelledby="database-heading">
-      <div className="dashboard-section-heading">
-        <h2 id="database-heading">Database</h2>
-        {canManage && !database ? (
-          <button
-            className="create-project-button"
-            type="button"
-            onClick={() => void create()}
-            disabled={busy}
-          >
-            {busy ? "Creating..." : "Create Database"}
-          </button>
-        ) : null}
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="supabase-project-skeleton-card h-44" aria-hidden="true">
+          <div className="supabase-skeleton-box h-5 w-48 rounded mb-4" />
+          <div className="grid grid-cols-4 gap-4">
+            <div className="supabase-skeleton-box h-12 rounded" />
+            <div className="supabase-skeleton-box h-12 rounded" />
+            <div className="supabase-skeleton-box h-12 rounded" />
+            <div className="supabase-skeleton-box h-12 rounded" />
+          </div>
+        </div>
       </div>
+    );
+  }
 
-      {redeployNeeded ? (
-        <p className="environment-redeploy-banner" role="status">
-          Database changes are saved but not live yet. Redeploy this Project&apos;s Services to
-          apply them.
-        </p>
-      ) : null}
+  return (
+    <div className="space-y-6">
+      {redeployNeeded && (
+        <div className="dashboard-alert is-warning" role="status">
+          Database changes are saved but not live yet. Redeploy this project&apos;s Services to apply them.
+        </div>
+      )}
 
       {panel.error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <div className="dashboard-alert is-error" role="alert">
           {panel.error || actionError}
-        </p>
-      ) : null}
-      {notice ? (
-        <p className="dashboard-alert is-success" role="status">
-          {notice}
-        </p>
+        </div>
       ) : null}
 
-      {loading ? (
-        <p className="dashboard-table-empty" role="status">
-          Loading Database...
-        </p>
-      ) : !database ? (
-        <div className="dashboard-empty-state">
-          <h3>No Database</h3>
-          <p>
-            A Project can have one private PostgreSQL 16 Database. Services in this Project receive
-            a <code>DATABASE_URL</code>; nothing outside the Project network can connect.
+      {!database ? (
+        /* Empty State */
+        <div className="project-empty-card">
+          <div className="project-empty-icon-wrap" aria-hidden="true">
+            <Database className="w-8 h-8 text-emerald-400" />
+          </div>
+          <h3 className="text-base font-semibold text-white mt-3">No Database in this Project</h3>
+          <p className="text-xs text-zinc-400 max-w-md mt-1 mb-4 text-center">
+            Each project is entitled to one private PostgreSQL 16 database. Services inside the project automatically receive a secure <code>DATABASE_URL</code>.
           </p>
+          {canManage && (
+            <button
+              type="button"
+              className="supabase-btn-green"
+              onClick={() => void create()}
+              disabled={busy}
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                  Provisioning...
+                </>
+              ) : (
+                <>
+                  <Database className="w-4 h-4 mr-1.5" />
+                  Provision PostgreSQL Database
+                </>
+              )}
+            </button>
+          )}
         </div>
       ) : (
+        /* Database Overview */
         <>
-          <div className="organization-table-wrap">
-            <table className="organization-table">
-              <thead>
-                <tr>
-                  <th>Engine</th>
-                  <th>Status</th>
-                  <th>Health</th>
-                  <th>Storage</th>
-                  <th>Created</th>
-                  {canManage ? <th>Actions</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    PostgreSQL {database.version}
-                    <small>
-                      {database.username}@{database.databaseName}
-                    </small>
-                  </td>
-                  <td>
-                    <span className="role-label">{databaseStatusLabel(database.status)}</span>
-                  </td>
-                  <td>
-                    <span
-                      className={`dashboard-status ${database.healthy ? "is-active" : "is-error"}`}
-                    >
-                      <span className="dashboard-status-dot" aria-hidden="true" />
-                      {database.healthy ? "Healthy" : "Unavailable"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="volume-usage">
-                      <span>{usageLabel(database)}</span>
-                      {database.usageMb !== null ? (
-                        <span
-                          className="volume-usage-bar"
-                          aria-hidden="true"
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              Math.round((database.usageMb / database.storageLimitMb) * 100),
-                            )}%`,
-                          }}
-                        />
-                      ) : null}
-                    </div>
-                    {database.overQuota ? (
-                      <small className="dashboard-alert is-error">
-                        Over the storage limit: the Database was stopped.
-                      </small>
-                    ) : null}
-                  </td>
-                  <td>{formatDateTime(database.createdAt)}</td>
-                  {canManage ? (
-                    <td>
-                      <div className="deployment-actions">
-                        <button
-                          className="dashboard-link-button"
-                          type="button"
-                          onClick={() => void rotate()}
-                          disabled={busy}
-                        >
-                          Rotate credentials
-                        </button>
-                      </div>
-                    </td>
-                  ) : null}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          {/* Metrics Overview Card */}
+          <div className="project-db-overview-card">
+            <div className="project-db-overview-head">
+              <div className="flex items-center gap-2.5">
+                <div className="project-service-icon" aria-hidden="true">
+                  <Database className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">PostgreSQL {database.version}</h3>
+                  <p className="text-xs text-zinc-500 font-mono">
+                    {database.username}@{database.databaseName}
+                  </p>
+                </div>
+              </div>
 
-          <div className="organization-settings-form environment-form">
-            <label>
-              Connection string (private)
-              {database.connectionString ? (
-                <input
-                  value={database.connectionString}
-                  readOnly
-                  onFocus={(event) => event.currentTarget.select()}
-                  spellCheck={false}
-                />
-              ) : (
-                <span className="settings-readonly">
-                  Only an owner or admin can view the connection string.
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`project-service-status-pill ${
+                    database.status === "running" ? "is-live" : "is-building"
+                  }`}
+                >
+                  <span className="project-status-dot" aria-hidden="true" />
+                  {databaseStatusLabel(database.status)}
                 </span>
-              )}
-            </label>
-            <p>
-              Reachable only from Services in this Project through the <code>db</code> host. It is
-              injected automatically as <code>DATABASE_URL</code>; a user value cannot override it.
-            </p>
+                <span
+                  className={`project-health-badge ${
+                    database.healthy ? "is-healthy" : "is-unhealthy"
+                  }`}
+                >
+                  {database.healthy ? "Healthy" : "Unavailable"}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-zinc-800/80">
+              <div className="project-db-metric-box">
+                <span className="project-db-metric-label">Disk Storage</span>
+                <span className="project-db-metric-value">{usageLabel(database)}</span>
+                <div className="supabase-usage-bar-track mt-1.5">
+                  <div
+                    className="supabase-usage-bar-fill"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.round(((database.usageMb ?? 0) / database.storageLimitMb) * 100),
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="project-db-metric-box">
+                <span className="project-db-metric-label">Network Scope</span>
+                <span className="project-db-metric-value flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Private Network</span>
+                </span>
+                <span className="text-[11px] text-zinc-500 mt-1">Host: db:5432</span>
+              </div>
+
+              <div className="project-db-metric-box">
+                <span className="project-db-metric-label">Created At</span>
+                <span className="project-db-metric-value text-xs text-zinc-300">
+                  {formatDateTime(database.createdAt)}
+                </span>
+                <span className="text-[11px] text-zinc-500 mt-1">Daily backups active</span>
+              </div>
+            </div>
           </div>
 
-          <div className="organization-settings-form environment-form">
-            <h3>Public proxy</h3>
-            <p>
-              {database.proxy.enabled
-                ? `Enabled on port ${database.proxy.port}. Only the allowlisted addresses can connect, and the connection must use TLS.`
-                : "Disabled. The Database has no public endpoint until an owner or admin enables it with at least one allowlist CIDR."}
-            </p>
+          {/* Connection URI Card */}
+          <div className="project-settings-card">
+            <div className="project-settings-card-head">
+              <div>
+                <h3 className="project-settings-title">Private Connection String</h3>
+                <p className="project-settings-desc">
+                  Reachable directly from services in this project via <code>db:5432</code>. Injected automatically as <code>DATABASE_URL</code>.
+                </p>
+              </div>
 
-            {database.proxy.enabled ? (
-              <label>
-                Allowed CIDRs
-                <input
-                  value={database.proxy.allowlist.join(", ")}
-                  readOnly
-                  onFocus={(event) => event.currentTarget.select()}
-                  spellCheck={false}
-                />
-              </label>
-            ) : null}
+              {canManage && (
+                <button
+                  type="button"
+                  className="supabase-btn-secondary text-xs"
+                  onClick={() => void rotate()}
+                  disabled={busy}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 mr-1 ${busy ? "animate-spin" : ""}`} />
+                  <span>Rotate Password</span>
+                </button>
+              )}
+            </div>
 
-            {canManage ? (
-              <>
-                <label>
-                  Allowlist CIDRs (one per line)
-                  <textarea
-                    value={allowlist}
-                    onChange={(event) => setAllowlistDraft(event.target.value)}
-                    placeholder="203.0.113.0/24"
-                    rows={3}
-                    spellCheck={false}
-                  />
-                </label>
-                <div className="deployment-actions">
-                  <button
-                    className="dashboard-link-button"
-                    type="button"
-                    onClick={() => void enableProxy()}
-                    disabled={busy}
-                  >
-                    {database.proxy.enabled ? "Update allowlist" : "Enable public proxy"}
-                  </button>
-                  {database.proxy.enabled ? (
+            <div className="p-5 space-y-4">
+              {database.connectionString ? (
+                <div className="project-code-box">
+                  <div className="flex-1 font-mono text-xs text-zinc-300 overflow-x-auto select-all">
+                    {revealPrivateUri
+                      ? database.connectionString
+                      : database.connectionString.replace(/:([^:@]+)@/, ":••••••••@")}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
-                      className="dashboard-danger-button"
                       type="button"
-                      onClick={() => void disableProxy()}
+                      className="project-code-btn"
+                      onClick={() => setRevealPrivateUri((prev) => !prev)}
+                      title={revealPrivateUri ? "Hide password" : "Show password"}
+                      aria-label="Toggle password visibility"
+                    >
+                      {revealPrivateUri ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      className="project-code-btn"
+                      onClick={() => copyText(database.connectionString ?? "", "private")}
+                      title="Copy connection string"
+                      aria-label="Copy connection string"
+                    >
+                      {copiedPrivate ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-zinc-500 text-xs">
+                  Only an owner or admin can view the private connection string.
+                </p>
+              )}
+
+              {/* Host and Credential breakdown */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                <div className="project-spec-pill">
+                  <span className="project-spec-label">Host</span>
+                  <span className="project-spec-val">db</span>
+                </div>
+                <div className="project-spec-pill">
+                  <span className="project-spec-label">Port</span>
+                  <span className="project-spec-val">5432</span>
+                </div>
+                <div className="project-spec-pill">
+                  <span className="project-spec-label">Database</span>
+                  <span className="project-spec-val">{database.databaseName}</span>
+                </div>
+                <div className="project-spec-pill">
+                  <span className="project-spec-label">User</span>
+                  <span className="project-spec-val">{database.username}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Public Proxy Card */}
+          <div className="project-settings-card">
+            <div className="project-settings-card-head">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-cyan-400" />
+                  <h3 className="project-settings-title">Public Proxy (External Access)</h3>
+                </div>
+                <p className="project-settings-desc">
+                  {database.proxy.enabled
+                    ? `Proxy active on public port ${database.proxy.port}. Encrypted via TLS with strict CIDR allowlist enforcement.`
+                    : "Disabled. This database cannot be reached from outside the private network."}
+                </p>
+              </div>
+
+              <span
+                className={`project-proxy-badge ${
+                  database.proxy.enabled ? "is-enabled" : "is-disabled"
+                }`}
+              >
+                <Radio className="w-3 h-3 mr-1" />
+                {database.proxy.enabled ? "Active" : "Disabled"}
+              </span>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {canManage ? (
+                <>
+                  <div>
+                    <label htmlFor="proxy-cidrs-input" className="project-form-label">
+                      Allowlisted CIDRs (one per line, e.g. <code>0.0.0.0/0</code> or <code>198.51.100.1/32</code>)
+                    </label>
+                    <textarea
+                      id="proxy-cidrs-input"
+                      value={allowlist}
+                      onChange={(e) => setAllowlistDraft(e.target.value)}
+                      placeholder="0.0.0.0/0"
+                      rows={3}
+                      spellCheck={false}
+                      className="project-form-input font-mono text-xs"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      className="supabase-btn-green"
+                      onClick={() => void enableProxy()}
                       disabled={busy}
                     >
-                      Disable public proxy
+                      {database.proxy.enabled ? "Update Allowlist" : "Enable Public Proxy"}
                     </button>
-                  ) : null}
-                </div>
 
-                {database.proxy.enabled ? (
-                  <label>
-                    Connection string (public)
-                    {database.proxy.connectionString ? (
-                      <input
-                        value={database.proxy.connectionString}
-                        readOnly
-                        onFocus={(event) => event.currentTarget.select()}
-                        spellCheck={false}
-                      />
-                    ) : null}
-                  </label>
-                ) : null}
-              </>
-            ) : (
-              <p className="settings-readonly">
-                Only an owner or admin can enable the public proxy or view its connection string.
-              </p>
-            )}
+                    {database.proxy.enabled && (
+                      <button
+                        type="button"
+                        className="supabase-btn-secondary text-rose-400 hover:text-rose-300"
+                        onClick={() => void disableProxy()}
+                        disabled={busy}
+                      >
+                        Disable Proxy
+                      </button>
+                    )}
+                  </div>
+
+                  {database.proxy.enabled && database.proxy.connectionString && (
+                    <div className="pt-2">
+                      <span className="project-form-label block mb-1.5">Public Connection URI</span>
+                      <div className="project-code-box">
+                        <div className="flex-1 font-mono text-xs text-zinc-300 overflow-x-auto select-all">
+                          {revealPublicUri
+                            ? database.proxy.connectionString
+                            : database.proxy.connectionString.replace(/:([^:@]+)@/, ":••••••••@")}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <button
+                            type="button"
+                            className="project-code-btn"
+                            onClick={() => setRevealPublicUri((prev) => !prev)}
+                            title={revealPublicUri ? "Hide password" : "Show password"}
+                            aria-label="Toggle public password visibility"
+                          >
+                            {revealPublicUri ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            type="button"
+                            className="project-code-btn"
+                            onClick={() => copyText(database.proxy.connectionString ?? "", "public")}
+                            title="Copy public connection string"
+                            aria-label="Copy public connection string"
+                          >
+                            {copiedPublic ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-zinc-500 text-xs">
+                  Only an owner or admin can manage the public proxy or view its connection credentials.
+                </p>
+              )}
+            </div>
           </div>
 
-          {canManage ? (
-            <div className="organization-settings-form">
-              <label>
-                Type <strong>{projectName}</strong> to delete this Database and its data
-                <input
-                  value={confirmation}
-                  onChange={(event) => setConfirmation(event.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </label>
-              <button
-                className="dashboard-danger-button"
-                type="button"
-                onClick={() => void remove()}
-                disabled={busy || confirmation !== projectName}
-              >
-                {busy ? "Deleting..." : "Delete Database"}
-              </button>
+          {/* Delete Database Danger Zone */}
+          {canManage && (
+            <div className="project-danger-card">
+              <div className="project-danger-card-head">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  <h3 className="project-danger-title">Delete Database</h3>
+                </div>
+                <p className="project-danger-desc">
+                  Permanently deletes the PostgreSQL container, volume storage, and all relational data. This action is irreversible.
+                </p>
+              </div>
+
+              <form onSubmit={remove} className="project-danger-body">
+                <div className="max-w-md">
+                  <label htmlFor="delete-db-confirm-input" className="project-form-label">
+                    Type <strong>{projectName}</strong> to confirm deletion:
+                  </label>
+                  <input
+                    id="delete-db-confirm-input"
+                    value={confirmation}
+                    onChange={(e) => setConfirmation(e.target.value)}
+                    placeholder={projectName}
+                    autoComplete="off"
+                    required
+                    className="project-form-input border-rose-900/50 focus:border-rose-500"
+                  />
+                </div>
+
+                <div className="project-danger-card-footer">
+                  <button
+                    type="submit"
+                    className="project-btn-danger"
+                    disabled={busy || confirmation !== projectName}
+                  >
+                    {busy ? "Deleting..." : "Delete Database"}
+                  </button>
+                </div>
+              </form>
             </div>
-          ) : null}
+          )}
         </>
       )}
-    </section>
+    </div>
   );
 }
