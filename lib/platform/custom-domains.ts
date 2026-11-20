@@ -432,4 +432,41 @@ export async function removeServiceCustomDomainOnNode(
   await removeCustomDomainRoute(serviceId, hostname);
 }
 
+export type OrganizationCustomDomainSummary = CustomDomainSummary & {
+  serviceName: string;
+  projectId: string;
+  projectName: string;
+};
+
+export async function listOrganizationCustomDomains(
+  organizationId: string,
+): Promise<OrganizationCustomDomainSummary[]> {
+  const result = await pool.query<
+    CustomDomainRow & {
+      serviceName: string;
+      projectId: string;
+      projectName: string;
+    }
+  >(
+    `SELECT cd."id", cd."serviceId", cd."hostname", cd."status", cd."verificationToken",
+            cd."certificateStatus", cd."verifiedAt", cd."lastError", cd."createdAt", cd."updatedAt",
+            s."name" AS "serviceName",
+            p."id" AS "projectId",
+            p."name" AS "projectName"
+     FROM "custom_domain" cd
+     JOIN "service" s ON s."id" = cd."serviceId"
+     JOIN "project" p ON p."id" = s."projectId"
+     WHERE p."organizationId" = $1
+     ORDER BY cd."createdAt" DESC`,
+    [organizationId],
+  );
+
+  return result.rows.map((row) => ({
+    ...toSummary(row),
+    serviceName: row.serviceName,
+    projectId: row.projectId,
+    projectName: row.projectName,
+  }));
+}
+
 export { loadDomainById };
