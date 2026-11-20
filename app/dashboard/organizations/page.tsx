@@ -3,11 +3,9 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Search, X, Loader2 } from "lucide-react";
-import {
-  authClient,
-  useListOrganizations,
-} from "@/lib/auth-client";
+import { authClient, useListOrganizations } from "@/lib/auth-client";
 import { useToast } from "@/components/toast-context";
+import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 
 function OrgHexIcon() {
   return (
@@ -40,6 +38,11 @@ export default function OrganizationsPage() {
     if (!q) return orgList;
     return orgList.filter((org) => org.name.toLowerCase().includes(q));
   }, [orgList, search]);
+
+  const gridRef = useGsapEntrance({ targets: ".org-card", y: 14, duration: 0.35, stagger: 0.05 }, [
+    filteredOrgs.length,
+    isPending,
+  ]);
 
   async function handleSelectOrg(orgId: string) {
     setSwitchingId(orgId);
@@ -159,9 +162,12 @@ export default function OrganizationsPage() {
               </>
             ) : (
               <>
-                <p className="text-zinc-300 font-medium">You don&apos;t have any organizations yet.</p>
+                <p className="text-zinc-300 font-medium">
+                  You don&apos;t have any organizations yet.
+                </p>
                 <p className="text-zinc-500 text-sm mt-1">
-                  Create your first organization to start launching projects and managed Postgres databases.
+                  Create your first organization to start launching projects and managed Postgres
+                  databases.
                 </p>
                 <button
                   type="button"
@@ -175,7 +181,7 @@ export default function OrganizationsPage() {
             )}
           </div>
         ) : (
-          <div className="orgs-grid">
+          <div ref={gridRef} className="orgs-grid">
             {filteredOrgs.map((org) => {
               const isSwitching = switchingId === org.id;
               return (
@@ -205,7 +211,12 @@ export default function OrganizationsPage() {
       {/* Modal New Organization */}
       {modalOpen && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <div
+            className="supabase-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+          >
             <div className="supabase-modal-header">
               <h2 id="modal-title">Create a new organization</h2>
               <button
@@ -221,7 +232,8 @@ export default function OrganizationsPage() {
             <form onSubmit={handleCreateOrg}>
               <div className="supabase-modal-body">
                 <p className="text-sm text-zinc-400 mb-4">
-                  Organizations group your projects, team members, and databases under a unified workspace.
+                  Organizations group your projects, team members, and databases under a unified
+                  workspace.
                 </p>
 
                 <label htmlFor="modal-org-name" className="supabase-modal-label">

@@ -21,6 +21,7 @@ import {
 import { authClient, useActiveMember, useActiveOrganization } from "@/lib/auth-client";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
+import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -37,6 +38,11 @@ export default function SettingsPage() {
 
   const isOwner = activeMember?.role === "owner";
   const organizationName = organization?.name ?? "";
+
+  const containerRef = useGsapEntrance([
+    { targets: ".settings-metric-card", y: 12, duration: 0.35, stagger: 0.05 },
+    { targets: ".settings-card", y: 16, duration: 0.4, stagger: 0.08, delay: 0.1 },
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,7 +147,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="settings-page-container">
+    <div ref={containerRef} className="settings-page-container">
       {/* Header */}
       <header className="settings-page-header">
         <div className="flex items-center gap-3">
