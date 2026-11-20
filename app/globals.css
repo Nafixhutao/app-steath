@@ -6569,3 +6569,265 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+
+/* ==========================================================================
+   Members / Team Page (Supabase Style)
+   ========================================================================== */
+.members-page-container {
+  padding: 28px 36px 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.members-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.members-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: #1a1922;
+  border: 1px solid #282633;
+  flex-shrink: 0;
+}
+
+.members-page-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.members-page-subtitle {
+  font-size: 13px;
+  color: #8e8c99;
+  margin: 3px 0 0;
+}
+
+.members-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.members-search-box {
+  position: relative;
+  width: 280px;
+  max-width: 100%;
+}
+
+.members-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: #636170;
+  pointer-events: none;
+}
+
+.members-search-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 28px 0 32px;
+  border-radius: 6px;
+  border: 1px solid #282631;
+  background-color: #17161b;
+  color: #edecf1;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 150ms;
+}
+
+.members-search-input:focus {
+  border-color: #3ecf8e;
+}
+
+.members-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #716f7c;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+}
+
+.members-count-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background-color: #17161b;
+  border: 1px solid #282631;
+  font-size: 12.5px;
+  color: #8e8c99;
+}
+
+/* Members Table Card */
+.members-table-card {
+  border-radius: 8px;
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  overflow: hidden;
+}
+
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.members-table th {
+  padding: 11px 16px;
+  background-color: #141318;
+  color: #716f7c;
+  font-weight: 500;
+  font-size: 12px;
+  border-bottom: 1px solid #25232c;
+}
+
+.members-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #1f1e25;
+  color: #c9c7d2;
+}
+
+.members-table tr:last-child td {
+  border-bottom: none;
+}
+
+.members-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.members-avatar-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #24222f;
+  border: 1px solid #322f3e;
+  color: #3ecf8e;
+  font-weight: 600;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.members-user-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.members-user-email {
+  display: block;
+  font-size: 11.5px;
+  color: #716f7c;
+  font-family: monospace;
+}
+
+.members-you-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: rgba(62, 207, 142, 0.1);
+  color: #3ecf8e;
+  border: 1px solid rgba(62, 207, 142, 0.25);
+}
+
+.members-role-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: capitalize;
+}
+
+.members-role-badge.is-owner {
+  background-color: rgba(168, 85, 247, 0.1);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.members-role-badge.is-admin {
+  background-color: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.members-role-badge.is-member {
+  background-color: #201e27;
+  color: #9e9aa7;
+  border: 1px solid #2a2835;
+}
+
+.members-role-select {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background-color: #1a1921;
+  border: 1px solid #2c2a38;
+  color: #edecf1;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.members-role-select:focus {
+  border-color: #3ecf8e;
+}
+
+.members-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 120ms;
+}
+
+.members-action-btn:hover {
+  background-color: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.members-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+}
