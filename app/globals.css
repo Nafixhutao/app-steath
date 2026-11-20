@@ -7406,10 +7406,44 @@ body {
   border-color: #34313c;
 }
 
+.usage-metric-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.usage-metric-icon-badge.is-emerald {
+  background-color: rgba(62, 207, 142, 0.1);
+  border: 1px solid rgba(62, 207, 142, 0.2);
+  color: #3ecf8e;
+}
+
+.usage-metric-icon-badge.is-cyan {
+  background-color: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  color: #22d3ee;
+}
+
+.usage-metric-icon-badge.is-amber {
+  background-color: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.usage-metric-icon-badge.is-blue {
+  background-color: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  color: #60a5fa;
+}
+
 .usage-metric-label {
   font-size: 11px;
   font-weight: 500;
-  color: #878492;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -7443,6 +7477,7 @@ body {
 .usage-meter-numbers {
   font-size: 13px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
   color: #edecf1;
 }
 
@@ -7477,6 +7512,7 @@ body {
   height: 6px;
   width: 100%;
   background-color: #22202a;
+  border: 1px solid #2b2836;
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -7493,10 +7529,12 @@ body {
 
 .usage-progress-fill.is-pending {
   background-color: #fbbf24;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.35);
 }
 
 .usage-progress-fill.is-failed {
   background-color: #f43f5e;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.35);
 }
 
 .usage-count-pill {
@@ -7570,6 +7608,7 @@ body {
 
 .usage-status-pill.is-running .project-status-dot {
   background-color: #3ecf8e;
+  box-shadow: 0 0 6px rgba(62, 207, 142, 0.55);
 }
 
 .usage-status-pill.is-failed {
@@ -7580,6 +7619,7 @@ body {
 
 .usage-status-pill.is-failed .project-status-dot {
   background-color: #f43f5e;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.55);
 }
 
 .usage-status-pill.is-pending {

@@ -20,6 +20,7 @@ import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
 import { useResource } from "@/lib/resource";
 import { getOrganizationUsage } from "@/lib/usage-client";
 import { formatDateTime } from "@/lib/format";
+import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 
 function formatMb(mb: number): string {
   if (mb < 1024) return `${mb} MB`;
@@ -68,15 +69,22 @@ function QuotaMeter({
             {used}
             {unit}
           </strong>{" "}
-          <span className="text-zinc-500">
+          <span className="text-zinc-400">
             of {limit}
             {unit}
           </span>
         </span>
-        <span className="text-xs font-mono font-medium text-zinc-400">{percent}%</span>
+        <span className="text-xs font-mono font-medium text-zinc-300 tabular-nums">{percent}%</span>
       </div>
 
-      <div className="usage-progress-track" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label={`${label} usage`}>
+      <div
+        className="usage-progress-track"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${label} usage`}
+      >
         <div
           className={`usage-progress-fill ${
             atLimit ? "is-failed" : nearLimit ? "is-pending" : "is-healthy"
@@ -85,9 +93,7 @@ function QuotaMeter({
         />
       </div>
 
-      {description ? (
-        <p className="text-[11px] text-zinc-500 mt-2">{description}</p>
-      ) : null}
+      {description ? <p className="text-[11px] text-zinc-400 mt-2">{description}</p> : null}
     </div>
   );
 }
@@ -110,8 +116,17 @@ export default function UsagePage() {
   const maxDatabasesPerProject =
     usageData?.projects.reduce((max, project) => Math.max(max, project.databaseCount), 0) ?? 0;
 
+  const containerRef = useGsapEntrance<HTMLDivElement>(
+    [
+      { targets: ".usage-metric-card", y: 10, duration: 0.35, stagger: 0.05 },
+      { targets: ".usage-meter-card", y: 10, duration: 0.35, stagger: 0.05, delay: 0.08 },
+      { targets: ".usage-table-card, .usage-policy-card", y: 12, duration: 0.4, delay: 0.16 },
+    ],
+    [Boolean(usageData)],
+  );
+
   return (
-    <div className="usage-page-container">
+    <div ref={containerRef} className="usage-page-container">
       {/* Header */}
       <header className="usage-page-header">
         <div className="flex items-center gap-3">
@@ -124,7 +139,8 @@ export default function UsagePage() {
               <span className="supabase-plan-badge">FREE PLAN</span>
             </div>
             <p className="usage-page-subtitle">
-              Resource consumption, billing quotas, and system limits for {organization?.name ?? "your organization"}.
+              Resource consumption, billing quotas, and system limits for{" "}
+              {organization?.name ?? "your organization"}.
             </p>
           </div>
         </div>
@@ -134,6 +150,7 @@ export default function UsagePage() {
           className="supabase-btn-secondary"
           onClick={() => void usage.refresh()}
           disabled={loading}
+          aria-busy={loading}
           title="Refresh measured usage"
         >
           <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
@@ -161,7 +178,7 @@ export default function UsagePage() {
         </div>
       ) : !usageData ? (
         <div className="usage-empty-state">
-          <AlertCircle className="w-8 h-8 text-zinc-500 mb-2" />
+          <AlertCircle className="w-8 h-8 text-zinc-400 mb-2" />
           <h2 className="text-sm font-semibold text-white">Quota unavailable</h2>
           <p className="text-xs text-zinc-400 mt-1">
             The organization quota could not be loaded. Try refreshing in a moment.
@@ -170,41 +187,55 @@ export default function UsagePage() {
       ) : (
         <>
           {/* Top 4 Metrics Grid */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" aria-label="Measured resource totals">
+          <section
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+            aria-label="Measured resource totals"
+          >
             <div className="usage-metric-card">
               <div className="flex items-center justify-between">
                 <span className="usage-metric-label">CPU Consumption</span>
-                <Cpu className="w-4 h-4 text-emerald-400" />
+                <div className="usage-metric-icon-badge is-emerald">
+                  <Cpu className="w-4 h-4" />
+                </div>
               </div>
-              <span className="usage-metric-val">{usageData.totals.cpu.toFixed(2)} <small className="text-xs font-normal text-zinc-400">vCPU</small></span>
-              <span className="text-[11px] text-zinc-500">Active container cores</span>
+              <span className="usage-metric-val">
+                {usageData.totals.cpu.toFixed(2)}{" "}
+                <small className="text-xs font-normal text-zinc-400">vCPU</small>
+              </span>
+              <span className="text-[11px] text-zinc-400">Active container cores</span>
             </div>
 
             <div className="usage-metric-card">
               <div className="flex items-center justify-between">
                 <span className="usage-metric-label">RAM Consumed</span>
-                <Activity className="w-4 h-4 text-cyan-400" />
+                <div className="usage-metric-icon-badge is-cyan">
+                  <Activity className="w-4 h-4" />
+                </div>
               </div>
               <span className="usage-metric-val">{formatMb(usageData.totals.memoryMb)}</span>
-              <span className="text-[11px] text-zinc-500">Container memory footprint</span>
+              <span className="text-[11px] text-zinc-400">Container memory footprint</span>
             </div>
 
             <div className="usage-metric-card">
               <div className="flex items-center justify-between">
                 <span className="usage-metric-label">Volume Storage</span>
-                <HardDrive className="w-4 h-4 text-amber-400" />
+                <div className="usage-metric-icon-badge is-amber">
+                  <HardDrive className="w-4 h-4" />
+                </div>
               </div>
               <span className="usage-metric-val">{formatMb(usageData.totals.volumeMb)}</span>
-              <span className="text-[11px] text-zinc-500">Persistent mounted disks</span>
+              <span className="text-[11px] text-zinc-400">Persistent mounted disks</span>
             </div>
 
             <div className="usage-metric-card">
               <div className="flex items-center justify-between">
                 <span className="usage-metric-label">Database Storage</span>
-                <Database className="w-4 h-4 text-blue-400" />
+                <div className="usage-metric-icon-badge is-blue">
+                  <Database className="w-4 h-4" />
+                </div>
               </div>
               <span className="usage-metric-val">{formatMb(usageData.totals.databaseMb)}</span>
-              <span className="text-[11px] text-zinc-500">Managed PostgreSQL engines</span>
+              <span className="text-[11px] text-zinc-400">Managed PostgreSQL engines</span>
             </div>
           </section>
 
@@ -217,7 +248,7 @@ export default function UsagePage() {
                   Organization Quotas &amp; Limits
                 </h2>
               </div>
-              <span className="text-xs text-zinc-500">Updated automatically</span>
+              <span className="text-xs text-zinc-400">Updated automatically</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -252,7 +283,7 @@ export default function UsagePage() {
           <section className="mb-8" aria-labelledby="services-usage-heading">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Server className="w-4 h-4 text-zinc-400" />
+                <Server className="w-4 h-4 text-emerald-400" />
                 <h2 id="services-usage-heading" className="text-sm font-semibold text-white">
                   Active Services Resource Breakdown
                 </h2>
@@ -265,7 +296,7 @@ export default function UsagePage() {
                 <div className="usage-empty-box">
                   <Server className="w-7 h-7 text-zinc-600 mb-2" />
                   <p className="text-sm text-zinc-300 font-medium">No deployed services</p>
-                  <p className="text-xs text-zinc-500 mt-1">
+                  <p className="text-xs text-zinc-400 mt-1">
                     Deploy a service from a project to start measuring container compute and RAM.
                   </p>
                 </div>
@@ -287,10 +318,10 @@ export default function UsagePage() {
                         <td>
                           <Link
                             href={`/dashboard/services/${service.id}`}
-                            className="font-medium text-white hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
+                            className="group font-medium text-white hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
                           >
                             <span>{service.name}</span>
-                            <ExternalLink className="w-3 h-3 text-zinc-500 opacity-60" />
+                            <ExternalLink className="w-3 h-3 text-zinc-400 opacity-70 group-hover:opacity-100 transition-opacity" />
                           </Link>
                         </td>
                         <td>
@@ -301,24 +332,30 @@ export default function UsagePage() {
                             {service.projectName}
                           </Link>
                         </td>
-                        <td className="text-xs font-mono text-zinc-300">
+                        <td className="text-xs font-mono tabular-nums text-zinc-200">
                           {service.cpuUsage.toFixed(2)}
                           {canSeeLimitDetail ? (
-                            <span className="text-zinc-500"> / {service.cpuLimit} vCPU</span>
+                            <span className="text-zinc-400"> / {service.cpuLimit} vCPU</span>
                           ) : (
                             " vCPU"
                           )}
                         </td>
-                        <td className="text-xs font-mono text-zinc-300">
+                        <td className="text-xs font-mono tabular-nums text-zinc-200">
                           {formatMb(service.memoryUsageMb)}
                           {canSeeLimitDetail ? (
-                            <span className="text-zinc-500"> / {formatMb(service.memoryLimitMb)}</span>
+                            <span className="text-zinc-400">
+                              {" "}
+                              / {formatMb(service.memoryLimitMb)}
+                            </span>
                           ) : null}
                         </td>
-                        <td className="text-xs font-mono text-zinc-300">
+                        <td className="text-xs font-mono tabular-nums text-zinc-200">
                           {formatMb(service.volumeUsageMb)}
                           {canSeeLimitDetail ? (
-                            <span className="text-zinc-500"> / {formatMb(service.volumeLimitMb)}</span>
+                            <span className="text-zinc-400">
+                              {" "}
+                              / {formatMb(service.volumeLimitMb)}
+                            </span>
                           ) : null}
                         </td>
                         <td>
@@ -327,8 +364,8 @@ export default function UsagePage() {
                               service.status === "running"
                                 ? "is-running"
                                 : service.status === "failed"
-                                ? "is-failed"
-                                : "is-pending"
+                                  ? "is-failed"
+                                  : "is-pending"
                             }`}
                           >
                             <span className="project-status-dot" aria-hidden="true" />
@@ -383,10 +420,13 @@ export default function UsagePage() {
                             {database.projectName}
                           </Link>
                         </td>
-                        <td className="text-xs font-mono text-zinc-300">
+                        <td className="text-xs font-mono tabular-nums text-zinc-200">
                           {formatMb(database.usageMb)}
                           {canSeeLimitDetail ? (
-                            <span className="text-zinc-500"> / {formatMb(database.storageLimitMb)}</span>
+                            <span className="text-zinc-400">
+                              {" "}
+                              / {formatMb(database.storageLimitMb)}
+                            </span>
                           ) : null}
                         </td>
                         <td>
@@ -420,43 +460,45 @@ export default function UsagePage() {
               <div className="usage-policy-card">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 p-5">
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500">CPU Cap per Service</span>
-                    <p className="text-sm font-mono font-medium text-white">
+                    <span className="text-xs text-zinc-400 font-medium">CPU Cap per Service</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
                       {usageData.limits.cpuPerService} vCPU
                     </p>
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500">RAM Cap per Service</span>
-                    <p className="text-sm font-mono font-medium text-white">
+                    <span className="text-xs text-zinc-400 font-medium">RAM Cap per Service</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
                       {formatMb(usageData.limits.memoryMbPerService)}
                     </p>
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500">Volume Cap per Service</span>
-                    <p className="text-sm font-mono font-medium text-white">
+                    <span className="text-xs text-zinc-400 font-medium">
+                      Volume Cap per Service
+                    </span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
                       {formatMb(usageData.limits.volumeMbPerService)}
                     </p>
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500">Database Storage Cap</span>
-                    <p className="text-sm font-mono font-medium text-white">
+                    <span className="text-xs text-zinc-400 font-medium">Database Storage Cap</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
                       {formatMb(usageData.limits.databaseStorageMb)}
                     </p>
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500">Build Concurrency</span>
-                    <p className="text-sm font-mono font-medium text-white">
+                    <span className="text-xs text-zinc-400 font-medium">Build Concurrency</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
                       {usageData.limits.buildConcurrencyPerNode} simultaneous jobs / node
                     </p>
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500">Log Retention</span>
-                    <p className="text-sm font-mono font-medium text-white">
+                    <span className="text-xs text-zinc-400 font-medium">Log Retention</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
                       {usageData.limits.logRetentionDays} days automatic prune
                     </p>
                   </div>
@@ -465,7 +507,8 @@ export default function UsagePage() {
                 <div className="usage-policy-footer">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   <p className="text-xs text-zinc-400">
-                    Lowering a quota never deletes an existing resource. All services and databases continue running until an owner or admin deletes them.
+                    Lowering a quota never deletes an existing resource. All services and databases
+                    continue running until an owner or admin deletes them.
                   </p>
                 </div>
               </div>
@@ -474,10 +517,11 @@ export default function UsagePage() {
 
           {/* Footer timestamp */}
           {usageData.capturedAt ? (
-            <div className="flex items-center gap-1.5 text-xs text-zinc-500 pt-2 pb-6">
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400 pt-2 pb-6">
               <Clock className="w-3.5 h-3.5" />
               <span>
-                Last measured {formatDateTime(usageData.capturedAt)}. System metrics refresh every 5 minutes.
+                Last measured {formatDateTime(usageData.capturedAt)}. System metrics refresh every 5
+                minutes.
               </span>
             </div>
           ) : null}
