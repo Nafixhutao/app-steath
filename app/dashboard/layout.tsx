@@ -1,8 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
+import { SupabaseTopbar } from "@/components/supabase-topbar";
 import { OrganizationOnboarding } from "@/components/organization-onboarding";
 import { getAdminStatus } from "@/lib/admin-client";
 import { authClient, useListOrganizations, useSession } from "@/lib/auth-client";
@@ -10,12 +11,15 @@ import { defaultOrganization, defaultUser } from "@/components/identity";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isOrgsPage = pathname === "/dashboard/organizations";
+
   const { data: session, isPending } = useSession();
   const { data: organizations, isPending: organizationsPending } = useListOrganizations();
   const activeOrganizationId = session?.session.activeOrganizationId;
   const needsOrganization = !organizationsPending && (organizations?.length ?? 0) === 0;
   const needsActiveOrganization =
-    !organizationsPending && !needsOrganization && !!session && !activeOrganizationId;
+    !organizationsPending && !needsOrganization && !!session && !activeOrganizationId && !isOrgsPage;
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
 
   useEffect(() => {
@@ -65,24 +69,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const signedOut = ready && !session;
 
   return (
-    <div className="console-layout flex min-h-dvh overflow-x-hidden bg-[#121014] text-[#edecf1] max-[1023px]:block">
-      {/*
-        The Sidebar reads `usePathname()`, which is only known at runtime. The
-        Suspense boundary lets the shell prerender and streams the active link
-        afterwards, instead of blocking the whole dashboard from prerendering.
-      */}
-      <Suspense fallback={<div className="sidebar" aria-hidden="true" />}>
-        <Sidebar
-          organization={defaultOrganization}
-          user={{
-            name: session?.user.name || session?.user.email || defaultUser.name,
-            role: "Member",
-          }}
-        />
-      </Suspense>
-      <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1">
-        {needsOrganization && !isPlatformAdmin ? <OrganizationOnboarding /> : children}
-      </main>
+    <div className="console-layout flex flex-col min-h-dvh overflow-x-hidden bg-[#121014] text-[#edecf1]">
+      <SupabaseTopbar />
+
+      {isOrgsPage ? (
+        <main className="flex-1 min-w-0">
+          {children}
+        </main>
+      ) : (
+        <div className="flex flex-1 min-w-0 max-[1023px]:block">
+          <Suspense fallback={<div className="sidebar" aria-hidden="true" />}>
+            <Sidebar
+              organization={defaultOrganization}
+              user={{
+                name: session?.user.name || session?.user.email || defaultUser.name,
+                role: "Member",
+              }}
+            />
+          </Suspense>
+          <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1">
+            {needsOrganization && !isPlatformAdmin ? <OrganizationOnboarding /> : children}
+          </main>
+        </div>
+      )}
 
       {!ready || signedOut ? (
         <div className="dashboard-gate">

@@ -82,17 +82,16 @@ type IconName =
   | "admin";
 
 const primaryItems: Array<{ label: string; icon: IconName; href: string }> = [
-  { label: "Overview", icon: "chart", href: "/dashboard" },
-  { label: "Usage", icon: "gauge", href: "/dashboard/usage" },
   { label: "Projects", icon: "projects", href: "/dashboard/projects" },
+  { label: "Team", icon: "user", href: "/dashboard/members" },
   { label: "Services", icon: "services", href: "/dashboard/services" },
   { label: "Databases", icon: "databases", href: "/dashboard/databases" },
   { label: "Backups", icon: "backups", href: "/dashboard/backups" },
   { label: "Domains", icon: "domains", href: "/dashboard/domains" },
+  { label: "Usage", icon: "gauge", href: "/dashboard/usage" },
 ];
 
 const secondaryItems: Array<{ label: string; icon: IconName; href: string }> = [
-  { label: "Members", icon: "face", href: "/dashboard/members" },
   { label: "Organization settings", icon: "settings", href: "/dashboard/settings" },
 ];
 
