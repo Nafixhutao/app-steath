@@ -7,6 +7,7 @@ import {
   authClient,
   useListOrganizations,
 } from "@/lib/auth-client";
+import { useToast } from "@/components/toast-context";
 
 function OrgHexIcon() {
   return (
@@ -22,6 +23,7 @@ function OrgHexIcon() {
 
 export default function OrganizationsPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const { data: organizations, isPending } = useListOrganizations();
 
   const [search, setSearch] = useState("");
@@ -81,6 +83,7 @@ export default function OrganizationsPage() {
 
       setModalOpen(false);
       setOrgName("");
+      toast.success("Organization created", `"${trimmed}" is ready.`);
       // Navigate to projects
       router.push("/dashboard/projects");
     } catch {
@@ -130,9 +133,16 @@ export default function OrganizationsPage() {
         </div>
 
         {isPending ? (
-          <div className="orgs-loading-state">
-            <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
-            <p>Loading your organizations...</p>
+          <div className="orgs-grid" aria-label="Loading organizations">
+            {[1, 2].map((n) => (
+              <div key={n} className="org-card-skeleton" aria-hidden="true">
+                <div className="supabase-skeleton-box w-9 h-9 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <div className="supabase-skeleton-box h-4 rounded w-32" />
+                  <div className="supabase-skeleton-box h-3 rounded w-20" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredOrgs.length === 0 ? (
           <div className="orgs-empty-card">

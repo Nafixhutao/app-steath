@@ -23,6 +23,7 @@ import {
 import { useActiveOrganization } from "@/lib/auth-client";
 import { QUOTAS } from "@/lib/platform/quota-limits";
 import { useResource } from "@/lib/resource";
+import { useToast } from "@/components/toast-context";
 import {
   databaseStatusLabel,
   listOrganizationDatabases,
@@ -71,6 +72,7 @@ function usageLabel(database: OrganizationDatabaseSummary): string {
 }
 
 export default function DatabasesPage() {
+  const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
   const organizationId = organization?.id;
 
@@ -134,6 +136,7 @@ export default function DatabasesPage() {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       void navigator.clipboard.writeText(text).then(() => {
         setCopiedId(id);
+        toast.success("Copied to clipboard", text);
         setTimeout(() => setCopiedId(null), 2000);
       });
     }

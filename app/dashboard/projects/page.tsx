@@ -13,7 +13,6 @@ import {
   Database,
   Layers,
   ArrowUpRight,
-  Loader2,
   Circle,
 } from "lucide-react";
 import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
@@ -21,8 +20,10 @@ import { createProject, listProjects, type ProjectSummary } from "@/lib/projects
 import { QUOTAS } from "@/lib/platform/quota-limits";
 import { getError, useResource } from "@/lib/resource";
 import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
+import { useToast } from "@/components/toast-context";
 
 export default function ProjectsPage() {
+  const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
   const organizationId = organization?.id;
@@ -68,11 +69,13 @@ export default function ProjectsPage() {
     setBusy(true);
     setFormError("");
     try {
-      await createProject({ name: name.trim(), slug: slug.trim() || undefined });
+      const createdName = name.trim();
+      await createProject({ name: createdName, slug: slug.trim() || undefined });
       setName("");
       setSlug("");
       setSlugEdited(false);
       setModalOpen(false);
+      toast.success("Project created", `"${createdName}" is ready.`);
       await projects.refresh();
     } catch (cause) {
       setFormError(getError(cause));
@@ -179,9 +182,22 @@ export default function ProjectsPage() {
         {/* Left / Main Column */}
         <div className="supabase-projects-main">
           {projects.loading ? (
-            <div className="supabase-projects-loading">
-              <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
-              <p>Loading projects...</p>
+            <div className="supabase-projects-grid">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="supabase-project-skeleton-card" aria-hidden="true">
+                  <div className="supabase-card-header">
+                    <div className="supabase-skeleton-box w-8 h-8 rounded-md" />
+                    <div className="flex-1 space-y-2">
+                      <div className="supabase-skeleton-box h-4 rounded w-3/4" />
+                      <div className="supabase-skeleton-box h-3 rounded w-1/2" />
+                    </div>
+                  </div>
+                  <div className="supabase-card-footer mt-4 pt-3 border-t border-zinc-800">
+                    <div className="supabase-skeleton-box h-3 rounded w-16" />
+                    <div className="supabase-skeleton-box h-3 rounded w-16" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : projectList.length === 0 ? (
             /* Create a project Hero Box matching Image 2 */
@@ -322,54 +338,89 @@ export default function ProjectsPage() {
             </div>
 
             <div className="supabase-usage-list">
-              <div className="supabase-usage-row">
-                <div className="supabase-usage-row-left">
-                  <Circle className="w-3.5 h-3.5 text-zinc-600" />
-                  <span className="supabase-usage-label">Egress</span>
+              <div className="supabase-usage-item">
+                <div className="supabase-usage-row">
+                  <div className="supabase-usage-row-left">
+                    <Circle className="w-3 h-3 text-zinc-500" />
+                    <span className="supabase-usage-label">Egress</span>
+                  </div>
+                  <span className="supabase-usage-val">0 / 5 GB</span>
                 </div>
-                <span className="supabase-usage-val">0 / 5 GB</span>
+                <div className="supabase-usage-bar-track">
+                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                </div>
               </div>
 
-              <div className="supabase-usage-row">
-                <div className="supabase-usage-row-left">
-                  <Circle className="w-3.5 h-3.5 text-zinc-600" />
-                  <span className="supabase-usage-label">Database size</span>
+              <div className="supabase-usage-item">
+                <div className="supabase-usage-row">
+                  <div className="supabase-usage-row-left">
+                    <Circle className="w-3 h-3 text-zinc-500" />
+                    <span className="supabase-usage-label">Database size</span>
+                  </div>
+                  <span className="supabase-usage-val">
+                    {totalDatabases > 0 ? `${totalDatabases * 10} / 500 MB` : "0 / 500 MB"}
+                  </span>
                 </div>
-                <span className="supabase-usage-val">
-                  {totalDatabases > 0 ? `${totalDatabases * 10} / 500 MB` : "0 / 500 MB"}
-                </span>
+                <div className="supabase-usage-bar-track">
+                  <div
+                    className="supabase-usage-bar-fill"
+                    style={{
+                      width: `${Math.min(100, Math.round(((totalDatabases * 10) / 500) * 100))}%`,
+                    }}
+                  />
+                </div>
               </div>
 
-              <div className="supabase-usage-row">
-                <div className="supabase-usage-row-left">
-                  <Circle className="w-3.5 h-3.5 text-zinc-600" />
-                  <span className="supabase-usage-label">Monthly active users</span>
+              <div className="supabase-usage-item">
+                <div className="supabase-usage-row">
+                  <div className="supabase-usage-row-left">
+                    <Circle className="w-3 h-3 text-zinc-500" />
+                    <span className="supabase-usage-label">Monthly active users</span>
+                  </div>
+                  <span className="supabase-usage-val">0 / 50,000</span>
                 </div>
-                <span className="supabase-usage-val">0 / 50,000</span>
+                <div className="supabase-usage-bar-track">
+                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                </div>
               </div>
 
-              <div className="supabase-usage-row">
-                <div className="supabase-usage-row-left">
-                  <Circle className="w-3.5 h-3.5 text-zinc-600" />
-                  <span className="supabase-usage-label">File storage</span>
+              <div className="supabase-usage-item">
+                <div className="supabase-usage-row">
+                  <div className="supabase-usage-row-left">
+                    <Circle className="w-3 h-3 text-zinc-500" />
+                    <span className="supabase-usage-label">File storage</span>
+                  </div>
+                  <span className="supabase-usage-val">0 / 1 GB</span>
                 </div>
-                <span className="supabase-usage-val">0 / 1 GB</span>
+                <div className="supabase-usage-bar-track">
+                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                </div>
               </div>
 
-              <div className="supabase-usage-row">
-                <div className="supabase-usage-row-left">
-                  <Circle className="w-3.5 h-3.5 text-zinc-600" />
-                  <span className="supabase-usage-label">Log Ingestion</span>
+              <div className="supabase-usage-item">
+                <div className="supabase-usage-row">
+                  <div className="supabase-usage-row-left">
+                    <Circle className="w-3 h-3 text-zinc-500" />
+                    <span className="supabase-usage-label">Log Ingestion</span>
+                  </div>
+                  <span className="supabase-usage-val">0 / 1 GB</span>
                 </div>
-                <span className="supabase-usage-val">0 / 1 GB</span>
+                <div className="supabase-usage-bar-track">
+                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                </div>
               </div>
 
-              <div className="supabase-usage-row">
-                <div className="supabase-usage-row-left">
-                  <Circle className="w-3.5 h-3.5 text-zinc-600" />
-                  <span className="supabase-usage-label">Log Query</span>
+              <div className="supabase-usage-item">
+                <div className="supabase-usage-row">
+                  <div className="supabase-usage-row-left">
+                    <Circle className="w-3 h-3 text-zinc-500" />
+                    <span className="supabase-usage-label">Log Query</span>
+                  </div>
+                  <span className="supabase-usage-val">0 / 100 GB</span>
                 </div>
-                <span className="supabase-usage-val">0 / 100 GB</span>
+                <div className="supabase-usage-bar-track">
+                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                </div>
               </div>
             </div>
           </div>
