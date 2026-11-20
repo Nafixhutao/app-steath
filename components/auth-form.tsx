@@ -106,7 +106,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
         if (!cancelled && payload?.data?.providers) setSocialProviders(payload.data.providers);
       })
       .catch(() => {
-        // Unknown stays "Coming soon" — the honest default.
+        // Unknown stays "Coming soon": the honest default.
       });
     return () => {
       cancelled = true;
@@ -118,7 +118,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
     try {
       const result = await signIn.social({
         provider,
-        callbackURL: "/dashboard",
+        callbackURL: "/dashboard/organizations",
         errorCallbackURL: "/login",
       });
       if (result?.error) {
@@ -139,7 +139,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
     const returnTo =
       requestedReturnTo?.startsWith("/") && !requestedReturnTo.startsWith("//")
         ? requestedReturnTo
-        : "/dashboard";
+        : "/dashboard/organizations";
 
     if (!email || !password) {
       setNotice("Enter your email and password to continue.");
@@ -161,13 +161,13 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           password,
           name: username,
           username,
-          callbackURL: "/dashboard",
+          callbackURL: "/dashboard/organizations",
         });
 
         if (result.error) {
           setNotice(result.error.message || "Sign up failed. Please try again.");
         } else {
-          setNotice("Signed up! Redirecting to dashboard...");
+          setNotice("Signed up! Redirecting to organizations...");
           router.push(returnTo);
         }
       } else {
@@ -175,7 +175,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           email,
           password,
           rememberMe: rememberEmail,
-          callbackURL: "/dashboard",
+          callbackURL: "/dashboard/organizations",
         });
 
         if (result.error) {

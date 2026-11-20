@@ -1,8 +1,11 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
+import { SupabaseTopbar } from "@/components/supabase-topbar";
+import { CommandPalette } from "@/components/command-palette";
+import { ToastProvider } from "@/components/toast-context";
 import { OrganizationOnboarding } from "@/components/organization-onboarding";
 import { getAdminStatus } from "@/lib/admin-client";
 import { authClient, useListOrganizations, useSession } from "@/lib/auth-client";
@@ -10,13 +13,28 @@ import { defaultOrganization, defaultUser } from "@/components/identity";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isOrgsPage = pathname === "/dashboard/organizations";
+
   const { data: session, isPending } = useSession();
   const { data: organizations, isPending: organizationsPending } = useListOrganizations();
   const activeOrganizationId = session?.session.activeOrganizationId;
   const needsOrganization = !organizationsPending && (organizations?.length ?? 0) === 0;
   const needsActiveOrganization =
-    !organizationsPending && !needsOrganization && !!session && !activeOrganizationId;
+    !organizationsPending && !needsOrganization && !!session && !activeOrganizationId && !isOrgsPage;
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (!isPending && !session) router.replace("/");
@@ -65,32 +83,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const signedOut = ready && !session;
 
   return (
-    <div className="console-layout flex min-h-dvh overflow-x-hidden bg-[#121014] text-[#edecf1] max-[1023px]:block">
-      {/*
-        The Sidebar reads `usePathname()`, which is only known at runtime. The
-        Suspense boundary lets the shell prerender and streams the active link
-        afterwards, instead of blocking the whole dashboard from prerendering.
-      */}
-      <Suspense fallback={<div className="sidebar" aria-hidden="true" />}>
-        <Sidebar
-          organization={defaultOrganization}
-          user={{
-            name: session?.user.name || session?.user.email || defaultUser.name,
-            role: "Member",
-          }}
-        />
-      </Suspense>
-      <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1">
-        {needsOrganization && !isPlatformAdmin ? <OrganizationOnboarding /> : children}
-      </main>
+    <ToastProvider>
+      <div className="console-layout flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
+        <SupabaseTopbar onOpenSearch={() => setSearchOpen(true)} />
 
-      {!ready || signedOut ? (
-        <div className="dashboard-gate">
-          <div className="dashboard-loading" role="status">
-            Loading your Organization...
+        {isOrgsPage ? (
+          <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden">
+            {children}
+          </main>
+        ) : (
+          <div className="flex flex-1 min-h-0 min-w-0 max-[1023px]:block overflow-hidden">
+            <Suspense fallback={<div className="sidebar" aria-hidden="true" />}>
+              <Sidebar
+                organization={defaultOrganization}
+                user={{
+                  name: session?.user.name || session?.user.email || defaultUser.name,
+                  role: "Member",
+                }}
+              />
+            </Suspense>
+            <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden">
+              {needsOrganization && !isPlatformAdmin ? <OrganizationOnboarding /> : children}
+            </main>
           </div>
-        </div>
-      ) : null}
-    </div>
+        )}
+
+        <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+        {!ready || signedOut ? (
+          <div className="dashboard-gate">
+            <div className="dashboard-loading" role="status">
+              Loading your Organization...
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </ToastProvider>
   );
 }

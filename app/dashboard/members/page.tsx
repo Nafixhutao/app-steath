@@ -1,7 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Users,
+  Plus,
+  Search,
+  Mail,
+  Shield,
+  Crown,
+  Copy,
+  Check,
+  Trash2,
+  X,
+  Loader2,
+  LogOut,
+  Clock,
+  AlertTriangle,
+} from "lucide-react";
 import {
   authClient,
   useActiveOrganization,
@@ -9,6 +25,8 @@ import {
   useListOrganizations,
 } from "@/lib/auth-client";
 import { getError } from "@/lib/resource";
+import { getInitials } from "@/components/identity";
+import { useToast } from "@/components/toast-context";
 
 type MemberRow = {
   id: string;
@@ -30,17 +48,30 @@ type InviteRole = "member" | "admin";
 
 export default function MembersPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
   const { data: organizations } = useListOrganizations();
+
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+
+  // Invite Modal State
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<InviteRole>("member");
   const [inviteUrl, setInviteUrl] = useState("");
+  const [copiedInvite, setCopiedInvite] = useState(false);
+
+  // Remove Modal State
+  const [removeTarget, setRemoveTarget] = useState<MemberRow | null>(null);
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+
   const organizationId = organization?.id;
   const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
   const organizationName =
@@ -49,55 +80,78 @@ export default function MembersPage() {
 
   async function refresh() {
     if (!organizationId) return;
-    const [memberResult, invitationResult] = await Promise.all([
-      authClient.organization.listMembers({ query: { organizationId } }),
-      canManage
-        ? authClient.organization.listInvitations({ query: { organizationId } })
-        : Promise.resolve({ data: null, error: null }),
-    ]);
-    if (memberResult.error) {
-      setError(memberResult.error.message ?? "Could not load members.");
-      return;
-    }
-    setMembers((memberResult.data?.members ?? []) as unknown as MemberRow[]);
-    if (invitationResult.data) {
-      const result = invitationResult.data as unknown;
-      const all = Array.isArray(result)
-        ? (result as InvitationRow[])
-        : ((result as { invitations?: InvitationRow[] }).invitations ?? []);
-      const now = Date.now();
-      setInvitations(
-        all.filter(
-          (invitation) =>
-            invitation.status === "pending" && new Date(invitation.expiresAt).getTime() > now,
-        ),
-      );
+    setLoading(true);
+    try {
+      const [memberResult, invitationResult] = await Promise.all([
+        authClient.organization.listMembers({ query: { organizationId } }),
+        canManage
+          ? authClient.organization.listInvitations({ query: { organizationId } })
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+
+      if (memberResult.error) {
+        setError(memberResult.error.message ?? "Could not load members.");
+        setLoading(false);
+        return;
+      }
+
+      setMembers((memberResult.data?.members ?? []) as unknown as MemberRow[]);
+
+      if (invitationResult.data) {
+        const result = invitationResult.data as unknown;
+        const all = Array.isArray(result)
+          ? (result as InvitationRow[])
+          : ((result as { invitations?: InvitationRow[] }).invitations ?? []);
+        const now = Date.now();
+        setInvitations(
+          all.filter(
+            (invitation) =>
+              invitation.status === "pending" && new Date(invitation.expiresAt).getTime() > now,
+          ),
+        );
+      }
+    } catch (cause) {
+      setError(getError(cause));
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    // Refresh is keyed to the active Organization and permission state.
     void Promise.resolve().then(refresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId, canManage]);
+
+  const filteredMembers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return members.filter((member) => {
+      if (roleFilter !== "all" && member.role !== roleFilter) return false;
+      if (!q) return true;
+      return (
+        member.user.name.toLowerCase().includes(q) ||
+        member.user.email.toLowerCase().includes(q)
+      );
+    });
+  }, [members, roleFilter, search]);
 
   async function invite(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!organizationId) return;
     setBusy(true);
     setError("");
-    setNotice("");
     try {
       const result = await authClient.organization.inviteMember({
         email: email.trim(),
         role: inviteRole as "member" | "admin",
         organizationId,
       });
+
       if (result.error) throw result.error;
       const invitation = result.data as { id: string };
-      setInviteUrl(`${window.location.origin}/invite/${invitation.id}`);
+      const generatedUrl = `${window.location.origin}/invite/${invitation.id}`;
+      setInviteUrl(generatedUrl);
       setEmail("");
-      setNotice("Invitation link created. Copy and share it with the invited person.");
+      toast.success("Invitation generated", "Share the link with your team member.");
       await refresh();
     } catch (cause) {
       setError(getError(cause));
@@ -106,250 +160,548 @@ export default function MembersPage() {
     }
   }
 
-  async function copyInvite() {
-    await navigator.clipboard.writeText(inviteUrl);
-    setNotice("Invitation link copied.");
+  function copyInvite() {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      void navigator.clipboard.writeText(inviteUrl).then(() => {
+        setCopiedInvite(true);
+        toast.success("Copied to clipboard", inviteUrl);
+        setTimeout(() => setCopiedInvite(false), 2000);
+      });
+    }
   }
 
   async function changeRole(memberId: string, role: string) {
     if (!organizationId) return;
     setBusy(true);
     setError("");
-    const response = await fetch(`/api/organizations/members/${encodeURIComponent(memberId)}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ role }),
-    });
-    setBusy(false);
-    if (!response.ok) {
-      const result = (await response.json()) as { error?: { message?: string } };
-      setError(result.error?.message ?? "Could not update the member role.");
-    } else await refresh();
+    try {
+      const response = await fetch(`/api/organizations/members/${encodeURIComponent(memberId)}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!response.ok) {
+        const result = (await response.json()) as { error?: { message?: string } };
+        setError(result.error?.message ?? "Could not update the member role.");
+      } else {
+        toast.success("Role updated", `Member role updated to ${role}.`);
+        await refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function removeMember(member: MemberRow) {
-    if (!window.confirm(`Remove ${member.user.email} from ${organizationName}?`)) return;
+  async function handleRemoveMember() {
+    if (!removeTarget) return;
     setBusy(true);
     setError("");
-    const response = await fetch(`/api/organizations/members/${encodeURIComponent(member.id)}`, {
-      method: "DELETE",
-    });
-    setBusy(false);
-    if (!response.ok) {
-      const result = (await response.json()) as { error?: { message?: string } };
-      setError(result.error?.message ?? "Could not remove this member.");
-    } else await refresh();
+    try {
+      const response = await fetch(
+        `/api/organizations/members/${encodeURIComponent(removeTarget.id)}`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) {
+        const result = (await response.json()) as { error?: { message?: string } };
+        setError(result.error?.message ?? "Could not remove this member.");
+      } else {
+        toast.success("Member removed", `${removeTarget.user.email} removed from organization.`);
+        setRemoveTarget(null);
+        await refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function cancelInvitation(invitationId: string) {
     setBusy(true);
-    const result = await authClient.organization.cancelInvitation({ invitationId });
-    setBusy(false);
-    if (result.error) setError(result.error.message ?? "Could not cancel this invitation.");
-    else await refresh();
+    try {
+      const result = await authClient.organization.cancelInvitation({ invitationId });
+      if (result.error) {
+        setError(result.error.message ?? "Could not cancel this invitation.");
+      } else {
+        toast.success("Invitation revoked", "The invitation link has been invalidated.");
+        await refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function leaveOrganization() {
-    if (!window.confirm(`Leave ${organizationName}? You will lose access to its resources.`))
+    if (!window.confirm(`Leave ${organizationName}? You will lose access to its resources.`)) {
       return;
+    }
     setBusy(true);
-    // The leave action is not exposed by the generated client actions, so it is
-    // called through the audited custom route instead of the raw endpoint.
-    const response = await fetch("/api/organizations/leave", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ organizationId }),
-    });
-    const result = (await response.json()) as { error?: { message?: string } };
-    setBusy(false);
-    if (!response.ok) setError(result.error?.message ?? "Could not leave this Organization.");
-    else router.push("/dashboard");
+    try {
+      const response = await fetch("/api/organizations/leave", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ organizationId }),
+      });
+      const result = (await response.json()) as { error?: { message?: string } };
+      if (!response.ok) {
+        setError(result.error?.message ?? "Could not leave this Organization.");
+      } else {
+        toast.success("Left organization", `You left ${organizationName}.`);
+        router.push("/dashboard/organizations");
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <div className="dashboard-content">
-      <div className="dashboard-page-heading">
-        <div>
-          <h1>Members</h1>
-          <p>Manage people and roles in {organizationName}.</p>
+    <div className="members-page-container">
+      {/* Page Header */}
+      <header className="members-page-header">
+        <div className="flex items-center gap-3">
+          <div className="members-header-icon" aria-hidden="true">
+            <Users className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h1 className="members-page-title">Team Members</h1>
+            <p className="members-page-subtitle">
+              Manage team access, invitations, and role-based permissions in {organizationName}.
+            </p>
+          </div>
         </div>
-        {activeMember?.role !== "owner" ? (
-          <button
-            type="button"
-            className="dashboard-secondary-button"
-            onClick={() => void leaveOrganization()}
-            disabled={busy}
-          >
-            Leave Organization
-          </button>
-        ) : null}
-      </div>
+
+        <div className="flex items-center gap-2.5">
+          {activeMember?.role !== "owner" && (
+            <button
+              type="button"
+              className="supabase-btn-secondary text-rose-400 hover:text-rose-300"
+              onClick={() => void leaveOrganization()}
+              disabled={busy}
+            >
+              <LogOut className="w-3.5 h-3.5 mr-1.5" />
+              <span>Leave</span>
+            </button>
+          )}
+
+          {canManage && (
+            <button
+              type="button"
+              className="supabase-btn-green"
+              onClick={() => {
+                setError("");
+                setInviteUrl("");
+                setInviteModalOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+              <span>Invite Member</span>
+            </button>
+          )}
+        </div>
+      </header>
 
       {error ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <div className="dashboard-alert is-error my-4" role="alert">
           {error}
-        </p>
-      ) : null}
-      {notice ? (
-        <p className="dashboard-alert is-success" role="status">
-          {notice}
-        </p>
-      ) : null}
-
-      {canManage ? (
-        <section className="dashboard-section" aria-labelledby="invite-heading">
-          <div className="dashboard-section-heading">
-            <h2 id="invite-heading">Invite a member</h2>
-          </div>
-          <form className="organization-invite-form" onSubmit={invite}>
-            <label>
-              Email address
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Role
-              <select
-                value={inviteRole}
-                onChange={(event) => setInviteRole(event.target.value as InviteRole)}
-              >
-                <option value="member">Member</option>
-                {activeMember?.role === "owner" ? <option value="admin">Admin</option> : null}
-              </select>
-            </label>
-            <button className="create-project-button" type="submit" disabled={busy}>
-              {busy ? "Creating..." : "Create invitation"}
-            </button>
-          </form>
-          {inviteUrl ? (
-            <div className="invitation-link-row">
-              <input aria-label="Invitation link" readOnly value={inviteUrl} />
-              <button
-                className="dashboard-secondary-button"
-                type="button"
-                onClick={() => void copyInvite()}
-              >
-                Copy link
-              </button>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
-      <section className="dashboard-section" aria-labelledby="members-heading">
-        <div className="dashboard-section-heading">
-          <h2 id="members-heading">
-            Members <span className="dashboard-count">{members.length}</span>
-          </h2>
         </div>
-        <div className="organization-table-wrap">
-          <table className="organization-table">
+      ) : null}
+
+      {/* Filter Toolbar */}
+      <div className="members-toolbar">
+        <div className="members-search-box">
+          <Search className="members-search-icon" aria-hidden="true" />
+          <input
+            type="search"
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="members-search-input"
+          />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="members-search-clear"
+              aria-label="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="supabase-filter-select"
+            aria-label="Filter by role"
+          >
+            <option value="all">All Roles</option>
+            <option value="owner">Owners</option>
+            <option value="admin">Admins</option>
+            <option value="member">Members</option>
+          </select>
+
+          <span className="members-count-pill">{filteredMembers.length} Members</span>
+        </div>
+      </div>
+
+      {/* Members Table */}
+      <div className="members-table-card">
+        {loading ? (
+          <div className="p-6 space-y-4" aria-label="Loading members">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="flex items-center gap-3">
+                <div className="supabase-skeleton-box w-9 h-9 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="supabase-skeleton-box h-4 w-32 rounded" />
+                  <div className="supabase-skeleton-box h-3 w-48 rounded" />
+                </div>
+                <div className="supabase-skeleton-box h-6 w-16 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : filteredMembers.length === 0 ? (
+          <div className="members-empty-box">
+            <Users className="w-8 h-8 text-zinc-600 mb-2" />
+            <p className="text-sm text-zinc-300 font-medium">No team members match this query</p>
+            <p className="text-xs text-zinc-500 mt-1">
+              {search ? "Try searching with a different term." : "Invite people to collaborate on your projects."}
+            </p>
+          </div>
+        ) : (
+          <table className="members-table">
             <thead>
               <tr>
-                <th>Member</th>
-                <th>Role</th>
-                <th>Joined</th>
-                {canRemoveMembers ? (
-                  <th>
-                    <span className="sr-only">Actions</span>
-                  </th>
-                ) : null}
+                <th scope="col">User</th>
+                <th scope="col">Role</th>
+                <th scope="col">Joined</th>
+                {canRemoveMembers ? <th scope="col" className="text-right">Actions</th> : null}
               </tr>
             </thead>
             <tbody>
-              {members.map((member) => (
-                <tr key={member.id}>
-                  <td>
-                    <strong>{member.user.name}</strong>
-                    <small>{member.user.email}</small>
-                  </td>
-                  <td>
-                    {activeMember?.role === "owner" && member.role !== "owner" ? (
-                      <select
-                        aria-label={`Role for ${member.user.email}`}
-                        value={member.role}
-                        disabled={busy}
-                        onChange={(event) => void changeRole(member.id, event.target.value)}
-                      >
-                        <option value="member">Member</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    ) : (
-                      <span className="role-label">{member.role}</span>
-                    )}
-                  </td>
-                  <td>{new Date(member.createdAt).toLocaleDateString()}</td>
-                  {canRemoveMembers ? (
+              {filteredMembers.map((member) => {
+                const isCurrentUser = member.userId === activeMember?.userId;
+                const isOwner = member.role === "owner";
+                const isAdmin = member.role === "admin";
+
+                return (
+                  <tr key={member.id}>
                     <td>
-                      {member.userId !== activeMember?.userId && member.role !== "owner" ? (
-                        <button
-                          type="button"
-                          className="dashboard-danger-button"
-                          disabled={busy}
-                          onClick={() => void removeMember(member)}
-                        >
-                          Remove
-                        </button>
-                      ) : null}
+                      <div className="flex items-center gap-3">
+                        <div className="members-avatar-box" aria-hidden="true">
+                          <span>{getInitials(member.user.name || member.user.email)}</span>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="members-user-name">{member.user.name}</span>
+                            {isCurrentUser && (
+                              <span className="members-you-badge">You</span>
+                            )}
+                          </div>
+                          <span className="members-user-email">{member.user.email}</span>
+                        </div>
+                      </div>
                     </td>
-                  ) : null}
-                </tr>
-              ))}
+
+                    <td>
+                      {activeMember?.role === "owner" && !isOwner ? (
+                        <select
+                          aria-label={`Role for ${member.user.email}`}
+                          value={member.role}
+                          disabled={busy}
+                          onChange={(e) => void changeRole(member.id, e.target.value)}
+                          className="members-role-select"
+                        >
+                          <option value="member">Member</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      ) : (
+                        <span
+                          className={`members-role-badge ${
+                            isOwner ? "is-owner" : isAdmin ? "is-admin" : "is-member"
+                          }`}
+                        >
+                          {isOwner && <Crown className="w-3 h-3 mr-1" />}
+                          {isAdmin && <Shield className="w-3 h-3 mr-1" />}
+                          <span>{member.role}</span>
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="text-xs text-zinc-400">
+                      {new Date(member.createdAt).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+
+                    {canRemoveMembers && (
+                      <td className="text-right">
+                        {!isCurrentUser && !isOwner && (
+                          <button
+                            type="button"
+                            className="members-action-btn text-zinc-400 hover:text-rose-400"
+                            disabled={busy}
+                            onClick={() => setRemoveTarget(member)}
+                            title={`Remove ${member.user.name || member.user.email}`}
+                            aria-label={`Remove ${member.user.name || member.user.email}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-          {members.length === 0 ? <p className="dashboard-table-empty">No members found.</p> : null}
-        </div>
-      </section>
+        )}
+      </div>
 
-      {canManage ? (
-        <section className="dashboard-section" aria-labelledby="invitations-heading">
-          <div className="dashboard-section-heading">
-            <h2 id="invitations-heading">Pending invitations</h2>
+      {/* Pending Invitations Section */}
+      {canManage && invitations.length > 0 && (
+        <div className="mt-8 space-y-3">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-400" />
+            <h2 className="text-sm font-semibold text-white">Pending Invitations</h2>
+            <span className="members-count-pill">{invitations.length}</span>
           </div>
-          <div className="organization-table-wrap">
-            <table className="organization-table">
+
+          <div className="members-table-card">
+            <table className="members-table">
               <thead>
                 <tr>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Expires</th>
-                  <th>
-                    <span className="sr-only">Actions</span>
-                  </th>
+                  <th scope="col">Invited Email</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Expires</th>
+                  <th scope="col" className="text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {invitations.map((invitation) => (
                   <tr key={invitation.id}>
-                    <td>{invitation.email}</td>
                     <td>
-                      <span className="role-label">{invitation.role}</span>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-zinc-500" />
+                        <span className="text-sm text-zinc-200 font-mono">{invitation.email}</span>
+                      </div>
                     </td>
-                    <td>{new Date(invitation.expiresAt).toLocaleDateString()}</td>
                     <td>
+                      <span className="members-role-badge is-member">{invitation.role}</span>
+                    </td>
+                    <td className="text-xs text-zinc-400">
+                      {new Date(invitation.expiresAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="text-right">
                       <button
                         type="button"
-                        className="dashboard-secondary-button"
+                        className="supabase-btn-secondary text-xs text-rose-400 hover:text-rose-300 py-1 px-2.5 h-7"
                         disabled={busy}
                         onClick={() => void cancelInvitation(invitation.id)}
                       >
-                        Cancel
+                        Revoke
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {invitations.length === 0 ? (
-              <p className="dashboard-table-empty">No pending invitations.</p>
-            ) : null}
           </div>
-        </section>
-      ) : null}
+        </div>
+      )}
+
+      {/* Modal: Invite Member */}
+      {inviteModalOpen && (
+        <div className="supabase-modal-backdrop" role="presentation">
+          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title">
+            <div className="supabase-modal-header">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-emerald-400" />
+                <h2 id="invite-modal-title">Invite Team Member</h2>
+              </div>
+              <button
+                type="button"
+                className="supabase-modal-close"
+                onClick={() => setInviteModalOpen(false)}
+                aria-label="Close dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {inviteUrl ? (
+              <div className="supabase-modal-body space-y-4">
+                <div className="p-3.5 rounded-lg bg-emerald-950/20 border border-emerald-800/40 text-emerald-300 text-xs">
+                  Invitation link created! Send this link to your team member to let them join {organizationName}.
+                </div>
+
+                <div>
+                  <label htmlFor="invitation-link-input" className="supabase-modal-label">
+                    Invitation URL
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="invitation-link-input"
+                      readOnly
+                      value={inviteUrl}
+                      className="supabase-modal-input font-mono text-xs select-all"
+                    />
+                    <button
+                      type="button"
+                      className="supabase-btn-green flex-shrink-0"
+                      onClick={copyInvite}
+                    >
+                      {copiedInvite ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 mr-1" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 mr-1" />
+                          Copy
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="supabase-modal-footer">
+                  <button
+                    type="button"
+                    className="supabase-btn-secondary"
+                    onClick={() => {
+                      setInviteUrl("");
+                      setInviteModalOpen(false);
+                    }}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={invite}>
+                <div className="supabase-modal-body space-y-4">
+                  <div>
+                    <label htmlFor="invite-email-input" className="supabase-modal-label">
+                      Email address
+                    </label>
+                    <input
+                      id="invite-email-input"
+                      type="email"
+                      required
+                      placeholder="collaborator@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="supabase-modal-input"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="invite-role-select" className="supabase-modal-label">
+                      Organization Role
+                    </label>
+                    <select
+                      id="invite-role-select"
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as InviteRole)}
+                      className="supabase-modal-input"
+                    >
+                      <option value="member">Member - Can view resources and trigger deployments</option>
+                      {activeMember?.role === "owner" && (
+                        <option value="admin">Admin - Full access to manage resources and invite members</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="supabase-modal-footer">
+                  <button
+                    type="button"
+                    className="supabase-btn-secondary"
+                    onClick={() => setInviteModalOpen(false)}
+                    disabled={busy}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="supabase-btn-green"
+                    disabled={busy || !email.trim()}
+                  >
+                    {busy ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Invitation Link"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Remove Member Confirmation */}
+      {removeTarget && (
+        <div className="supabase-modal-backdrop" role="presentation">
+          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="remove-member-dialog-title">
+            <div className="supabase-modal-header border-rose-900/40">
+              <div className="flex items-center gap-2 text-rose-400">
+                <AlertTriangle className="w-4 h-4" />
+                <h2 id="remove-member-dialog-title">Remove Member</h2>
+              </div>
+              <button
+                type="button"
+                className="supabase-modal-close"
+                onClick={() => setRemoveTarget(null)}
+                aria-label="Close dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="supabase-modal-body space-y-3">
+              <p className="text-xs text-zinc-300">
+                Are you sure you want to remove{" "}
+                <strong className="text-white">{removeTarget.user.name || removeTarget.user.email}</strong>{" "}
+                from <strong className="text-white">{organizationName}</strong>?
+              </p>
+              <p className="text-xs text-zinc-500">
+                They will immediately lose access to all projects, services, databases, and environments inside this organization.
+              </p>
+            </div>
+
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setRemoveTarget(null)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="project-btn-danger"
+                disabled={busy}
+                onClick={() => void handleRemoveMember()}
+              >
+                {busy ? "Removing..." : "Remove Member"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

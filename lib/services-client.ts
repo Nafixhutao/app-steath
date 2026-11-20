@@ -76,3 +76,8 @@ const STATUS_LABELS: Record<ServiceStatus, string> = {
 export function serviceStatusLabel(status: ServiceStatus): string {
   return STATUS_LABELS[status] ?? status;
 }
+// Re-export service sub-resource clients to provide a single deep Service client seam
+export * from "./volumes-client";
+export * from "./environment-variables-client";
+export * from "./deployments-client";
+export * from "./custom-domains-client";
