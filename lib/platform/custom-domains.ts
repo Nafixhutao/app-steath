@@ -66,10 +66,43 @@ export type DnsResolver = {
   lookup(name: string): Promise<Array<{ address: string; family: number }>>;
 };
 
-const defaultResolver: DnsResolver = {
-  resolveTxt: (name) => resolveTxt(name),
-  lookup: (name) => lookup(name, { all: true, verbatim: true }),
-};
+/** Production adapter using Node.js DNS resolver. */
+export class SystemDnsResolver implements DnsResolver {
+  resolveTxt(name: string): Promise<string[][]> {
+    return resolveTxt(name);
+  }
+  lookup(name: string): Promise<Array<{ address: string; family: number }>> {
+    return lookup(name, { all: true, verbatim: true });
+  }
+}
+
+/** In-memory fake resolver adapter for unit tests. */
+export class FakeDnsResolver implements DnsResolver {
+  constructor(
+    private readonly config: {
+      txt?: string[][] | ((name: string) => Promise<string[][]>);
+      addresses?:
+        | Array<{ address: string; family: number }>
+        | ((name: string) => Promise<Array<{ address: string; family: number }>>);
+    } = {},
+  ) {}
+
+  async resolveTxt(name: string): Promise<string[][]> {
+    if (typeof this.config.txt === "function") {
+      return this.config.txt(name);
+    }
+    return this.config.txt ?? [];
+  }
+
+  async lookup(name: string): Promise<Array<{ address: string; family: number }>> {
+    if (typeof this.config.addresses === "function") {
+      return this.config.addresses(name);
+    }
+    return this.config.addresses ?? [{ address: "203.0.113.10", family: 4 }];
+  }
+}
+
+const defaultResolver: DnsResolver = new SystemDnsResolver();
 
 /**
  * The resolver verification uses. It is swappable so tests can prove the TXT and
