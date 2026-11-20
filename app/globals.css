@@ -4888,60 +4888,137 @@ body {
   color: #edecf1;
 }
 
-/* Green Action Button matching Supabase */
+/* Action Buttons - Unified with Database Button Design System */
 .supabase-btn-green {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 6px;
-  background-color: #24b47e;
-  border: 1px solid #24b47e;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 0;
+  background: #3ecf8e;
+  background-image: linear-gradient(180deg, #3ecf8e 0%, #24b47e 100%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.28),
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 0 0 1px #1d9b6c;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 150ms, opacity 150ms;
-  text-decoration: none;
   white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 100ms ease;
 }
 
 .supabase-btn-green:hover:not(:disabled) {
-  background-color: #1e9d6d;
+  background-image: linear-gradient(180deg, #4ee39e 0%, #2ec28a 100%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 1px #24b47e;
+  color: #ffffff;
+}
+
+.supabase-btn-green:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.supabase-btn-green:focus-visible {
+  outline: 2px solid #3ecf8e;
+  outline-offset: 2px;
 }
 
 .supabase-btn-green:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .supabase-btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 6px;
-  background-color: #1c1b22;
-  border: 1px solid #2d2b38;
-  color: #edecf1;
-  font-size: 13px;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 15px;
+  border-radius: 8px;
+  border: 1px solid #2a2834;
+  background: #181720;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: #f3f2f5;
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 150ms, border-color 150ms;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 120ms ease,
+    transform 100ms ease;
 }
 
 .supabase-btn-secondary:hover:not(:disabled) {
-  background-color: #25242d;
-  border-color: #3d3b4b;
+  border-color: #3b3749;
+  background: #201e2a;
+  color: #ffffff;
+}
+
+.supabase-btn-secondary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.supabase-btn-secondary:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }
 
 .supabase-btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+}
+
+/* Table Row Action Buttons - matching .db-btn-manage */
+.supabase-btn-secondary.text-xs,
+.backups-table .supabase-btn-secondary,
+.domains-table .supabase-btn-secondary,
+.services-table .supabase-btn-secondary {
+  min-height: 30px;
+  height: 30px;
+  padding: 4px 11px;
+  font-size: 12.5px;
+  border-radius: 6px;
+  background: #1c1a24;
+  border: 1px solid #2d2a3a;
+  color: #ffffff;
+  box-shadow: none;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 100ms ease;
+}
+
+.supabase-btn-secondary.text-xs:hover:not(:disabled),
+.backups-table .supabase-btn-secondary:hover:not(:disabled),
+.domains-table .supabase-btn-secondary:hover:not(:disabled),
+.services-table .supabase-btn-secondary:hover:not(:disabled) {
+  background: #252230;
+  border-color: #433e54;
+  color: #ffffff;
+}
+
+.supabase-btn-secondary.text-xs:active:not(:disabled),
+.backups-table .supabase-btn-secondary:active:not(:disabled),
+.domains-table .supabase-btn-secondary:active:not(:disabled),
+.services-table .supabase-btn-secondary:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 /* Organizations Grid */
@@ -5233,27 +5310,40 @@ body {
 .supabase-hero-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 6px;
-  background-color: #1c1b22;
-  border: 1px solid #302e3b;
-  color: #edecf1;
-  font-size: 13px;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  background-color: #181720;
+  border: 1px solid #2a2834;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: #f3f2f5;
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 150ms, border-color 150ms;
+  white-space: nowrap;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 120ms ease,
+    transform 100ms ease;
 }
 
 .supabase-hero-btn:hover:not(:disabled) {
-  background-color: #24232c;
-  border-color: #3e3c4b;
+  background-color: #201e2a;
+  border-color: #3b3749;
+  color: #ffffff;
+}
+
+.supabase-hero-btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .supabase-hero-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* Projects Grid View */
@@ -6549,25 +6639,47 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 6px;
-  background-color: #e11d48;
-  border: 1px solid #e11d48;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 0;
+  background: #e11d48;
+  background-image: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 0 0 1px #be123c;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 150ms;
+  white-space: nowrap;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 100ms ease;
 }
 
 .project-btn-danger:hover:not(:disabled) {
-  background-color: #be123c;
+  background-image: linear-gradient(180deg, #fb7185 0%, #f43f5e 100%);
+  color: #ffffff;
+}
+
+.project-btn-danger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.project-btn-danger:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
 }
 
 .project-btn-danger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 
