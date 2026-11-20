@@ -220,25 +220,31 @@ export function CommandPalette({
     );
   }, [allCommands, query]);
 
+  const stateRef = useRef({ filteredCommands, selectedIndex, handleClose });
+  useEffect(() => {
+    stateRef.current = { filteredCommands, selectedIndex, handleClose };
+  });
+
   // Keyboard navigation
   useEffect(() => {
     if (!open) return;
 
     function handleKeyDown(e: KeyboardEvent) {
+      const { filteredCommands: cmds, selectedIndex: idx, handleClose: close } = stateRef.current;
       if (e.key === "Escape") {
         e.preventDefault();
-        handleClose();
+        close();
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % Math.max(1, filteredCommands.length));
+        setSelectedIndex((prev) => (prev + 1) % Math.max(1, cmds.length));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((prev) =>
-          prev - 1 < 0 ? Math.max(0, filteredCommands.length - 1) : prev - 1,
+          prev - 1 < 0 ? Math.max(0, cmds.length - 1) : prev - 1,
         );
       } else if (e.key === "Enter") {
         e.preventDefault();
-        const selected = filteredCommands[selectedIndex];
+        const selected = cmds[idx];
         if (selected) {
           selected.onSelect();
         }
@@ -247,7 +253,7 @@ export function CommandPalette({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [filteredCommands, handleClose, open, selectedIndex]);
+  }, [open]);
 
   if (!open) return null;
 
