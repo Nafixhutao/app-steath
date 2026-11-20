@@ -22,30 +22,12 @@ import {
   useSession,
 } from "@/lib/auth-client";
 import { getInitials } from "@/components/identity";
+import { useToast } from "@/components/toast-context";
 
-function SupabaseLightningLogo({ className = "w-5 h-5" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M21.362 9.354H12V.3L1.637 14.646H11v9.054l10.362-14.346z"
-        fill="#3ECF8E"
-      />
-    </svg>
-  );
-}
-
-export function SupabaseTopbar({
-  onOpenSearch,
-}: {
-  onOpenSearch?: () => void;
-}) {
+export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
   const { data: session } = useSession();
   const { data: activeOrg } = useActiveOrganization();
   const { data: organizations } = useListOrganizations();
@@ -81,10 +63,24 @@ export function SupabaseTopbar({
   return (
     <header className="supabase-topbar" aria-label="Global header">
       <div className="supabase-topbar-left">
-        <Link href="/dashboard/organizations" className="supabase-logo-link" title="Stealth Home">
-          <SupabaseLightningLogo className="w-5 h-5" />
+        <Link
+          href="/dashboard/organizations"
+          className="supabase-logo-link"
+          title="Stealth Home"
+          aria-label="Stealth Home"
+        >
+          <Image
+            src="/stealth-cat.png"
+            alt="Stealth"
+            width={22}
+            height={22}
+            priority
+            className="w-[22px] h-[22px] object-contain"
+          />
         </Link>
-        <span className="supabase-topbar-sep" aria-hidden="true">/</span>
+        <span className="supabase-topbar-sep" aria-hidden="true">
+          /
+        </span>
 
         {isOrgsPage ? (
           <span className="supabase-breadcrumb-text">Organizations</span>
@@ -123,7 +119,9 @@ export function SupabaseTopbar({
                           <span className="text-[10px] font-bold">{getInitials(org.name)}</span>
                         </div>
                         <span className="supabase-dropdown-item-name">{org.name}</span>
-                        {isActive && <Check className="w-4 h-4 text-emerald-400" aria-hidden="true" />}
+                        {isActive && (
+                          <Check className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                        )}
                       </button>
                     );
                   })}
@@ -180,6 +178,12 @@ export function SupabaseTopbar({
           className="supabase-icon-btn"
           title="Notifications"
           aria-label="Notifications"
+          onClick={() => {
+            toast.info(
+              "Notifications",
+              "All services operating normally. No unread notifications.",
+            );
+          }}
         >
           <Bell className="w-4 h-4" aria-hidden="true" />
         </button>

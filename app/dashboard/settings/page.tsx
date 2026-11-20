@@ -25,8 +25,9 @@ import { useToast } from "@/components/toast-context";
 export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { data: organization } = useActiveOrganization();
-  const { data: activeMember } = useActiveMember();
+  const { data: organization, isPending: orgPending } = useActiveOrganization();
+  const { data: activeMember, isPending: memberPending } = useActiveMember();
+  const isLoading = orgPending || memberPending;
 
   const [name, setName] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -153,7 +154,8 @@ export default function SettingsPage() {
               <span className="supabase-plan-badge">FREE PLAN</span>
             </div>
             <p className="settings-page-subtitle">
-              Manage organization details, team ownership, and preferences for {organization?.name ?? "your organization"}.
+              Manage organization details, team ownership, and preferences for{" "}
+              {organization?.name ?? "your organization"}.
             </p>
           </div>
         </div>
@@ -161,11 +163,7 @@ export default function SettingsPage() {
         <div className="flex items-center gap-2">
           <span
             className={`settings-role-badge ${
-              isOwner
-                ? "is-owner"
-                : activeMember?.role === "admin"
-                ? "is-admin"
-                : "is-member"
+              isOwner ? "is-owner" : activeMember?.role === "admin" ? "is-admin" : "is-member"
             }`}
           >
             <Shield className="w-3.5 h-3.5 mr-1" />
@@ -182,16 +180,23 @@ export default function SettingsPage() {
       ) : null}
 
       {/* Overview Metadata Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" aria-label="Organization identity">
-        <div className="settings-metric-card">
+      <section
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+        aria-label="Organization identity"
+      >
+        <div className="settings-metric-card is-primary">
           <div className="flex items-center justify-between">
             <span className="settings-metric-label">Organization Name</span>
             <Building className="w-4 h-4 text-emerald-400" />
           </div>
-          <span className="settings-metric-val truncate" title={organization?.name}>
-            {organization?.name ?? "-"}
-          </span>
-          <span className="text-[11px] text-zinc-500">Active workspace title</span>
+          {isLoading ? (
+            <div className="h-6 w-3/4 bg-zinc-800/80 rounded animate-pulse my-0.5" />
+          ) : (
+            <span className="settings-metric-val truncate" title={organization?.name}>
+              {organization?.name ?? "-"}
+            </span>
+          )}
+          <span className="text-[11px] text-zinc-400">Active workspace title</span>
         </div>
 
         <div className="settings-metric-card">
@@ -200,8 +205,9 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => copyText(organization?.slug ?? "", "slug", "Slug")}
-              className="text-zinc-500 hover:text-white transition-colors"
+              className="text-zinc-400 hover:text-white transition-colors"
               title="Copy organization slug"
+              aria-label="Copy organization slug"
             >
               {copiedKey === "slug" ? (
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -210,10 +216,17 @@ export default function SettingsPage() {
               )}
             </button>
           </div>
-          <span className="settings-metric-val font-mono text-base truncate text-emerald-400" title={organization?.slug}>
-            {organization?.slug ?? "-"}
-          </span>
-          <span className="text-[11px] text-zinc-500">Unique routing identifier</span>
+          {isLoading ? (
+            <div className="h-6 w-28 bg-zinc-800/80 rounded animate-pulse my-0.5" />
+          ) : (
+            <span
+              className="settings-metric-val font-mono text-base truncate text-emerald-400"
+              title={organization?.slug}
+            >
+              {organization?.slug ?? "-"}
+            </span>
+          )}
+          <span className="text-[11px] text-zinc-400">Unique routing identifier</span>
         </div>
 
         <div className="settings-metric-card">
@@ -222,8 +235,9 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => copyText(organization?.id ?? "", "id", "Organization ID")}
-              className="text-zinc-500 hover:text-white transition-colors"
+              className="text-zinc-400 hover:text-white transition-colors"
               title="Copy UUID"
+              aria-label="Copy organization UUID"
             >
               {copiedKey === "id" ? (
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -232,21 +246,38 @@ export default function SettingsPage() {
               )}
             </button>
           </div>
-          <span className="settings-metric-val font-mono text-xs truncate text-zinc-300" title={organization?.id}>
-            {organization?.id ?? "-"}
-          </span>
-          <span className="text-[11px] text-zinc-500">System UUID</span>
+          {isLoading ? (
+            <div className="h-6 w-36 bg-zinc-800/80 rounded animate-pulse my-0.5" />
+          ) : (
+            <span
+              className="settings-metric-val font-mono text-xs truncate text-zinc-300"
+              title={organization?.id}
+            >
+              {organization?.id ?? "-"}
+            </span>
+          )}
+          <span className="text-[11px] text-zinc-400">System UUID</span>
         </div>
 
         <div className="settings-metric-card">
           <div className="flex items-center justify-between">
             <span className="settings-metric-label">Created Date</span>
-            <Calendar className="w-4 h-4 text-zinc-500" />
+            <Calendar className="w-4 h-4 text-zinc-400" />
           </div>
-          <span className="settings-metric-val text-sm font-mono text-zinc-200">
-            {organization?.createdAt ? formatDateTime(organization.createdAt instanceof Date ? organization.createdAt.toISOString() : String(organization.createdAt)) : "Active"}
-          </span>
-          <span className="text-[11px] text-zinc-500">Initial registration</span>
+          {isLoading ? (
+            <div className="h-6 w-24 bg-zinc-800/80 rounded animate-pulse my-0.5" />
+          ) : (
+            <span className="settings-metric-val text-sm font-mono text-zinc-200">
+              {organization?.createdAt
+                ? formatDateTime(
+                    organization.createdAt instanceof Date
+                      ? organization.createdAt.toISOString()
+                      : String(organization.createdAt),
+                  )
+                : "Active"}
+            </span>
+          )}
+          <span className="text-[11px] text-zinc-400">Initial registration</span>
         </div>
       </section>
 
@@ -261,7 +292,7 @@ export default function SettingsPage() {
                 General Information
               </h2>
             </div>
-            <span className="text-xs text-zinc-500">Display and identity</span>
+            <span className="text-xs text-zinc-400">Display and identity</span>
           </div>
 
           {isOwner ? (
@@ -272,9 +303,7 @@ export default function SettingsPage() {
                     <label htmlFor="org-name-input" className="text-xs font-medium text-zinc-300">
                       Organization Name:
                     </label>
-                    <span className="text-[11px] text-zinc-500 font-mono">
-                      {name.length} / 80
-                    </span>
+                    <span className="text-[11px] text-zinc-400 font-mono">{name.length} / 80</span>
                   </div>
                   <input
                     id="org-name-input"
@@ -286,8 +315,9 @@ export default function SettingsPage() {
                     className="settings-input"
                     placeholder="e.g. Acme Corp"
                   />
-                  <p className="text-[11px] text-zinc-500 mt-1.5">
-                    This is your team&apos;s public workspace display name shown in the top navigation bar.
+                  <p className="text-[11px] text-zinc-400 mt-1.5">
+                    This is your team&apos;s public workspace display name shown in the top
+                    navigation bar.
                   </p>
                 </div>
 
@@ -296,14 +326,13 @@ export default function SettingsPage() {
                     Workspace Slug (Read-only):
                   </label>
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-950/40 border border-zinc-800">
-                    <code className="text-xs font-mono text-zinc-300">
-                      {organization?.slug}
-                    </code>
+                    <code className="text-xs font-mono text-zinc-300">{organization?.slug}</code>
                     <button
                       type="button"
                       onClick={() => copyText(organization?.slug ?? "", "slug-inner", "Slug")}
-                      className="text-zinc-500 hover:text-white transition-colors"
+                      className="text-zinc-400 hover:text-white transition-colors"
                       title="Copy slug"
+                      aria-label="Copy workspace slug"
                     >
                       {copiedKey === "slug-inner" ? (
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -316,7 +345,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="settings-card-footer">
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-zinc-400">
                   Name changes take effect immediately across all dashboard projects.
                 </span>
                 <button
@@ -343,7 +372,9 @@ export default function SettingsPage() {
               <div className="settings-readonly-banner">
                 <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-cyan-200 leading-relaxed">
-                  You are viewing this organization as a <strong>{activeMember?.role ?? "member"}</strong>. Only organization owners have permission to edit organization details or manage billing.
+                  You are viewing this organization as a{" "}
+                  <strong>{activeMember?.role ?? "member"}</strong>. Only organization owners have
+                  permission to edit organization details or manage billing.
                 </p>
               </div>
             </div>
@@ -364,7 +395,8 @@ export default function SettingsPage() {
 
           <div className="settings-card-body">
             <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Your organization is currently on the <strong>Free Plan</strong>, suitable for self-hosted development environments, internal tools, and container workloads.
+              Your organization is currently on the <strong>Free Plan</strong>, suitable for
+              self-hosted development environments, internal tools, and container workloads.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -396,7 +428,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="settings-card-footer">
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-zinc-400">
               Need higher limits or dedicated node clusters?
             </span>
             <Link
@@ -424,12 +456,19 @@ export default function SettingsPage() {
 
             <div className="settings-card-body space-y-4">
               <div className="p-3.5 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
-                <strong>Permanent Deletion Warning:</strong> Deleting <strong>{organization?.name}</strong> will immediately terminate all running containers, erase attached persistent volumes, remove managed PostgreSQL databases, invalidate custom domain certificates, and revoke all member access. This operation cannot be recovered.
+                <strong>Permanent Deletion Warning:</strong> Deleting{" "}
+                <strong>{organization?.name}</strong> will immediately terminate all running
+                containers, erase attached persistent volumes, remove managed PostgreSQL databases,
+                invalidate custom domain certificates, and revoke all member access. This operation
+                cannot be recovered.
               </div>
 
               <form onSubmit={handleDeleteOrganization} className="space-y-3">
                 <div>
-                  <label htmlFor="confirm-delete-input" className="text-xs font-medium text-zinc-300 block mb-1.5">
+                  <label
+                    htmlFor="confirm-delete-input"
+                    className="text-xs font-medium text-zinc-300 block mb-1.5"
+                  >
                     Type <strong>{organization?.name}</strong> to confirm deletion:
                   </label>
                   <input
@@ -481,7 +520,9 @@ export default function SettingsPage() {
 
             <div className="settings-card-body">
               <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-                Revoke your membership from <strong>{organization?.name}</strong>. You will immediately lose access to all projects, services, and databases until an owner re-invites you.
+                Revoke your membership from <strong>{organization?.name}</strong>. You will
+                immediately lose access to all projects, services, and databases until an owner
+                re-invites you.
               </p>
 
               <button

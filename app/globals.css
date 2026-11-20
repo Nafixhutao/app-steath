@@ -63,6 +63,20 @@ button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
+button,
+summary,
+select,
+a[href],
+label[for],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+}
+button:disabled,
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
 
 .auth-page {
   min-height: 100dvh;
@@ -922,7 +936,9 @@ a:hover {
   align-items: center;
   gap: 8px;
   padding: 4px 6px;
-  transition: flex-basis 360ms cubic-bezier(0.22, 1, 0.36, 1), background-color 150ms ease;
+  transition:
+    flex-basis 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 150ms ease;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -2773,7 +2789,9 @@ a:hover {
   background: #272531;
   color: #9e9aa7;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
 }
 
 .db-search-clear:hover {
@@ -3082,7 +3100,10 @@ a:hover {
   font-size: 12.5px;
   font-weight: 500;
   text-decoration: none;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 .db-btn-manage:hover {
@@ -3103,7 +3124,11 @@ a:hover {
   padding: 60px 24px;
   border: 1px solid #262430;
   border-radius: 16px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(62, 207, 142, 0.08) 0%, rgba(21, 20, 27, 0.95) 70%);
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(62, 207, 142, 0.08) 0%,
+    rgba(21, 20, 27, 0.95) 70%
+  );
   text-align: center;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
@@ -4527,7 +4552,6 @@ body {
   border-color: var(--projects-border-hover);
 }
 
-
 /* ==========================================================================
    Supabase Design System - Topbar, Organizations, Projects, and Usage Panel
    ========================================================================== */
@@ -4596,7 +4620,9 @@ body {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 150ms, border-color 150ms;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
 }
 
 .supabase-org-dropdown-btn:hover {
@@ -4626,7 +4652,9 @@ body {
   height: 8px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: -4px 5px 0 0 currentColor, 4px 5px 0 0 currentColor;
+  box-shadow:
+    -4px 5px 0 0 currentColor,
+    4px 5px 0 0 currentColor;
 }
 
 .supabase-org-name {
@@ -4678,7 +4706,9 @@ body {
   color: #8e8c99;
   font-size: 13px;
   cursor: pointer;
-  transition: border-color 150ms, color 150ms;
+  transition:
+    border-color 150ms,
+    color 150ms;
 }
 
 .supabase-search-btn:hover {
@@ -4704,19 +4734,37 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  position: relative;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
   background: transparent;
   border: none;
   color: #8e8c99;
   cursor: pointer;
-  transition: color 150ms, background-color 150ms;
+  transition:
+    color 150ms,
+    background-color 150ms;
+}
+
+.supabase-icon-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .supabase-icon-btn:hover {
   color: #edecf1;
   background-color: rgba(255, 255, 255, 0.05);
+}
+
+.supabase-icon-btn:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }
 
 .supabase-user-menu-wrapper {
@@ -4727,12 +4775,28 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   border: none;
   background: transparent;
   padding: 0;
   cursor: pointer;
   border-radius: 50%;
   outline: none;
+}
+
+.supabase-avatar-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.supabase-avatar-btn:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }
 
 .supabase-avatar-img {
@@ -5033,7 +5097,11 @@ body {
   border: 1px solid #2d2a3a;
   color: #ffffff;
   box-shadow: none;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 100ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 100ms ease;
 }
 
 .supabase-btn-secondary.text-xs:hover:not(:disabled),
@@ -5069,7 +5137,9 @@ body {
   border: 1px solid #25232c;
   cursor: pointer;
   text-align: left;
-  transition: border-color 150ms, background-color 150ms;
+  transition:
+    border-color 150ms,
+    background-color 150ms;
   width: 100%;
 }
 
@@ -5274,7 +5344,9 @@ body {
   border: none;
   color: #716f7c;
   cursor: pointer;
-  transition: color 150ms, background-color 150ms;
+  transition:
+    color 150ms,
+    background-color 150ms;
 }
 
 .supabase-view-btn:hover {
@@ -5400,7 +5472,9 @@ body {
   background-color: #17161b;
   border: 1px solid #25232c;
   text-decoration: none;
-  transition: border-color 150ms, background-color 150ms;
+  transition:
+    border-color 150ms,
+    background-color 150ms;
   min-height: 120px;
 }
 
@@ -5455,7 +5529,9 @@ body {
   width: 16px;
   height: 16px;
   color: #555360;
-  transition: color 150ms, transform 150ms;
+  transition:
+    color 150ms,
+    transform 150ms;
 }
 
 .supabase-project-card:hover .supabase-card-arrow {
@@ -5565,7 +5641,9 @@ body {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 150ms, border-color 150ms;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
   white-space: nowrap;
 }
 
@@ -5667,7 +5745,9 @@ body {
   border: none;
   color: #716f7c;
   cursor: pointer;
-  transition: color 150ms, background-color 150ms;
+  transition:
+    color 150ms,
+    background-color 150ms;
 }
 
 .supabase-modal-close:hover {
@@ -5728,7 +5808,6 @@ body {
   }
 }
 
-
 /* ==========================================================================
    Command Palette (Ctrl+K)
    ========================================================================== */
@@ -5761,7 +5840,9 @@ body {
   border: 1px solid #282633;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
   animation: commandSlideIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -6032,7 +6113,8 @@ body {
 }
 
 @keyframes supabasePulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -6061,7 +6143,6 @@ body {
   border: 1px solid #25232c;
   min-height: 120px;
 }
-
 
 /* ==========================================================================
    Project Detail View (Supabase-Style Tabbed Dashboard)
@@ -6237,7 +6318,9 @@ body {
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 150ms, border-color 150ms;
+  transition:
+    color 150ms,
+    border-color 150ms;
 }
 
 .project-tab-button:hover {
@@ -6719,7 +6802,6 @@ body {
   transform: none;
   box-shadow: none;
 }
-
 
 /* ==========================================================================
    Members / Team Page (Supabase Style)
@@ -8462,6 +8544,15 @@ body {
   border-color: #34313c;
 }
 
+.settings-metric-card.is-primary {
+  border-color: rgba(62, 207, 142, 0.35);
+  background: linear-gradient(180deg, rgba(62, 207, 142, 0.06) 0%, #17161b 100%);
+}
+
+.settings-metric-card.is-primary:hover {
+  border-color: rgba(62, 207, 142, 0.55);
+}
+
 .settings-metric-label {
   font-size: 11px;
   font-weight: 500;
@@ -8550,4 +8641,61 @@ body {
   border: 1px solid #24222c;
   font-size: 12px;
   color: #edecf1;
+}
+
+.supabase-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background-color: rgba(62, 207, 142, 0.12);
+  color: #3ecf8e;
+  border: 1px solid rgba(62, 207, 142, 0.25);
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.supabase-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 0;
+  background: #e11d48;
+  background-image: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition:
+    filter 140ms ease,
+    transform 100ms ease;
+  cursor: pointer;
+}
+
+.supabase-btn-danger:hover:not(:disabled) {
+  background-image: linear-gradient(180deg, #fb7185 0%, #f43f5e 100%);
+  color: #ffffff;
+}
+
+.supabase-btn-danger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.supabase-btn-danger:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
+}
+
+.supabase-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }

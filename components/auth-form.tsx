@@ -106,7 +106,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
         if (!cancelled && payload?.data?.providers) setSocialProviders(payload.data.providers);
       })
       .catch(() => {
-        // Unknown stays "Coming soon" — the honest default.
+        // Unknown stays "Coming soon": the honest default.
       });
     return () => {
       cancelled = true;
