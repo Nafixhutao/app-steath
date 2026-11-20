@@ -118,9 +118,22 @@ export default function UsagePage() {
 
   const containerRef = useGsapEntrance<HTMLDivElement>(
     [
-      { targets: ".usage-metric-card", y: 10, duration: 0.35, stagger: 0.05 },
-      { targets: ".usage-meter-card", y: 10, duration: 0.35, stagger: 0.05, delay: 0.08 },
-      { targets: ".usage-table-card, .usage-policy-card", y: 12, duration: 0.4, delay: 0.16 },
+      { targets: ".usage-metric-card", y: 20, duration: 0.5, stagger: 0.08, ease: "power2.out" },
+      {
+        targets: ".usage-meter-card",
+        y: 20,
+        duration: 0.5,
+        stagger: 0.08,
+        delay: 0.12,
+        ease: "power2.out",
+      },
+      {
+        targets: ".usage-table-card, .usage-policy-card",
+        y: 24,
+        duration: 0.55,
+        delay: 0.22,
+        ease: "power2.out",
+      },
     ],
     [Boolean(usageData)],
   );

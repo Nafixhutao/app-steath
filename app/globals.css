@@ -7392,51 +7392,70 @@ body {
 }
 
 .usage-metric-card {
-  background-color: #17161b;
-  border: 1px solid #25232c;
-  border-radius: 10px;
-  padding: 16px 18px;
+  background: linear-gradient(180deg, #191820 0%, #141318 100%);
+  border: 1px solid #282632;
+  border-radius: 12px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition: border-color 150ms ease;
+  gap: 8px;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.usage-metric-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
 }
 
 .usage-metric-card:hover {
-  border-color: #34313c;
+  border-color: #3e3b4d;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
 .usage-metric-icon-badge {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+
+.usage-metric-card:hover .usage-metric-icon-badge {
+  transform: scale(1.08);
 }
 
 .usage-metric-icon-badge.is-emerald {
-  background-color: rgba(62, 207, 142, 0.1);
-  border: 1px solid rgba(62, 207, 142, 0.2);
+  background-color: rgba(62, 207, 142, 0.12);
+  border: 1px solid rgba(62, 207, 142, 0.25);
   color: #3ecf8e;
 }
 
 .usage-metric-icon-badge.is-cyan {
-  background-color: rgba(34, 211, 238, 0.1);
-  border: 1px solid rgba(34, 211, 238, 0.2);
+  background-color: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.25);
   color: #22d3ee;
 }
 
 .usage-metric-icon-badge.is-amber {
-  background-color: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  background-color: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.25);
   color: #fbbf24;
 }
 
 .usage-metric-icon-badge.is-blue {
-  background-color: rgba(96, 165, 250, 0.1);
-  border: 1px solid rgba(96, 165, 250, 0.2);
+  background-color: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.25);
   color: #60a5fa;
 }
 
@@ -7457,15 +7476,29 @@ body {
 }
 
 .usage-meter-card {
-  background-color: #17161b;
-  border: 1px solid #25232c;
-  border-radius: 10px;
-  padding: 16px 18px;
-  transition: border-color 150ms ease;
+  background: linear-gradient(180deg, #191820 0%, #141318 100%);
+  border: 1px solid #282632;
+  border-radius: 12px;
+  padding: 18px 20px;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.usage-meter-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
 }
 
 .usage-meter-card:hover {
-  border-color: #34313c;
+  border-color: #3e3b4d;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
 .usage-meter-label {
@@ -7509,32 +7542,34 @@ body {
 }
 
 .usage-progress-track {
-  height: 6px;
+  height: 8px;
   width: 100%;
-  background-color: #22202a;
+  background-color: #1a1922;
   border: 1px solid #2b2836;
   border-radius: 9999px;
   overflow: hidden;
+  padding: 1px;
 }
 
 .usage-progress-fill {
   height: 100%;
   border-radius: 9999px;
-  transition: width 300ms ease;
+  transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .usage-progress-fill.is-healthy {
-  background-color: #3ecf8e;
+  background: linear-gradient(90deg, #10b981 0%, #3ecf8e 100%);
+  box-shadow: 0 0 10px rgba(62, 207, 142, 0.35);
 }
 
 .usage-progress-fill.is-pending {
-  background-color: #fbbf24;
-  box-shadow: 0 0 6px rgba(251, 191, 36, 0.35);
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.45);
 }
 
 .usage-progress-fill.is-failed {
-  background-color: #f43f5e;
-  box-shadow: 0 0 6px rgba(244, 63, 94, 0.35);
+  background: linear-gradient(90deg, #e11d48 0%, #f43f5e 100%);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.45);
 }
 
 .usage-count-pill {
