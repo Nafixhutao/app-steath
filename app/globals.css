@@ -6831,3 +6831,283 @@ body {
   padding: 48px 20px;
   text-align: center;
 }
+
+/* ==========================================================================
+   Supabase Style - Backups & Restores Page
+   ========================================================================== */
+
+.backups-page-container {
+  padding: 28px 36px 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.backups-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.backups-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: rgba(62, 207, 142, 0.1);
+  border: 1px solid rgba(62, 207, 142, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.backups-page-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.backups-page-subtitle {
+  font-size: 13px;
+  color: #878492;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.backups-warning-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  margin-bottom: 20px;
+}
+
+.backups-metric-card {
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 150ms ease;
+}
+
+.backups-metric-card:hover {
+  border-color: #34313c;
+}
+
+.backups-metric-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #878492;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.backups-metric-val {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.backups-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.backups-search-box {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+}
+
+.backups-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: #706d7e;
+  pointer-events: none;
+}
+
+.backups-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 32px 0 36px;
+  border-radius: 6px;
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  color: #edecf1;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.backups-search-input:focus {
+  border-color: #3ecf8e;
+}
+
+.backups-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #706d7e;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.backups-search-clear:hover {
+  color: #edecf1;
+}
+
+.backups-count-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: #1d1b22;
+  border: 1px solid #282632;
+  color: #878492;
+}
+
+.backups-table-card {
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.backups-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.backups-table th {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #878492;
+  padding: 12px 18px;
+  border-bottom: 1px solid #25232c;
+  background-color: #131217;
+}
+
+.backups-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #1f1d25;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.backups-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.backups-table tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.backups-row-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background-color: #1f1d26;
+  border: 1px solid #2d2a37;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.backups-storage-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #1f1d27;
+  border: 1px solid #2d2b37;
+  color: #a6a3b0;
+}
+
+.backups-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.backups-status-pill.is-completed {
+  background-color: #0f2e21;
+  border: 1px solid #1d4a36;
+  color: #3ecf8e;
+}
+
+.backups-status-pill.is-completed .project-status-dot {
+  background-color: #3ecf8e;
+}
+
+.backups-status-pill.is-failed {
+  background-color: #2d1419;
+  border: 1px solid #4d222a;
+  color: #f43f5e;
+}
+
+.backups-status-pill.is-failed .project-status-dot {
+  background-color: #f43f5e;
+}
+
+.backups-status-pill.is-pending {
+  background-color: #2a2012;
+  border: 1px solid #48381c;
+  color: #fbbf24;
+}
+
+.backups-status-pill.is-pending .project-status-dot {
+  background-color: #fbbf24;
+}
+
+.backups-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+}
