@@ -7111,3 +7111,295 @@ body {
   padding: 48px 20px;
   text-align: center;
 }
+
+/* ==========================================================================
+   Supabase Style - Usage & Quotas Page
+   ========================================================================== */
+
+.usage-page-container {
+  padding: 28px 36px 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.usage-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.usage-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: rgba(62, 207, 142, 0.1);
+  border: 1px solid rgba(62, 207, 142, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.usage-page-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.usage-page-subtitle {
+  font-size: 13px;
+  color: #878492;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.usage-metric-card {
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 150ms ease;
+}
+
+.usage-metric-card:hover {
+  border-color: #34313c;
+}
+
+.usage-metric-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #878492;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.usage-metric-val {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.usage-meter-card {
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 10px;
+  padding: 16px 18px;
+  transition: border-color 150ms ease;
+}
+
+.usage-meter-card:hover {
+  border-color: #34313c;
+}
+
+.usage-meter-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #edecf1;
+}
+
+.usage-meter-numbers {
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #edecf1;
+}
+
+.usage-meter-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.usage-meter-pill.is-healthy {
+  background-color: #0f2e21;
+  border: 1px solid #1d4a36;
+  color: #3ecf8e;
+}
+
+.usage-meter-pill.is-pending {
+  background-color: #2a2012;
+  border: 1px solid #48381c;
+  color: #fbbf24;
+}
+
+.usage-meter-pill.is-failed {
+  background-color: #2d1419;
+  border: 1px solid #4d222a;
+  color: #f43f5e;
+}
+
+.usage-progress-track {
+  height: 6px;
+  width: 100%;
+  background-color: #22202a;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.usage-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 300ms ease;
+}
+
+.usage-progress-fill.is-healthy {
+  background-color: #3ecf8e;
+}
+
+.usage-progress-fill.is-pending {
+  background-color: #fbbf24;
+}
+
+.usage-progress-fill.is-failed {
+  background-color: #f43f5e;
+}
+
+.usage-count-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: #1d1b22;
+  border: 1px solid #282632;
+  color: #878492;
+}
+
+.usage-table-card {
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.usage-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.usage-table th {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #878492;
+  padding: 12px 18px;
+  border-bottom: 1px solid #25232c;
+  background-color: #131217;
+}
+
+.usage-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #1f1d25;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.usage-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.usage-table tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.usage-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.usage-status-pill.is-running {
+  background-color: #0f2e21;
+  border: 1px solid #1d4a36;
+  color: #3ecf8e;
+}
+
+.usage-status-pill.is-running .project-status-dot {
+  background-color: #3ecf8e;
+}
+
+.usage-status-pill.is-failed {
+  background-color: #2d1419;
+  border: 1px solid #4d222a;
+  color: #f43f5e;
+}
+
+.usage-status-pill.is-failed .project-status-dot {
+  background-color: #f43f5e;
+}
+
+.usage-status-pill.is-pending {
+  background-color: #2a2012;
+  border: 1px solid #48381c;
+  color: #fbbf24;
+}
+
+.usage-status-pill.is-pending .project-status-dot {
+  background-color: #fbbf24;
+}
+
+.usage-policy-card {
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.usage-policy-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background-color: #131217;
+  border-top: 1px solid #25232c;
+}
+
+.usage-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.usage-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 20px;
+  text-align: center;
+  background-color: #17161b;
+  border: 1px dashed #25232c;
+  border-radius: 10px;
+}
+
+.usage-metric-skeleton {
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
