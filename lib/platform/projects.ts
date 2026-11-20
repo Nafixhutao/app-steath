@@ -1,7 +1,6 @@
 import { pool } from "./db.ts";
 import { ApiError } from "./api-error.ts";
-import { QuotaExceededError } from "@/lib/platform/quota";
-import { QUOTAS } from "@/lib/platform/quota-limits";
+import { assertQuota } from "@/lib/platform/quota";
 import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -138,15 +137,7 @@ export async function createProject(input: {
       `project-quota:${input.organizationId}`,
     ]);
 
-    const usage = await client.query<{ count: string }>(
-      'SELECT count(*) FROM "project" WHERE "organizationId" = $1',
-      [input.organizationId],
-    );
-    const used = Number(usage.rows[0]?.count ?? 0);
-    const limit = QUOTAS.projectsPerOrganization;
-    if (used >= limit) {
-      throw new QuotaExceededError("Project", limit, used, "Organization");
-    }
+    await assertQuota(client, { type: "project", organizationId: input.organizationId });
 
     const existing = await client.query(
       'SELECT 1 FROM "project" WHERE "organizationId" = $1 AND "slug" = $2',

@@ -5,7 +5,7 @@ import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { nodeConfig } from "./nodes.ts";
 import { getPlatformDomain } from "./platform-domain.ts";
-import { QUOTAS } from "./quota-limits.ts";
+import { assertQuota, QUOTAS, QuotaExceededError } from "./quota.ts";
 import { decryptSecret, encryptSecret } from "./secrets.ts";
 import { requireProject } from "./ownership.ts";
 import { bumpProjectRevisions, projectNeedsRedeploy } from "./revisions.ts";
@@ -157,15 +157,6 @@ export function normalizeStorageLimitMb(value: unknown): number {
   }
 
   return value;
-}
-
-function quotaError(limit: number, usage: number): ApiError {
-  return new ApiError(
-    409,
-    "quota_exceeded",
-    `Database Quota reached: this Project uses ${usage} of ${limit} allowed Databases.`,
-    { resource: "database", scope: "project", limit, usage },
-  );
 }
 
 /**
@@ -450,10 +441,7 @@ export async function createProjectDatabase(input: {
   const storageLimitMb = normalizeStorageLimitMb(input.storageLimitMb);
   const project = await requireProject(input.organizationId, input.projectId);
 
-  const existing = await loadDatabaseRow(input.projectId);
-  if (existing) {
-    throw quotaError(QUOTAS.databasesPerProject, QUOTAS.databasesPerProject);
-  }
+  await assertQuota(pool, { type: "database", projectId: input.projectId });
 
   const password = randomBytes(32).toString("hex");
   const encryptedPassword = encryptSecret(password);
@@ -478,7 +466,7 @@ export async function createProjectDatabase(input: {
     row = inserted.rows[0];
   } catch (error) {
     if ((error as { code?: string }).code === "23505") {
-      throw quotaError(QUOTAS.databasesPerProject, QUOTAS.databasesPerProject);
+      throw new QuotaExceededError("Database", QUOTAS.databasesPerProject, QUOTAS.databasesPerProject, "Project");
     }
     throw error;
   }
