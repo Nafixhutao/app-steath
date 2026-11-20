@@ -84,15 +84,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <ToastProvider>
-      <div className="console-layout flex flex-col min-h-dvh overflow-x-hidden bg-[#121014] text-[#edecf1]">
+      <div className="console-layout flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
         <SupabaseTopbar onOpenSearch={() => setSearchOpen(true)} />
 
         {isOrgsPage ? (
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden">
             {children}
           </main>
         ) : (
-          <div className="flex flex-1 min-w-0 max-[1023px]:block">
+          <div className="flex flex-1 min-h-0 min-w-0 max-[1023px]:block overflow-hidden">
             <Suspense fallback={<div className="sidebar" aria-hidden="true" />}>
               <Sidebar
                 organization={defaultOrganization}
@@ -102,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }}
               />
             </Suspense>
-            <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1">
+            <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden">
               {needsOrganization && !isPlatformAdmin ? <OrganizationOnboarding /> : children}
             </main>
           </div>
