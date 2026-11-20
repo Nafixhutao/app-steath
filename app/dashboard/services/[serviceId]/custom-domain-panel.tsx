@@ -7,7 +7,7 @@ import {
   getServiceCustomDomain,
   verifyServiceCustomDomain,
   type CustomDomainSummary,
-} from "@/lib/custom-domains-client";
+} from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 

@@ -7,7 +7,7 @@ import {
   serviceRuntimeLabel,
   streamRuntimeLog,
   type ServiceRuntimeAction,
-} from "@/lib/deployments-client";
+} from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 
 const LOG_TAIL = 200;
