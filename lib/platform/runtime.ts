@@ -5,7 +5,7 @@ import {
 } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { recordAudit } from "./audit.ts";
-import { markServiceRunning, markServiceStopped } from "./deployments.ts";
+import { markServiceRunning, markServiceStopped } from "./services.ts";
 import { nodeConfig } from "./nodes.ts";
 import { requireService } from "./ownership.ts";
 

@@ -469,3 +469,31 @@ export async function deleteService(input: {
     projectId: current.projectId,
   };
 }
+
+/**
+ * Updates a Service status in the database, preserving suspension if active.
+ */
+export async function setServiceStatus(
+  serviceId: string,
+  status: "running" | "stopped" | "deploying",
+): Promise<void> {
+  await pool.query(
+    `UPDATE "service" SET "status" = $2, "updatedAt" = now() WHERE "id" = $1 AND "status" <> 'suspended'`,
+    [serviceId, status],
+  );
+}
+
+/**
+ * Marks the Service stopped in the database when its container stops.
+ */
+export function markServiceStopped(serviceId: string): Promise<void> {
+  return setServiceStatus(serviceId, "stopped");
+}
+
+/**
+ * Marks the Service running in the database after a start or restart.
+ */
+export function markServiceRunning(serviceId: string): Promise<void> {
+  return setServiceStatus(serviceId, "running");
+}
+
