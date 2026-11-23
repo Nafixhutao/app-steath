@@ -1983,9 +1983,6 @@ a:hover {
   .view-toggle {
     width: 28px;
   }
-  .create-project-button {
-    display: none;
-  }
   .project-grid {
     grid-template-columns: 1fr;
     gap: 8px;
