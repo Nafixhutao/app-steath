@@ -166,6 +166,10 @@ export const authConfig = {
   ],
 
   session: {
+    // A hosting console is a long-lived tool, so a signed-in session lasts 30
+    // days and is refreshed once a day instead of expiring after a week.
+    expiresIn: 60 * 60 * 24 * 30,
+    updateAge: 60 * 60 * 24,
     cookieCache: {
       enabled: false,
     },

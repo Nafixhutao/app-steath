@@ -315,7 +315,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
               <span className="checkbox-mark" aria-hidden="true">
                 {rememberEmail ? <CheckMark /> : null}
               </span>
-              Save email and login method on this device
+              Keep me signed in on this device
             </label>
           )}
 
