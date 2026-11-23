@@ -110,7 +110,7 @@ export function EnvironmentPanel({
       <div className="dashboard-section-heading">
         <h2 id="environment-heading">Environment Variables</h2>
         <button
-          className="create-project-button"
+          className="supabase-btn-green"
           type="button"
           onClick={() => setDraft(EMPTY_DRAFT)}
           disabled={draft?.mode === "create"}
@@ -157,7 +157,7 @@ export function EnvironmentPanel({
             />
           </label>
           <div className="environment-form-actions">
-            <button className="dashboard-secondary-button" type="submit" disabled={busy}>
+            <button className="supabase-btn-secondary" type="submit" disabled={busy}>
               {busy ? "Saving..." : draft.mode === "create" ? "Add" : "Save"}
             </button>
             <button

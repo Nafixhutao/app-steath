@@ -59,8 +59,8 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
 
   if (loading) {
     return (
-      <div className="dashboard-content">
-        <p className="dashboard-table-empty" role="status">
+      <div className="dashboard-content supabase-service-page">
+        <p className="supabase-service-empty" role="status">
           Loading Service...
         </p>
       </div>
@@ -69,11 +69,13 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
 
   if (!service) {
     return (
-      <div className="dashboard-content">
-        <div className="dashboard-page-heading">
+      <div className="dashboard-content supabase-service-page">
+        <div className="supabase-service-hero">
           <div>
-            <h1>Service not found</h1>
-            <p>This Service does not exist in the active Organization.</p>
+            <h1 className="supabase-service-title">Service not found</h1>
+            <p className="supabase-service-subtitle">
+              This Service does not exist in the active Organization.
+            </p>
           </div>
         </div>
         {error || actionError ? (
@@ -89,24 +91,24 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
   }
 
   return (
-    <div className="dashboard-content">
-      <div className="dashboard-page-heading">
+    <div className="dashboard-content supabase-service-page">
+      <div className="supabase-service-hero">
         <div>
-          <p className="dashboard-breadcrumb">
+          <p className="supabase-service-breadcrumb">
             <Link href="/dashboard/projects">Projects</Link> /{" "}
             <Link href={`/dashboard/projects/${service.projectId}`}>
               {projectName || "Project"}
             </Link>{" "}
             / {service.name}
           </p>
-          <h1>{service.name}</h1>
-          <p>
-            <a className="service-url" href={service.url} target="_blank" rel="noreferrer">
-              {service.platformHostname}
-            </a>
-          </p>
+          <h1 className="supabase-service-title">{service.name}</h1>
+          <a className="supabase-service-url" href={service.url} target="_blank" rel="noreferrer">
+            {service.platformHostname} ↗
+          </a>
         </div>
-        <span className="role-label">{serviceStatusLabel(service.status)}</span>
+        <span className={`supabase-service-status is-${service.status}`}>
+          {serviceStatusLabel(service.status)}
+        </span>
       </div>
 
       {error || actionError ? (
@@ -194,7 +196,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
               />
             </label>
             <button
-              className="dashboard-danger-button"
+              className="supabase-btn-danger"
               type="submit"
               disabled={busy || confirmation !== service.name}
             >

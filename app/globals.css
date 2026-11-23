@@ -8851,3 +8851,311 @@ body {
   transform: none;
   box-shadow: none;
 }
+
+/* ==========================================================================
+   Service detail — same console design system as Projects / Create Project
+   ========================================================================== */
+.dashboard-content.supabase-service-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 32px 56px;
+}
+.supabase-service-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.supabase-service-breadcrumb {
+  margin: 0 0 8px;
+  color: #8e8c99;
+  font-size: 12px;
+}
+.supabase-service-breadcrumb a {
+  color: #bdb8c2;
+  text-decoration: none;
+}
+.supabase-service-breadcrumb a:hover {
+  color: #edecf1;
+}
+.supabase-service-title {
+  margin: 0 0 6px;
+  color: #edecf1;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  /* The global h1 rule centers auth headings; console titles stay left. */
+  text-align: left;
+}
+.supabase-service-subtitle {
+  margin: 0;
+  color: #8e8c99;
+  font-size: 13px;
+}
+.supabase-service-url {
+  color: #3ecf8e;
+  font-size: 13px;
+  text-decoration: none;
+}
+.supabase-service-url:hover {
+  text-decoration: underline;
+}
+.supabase-service-status {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #2f2d38;
+  border-radius: 999px;
+  background: #1b1a20;
+  color: #bdb8c2;
+  font-size: 11px;
+  font-weight: 600;
+}
+.supabase-service-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.supabase-service-status.is-running {
+  border-color: rgba(62, 207, 142, 0.3);
+  background: rgba(62, 207, 142, 0.1);
+  color: #3ecf8e;
+}
+.supabase-service-status.is-deploying,
+.supabase-service-status.is-building {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+}
+.supabase-service-status.is-failed,
+.supabase-service-status.is-suspended {
+  border-color: rgba(251, 113, 133, 0.3);
+  background: rgba(251, 113, 133, 0.1);
+  color: #fb7185;
+}
+
+.supabase-service-page .dashboard-section {
+  margin: 0 0 16px;
+  padding: 18px;
+  border: 1px solid #23222a;
+  border-radius: 8px;
+  background: #16151a;
+}
+.supabase-service-page .dashboard-section-heading {
+  min-height: 0;
+  margin: -18px -18px 16px;
+  padding: 13px 18px;
+  border-bottom: 1px solid #23222a;
+}
+.supabase-service-page .dashboard-section-heading h2 {
+  color: #edecf1;
+  font-size: 14px;
+  font-weight: 600;
+}
+.supabase-service-page .dashboard-alert {
+  margin: 0 0 14px;
+  font-size: 12px;
+}
+.supabase-service-page .service-meta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+}
+.supabase-service-page .service-meta > div {
+  display: block;
+}
+.supabase-service-page .service-meta dt {
+  margin-bottom: 4px;
+  color: #8e8c99;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.supabase-service-page .service-meta dd {
+  color: #edecf1;
+  font-size: 13px;
+}
+.supabase-service-page .dashboard-empty-state {
+  padding: 28px 16px;
+  border: 1px dashed #2b2933;
+  border-radius: 8px;
+  background: #121014;
+}
+.supabase-service-page .dashboard-empty-state h3 {
+  font-size: 14px;
+}
+.supabase-service-page .dashboard-empty-state p {
+  font-size: 12px;
+}
+.supabase-service-page .dashboard-table-empty {
+  padding: 18px;
+  color: #8e8c99;
+  font-size: 12px;
+  text-align: center;
+}
+.supabase-service-page .organization-table-wrap {
+  border: 1px solid #23222a;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.supabase-service-page .organization-table {
+  margin: 0;
+  font-size: 12px;
+}
+.supabase-service-page .organization-table th,
+.supabase-service-page .organization-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #23222a;
+}
+.supabase-service-page .organization-table th {
+  background: #121014;
+  color: #8e8c99;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.supabase-service-page .organization-table td {
+  color: #d6d3da;
+}
+.supabase-service-page .organization-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.supabase-service-page .dashboard-link-button {
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #bdb8c2;
+  font-size: 12px;
+  cursor: pointer;
+}
+.supabase-service-page .dashboard-link-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.supabase-service-page .dashboard-link-button.is-danger {
+  color: #fb7185;
+}
+.supabase-service-page .organization-settings-form,
+.supabase-service-page .environment-form {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 16px;
+  padding: 14px;
+  border: 1px solid #23222a;
+  border-radius: 6px;
+  background: #121014;
+}
+.supabase-service-page .organization-settings-form label,
+.supabase-service-page .environment-form label {
+  display: grid;
+  gap: 6px;
+  color: #bdb8c2;
+  font-size: 12px;
+}
+.supabase-service-page .organization-settings-form input,
+.supabase-service-page .environment-form input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #2b2935;
+  border-radius: 6px;
+  background: #1a1920;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+.supabase-service-page .organization-settings-form input:focus,
+.supabase-service-page .environment-form input:focus {
+  border-color: #3ecf8e;
+}
+.supabase-service-page .environment-form-actions,
+.supabase-service-page .deployment-actions,
+.supabase-service-page .runtime-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.supabase-service-page .environment-redeploy-banner {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 6px;
+  background: rgba(251, 191, 36, 0.07);
+  color: #fbbf24;
+  font-size: 12px;
+}
+.supabase-service-page .deployment-node {
+  margin: 0 0 14px;
+  color: #8e8c99;
+  font-size: 12px;
+}
+.supabase-service-page .deployment-node.is-healthy {
+  color: #3ecf8e;
+}
+.supabase-service-page .deployment-log {
+  margin-top: 16px;
+  border: 1px solid #23222a;
+  border-radius: 6px;
+  background: #121014;
+  overflow: hidden;
+}
+.supabase-service-page .deployment-log-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #23222a;
+}
+.supabase-service-page .deployment-log-head h3 {
+  margin: 0;
+  color: #bdb8c2;
+  font-size: 12px;
+}
+.supabase-service-page .deployment-log pre {
+  max-height: 320px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  color: #d6d3da;
+  font-size: 11px;
+}
+.supabase-service-page .dashboard-back-link a {
+  color: #3ecf8e;
+  font-size: 13px;
+  text-decoration: none;
+}
+.supabase-service-page .organization-danger-zone {
+  border-color: #5b2b35;
+  background: #1a1216;
+}
+.supabase-service-page .organization-danger-zone .dashboard-section-heading h2 {
+  color: #fb7185;
+}
+
+@media (max-width: 760px) {
+  .dashboard-content.supabase-service-page {
+    padding: 20px 16px 40px;
+  }
+  .supabase-service-hero {
+    flex-direction: column;
+  }
+  .supabase-service-page .service-meta {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .supabase-service-page .dashboard-section {
+    padding: 14px;
+  }
+  .supabase-service-page .dashboard-section-heading {
+    margin: -14px -14px 14px;
+    padding: 12px 14px;
+  }
+}

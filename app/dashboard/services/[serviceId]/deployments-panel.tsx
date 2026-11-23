@@ -129,7 +129,7 @@ export function DeploymentsPanel({
         <h2 id="deployments-heading">Deployments</h2>
         {canDeploy ? (
           <button
-            className="create-project-button"
+            className="supabase-btn-green"
             type="button"
             onClick={deploy}
             disabled={busy || !nodeHealthy || (latest ? isDeploymentActive(latest.status) : false)}

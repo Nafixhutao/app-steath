@@ -97,7 +97,7 @@ export function CustomDomainPanel({
         <h2 id="custom-domain-heading">Custom Domain</h2>
         {canManage && !domainData ? (
           <button
-            className="create-project-button"
+            className="supabase-btn-green"
             type="button"
             onClick={() => setAdding(true)}
             disabled={adding}
@@ -127,7 +127,7 @@ export function CustomDomainPanel({
             />
           </label>
           <div className="environment-form-actions">
-            <button className="dashboard-secondary-button" type="submit" disabled={busy}>
+            <button className="supabase-btn-secondary" type="submit" disabled={busy}>
               {busy ? "Saving..." : "Add"}
             </button>
             <button
@@ -241,7 +241,7 @@ export function CustomDomainPanel({
           {canManage ? (
             <div className="deployment-actions">
               <button
-                className="dashboard-secondary-button"
+                className="supabase-btn-secondary"
                 type="button"
                 onClick={() => void verify()}
                 disabled={busy}

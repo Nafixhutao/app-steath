@@ -92,7 +92,7 @@ export function VolumePanel({
         <h2 id="volume-heading">Volume</h2>
         {canManage && !volume ? (
           <button
-            className="create-project-button"
+            className="supabase-btn-green"
             type="button"
             onClick={() => setCreating(true)}
             disabled={creating}
@@ -139,7 +139,7 @@ export function VolumePanel({
             />
           </label>
           <div className="environment-form-actions">
-            <button className="dashboard-secondary-button" type="submit" disabled={busy}>
+            <button className="supabase-btn-secondary" type="submit" disabled={busy}>
               {busy ? "Saving..." : "Add"}
             </button>
             <button

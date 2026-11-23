@@ -90,7 +90,7 @@ export function RuntimePanel({
         {canManage ? (
           <div className="runtime-actions">
             <button
-              className="create-project-button"
+              className="supabase-btn-green"
               type="button"
               onClick={() => void act(running ? "stop" : "start")}
               disabled={busy !== null || runtime.loading || status === "absent"}
