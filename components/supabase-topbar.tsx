@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   HelpCircle,
+  Menu,
   Search,
   ChevronsUpDown,
   Check,
@@ -63,6 +64,14 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
   return (
     <header className="supabase-topbar" aria-label="Global header">
       <div className="supabase-topbar-left">
+        <button
+          type="button"
+          className="supabase-mobile-menu-btn"
+          onClick={() => window.dispatchEvent(new Event("stealth:open-mobile-nav"))}
+          aria-label="Open navigation"
+        >
+          <Menu className="w-5 h-5" aria-hidden="true" />
+        </button>
         <Link
           href="/dashboard/organizations"
           className="supabase-logo-link"

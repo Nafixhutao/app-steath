@@ -379,9 +379,18 @@ export function Sidebar({
   const [organizationError, setOrganizationError] = useState("");
   const [organizationBusy, setOrganizationBusy] = useState(false);
 
+  useEffect(() => {
+    // The Supabase topbar owns the global header now, so its mobile menu
+    // button asks the sidebar to open the navigation sheet.
+    function openMobileNav() {
+      setMobileOpen(true);
+    }
+    window.addEventListener("stealth:open-mobile-nav", openMobileNav);
+    return () => window.removeEventListener("stealth:open-mobile-nav", openMobileNav);
+  }, []);
+
   const activeOrganizationId = session?.session.activeOrganizationId;
-  const activeOrganization = organizations?.find((item) => item.id === activeOrganizationId);
-  const sidebarOrganization: OrganizationIdentity = activeOrganization
+  const activeOrganization = organizations?.find((item) => item.id === activeOrganizationId);  const sidebarOrganization: OrganizationIdentity = activeOrganization
     ? { name: activeOrganization.name }
     : organization;
 

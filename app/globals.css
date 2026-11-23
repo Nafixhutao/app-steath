@@ -4557,6 +4557,26 @@ body {
    ========================================================================== */
 
 /* Topbar */
+/* The new global header replaces the old fixed mobile topbar; its menu button
+   is the only way to open the navigation sheet on small screens. */
+.supabase-mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #edecf1;
+  cursor: pointer;
+}
+
+.supabase-mobile-menu-btn:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
 .supabase-topbar {
   position: sticky;
   top: 0;
@@ -4805,6 +4825,66 @@ body {
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid #3a3845;
+}
+
+/* The Supabase topbar is the only header on mobile now: the old fixed
+   `.user-mobile-topbar` is hidden, and the topbar trims its secondary actions
+   so the org switcher and avatar fit without horizontal overflow. */
+@media (max-width: 1023px) {
+  .user-mobile-topbar {
+    display: none;
+  }
+  .supabase-topbar {
+    height: 52px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .supabase-topbar-left {
+    min-width: 0;
+    gap: 8px;
+  }
+  .supabase-topbar-sep,
+  .supabase-topbar-link,
+  .supabase-icon-btn {
+    display: none;
+  }
+  .supabase-mobile-menu-btn {
+    display: inline-flex;
+  }
+  .supabase-org-name {
+    max-width: 96px;
+  }
+  .supabase-search-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+  .supabase-search-label,
+  .supabase-search-kbd {
+    display: none;
+  }
+  .supabase-topbar-right {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .console-main {
+    min-height: calc(100dvh - 52px);
+  }
+  .dashboard-content {
+    min-height: calc(100dvh - 52px);
+    padding-top: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .supabase-org-name {
+    max-width: 64px;
+  }
+  .supabase-org-dropdown-btn {
+    gap: 6px;
+    padding: 4px;
+  }
 }
 
 /* Dropdown menus (org & user) */
