@@ -9163,6 +9163,9 @@ body {
   .supabase-service-layout {
     display: flex;
     flex-direction: column;
+    /* Override the desktop grid's align-items:start so panels match the
+       viewport width instead of expanding to their max-content size. */
+    align-items: stretch;
   }
   /* Configuration first, then the operational panels, then Danger zone. */
   .supabase-service-side {
