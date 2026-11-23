@@ -1,12 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { pool } from "./db.ts";
 import { ApiError } from "./api-error.ts";
-import { buildPlatformHostname } from "@/lib/platform/platform-domain";
-import { assertQuota } from "@/lib/platform/quota";
-import { removeServiceRuntime } from "@/lib/platform/runtime";
-import { requireProject } from "@/lib/platform/ownership";
-import { SERVICE_NEEDS_REDEPLOY } from "@/lib/platform/revisions";
-import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
+import { buildPlatformHostname } from "./platform-domain.ts";
+import { assertQuota } from "./quota.ts";
+import { removeServiceRuntime } from "./runtime.ts";
+import { requireProject } from "./ownership.ts";
+import { SERVICE_NEEDS_REDEPLOY } from "./revisions.ts";
+import { MAX_SLUG_LENGTH, slugify } from "../slug.ts";
 
 const MAX_NAME_LENGTH = 80;
 const MAX_BRANCH_LENGTH = 120;
