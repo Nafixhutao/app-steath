@@ -92,8 +92,8 @@ async function handleAgentRequest(
           serviceId,
           ...usage,
         })),
-        databases: [...agent.databases.entries()].map(([databaseId, usageMb]) => ({
-          databaseId,
+        databases: [...agent.databases.entries()].map(([databaseName, usageMb]) => ({
+          databaseName,
           usageMb,
         })),
       }),
@@ -358,11 +358,15 @@ describe("Organization usage and Quota", () => {
     const second = await createService(owner.cookie, project.id, "Usage App Two");
     const databaseResponse = await createDatabaseRequest(owner.cookie, project.id);
     expect(databaseResponse.status).toBe(201);
-    const database = ((await databaseResponse.json()) as { data: { id: string } }).data;
+    const database = (
+      (await databaseResponse.json()) as { data: { id: string; databaseName: string } }
+    ).data;
 
     agent.services.set(first.id, { cpuUsage: 0.25, memoryUsageMb: 128, volumeUsageMb: 40 });
     agent.services.set(second.id, { cpuUsage: 0.5, memoryUsageMb: 256, volumeUsageMb: 60 });
-    agent.databases.set(database.id, 200);
+    // A Database is a schema inside a shared server, so the Agent reports usage
+    // under the schema name it created rather than the Database id.
+    agent.databases.set(database.databaseName, 200);
 
     const usage = await usageBody(owner.cookie);
 
@@ -421,6 +425,8 @@ describe("Organization usage and Quota", () => {
         id: database.id,
         projectId: project.id,
         projectName: "Usage Project",
+        engine: "postgres",
+        version: "16",
         status: "running",
         usageMb: 200,
         storageLimitMb: 1024,

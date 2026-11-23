@@ -25,6 +25,7 @@ import { QUOTAS } from "@/lib/platform/quota-limits";
 import { useResource } from "@/lib/resource";
 import { useToast } from "@/components/toast-context";
 import {
+  databaseEngineLabel,
   databaseStatusLabel,
   listOrganizationDatabases,
   type DatabaseStatus,
@@ -69,6 +70,25 @@ function usageLabel(database: OrganizationDatabaseSummary): string {
   }
 
   return `${database.usageMb} MB`;
+}
+
+/**
+ * The engines in use, e.g. `PostgreSQL 16` or `PostgreSQL 16 + MySQL 8`. The
+ * card has room for one line, so more than two engines collapse to a count.
+ */
+function engineSummary(databases: OrganizationDatabaseSummary[]): string {
+  const engines = new Map<string, string>();
+  for (const database of databases) {
+    engines.set(database.engine, databaseEngineLabel(database.engine, database.version));
+  }
+  if (engines.size === 0) {
+    return "PostgreSQL 16 · MySQL 8";
+  }
+  if (engines.size > 2) {
+    return `${engines.size} engines`;
+  }
+
+  return [...engines.values()].join(" + ");
 }
 
 export default function DatabasesPage() {
@@ -157,13 +177,16 @@ export default function DatabasesPage() {
             </div>
           </div>
           <p className="db-description">
-            Dedicated PostgreSQL 16 instances with private networking, connection isolation, and automated daily backups.
+            Dedicated PostgreSQL 16 or MySQL 8 instances with private networking, connection
+            isolation, and automated daily backups.
           </p>
         </div>
         <div className="db-actions">
           <span className="db-quota" title="Limit per project in this organization">
             <Server className="db-quota-icon" aria-hidden="true" />
-            <span>{databasesList.length} of {QUOTAS.databasesPerProject} per Project</span>
+            <span>
+              {databasesList.length} of {QUOTAS.databasesPerProject} per Project
+            </span>
           </span>
           <Link href="/dashboard/projects" className="db-btn db-btn-primary">
             <Plus className="db-btn-icon" aria-hidden="true" />
@@ -227,9 +250,7 @@ export default function DatabasesPage() {
             <span className="db-metric-label">Engine & Health</span>
             <CheckCircle2 className="db-metric-icon text-emerald" aria-hidden="true" />
           </div>
-          <div className="db-metric-value">
-            {databasesList.length > 0 ? "PostgreSQL 16" : "PostgreSQL 16"}
-          </div>
+          <div className="db-metric-value">{engineSummary(databasesList)}</div>
           <div className="db-metric-meta">
             {databasesList.length > 0 && runningCount === databasesList.length
               ? "All instances operational"
@@ -328,10 +349,11 @@ export default function DatabasesPage() {
               <Database className="db-empty-primary-icon" />
             </div>
           </div>
-          <h2>No PostgreSQL databases provisioned yet</h2>
+          <h2>No databases provisioned yet</h2>
           <p className="db-empty-lead">
-            Every project in Stealth Hosting can host its own dedicated PostgreSQL 16 database.
-            Databases run in private container networks with persistent storage and scheduled backups.
+            Every project in Stealth Hosting can host its own dedicated PostgreSQL 16 or MySQL 8
+            database. Databases run in private container networks with persistent storage and
+            scheduled backups.
           </p>
 
           <Link href="/dashboard/projects" className="db-btn db-btn-primary db-btn-hero">
@@ -377,7 +399,8 @@ export default function DatabasesPage() {
           </div>
           <h2>No databases match the filter</h2>
           <p>
-            No databases match your current query &ldquo;{search}&rdquo; or the selected status filter.
+            No databases match your current query &ldquo;{search}&rdquo; or the selected status
+            filter.
           </p>
           <button
             type="button"
@@ -401,7 +424,9 @@ export default function DatabasesPage() {
                 <th scope="col">Status</th>
                 <th scope="col">Engine</th>
                 <th scope="col">Disk Usage</th>
-                <th scope="col" className="text-right">Action</th>
+                <th scope="col" className="text-right">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -462,7 +487,7 @@ export default function DatabasesPage() {
 
                     <td>
                       <span className="db-engine-pill">
-                        PostgreSQL {database.version}
+                        {databaseEngineLabel(database.engine, database.version)}
                       </span>
                     </td>
 

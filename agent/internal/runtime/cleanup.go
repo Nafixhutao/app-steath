@@ -148,6 +148,12 @@ func (m *Manager) Cleanup(ctx context.Context) (CleanupReport, error) {
 	}
 	report.VolumesRemoved += databaseVolumesRemoved
 
+	phpMyAdminRemoved, err := m.pruneOrphanPhpMyAdmin(ctx)
+	if err != nil {
+		log.Printf("cleanup: could not prune phpMyAdmin sidecars: %v", err)
+	}
+	report.ContainersRemoved += phpMyAdminRemoved
+
 	proxyContainersRemoved, err := m.pruneOrphanDatabaseProxies(ctx)
 	if err != nil {
 		log.Printf("cleanup: could not prune public Database proxies: %v", err)

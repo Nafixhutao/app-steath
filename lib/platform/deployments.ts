@@ -563,10 +563,12 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
     repoUrl: string;
     branch: string;
     dockerfilePath: string;
+    containerPort: number;
     serviceId: string;
     commitSha: string | null;
   }>(
-    `SELECT d."id", d."serviceId", d."commitSha", s."repoUrl", s."branch", s."dockerfilePath"
+    `SELECT d."id", d."serviceId", d."commitSha", s."repoUrl", s."branch", s."dockerfilePath",
+            s."containerPort"
      FROM "deployment" d JOIN "service" s ON s."id" = d."serviceId"
      WHERE d."id" = $1`,
     [deploymentId],
@@ -588,6 +590,7 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
       repoUrl: deployment.repoUrl,
       branch: deployment.branch,
       dockerfilePath: deployment.dockerfilePath,
+      containerPort: deployment.containerPort,
       imageTag,
       // A redeploy pins the commit so the rebuild uses the same code even when
       // the branch has moved on.

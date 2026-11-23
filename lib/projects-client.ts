@@ -6,6 +6,8 @@ export type ProjectSummary = {
   slug: string;
   serviceCount: number;
   databaseCount: number;
+  /** The engine of the Project's Database, or null when it has none. */
+  databaseEngine: string | null;
   status: "empty" | "active";
   createdAt: string;
   updatedAt: string;

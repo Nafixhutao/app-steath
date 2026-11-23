@@ -3,8 +3,6 @@ package runtime
 import (
 	"context"
 	"errors"
-	"strconv"
-	"strings"
 	"testing"
 )
 
@@ -16,17 +14,10 @@ func proxyRequest() DatabaseProxyRequest {
 	}
 }
 
-func ensureProxyDatabase(t *testing.T, manager *Manager) {
-	t.Helper()
-
-	if _, err := manager.EnsureDatabase(context.Background(), databaseRequest()); err != nil {
-		t.Fatalf("ensure Database: %v", err)
-	}
-}
-
+// TestEnsureDatabaseProxyRequiresAnAllowlist keeps the request validation that
+// still applies: a malformed allowlist is reported as such.
 func TestEnsureDatabaseProxyRequiresAnAllowlist(t *testing.T) {
 	manager := testManager(t, newFakeDocker(), newFakeRouter())
-	ensureProxyDatabase(t, manager)
 
 	request := proxyRequest()
 	request.Allowlist = nil
@@ -42,20 +33,14 @@ func TestEnsureDatabaseProxyRequiresAnAllowlist(t *testing.T) {
 		err,
 		ErrInvalidDatabaseProxy,
 	) {
-		t.Fatalf("expected blank allowlist entries to be rejected, got %v", err)
+		t.Fatalf("expected a blank allowlist to be rejected, got %v", err)
 	}
 }
 
 func TestEnsureDatabaseProxyRejectsMalformedCIDRs(t *testing.T) {
 	manager := testManager(t, newFakeDocker(), newFakeRouter())
-	ensureProxyDatabase(t, manager)
 
-	for _, value := range []string{
-		"not-an-ip",
-		"10.0.0.0/33",
-		"10.0.0.0/24; allow all",
-		"10.0.0.1\nallow all",
-	} {
+	for _, value := range []string{"not-a-cidr", "10.0.0.0/33", "::1/129", "10.0.0.1;drop"} {
 		request := proxyRequest()
 		request.Allowlist = []string{value}
 		if _, err := manager.EnsureDatabaseProxy(context.Background(), request); !errors.Is(
@@ -67,209 +52,57 @@ func TestEnsureDatabaseProxyRejectsMalformedCIDRs(t *testing.T) {
 	}
 }
 
-func TestEnsureDatabaseProxyPublishesATLSListenerOnAUniquePort(t *testing.T) {
+// TestEnsureDatabaseProxyIsRefusedForEveryEngine is the core of the shared model:
+// one public port would forward to a server holding every tenant, so no listener
+// is ever created.
+func TestEnsureDatabaseProxyIsRefusedForEveryEngine(t *testing.T) {
+	for _, engine := range []string{DatabaseEnginePostgres, DatabaseEngineMySQL} {
+		t.Run(engine, func(t *testing.T) {
+			docker := newFakeDocker()
+			manager := testManager(t, docker, newFakeRouter())
+
+			_, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest())
+			if !errors.Is(err, ErrDatabaseProxyDisabled) {
+				t.Fatalf("expected %v, got %v", ErrDatabaseProxyDisabled, err)
+			}
+
+			// No listener container and no certificate Volume may be created.
+			if len(docker.created) != 0 {
+				t.Fatalf("expected no container, got %v", docker.created)
+			}
+			if len(docker.volumes) != 0 {
+				t.Fatalf("expected no Volume, got %v", docker.volumes)
+			}
+		})
+	}
+}
+
+// TestEnsureDatabaseProxyTearsDownALeftoverListener proves a listener from the
+// per-Project model is revoked rather than left open.
+func TestEnsureDatabaseProxyTearsDownALeftoverListener(t *testing.T) {
 	docker := newFakeDocker()
 	manager := testManager(t, docker, newFakeRouter())
-	ensureProxyDatabase(t, manager)
 
-	state, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest())
-	if err != nil {
-		t.Fatalf("ensure proxy: %v", err)
+	if _, err := docker.CreateContainer(context.Background(), ContainerSpec{
+		Name:  databaseProxyContainerName("database-1"),
+		Image: "nginx:1.27-alpine",
+		Labels: map[string]string{
+			LabelType:       ResourceTypeDatabaseProxy,
+			LabelDatabaseID: "database-1",
+		},
+	}); err != nil {
+		t.Fatalf("seed the leftover listener: %v", err)
 	}
-	if !state.Enabled {
-		t.Fatal("expected the proxy to be enabled")
-	}
-	if state.Port < DatabaseProxyPortMin || state.Port > DatabaseProxyPortMax {
-		t.Fatalf("expected a port in the public range, got %d", state.Port)
-	}
-	if len(state.Allowlist) != 1 || state.Allowlist[0] != "203.0.113.0/24" {
-		t.Fatalf("unexpected allowlist: %v", state.Allowlist)
-	}
-
-	// The Database itself was created first, so the proxy is the second
-	// container. It must publish the allocated port and run unprivileged nginx.
-	var spec ContainerSpec
-	for _, created := range docker.created {
-		if created.Labels[LabelType] == ResourceTypeDatabaseProxy {
-			spec = created
-		}
-	}
-	if spec.Name == "" {
-		t.Fatal("expected a proxy container")
-	}
-	if spec.Image != DatabaseProxyImage {
-		t.Fatalf("expected %s, got %s", DatabaseProxyImage, spec.Image)
-	}
-	if spec.PublishedPort != state.Port {
-		t.Fatalf("expected the container to publish %d, got %d", state.Port, spec.PublishedPort)
-	}
-	if spec.Port != DatabaseProxyInternalPort {
-		t.Fatalf("expected the internal port %d, got %d", DatabaseProxyInternalPort, spec.Port)
-	}
-	if spec.Entrypoint != "nginx" {
-		t.Fatalf("expected the nginx entrypoint, got %q", spec.Entrypoint)
-	}
-	if !spec.ReadOnlyRoot {
-		t.Fatal("expected the proxy root filesystem to be read-only")
-	}
-	if spec.User != DatabaseProxyUser {
-		t.Fatalf("expected the proxy to run as %q, got %q", DatabaseProxyUser, spec.User)
-	}
-	if spec.Volume == nil || spec.Volume.Name != databaseProxyVolumeName("database-1") {
-		t.Fatalf("expected the proxy certificate Volume, got %+v", spec.Volume)
-	}
-	if spec.Labels[LabelDatabaseID] != "database-1" {
-		t.Fatalf("expected the Database label, got %q", spec.Labels[LabelDatabaseID])
-	}
-	if spec.Labels[LabelDatabaseProxyPort] != strconv.Itoa(state.Port) {
-		t.Fatalf("expected the port label, got %q", spec.Labels[LabelDatabaseProxyPort])
-	}
-
-	files := docker.volumeFiles[databaseProxyVolumeName("database-1")]
-	if files == nil {
-		t.Fatal("expected the proxy Volume files to be written")
-	}
-	if !strings.Contains(files["nginx.conf"], "listen 5432;") {
-		t.Fatalf("expected the listener in the config, got %q", files["nginx.conf"])
-	}
-	if strings.Contains(files["nginx.conf"], "ssl") {
-		t.Fatalf("expected PostgreSQL, not nginx, to terminate TLS, got %q", files["nginx.conf"])
-	}
-	if !strings.Contains(files["nginx.conf"], "allow 203.0.113.0/24;") {
-		t.Fatalf("expected the allowlist in the config, got %q", files["nginx.conf"])
-	}
-	if !strings.Contains(files["nginx.conf"], "deny all;") {
-		t.Fatalf("expected the config to fail closed, got %q", files["nginx.conf"])
-	}
-	if !strings.Contains(files["nginx.conf"], "limit_conn_zone $binary_remote_addr") {
-		t.Fatalf("expected a per-IP connection rate limit, got %q", files["nginx.conf"])
-	}
-	if !strings.Contains(files["nginx.conf"], "limit_conn dbproxy_per_ip") {
-		t.Fatalf("expected the rate limit applied to the listener, got %q", files["nginx.conf"])
-	}
-	if !strings.Contains(files["nginx.conf"], "access_log /dev/stdout dbproxy;") {
-		t.Fatalf("expected an access audit log with a named format, got %q", files["nginx.conf"])
-	}
-}
-
-func TestEnsureDatabaseProxyNormalizesBareAddresses(t *testing.T) {
-	manager := testManager(t, newFakeDocker(), newFakeRouter())
-	ensureProxyDatabase(t, manager)
-
-	request := proxyRequest()
-	request.Allowlist = []string{"198.51.100.7", "2001:db8::1", "203.0.113.0/24", "203.0.113.0/24"}
-	state, err := manager.EnsureDatabaseProxy(context.Background(), request)
-	if err != nil {
-		t.Fatalf("ensure proxy: %v", err)
-	}
-
-	want := []string{"198.51.100.7/32", "2001:db8::1/128", "203.0.113.0/24"}
-	if len(state.Allowlist) != len(want) {
-		t.Fatalf("expected %d deduplicated entries, got %v", len(want), state.Allowlist)
-	}
-	for index, value := range want {
-		if state.Allowlist[index] != value {
-			t.Fatalf("expected %q at %d, got %q", value, index, state.Allowlist[index])
-		}
-	}
-}
-
-func TestEnsureDatabaseProxyRejectsTooManyEntries(t *testing.T) {
-	manager := testManager(t, newFakeDocker(), newFakeRouter())
-	ensureProxyDatabase(t, manager)
-
-	request := proxyRequest()
-	request.Allowlist = make([]string, 0, MaxDatabaseProxyAllowlist+1)
-	for index := 0; index <= MaxDatabaseProxyAllowlist; index++ {
-		request.Allowlist = append(request.Allowlist, "10.0."+strconv.Itoa(index/256)+"."+strconv.Itoa(index%256)+"/32")
-	}
-
-	if _, err := manager.EnsureDatabaseProxy(context.Background(), request); !errors.Is(
-		err,
-		ErrInvalidDatabaseProxy,
-	) {
-		t.Fatalf("expected an oversized allowlist to be rejected, got %v", err)
-	}
-}
-
-func TestEnsureDatabaseProxyReusesThePortOnUpdate(t *testing.T) {
-	docker := newFakeDocker()
-	manager := testManager(t, docker, newFakeRouter())
-	ensureProxyDatabase(t, manager)
-
-	first, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest())
-	if err != nil {
-		t.Fatalf("first ensure: %v", err)
-	}
-
-	update := proxyRequest()
-	update.Allowlist = []string{"198.51.100.0/24"}
-	second, err := manager.EnsureDatabaseProxy(context.Background(), update)
-	if err != nil {
-		t.Fatalf("update: %v", err)
-	}
-	if second.Port != first.Port {
-		t.Fatalf("expected the port to be reused (%d), got %d", first.Port, second.Port)
-	}
-
-	files := docker.volumeFiles[databaseProxyVolumeName("database-1")]
-	if !strings.Contains(files["nginx.conf"], "allow 198.51.100.0/24;") {
-		t.Fatalf("expected the updated allowlist in the config, got %q", files["nginx.conf"])
-	}
-	if strings.Contains(files["nginx.conf"], "203.0.113.0/24") {
-		t.Fatalf("expected the old allowlist to be gone, got %q", files["nginx.conf"])
-	}
-}
-
-func TestEnsureDatabaseProxyAvoidsAnOccupiedPort(t *testing.T) {
-	docker := newFakeDocker()
-	manager := testManager(t, docker, newFakeRouter())
-	ensureProxyDatabase(t, manager)
-
-	occupied := proxyStartPort("database-1")
-	docker.containers["occupied"] = &fakeContainer{
-		ID:             "occupied",
-		Name:           "someone-else",
-		State:          "running",
-		Labels:         map[string]string{LabelType: "other"},
-		Networks:       map[string]string{},
-		PublishedPorts: []int{occupied},
-	}
-
-	state, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest())
-	if err != nil {
-		t.Fatalf("ensure proxy: %v", err)
-	}
-	if state.Port == occupied {
-		t.Fatalf("expected the allocator to skip the occupied port %d", occupied)
-	}
-	if state.Port < DatabaseProxyPortMin || state.Port > DatabaseProxyPortMax {
-		t.Fatalf("expected a port in the public range, got %d", state.Port)
-	}
-}
-
-func TestEnsureDatabaseProxyNeedsARunningDatabase(t *testing.T) {
-	manager := testManager(t, newFakeDocker(), newFakeRouter())
 
 	if _, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest()); !errors.Is(
 		err,
-		ErrUnknownDatabase,
+		ErrDatabaseProxyDisabled,
 	) {
-		t.Fatalf("expected a missing Database to be rejected, got %v", err)
+		t.Fatalf("expected %v, got %v", ErrDatabaseProxyDisabled, err)
 	}
-}
 
-func TestEnsureDatabaseProxyRejectsAnotherProjectsDatabase(t *testing.T) {
-	manager := testManager(t, newFakeDocker(), newFakeRouter())
-	ensureProxyDatabase(t, manager)
-
-	request := proxyRequest()
-	request.ProjectID = "project-2"
-	if _, err := manager.EnsureDatabaseProxy(context.Background(), request); !errors.Is(
-		err,
-		ErrInvalidDatabaseProxy,
-	) {
-		t.Fatalf("expected a cross-Project request to be rejected, got %v", err)
+	if _, ok := docker.find(databaseProxyContainerName("database-1")); ok {
+		t.Fatal("expected the leftover listener to be removed")
 	}
 }
 
@@ -280,133 +113,73 @@ func TestGetDatabaseProxyReportsDisabledWhenAbsent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
-	if state.Enabled {
-		t.Fatal("expected the proxy to be disabled")
-	}
-	if state.Port != 0 {
-		t.Fatalf("expected no port, got %d", state.Port)
+	if state.Enabled || state.Port != 0 {
+		t.Fatalf("expected a disabled endpoint, got %+v", state)
 	}
 }
 
 func TestRemoveDatabaseProxyRevokesTheListenerAndVolume(t *testing.T) {
 	docker := newFakeDocker()
 	manager := testManager(t, docker, newFakeRouter())
-	ensureProxyDatabase(t, manager)
 
-	state, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest())
-	if err != nil {
-		t.Fatalf("ensure proxy: %v", err)
+	if _, err := docker.CreateContainer(context.Background(), ContainerSpec{
+		Name:  databaseProxyContainerName("database-1"),
+		Image: "nginx:1.27-alpine",
+		Labels: map[string]string{
+			LabelType:       ResourceTypeDatabaseProxy,
+			LabelDatabaseID: "database-1",
+		},
+	}); err != nil {
+		t.Fatalf("seed the listener: %v", err)
+	}
+	if err := docker.EnsureVolume(context.Background(), VolumeSpec{
+		Name: databaseProxyVolumeName("database-1"),
+	}); err != nil {
+		t.Fatalf("seed the Volume: %v", err)
 	}
 
 	removed, err := manager.RemoveDatabaseProxy(context.Background(), "database-1")
 	if err != nil {
-		t.Fatalf("remove proxy: %v", err)
+		t.Fatalf("remove: %v", err)
 	}
 	if !removed {
 		t.Fatal("expected the proxy to be reported as removed")
 	}
 	if _, ok := docker.find(databaseProxyContainerName("database-1")); ok {
-		t.Fatal("expected the listener container to be gone")
+		t.Fatal("expected the listener to be gone")
 	}
 	if _, ok := docker.volumes[databaseProxyVolumeName("database-1")]; ok {
 		t.Fatal("expected the certificate Volume to be gone")
 	}
 
-	after, err := manager.GetDatabaseProxy(context.Background(), "database-1")
-	if err != nil {
-		t.Fatalf("get after remove: %v", err)
-	}
-	if after.Enabled || after.Port != 0 {
-		t.Fatalf("expected the endpoint to be revoked, got %+v", after)
-	}
-	if after.Port == state.Port && state.Port != 0 {
-		t.Fatalf("expected the old port %d to be gone", state.Port)
-	}
-
-	// Disabling again must not fail.
-	if again, err := manager.RemoveDatabaseProxy(context.Background(), "database-1"); err != nil || again {
-		t.Fatalf("expected an idempotent disable, got removed=%t err=%v", again, err)
+	// A second removal is a no-op, so disabling is safe to retry.
+	if _, err := manager.RemoveDatabaseProxy(context.Background(), "database-1"); err != nil {
+		t.Fatalf("second remove: %v", err)
 	}
 }
 
+// TestRemoveDatabaseRevokesALeftoverProxy proves a Database deleted after the
+// switch to shared servers still has its old listener revoked.
 func TestRemoveDatabaseRevokesTheProxy(t *testing.T) {
 	docker := newFakeDocker()
 	manager := testManager(t, docker, newFakeRouter())
-	ensureProxyDatabase(t, manager)
 
-	if _, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest()); err != nil {
-		t.Fatalf("ensure proxy: %v", err)
+	if _, err := docker.CreateContainer(context.Background(), ContainerSpec{
+		Name:  databaseProxyContainerName("database-1"),
+		Image: "nginx:1.27-alpine",
+		Labels: map[string]string{
+			LabelType:       ResourceTypeDatabaseProxy,
+			LabelDatabaseID: "database-1",
+		},
+	}); err != nil {
+		t.Fatalf("seed the listener: %v", err)
 	}
 
 	if _, err := manager.RemoveDatabase(context.Background(), "database-1"); err != nil {
-		t.Fatalf("remove Database: %v", err)
+		t.Fatalf("remove: %v", err)
 	}
+
 	if _, ok := docker.find(databaseProxyContainerName("database-1")); ok {
-		t.Fatal("expected the proxy to be removed with the Database")
-	}
-	if _, ok := docker.volumes[databaseProxyVolumeName("database-1")]; ok {
-		t.Fatal("expected the proxy Volume to be removed with the Database")
-	}
-}
-
-func TestCleanupKeepsALiveProxyAndRemovesAnOrphan(t *testing.T) {
-	docker := newFakeDocker()
-	manager := testManager(t, docker, newFakeRouter())
-	manager.SetCleanupStatePath(t.TempDir() + "/cleanup.json")
-
-	ensureProxyDatabase(t, manager)
-	if _, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest()); err != nil {
-		t.Fatalf("ensure proxy: %v", err)
-	}
-
-	docker.containers["orphan"] = &fakeContainer{
-		ID:       "orphan",
-		Name:     databaseProxyContainerName("gone"),
-		State:    "running",
-		Labels:   map[string]string{LabelType: ResourceTypeDatabaseProxy, LabelDatabaseID: "gone", LabelProjectID: "project-1"},
-		Networks: map[string]string{},
-	}
-	docker.volumes[databaseProxyVolumeName("gone")] = &fakeVolume{
-		Name:   databaseProxyVolumeName("gone"),
-		Labels: map[string]string{LabelType: ResourceTypeDatabaseProxy, LabelDatabaseID: "gone"},
-	}
-
-	if _, err := manager.Cleanup(context.Background()); err != nil {
-		t.Fatalf("cleanup: %v", err)
-	}
-	if _, ok := docker.find(databaseProxyContainerName("database-1")); !ok {
-		t.Fatal("expected the live proxy to survive cleanup")
-	}
-	if _, ok := docker.volumes[databaseProxyVolumeName("database-1")]; !ok {
-		t.Fatal("expected the live proxy Volume to survive cleanup")
-	}
-	if _, ok := docker.find("orphan"); ok {
-		t.Fatal("expected the orphan proxy to be removed")
-	}
-	if _, ok := docker.volumes[databaseProxyVolumeName("gone")]; ok {
-		t.Fatal("expected the orphan proxy Volume to be removed")
-	}
-}
-
-func TestReconcileReattachesAProxyToItsProjectNetwork(t *testing.T) {
-	docker := newFakeDocker()
-	manager := testManager(t, docker, newFakeRouter())
-
-	ensureProxyDatabase(t, manager)
-	if _, err := manager.EnsureDatabaseProxy(context.Background(), proxyRequest()); err != nil {
-		t.Fatalf("ensure proxy: %v", err)
-	}
-
-	// Simulate a restart where the Project network was recreated and the proxy
-	// lost its membership.
-	delete(docker.networks, projectNetwork("project-1"))
-	proxy, _ := docker.find(databaseProxyContainerName("database-1"))
-	delete(proxy.Networks, projectNetwork("project-1"))
-
-	if err := manager.Reconcile(context.Background()); err != nil {
-		t.Fatalf("reconcile: %v", err)
-	}
-	if _, ok := proxy.Networks[projectNetwork("project-1")]; !ok {
-		t.Fatal("expected reconcile to reattach the proxy to its Project network")
+		t.Fatal("expected the leftover listener to be revoked with the Database")
 	}
 }

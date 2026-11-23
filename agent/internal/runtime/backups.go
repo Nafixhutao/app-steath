@@ -47,6 +47,17 @@ type BackupArtifact struct {
 	SizeBytes int64
 }
 
+// backupExtension is the file extension the artifact for an engine uses. The
+// Control Plane stores the file as-is, so the extension is what tells a Restore
+// which tool produced it.
+func backupExtension(engine string) string {
+	if engine == DatabaseEngineMySQL {
+		return ".sql"
+	}
+
+	return ".backup"
+}
+
 // backupArtifacts tracks the file each Backup id produced. A map is needed
 // because a Database backup and a Volume archive have different extensions.
 type backupArtifacts struct {
@@ -84,19 +95,26 @@ func (m *Manager) Backup(ctx context.Context, request BackupRequest) (BackupArti
 	path := filepath.Join(m.backupDir, sanitizeID(request.BackupID))
 	switch request.TargetType {
 	case BackupTargetDatabase:
-		containerName := databaseContainerName(request.TargetID)
+		// A Database is a schema inside the shared server, not a container of
+		// its own, so the dump runs against the shared container and names the
+		// tenant schema explicitly.
+		engine := m.engineForDatabase(ctx, request.TargetID)
+		containerName := sharedServerFor(engine).Name
 		info, err := m.docker.InspectContainer(ctx, containerName)
 		if err != nil {
 			return BackupArtifact{}, fmt.Errorf("%w: Database %s is not on this node", ErrUnknownBackup, request.TargetID)
 		}
-		databaseName := info.Labels[LabelDatabaseName]
-		username := info.Labels[LabelDatabaseUsername]
-		if databaseName == "" || username == "" {
-			return BackupArtifact{}, fmt.Errorf("%w: Database %s has no backup metadata", ErrInvalidBackup, request.TargetID)
+		if !info.Running() {
+			return BackupArtifact{}, fmt.Errorf("%w: Database %s is not running", ErrInvalidBackup, request.TargetID)
 		}
 
-		path += ".backup"
-		if err := m.docker.DumpDatabase(ctx, containerName, databaseName, username, path); err != nil {
+		schema := schemaNameFor(request.TargetID)
+		_, username := databaseObjectNames(request.TargetID)
+
+		// MySQL writes a plain SQL dump and PostgreSQL a custom-format one, so the
+		// artifact keeps the extension the matching Restore expects.
+		path += backupExtension(engine)
+		if err := m.docker.DumpDatabase(ctx, containerName, schema, username, engine, path); err != nil {
 			return BackupArtifact{}, fmt.Errorf("back up Database %s: %w", request.TargetID, err)
 		}
 	case BackupTargetVolume:
@@ -122,6 +140,7 @@ func (m *Manager) Backup(ctx context.Context, request BackupRequest) (BackupArti
 			request.ContainerName,
 			request.DatabaseName,
 			request.Username,
+			DatabaseEnginePostgres,
 			path,
 		); err != nil {
 			return BackupArtifact{}, fmt.Errorf("back up the platform PostgreSQL: %w", err)

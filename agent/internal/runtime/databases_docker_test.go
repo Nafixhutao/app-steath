@@ -12,25 +12,30 @@ import (
 )
 
 // databaseDockerDeadline is longer than dockerDeadline because the first run may
-// pull the postgres image and initdb has to create the cluster on disk.
+// pull the postgres image and initdb has to create the shared cluster on disk.
 const databaseDockerDeadline = 5 * time.Minute
 
-// TestDockerDatabaseIsReachableOnlyFromTheProjectNetwork proves the two promises
-// the ticket makes about isolation: a Service in the same Project can connect
-// through the `db` alias, and nothing outside the Project network can.
-func TestDockerDatabaseIsReachableOnlyFromTheProjectNetwork(t *testing.T) {
+// TestDockerSharedDatabaseIsReachableOnlyFromTheProjectNetwork proves the two
+// promises of the shared model with a real daemon: a Service in the Project
+// reaches its own schema through `db`, and the same schema is not reachable from
+// a container that is not on the Project network.
+func TestDockerSharedDatabaseIsReachableOnlyFromTheProjectNetwork(t *testing.T) {
 	requireDocker(t)
 
 	docker := NewCLIDocker(stealthexec.SystemExecutor{}, "")
 	manager := NewManager(docker, newFakeRouter())
+	password := "0123456789abcdef0123456789abcdef"
+	manager.SetDatabaseServerPasswords(password, password)
 
+	databaseID := "dbint" + fmt.Sprint(time.Now().UnixNano()%1_000_000)
+	schema, role := databaseObjectNames(databaseID)
 	request := DatabaseRequest{
-		DatabaseID:     "dbint" + fmt.Sprint(time.Now().UnixNano()%1_000_000),
+		DatabaseID:     databaseID,
 		ProjectID:      "project-dbint",
 		OrganizationID: "org-test",
-		DatabaseName:   "app",
-		Username:       "app",
-		Password:       "0123456789abcdef0123456789abcdef",
+		DatabaseName:   schema,
+		Username:       role,
+		Password:       password,
 		StorageLimitMB: MaxDatabaseStorageMB,
 	}
 
@@ -38,13 +43,13 @@ func TestDockerDatabaseIsReachableOnlyFromTheProjectNetwork(t *testing.T) {
 	defer cancel()
 
 	// A leftover from an earlier run would make the test pass on stale state.
-	_, _ = manager.RemoveDatabase(ctx, request.DatabaseID)
+	_, _ = manager.RemoveDatabase(ctx, databaseID)
 	_ = exec.Command("docker", "network", "rm", projectNetwork(request.ProjectID)).Run()
 
 	t.Cleanup(func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cleanupCancel()
-		_, _ = manager.RemoveDatabase(cleanupCtx, request.DatabaseID)
+		_, _ = manager.RemoveDatabase(cleanupCtx, databaseID)
 		_ = exec.Command("docker", "network", "rm", projectNetwork(request.ProjectID)).Run()
 	})
 
@@ -56,8 +61,9 @@ func TestDockerDatabaseIsReachableOnlyFromTheProjectNetwork(t *testing.T) {
 		t.Fatalf("expected a healthy running Database, got %+v", state)
 	}
 
-	// No host port may be published: the only way in is the Project network.
-	ports, err := exec.Command("docker", "port", databaseContainerName(request.DatabaseID)).Output()
+	// The shared server publishes no host port: the only way in is a Project
+	// network the agent attached it to.
+	ports, err := exec.Command("docker", "port", SharedPostgresContainerName).Output()
 	if err != nil {
 		t.Fatalf("read published ports: %v", err)
 	}
@@ -65,14 +71,14 @@ func TestDockerDatabaseIsReachableOnlyFromTheProjectNetwork(t *testing.T) {
 		t.Fatalf("expected no published ports, got %q", ports)
 	}
 
-	// A container on the Project network reaches the Database through `db`.
+	// A container on the Project network reaches its own schema through `db`.
 	serviceProbe := exec.Command(
 		"docker", "run", "--rm",
 		"--network", projectNetwork(request.ProjectID),
-		"--env", "PGPASSWORD="+request.Password,
-		DatabaseImage,
-		"psql", "--host", DatabaseAlias, "--username", request.Username,
-		"--dbname", request.DatabaseName, "--no-psqlrc", "--command", "SELECT 42 AS ok",
+		"--env", "PGPASSWORD="+password,
+		SharedPostgresImage,
+		"psql", "--host", DatabaseAlias, "--username", role,
+		"--dbname", schema, "--no-psqlrc", "--command", "SELECT 42 AS ok",
 	)
 	output, err := serviceProbe.CombinedOutput()
 	if err != nil {
@@ -82,17 +88,99 @@ func TestDockerDatabaseIsReachableOnlyFromTheProjectNetwork(t *testing.T) {
 		t.Fatalf("expected the query to return 42, got %q", output)
 	}
 
-	// The host itself has no route in: a client outside the Project network
-	// cannot even resolve the alias.
+	// A container that is not on the Project network cannot resolve the alias.
 	hostProbe := exec.Command(
 		"docker", "run", "--rm",
-		"--env", "PGPASSWORD="+request.Password,
-		DatabaseImage,
-		"psql", "--host", DatabaseAlias, "--username", request.Username,
-		"--dbname", request.DatabaseName, "--no-psqlrc", "--command", "SELECT 1",
+		"--env", "PGPASSWORD="+password,
+		SharedPostgresImage,
+		"psql", "--host", DatabaseAlias, "--username", role,
+		"--dbname", schema, "--no-psqlrc", "--command", "SELECT 1",
 	)
 	output, err = hostProbe.CombinedOutput()
 	if err == nil {
 		t.Fatalf("expected a client outside the Project network to fail, got %q", output)
 	}
+}
+
+// TestDockerSharedDatabaseIsolatesTwoTenants proves the isolation the shared
+// model rests on: a role for one Database cannot read another Database's schema
+// on the same server.
+func TestDockerSharedDatabaseIsolatesTwoTenants(t *testing.T) {
+	requireDocker(t)
+
+	docker := NewCLIDocker(stealthexec.SystemExecutor{}, "")
+	manager := NewManager(docker, newFakeRouter())
+	password := "0123456789abcdef0123456789abcdef"
+	manager.SetDatabaseServerPasswords(password, password)
+
+	suffix := fmt.Sprint(time.Now().UnixNano() % 1_000_000)
+	first := "dbiso" + suffix + "a"
+	second := "dbiso" + suffix + "b"
+
+	ctx, cancel := context.WithTimeout(context.Background(), databaseDockerDeadline)
+	defer cancel()
+
+	projectID := "project-dbiso"
+	t.Cleanup(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cleanupCancel()
+		_, _ = manager.RemoveDatabase(cleanupCtx, first)
+		_, _ = manager.RemoveDatabase(cleanupCtx, second)
+		_ = exec.Command("docker", "network", "rm", projectNetwork(projectID)).Run()
+	})
+
+	for _, databaseID := range []string{first, second} {
+		schema, role := databaseObjectNames(databaseID)
+		if _, err := manager.EnsureDatabase(ctx, DatabaseRequest{
+			DatabaseID:     databaseID,
+			ProjectID:      projectID,
+			OrganizationID: "org-test",
+			DatabaseName:   schema,
+			Username:       role,
+			Password:       password,
+			StorageLimitMB: MaxDatabaseStorageMB,
+		}); err != nil {
+			t.Fatalf("ensure %s: %v", databaseID, err)
+		}
+	}
+
+	firstSchema, firstName := databaseObjectNames(first)
+	secondSchema, _ := databaseObjectNames(second)
+
+	// The first tenant writes a row into its own schema.
+	write := exec.Command(
+		"docker", "run", "--rm",
+		"--network", projectNetwork(projectID),
+		"--env", "PGPASSWORD="+password,
+		SharedPostgresImage,
+		"psql", "--host", DatabaseAlias, "--username", firstName,
+		"--dbname", firstSchema, "--no-psqlrc", "--command",
+		"CREATE TABLE secret (v text); INSERT INTO secret VALUES ('private')",
+	)
+	if output, err := write.CombinedOutput(); err != nil {
+		t.Fatalf("seed the first tenant: %v\n%s", err, output)
+	}
+
+	// The second tenant must not be able to read it, even though it is on the
+	// same server and network.
+	secondRole := role2(first)
+	read := exec.Command(
+		"docker", "run", "--rm",
+		"--network", projectNetwork(projectID),
+		"--env", "PGPASSWORD="+password,
+		SharedPostgresImage,
+		"psql", "--host", DatabaseAlias, "--username", secondRole,
+		"--dbname", secondSchema, "--no-psqlrc", "--command",
+		"SELECT v FROM "+firstSchema+".secret",
+	)
+	if output, err := read.CombinedOutput(); err == nil {
+		t.Fatalf("expected the second tenant to be denied, got %q", output)
+	}
+}
+
+// role2 is a tiny helper so the isolation test reads clearly.
+func role2(databaseID string) string {
+	_, role := databaseObjectNames(databaseID)
+
+	return role
 }

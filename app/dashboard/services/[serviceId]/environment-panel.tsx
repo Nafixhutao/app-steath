@@ -206,10 +206,10 @@ export function EnvironmentPanel({
           <table className="organization-table">
             <thead>
               <tr>
-                <th>Key</th>
-                <th>Value</th>
-                <th>Updated</th>
-                <th>Actions</th>
+                <th scope="col">Key</th>
+                <th scope="col">Value</th>
+                <th scope="col">Updated</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -218,16 +218,18 @@ export function EnvironmentPanel({
 
                 return (
                   <tr key={variable.id}>
-                    <td>
+                    <td data-label="Key">
                       <code className="environment-key">{variable.key}</code>
                     </td>
-                    <td>
+                    <td data-label="Value">
                       <code className="environment-value">
                         {isRevealed ? (revealed?.value ?? "") : variable.maskedValue}
                       </code>
                     </td>
-                    <td>{formatDateTime(variable.updatedAt)}</td>
-                    <td>
+                    <td data-label="Updated" className="svc-cell-wide">
+                      {formatDateTime(variable.updatedAt)}
+                    </td>
+                    <td data-label="Actions" className="svc-cell-actions">
                       <div className="deployment-actions">
                         <button
                           className="dashboard-link-button"

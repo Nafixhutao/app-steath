@@ -205,30 +205,30 @@ export function CustomDomainPanel({
             <p>
               Add these records at your DNS provider, then verify. DNS changes can take a while.
             </p>
-            <table className="organization-table">
+            <table className="organization-table svc-table-records">
               <thead>
                 <tr>
-                  <th>Type</th>
-                  <th>Name</th>
-                  <th>Value</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Value</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>TXT</td>
-                  <td>
+                  <td data-label="Type">TXT</td>
+                  <td data-label="Name">
                     <code className="environment-key">{domainData.instructions.txt.name}</code>
                   </td>
-                  <td>
+                  <td data-label="Value" className="svc-cell-wide">
                     <code className="environment-key">{domainData.instructions.txt.value}</code>
                   </td>
                 </tr>
                 <tr>
-                  <td>A</td>
-                  <td>
+                  <td data-label="Type">A</td>
+                  <td data-label="Name">
                     <code className="environment-key">{domainData.instructions.a.name}</code>
                   </td>
-                  <td>
+                  <td data-label="Value" className="svc-cell-wide">
                     {domainData.instructions.a.value ? (
                       <code className="environment-key">{domainData.instructions.a.value}</code>
                     ) : (
@@ -237,11 +237,11 @@ export function CustomDomainPanel({
                   </td>
                 </tr>
                 <tr>
-                  <td>CNAME</td>
-                  <td>
+                  <td data-label="Type">CNAME</td>
+                  <td data-label="Name">
                     <code className="environment-key">{domainData.instructions.cname.name}</code>
                   </td>
-                  <td>
+                  <td data-label="Value" className="svc-cell-wide">
                     <code className="environment-key">{domainData.instructions.cname.value}</code>
                   </td>
                 </tr>

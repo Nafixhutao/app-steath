@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -58,6 +60,11 @@ type fakeDocker struct {
 	// ready or a failed rotation is simulated.
 	execErr   error
 	execCalls []fakeExec
+	// tenantList and tenantUsage drive the shared-server queries: an Exec whose
+	// SQL mentions information_schema or pg_database answers from these, so the
+	// enforcement and usage tests do not need a real server.
+	tenantList  map[string][]string
+	tenantUsage map[string]int64
 
 	// dumpErr and archiveErr simulate a Backup that cannot be produced. The
 	// recorded calls let the Backup tests assert the container and Volume names.
@@ -336,7 +343,60 @@ func (f *fakeDocker) Exec(
 		return "", f.execErr
 	}
 
+	// Answer the shared-server queries from the seeded fixtures, so enforcement
+	// and usage are testable without a real database. The SQL travels on stdin,
+	// so it is part of what identifies the query.
+	if output, ok := f.sharedServerOutput(containerID, command, stdin); ok {
+		return output, nil
+	}
+
 	return "accepting connections", nil
+}
+
+// sharedServerOutput answers a tenant listing or usage query from the seeded
+// fixtures. It reports false for every other command.
+func (f *fakeDocker) sharedServerOutput(containerID string, command []string, stdin string) (string, bool) {
+	joined := strings.Join(command, " ") + " " + stdin
+	container, ok := f.containers[containerID]
+	if !ok {
+		return "", false
+	}
+
+	switch {
+	case strings.Contains(joined, "information_schema.schemata"),
+		strings.Contains(joined, "FROM pg_database"):
+		names := f.tenantList[container.Name]
+		// The engine probe asks for a COUNT, so it gets `1` or `0`; the usage
+		// pass asks for the names themselves.
+		if strings.Contains(joined, "COUNT(*)") {
+			for _, name := range names {
+				if strings.Contains(joined, name) {
+					return "1", true
+				}
+			}
+
+			return "0", true
+		}
+		lines := ""
+		for _, name := range names {
+			lines += name + "\n"
+		}
+
+		return lines, true
+	case strings.Contains(joined, "information_schema.tables"),
+		strings.Contains(joined, "pg_database_size"):
+		// The query names one schema, so the usage fixture is matched by the
+		// schema the statement mentions.
+		for schema, usage := range f.tenantUsage {
+			if strings.Contains(joined, schema) {
+				return strconv.FormatInt(usage, 10), true
+			}
+		}
+
+		return "0", true
+	}
+
+	return "", false
 }
 
 func (f *fakeDocker) Logs(
@@ -440,7 +500,7 @@ func (f *fakeDocker) ContainerStats(_ context.Context, containerID string) (Cont
 
 func (f *fakeDocker) DumpDatabase(
 	_ context.Context,
-	containerName, databaseName, username, destPath string,
+	containerName, databaseName, username, engine, destPath string,
 ) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -448,7 +508,7 @@ func (f *fakeDocker) DumpDatabase(
 	if f.dumpErr != nil {
 		return f.dumpErr
 	}
-	f.dumped = append(f.dumped, containerName+" "+databaseName+" "+username)
+	f.dumped = append(f.dumped, containerName+" "+databaseName+" "+username+" "+engine)
 
 	return os.WriteFile(destPath, []byte("custom-format-dump"), 0o600)
 }
@@ -467,7 +527,7 @@ func (f *fakeDocker) ArchiveVolume(_ context.Context, volumeName, destPath strin
 
 func (f *fakeDocker) RestoreDatabase(
 	_ context.Context,
-	containerName, databaseName, username, srcPath string,
+	containerName, databaseName, username, engine, srcPath string,
 ) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -478,7 +538,7 @@ func (f *fakeDocker) RestoreDatabase(
 	if _, err := os.Stat(srcPath); err != nil {
 		return err
 	}
-	f.restoredDatabases = append(f.restoredDatabases, containerName+" "+databaseName+" "+username)
+	f.restoredDatabases = append(f.restoredDatabases, containerName+" "+databaseName+" "+username+" "+engine)
 
 	return nil
 }
@@ -635,6 +695,21 @@ func (f *fakeRouter) route(hostname string) (Route, bool) {
 	route, ok := f.routes[hostname]
 
 	return route, ok
+}
+
+// hostnames returns every hostname the Manager programmed, sorted for a stable
+// assertion message.
+func (f *fakeRouter) hostnames() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	hostnames := make([]string, 0, len(f.routes))
+	for hostname := range f.routes {
+		hostnames = append(hostnames, hostname)
+	}
+	sort.Strings(hostnames)
+
+	return hostnames
 }
 
 // testManager returns a Manager wired to fakes with a short health check so the
@@ -1561,4 +1636,10 @@ func TestVolumeRequestsAreValidated(t *testing.T) {
 			t.Fatalf("%s: expected ErrInvalidDeploy, got %v", name, err)
 		}
 	}
+}
+
+// errorf builds an error with a formatted message, which the tests use to seed a
+// failure whose text they later inspect.
+func errorf(format string, args ...any) error {
+	return fmt.Errorf(format, args...)
 }

@@ -520,7 +520,8 @@ export interface paths {
          * @description Creates the Database container on the Project network with its own Volume,
          *     or starts it when it already exists. The container publishes no host port,
          *     so it is reachable only from the Project network. Calling this again with
-         *     the same `databaseId` is idempotent.
+         *     the same `databaseId` is idempotent. A MySQL Database also starts a
+         *     phpMyAdmin sidecar, which the agent routes on `phpMyAdminHostname`.
          */
         put: operations["ensureDatabase"];
         post?: never;
@@ -621,7 +622,14 @@ export interface components {
             volumeUsageMb: number;
         };
         DatabaseUsage: {
-            databaseId: string;
+            /**
+             * @description The schema the Agent created for the Database inside the shared
+             *     server. A Database has no container of its own, and the schema name is
+             *     a truncated hash that cannot be reversed into the Database id, so the
+             *     Control Plane joins it against the stored `databaseName`.
+             */
+            databaseName: string;
+            /** @description Size of the Database's schema, in megabytes. */
             usageMb: number;
         };
         HostMetricsSample: {
@@ -697,6 +705,13 @@ export interface components {
             dockerfilePath: string;
             imageTag: string;
             /**
+             * @description Port the generated container listens on. Only used when the
+             *     repository has no Dockerfile and the Agent synthesizes one from the
+             *     detected framework, so the generated server listens where the
+             *     Deployer expects it.
+             */
+            containerPort?: number;
+            /**
              * @description Exact commit to build. A redeploy sets this so the new Deployment
              *     builds the same code as the one it replaces instead of whatever the
              *     branch points at now. Omitted means "the branch tip".
@@ -766,6 +781,19 @@ export interface components {
             databaseId: string;
             projectId: string;
             organizationId: string;
+            /**
+             * @description The engine is fixed at creation. PostgreSQL 16 gets its own TLS
+             *     terminating public proxy; MySQL 8 always ships with a phpMyAdmin
+             *     container on the Project network.
+             * @default postgres
+             * @enum {string}
+             */
+            engine: "postgres" | "mysql";
+            /**
+             * @description The hostname phpMyAdmin answers on. Required for a MySQL Database,
+             *     rejected for PostgreSQL, because PostgreSQL has no browser client.
+             */
+            phpMyAdminHostname?: string;
             databaseName: string;
             username: string;
             /**
@@ -776,13 +804,23 @@ export interface components {
             storageLimitMb: number;
         };
         DatabasePasswordRequest: {
-            databaseName: string;
-            username: string;
+            /**
+             * @description Which shared server holds the Database. The engine is fixed at
+             *     creation, so the Control Plane sends the stored value.
+             * @default postgres
+             * @enum {string}
+             */
+            engine: "postgres" | "mysql";
             /** @description The new password. It is sent in the body only and is never logged. */
             password: string;
         };
         DatabaseState: {
             databaseId: string;
+            /**
+             * @description The engine the running container was created with.
+             * @enum {string}
+             */
+            engine?: "postgres" | "mysql";
             /** @enum {string} */
             status: "running" | "stopped" | "absent" | "failed";
             containerId?: string;
@@ -794,8 +832,16 @@ export interface components {
              * @description Space the Database Volume currently uses, measured on the node.
              */
             usageMb: number;
-            /** @description True when PostgreSQL answers `pg_isready`. */
+            /**
+             * @description True when the engine answers its readiness probe: `pg_isready` for
+             *     PostgreSQL, `mysqladmin ping` for MySQL.
+             */
             healthy: boolean;
+            /**
+             * @description True when the phpMyAdmin sidecar answers on the Project network.
+             *     Always false for PostgreSQL.
+             */
+            phpMyAdminReady?: boolean;
             /** @description True when the Database Volume is over its storage limit. */
             overQuota?: boolean;
         };

@@ -43,8 +43,11 @@ const (
 	LabelVolumeSizeMb = "stealth.volumeSizeMb"
 
 	// Database labels let the agent find a Project Database after a restart,
-	// measure its storage, and run `pg_isready` without asking the Control Plane.
+	// measure its storage, and run its readiness probe without asking the
+	// Control Plane. The engine decides the probe, the rotation statement, and
+	// the dump tool, so it is recorded on the container itself.
 	LabelDatabaseID        = "stealth.databaseId"
+	LabelDatabaseEngine    = "stealth.databaseEngine"
 	LabelDatabaseName      = "stealth.databaseName"
 	LabelDatabaseUsername  = "stealth.databaseUsername"
 	LabelDatabaseStorageMb = "stealth.databaseStorageMb"
@@ -55,7 +58,11 @@ const (
 	ResourceTypeService         = "service"
 	ResourceTypeVolume          = "volume"
 	ResourceTypeDatabase        = "database"
-	ResourceTypeDatabaseProxy   = "database-proxy"
+	// ResourceTypeDatabasePhpMyAdmin marks the browser client that ships with a
+	// MySQL Database. It is a separate type so quota enforcement and storage
+	// measurement never mistake it for the Database itself.
+	ResourceTypeDatabasePhpMyAdmin = "database-phpmyadmin"
+	ResourceTypeDatabaseProxy      = "database-proxy"
 )
 
 // ContainerSpec is one Service container the agent wants running.
@@ -74,6 +81,11 @@ type ContainerSpec struct {
 	// User overrides the image's default user. The Database runs as the
 	// `postgres` user so its entrypoint never needs root capabilities.
 	User string
+	// Capabilities are added back after every capability is dropped. Only the
+	// phpMyAdmin sidecar uses it: Apache binds port 80 and then drops to
+	// www-data, which needs CHOWN, DAC_OVERRIDE, NET_BIND_SERVICE, SETGID and
+	// SETUID. Every other container keeps the default of no capabilities.
+	Capabilities []string
 	// Entrypoint overrides the image entrypoint and Command appends arguments
 	// after the image name. The public Database proxy uses both to run nginx with
 	// its generated configuration instead of the image's default entrypoint.
@@ -217,15 +229,16 @@ type Docker interface {
 	// ContainerStats reports the live CPU and memory usage of one container.
 	// Stopped containers are not sampled; the caller treats them as zero.
 	ContainerStats(ctx context.Context, containerID string) (ContainerStats, error)
-	// DumpDatabase writes a custom-format pg_dump of one container to destPath.
-	// The container must already run PostgreSQL.
-	DumpDatabase(ctx context.Context, containerName, databaseName, username, destPath string) error
+	// DumpDatabase writes a dump of one container to destPath. The engine picks
+	// the tool: pg_dump for PostgreSQL, mysqldump for MySQL.
+	DumpDatabase(ctx context.Context, containerName, databaseName, username, engine, destPath string) error
 	// ArchiveVolume writes a gzip compressed tar of one Volume to destPath.
 	ArchiveVolume(ctx context.Context, volumeName, destPath string) error
-	// RestoreDatabase replaces one Database's contents from a custom-format backup.
-	// The load goes into a temporary Database and is only swapped in after it
-	// succeeds, so a failed Restore leaves the original data untouched.
-	RestoreDatabase(ctx context.Context, containerName, databaseName, username, srcPath string) error
+	// RestoreDatabase replaces one Database's contents from a Backup. For
+	// PostgreSQL the load goes into a temporary Database and is only swapped in
+	// after it succeeds; MySQL has no database rename, so the dump is validated
+	// in a temporary Database and then applied to the original one.
+	RestoreDatabase(ctx context.Context, containerName, databaseName, username, engine, srcPath string) error
 	// RestoreVolume replaces one Volume's contents from a gzip compressed tar.
 	// Extraction goes to a staging directory first, so a corrupt archive never
 	// removes the data that was already there.
@@ -305,6 +318,12 @@ func (d *CLIDocker) CreateContainer(ctx context.Context, spec ContainerSpec) (st
 		"--log-opt", "max-size=10m",
 		"--log-opt", "max-file=5",
 		"--expose", strconv.Itoa(spec.Port),
+	}
+
+	// A capability is only ever added back for a container that needs it, and
+	// only after everything was dropped, so the starting point stays minimal.
+	for _, capability := range spec.Capabilities {
+		args = append(args, "--cap-add", capability)
 	}
 
 	if spec.PublishedPort > 0 {
@@ -790,13 +809,29 @@ func (d *CLIDocker) ContainerStats(ctx context.Context, containerID string) (Con
 	}, nil
 }
 
-// DumpDatabase runs pg_dump inside the Database container. The container's
-// local socket trusts its own OS user, so no password crosses the command line
-// or the agent process.
+// DumpDatabase runs the engine's dump tool inside the Database container. For
+// PostgreSQL the container's local socket trusts its own OS user, so no password
+// crosses the command line. For MySQL the root account the entrypoint created is
+// read from the container environment, which keeps the password out of the
+// arguments too.
 func (d *CLIDocker) DumpDatabase(
 	ctx context.Context,
-	containerName, databaseName, username, destPath string,
+	containerName, databaseName, username, engine, destPath string,
 ) error {
+	if engine == DatabaseEngineMySQL {
+		return d.runner.OutputToFile(ctx, exec.Options{
+			Name: "docker",
+			Args: []string{
+				"exec", containerName,
+				"sh", "-c",
+				`MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump --user=root ` +
+					`--single-transaction --no-tablespaces --routines --events --triggers ` +
+					`--set-gtid-purged=OFF "$1"`,
+				"sh", databaseName,
+			},
+		}, destPath)
+	}
+
 	return d.runner.OutputToFile(ctx, exec.Options{
 		Name: "docker",
 		Args: []string{
@@ -823,13 +858,19 @@ func (d *CLIDocker) ArchiveVolume(ctx context.Context, volumeName, destPath stri
 	}, destPath)
 }
 
-// RestoreDatabase loads a custom-format backup into a temporary Database and swaps
-// it into place only after the load succeeds. A corrupt or partial backup
-// therefore leaves the original Database exactly as it was.
+// RestoreDatabase replaces one Database's contents from a Backup. PostgreSQL
+// loads into a temporary Database and swaps it in only after the load succeeds,
+// so a corrupt backup leaves the original data untouched. MySQL has no database
+// rename, so the dump is loaded into a temporary Database first to prove it is
+// usable, then applied to the original one.
 func (d *CLIDocker) RestoreDatabase(
 	ctx context.Context,
-	containerName, databaseName, username, srcPath string,
+	containerName, databaseName, username, engine, srcPath string,
 ) error {
+	if engine == DatabaseEngineMySQL {
+		return d.restoreMySQLDatabase(ctx, containerName, databaseName, srcPath)
+	}
+
 	tempDatabase := restoreTempDatabaseName(srcPath)
 
 	create := fmt.Sprintf("CREATE DATABASE %s", quoteSQLIdentifier(tempDatabase))
@@ -887,6 +928,92 @@ func (d *CLIDocker) RestoreDatabase(
 	}
 
 	return nil
+}
+
+// restoreMySQLDatabase validates the dump in a temporary Database and then
+// replaces the original one. MySQL cannot rename a Database, so the swap cannot
+// be atomic; validating the artifact first is what keeps a corrupt or partial
+// dump from destroying the data that was already there.
+func (d *CLIDocker) restoreMySQLDatabase(
+	ctx context.Context,
+	containerName, databaseName, srcPath string,
+) error {
+	tempDatabase := restoreTempDatabaseName(srcPath)
+	dropTemp := func() {
+		_ = d.execMySQL(ctx, containerName, "DROP DATABASE IF EXISTS "+quoteMySQLIdentifier(tempDatabase))
+	}
+
+	if err := d.execMySQL(
+		ctx, containerName, "DROP DATABASE IF EXISTS "+quoteMySQLIdentifier(tempDatabase),
+	); err != nil {
+		return fmt.Errorf("reset the temporary Database: %w", err)
+	}
+	if err := d.execMySQL(
+		ctx, containerName, "CREATE DATABASE "+quoteMySQLIdentifier(tempDatabase),
+	); err != nil {
+		return fmt.Errorf("create the temporary Database: %w", err)
+	}
+	if err := d.importMySQLDump(ctx, containerName, tempDatabase, srcPath); err != nil {
+		dropTemp()
+		return fmt.Errorf("load the Backup into the temporary Database: %w", err)
+	}
+
+	// The artifact is known to load. Replace the original Database with it.
+	if err := d.execMySQL(
+		ctx, containerName, "DROP DATABASE IF EXISTS "+quoteMySQLIdentifier(databaseName),
+	); err != nil {
+		dropTemp()
+		return fmt.Errorf("replace the Database: %w", err)
+	}
+	if err := d.execMySQL(
+		ctx, containerName, "CREATE DATABASE "+quoteMySQLIdentifier(databaseName),
+	); err != nil {
+		return fmt.Errorf("recreate the Database: %w", err)
+	}
+	if err := d.importMySQLDump(ctx, containerName, databaseName, srcPath); err != nil {
+		return fmt.Errorf("apply the Backup to the Database: %w", err)
+	}
+	dropTemp()
+
+	return nil
+}
+
+// execMySQL runs one statement as the container's root account. The password is
+// read from the container environment, so it never appears in an argument.
+func (d *CLIDocker) execMySQL(ctx context.Context, containerName, statement string) error {
+	_, err := d.runner.Output(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"exec", containerName,
+			"sh", "-c",
+			`MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root --execute="$1"`,
+			"sh", statement,
+		},
+	})
+
+	return err
+}
+
+// importMySQLDump streams a dump file into one Database.
+func (d *CLIDocker) importMySQLDump(
+	ctx context.Context,
+	containerName, databaseName, srcPath string,
+) error {
+	return d.runner.RunFile(ctx, exec.Options{
+		Name: "docker",
+		Args: []string{
+			"exec", "-i", containerName,
+			"sh", "-c",
+			`MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root "$1"`,
+			"sh", databaseName,
+		},
+	}, srcPath)
+}
+
+// quoteMySQLIdentifier quotes a MySQL identifier. Values come from container
+// labels the platform wrote, but quoting keeps a name from changing meaning.
+func quoteMySQLIdentifier(value string) string {
+	return "`" + strings.ReplaceAll(value, "`", "``") + "`"
 }
 
 // RestoreVolume extracts the archive into a staging directory on the Volume and

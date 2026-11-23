@@ -206,9 +206,7 @@ export default function ProjectsPage() {
                 <Boxes className="w-10 h-10 text-zinc-400" />
               </div>
               <h2 className="supabase-hero-title">Create a project</h2>
-              <p className="supabase-hero-subtitle">
-                Launch a complete backend built on Postgres.
-              </p>
+              <p className="supabase-hero-subtitle">Launch a complete backend built on Postgres.</p>
               <button
                 type="button"
                 className="supabase-hero-btn"
@@ -296,7 +294,13 @@ export default function ProjectsPage() {
                         </Link>
                       </td>
                       <td>{project.serviceCount}</td>
-                      <td>{project.databaseCount > 0 ? "Postgres 16" : "None"}</td>
+                      <td>
+                        {project.databaseCount > 0
+                          ? project.databaseEngine === "mysql"
+                            ? "MySQL 8"
+                            : "PostgreSQL 16"
+                          : "None"}
+                      </td>
                       <td>
                         <span className="inline-flex items-center gap-1.5 text-xs text-zinc-300">
                           <span
@@ -430,7 +434,12 @@ export default function ProjectsPage() {
       {/* Modal: Create Project */}
       {modalOpen && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="create-project-title">
+          <div
+            className="supabase-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-project-title"
+          >
             <div className="supabase-modal-header">
               <h2 id="create-project-title">Create a new project</h2>
               <button
@@ -446,7 +455,8 @@ export default function ProjectsPage() {
             <form onSubmit={handleCreateProject}>
               <div className="supabase-modal-body">
                 <p className="text-sm text-zinc-400 mb-4">
-                  Each project provides an isolated environment for your services and a dedicated PostgreSQL database.
+                  Each project provides an isolated environment for your services and a dedicated
+                  PostgreSQL or MySQL database.
                 </p>
 
                 <div className="mb-4">
@@ -486,7 +496,9 @@ export default function ProjectsPage() {
                     }}
                     className="supabase-modal-input font-mono text-sm"
                   />
-                  <p className="text-xs text-zinc-500 mt-1">Used in service domain names and internal routing.</p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Used in service domain names and internal routing.
+                  </p>
                 </div>
 
                 {formError && <p className="text-xs text-rose-400 mt-3">{formError}</p>}

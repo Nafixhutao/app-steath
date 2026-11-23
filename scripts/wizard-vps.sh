@@ -270,7 +270,7 @@ pause "Tekan Enter setelah 'Docker Compose version' muncul..."
 stage "DNS: A record"
 say "Buka panel DNS domain-mu, cari menu DNS / Records."
 ask DASHBOARD_DOMAIN "Domain dashboard (mis. console.example.com):"
-ask PLATFORM_DOMAIN "Domain Service (mis. apps.example.com):"
+ask PLATFORM_DOMAIN "Domain Service satu level (mis. example.com):"
 if [[ -z "$DASHBOARD_DOMAIN" || -z "$PLATFORM_DOMAIN" ]]; then
   warn "Kedua domain harus diisi: satu untuk dashboard, satu untuk Service."
   exit 1

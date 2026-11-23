@@ -22,6 +22,8 @@ type FakeDatabase = {
   usageMb: number;
   overQuota: boolean;
   password: string;
+  engine: "postgres" | "mysql";
+  phpMyAdminHostname: string | null;
 };
 
 type FakeProxy = {
@@ -83,12 +85,16 @@ async function readBody(request: IncomingMessage): Promise<string> {
 function databaseState(databaseId: string, database: FakeDatabase) {
   return {
     databaseId,
+    engine: database.engine,
     status: database.status,
     containerId: `container-${databaseId}`,
     hostname: "db",
     storageLimitMb: 1024,
     usageMb: database.usageMb,
     healthy: database.healthy,
+    // A MySQL Database always runs its phpMyAdmin sidecar; PostgreSQL never has
+    // one, so mirroring the agent here keeps the two paths honest.
+    phpMyAdminReady: database.engine === "mysql",
     overQuota: database.overQuota,
   };
 }
@@ -190,24 +196,22 @@ async function handleAgentRequest(
       return;
     }
 
+    // A shared server listens on one port for every tenant, so the Agent refuses
+    // to publish a listener at all. It tears down a leftover from the previous
+    // per-Database model first, which is what the fake mirrors.
     if (request.method === "PUT") {
       const requested = Array.isArray(body?.allowlist)
         ? (body.allowlist as unknown[]).map((entry) => String(entry))
         : [];
-      const allowlist = canonicalizeAllowlist(requested);
-      if (allowlist.length === 0) {
+      if (canonicalizeAllowlist(requested).length === 0) {
         response.writeHead(400, { "content-type": "application/json" });
         response.end(JSON.stringify({ error: "invalid_database_proxy_request" }));
         return;
       }
 
-      const existing = agent.proxies.get(databaseId);
-      const port = existing?.port ?? agent.nextProxyPort++;
-      agent.proxies.set(databaseId, { port, allowlist });
-      response.writeHead(200, { "content-type": "application/json" });
-      response.end(
-        JSON.stringify({ databaseId, enabled: true, port, allowlist }),
-      );
+      agent.proxies.delete(databaseId);
+      response.writeHead(409, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: "database_proxy_disabled" }));
       return;
     }
 
@@ -258,6 +262,8 @@ async function handleAgentRequest(
         usageMb: 0,
         overQuota: false,
         password: String(body?.password ?? ""),
+        engine: body?.engine === "mysql" ? "mysql" : "postgres",
+        phpMyAdminHostname: body?.phpMyAdminHostname ? String(body.phpMyAdminHostname) : null,
       });
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify(databaseState(databaseId, agent.databases.get(databaseId)!)));
@@ -424,6 +430,12 @@ type DatabaseBody = {
   overQuota: boolean;
   connectionString: string | null;
   proxy: DatabaseProxyBody;
+  phpMyAdmin: {
+    enabled: boolean;
+    url: string | null;
+    hostname: string | null;
+    ready: boolean;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -505,8 +517,7 @@ async function proxyRequest(
   projectId: string,
   init: { method?: string; body?: unknown } = {},
 ): Promise<Response> {
-  const { GET, PUT, DELETE } =
-    await import("@/app/api/projects/[projectId]/database/proxy/route");
+  const { GET, PUT, DELETE } = await import("@/app/api/projects/[projectId]/database/proxy/route");
   const request = new Request(`${BASE_URL}/api/projects/${projectId}/database/proxy`, {
     method: init.method ?? "GET",
     headers: {
@@ -614,19 +625,28 @@ describe("Databases", () => {
     expect(response.status).toBe(201);
     const database = ((await response.json()) as { data: DatabaseBody }).data;
 
+    // The schema and role are derived from the id, because they must be unique
+    // inside the shared server that holds every tenant.
+    const { databaseObjectNames } = await import("@/lib/platform/databases");
+    const names = databaseObjectNames(database.id);
     expect(database).toMatchObject({
       projectId: project.id,
       engine: "postgres",
       version: "16",
-      databaseName: "app",
-      username: "app",
+      databaseName: names.schema,
+      username: names.role,
       storageLimitMb: 1024,
       status: "running",
       healthy: true,
       usageMb: 0,
       overQuota: false,
     });
-    expect(database.connectionString).toMatch(/^postgres:\/\/app:[0-9a-f]{64}@db:5432\/app$/);
+    expect(names.schema).toMatch(/^db_[A-Za-z0-9]{24}$/);
+    expect(names.role).toMatch(/^u_[A-Za-z0-9]{24}$/);
+    expect(database.connectionString).toBe(
+      `postgres://${names.role}:[0-9a-f]{64}@db:5432/${names.schema}`.replace("[0-9a-f]{64}", new URL(database.connectionString as string).password),
+    );
+    expect(new URL(database.connectionString as string).port).toBe("5432");
 
     // The password is random and sealed at rest.
     const rows = await queryRows<{ encryptedPassword: string }>(
@@ -679,6 +699,109 @@ describe("Databases", () => {
         connectionString: database.connectionString,
       }),
     );
+  });
+
+  it("provisions a MySQL Database with phpMyAdmin and a mysql connection string", async () => {
+    const owner = await signUp(uniqueName("dbmysql") + "@example.test", uniqueName("dbmysql"));
+    const project = await createProject(owner.cookie, "Database MySQL");
+
+    const response = await databaseRequest(owner.cookie, project.id, {
+      method: "POST",
+      body: { engine: "mysql" },
+    });
+    expect(response.status).toBe(201);
+    const database = ((await response.json()) as { data: DatabaseBody }).data;
+
+    const { databaseObjectNames } = await import("@/lib/platform/databases");
+    const names = databaseObjectNames(database.id);
+    expect(database).toMatchObject({
+      projectId: project.id,
+      engine: "mysql",
+      version: "8",
+      databaseName: names.schema,
+      username: names.role,
+      status: "running",
+      healthy: true,
+    });
+    // MySQL carries its own TLS negotiation flag; the proxy's sslmode=require
+    // would be meaningless for it.
+    expect(database.connectionString).toMatch(
+      new RegExp(
+        `^mysql://${names.role}:[0-9a-f]{64}@db:3306/${names.schema}\\?ssl-mode=REQUIRED$`,
+      ),
+    );
+
+    // The one phpMyAdmin for the node is on the Platform Domain and reports ready.
+    expect(database.phpMyAdmin.enabled).toBe(true);
+    expect(database.phpMyAdmin.ready).toBe(true);
+    expect(database.phpMyAdmin.hostname).toMatch(/^pma\.[^./]+$/);
+    expect(database.phpMyAdmin.url).toBe(`https://${database.phpMyAdmin.hostname}`);
+
+    // PostgreSQL has no browser client, so its own summary is empty.
+    // The agent received the engine and the phpMyAdmin hostname.
+    const provisionRequest = agent.requests.find(
+      (entry) => entry.method === "PUT" && entry.path === `/v1/databases/${database.id}`,
+    );
+    expect(provisionRequest?.body).toMatchObject({
+      engine: "mysql",
+      phpMyAdminHostname: database.phpMyAdmin.hostname,
+    });
+
+    // The hostname is persisted, so a redeploy reuses the same address.
+    const rows = await queryRows<{ engine: string; phpMyAdminHostname: string | null }>(
+      'SELECT "engine", "phpMyAdminHostname" FROM "database" WHERE "id" = $1',
+      [database.id],
+    );
+    expect(rows[0]).toEqual({
+      engine: "mysql",
+      phpMyAdminHostname: database.phpMyAdmin.hostname,
+    });
+
+    // One listener cannot publish one tenant of a shared server, so the proxy is
+    // refused for MySQL too.
+    const proxy = await proxyRequest(owner.cookie, project.id, {
+      method: "PUT",
+      body: { allowlist: ["203.0.113.0/24"] },
+    });
+    expect(proxy.status).toBe(409);
+    expect(((await proxy.json()) as FailureBody).error.code).toBe("database_proxy_unsupported");
+  });
+
+  it("shares one phpMyAdmin across every MySQL Database", async () => {
+    const owner = await signUp(uniqueName("dbpmag") + "@example.test", uniqueName("dbpmag"));
+    const first = await createProject(owner.cookie, "Database PMA One");
+    const second = await createProject(owner.cookie, "Database PMA Two");
+
+    const created = await Promise.all(
+      [first, second].map((project) =>
+        databaseRequest(owner.cookie, project.id, { method: "POST", body: { engine: "mysql" } }),
+      ),
+    );
+    expect(created.map((response) => response.status)).toEqual([201, 201]);
+
+    const bodies = await Promise.all(
+      created.map(async (response) => ((await response.json()) as { data: DatabaseBody }).data),
+    );
+    const hostnames = bodies.map((body) => body.phpMyAdmin.hostname);
+    // There is one browser client for the whole node, so both Databases point at
+    // the same address; what differs is the credentials they sign in with.
+    expect(hostnames[0]).toBe(hostnames[1]);
+    expect(bodies[0].username).not.toBe(bodies[1].username);
+  });
+
+  it("rejects an unknown engine", async () => {
+    const owner = await signUp(uniqueName("dbengine") + "@example.test", uniqueName("dbengine"));
+    const project = await createProject(owner.cookie, "Database Engine");
+
+    const response = await databaseRequest(owner.cookie, project.id, {
+      method: "POST",
+      body: { engine: "sqlite" },
+    });
+    expect(response.status).toBe(400);
+    expect(((await response.json()) as FailureBody).error.code).toBe("invalid_database_engine");
+    expect(
+      await queryRows('SELECT "id" FROM "database" WHERE "projectId" = $1', [project.id]),
+    ).toHaveLength(0);
   });
 
   it("lets members see the Database but not the connection string or any mutation", async () => {
@@ -874,7 +997,7 @@ describe("Databases", () => {
     });
   });
 
-  it("creates no public endpoint and requires an allowlist to enable the proxy", async () => {
+  it("publishes no public endpoint and refuses every proxy attempt", async () => {
     const owner = await signUp(uniqueName("dbproxy") + "@example.test", uniqueName("dbproxy"));
     const project = await createProject(owner.cookie, "Database Proxy");
 
@@ -889,6 +1012,8 @@ describe("Databases", () => {
       connectionString: null,
     });
 
+    // A malformed allowlist is still reported as such, so the caller is not left
+    // guessing whether the refusal was about the CIDR or the feature.
     const missing = await proxyRequest(owner.cookie, project.id, {
       method: "PUT",
       body: { allowlist: [] },
@@ -903,82 +1028,56 @@ describe("Databases", () => {
     expect(invalid.status).toBe(400);
     expect(((await invalid.json()) as FailureBody).error.code).toBe("invalid_allowlist");
 
-    const enabledResponse = await proxyRequest(owner.cookie, project.id, {
+    // A valid allowlist is refused: one listener would publish every tenant.
+    const refused = await proxyRequest(owner.cookie, project.id, {
       method: "PUT",
       body: { allowlist: ["203.0.113.7", "198.51.100.0/24"] },
     });
-    expect(enabledResponse.status).toBe(200);
-    const proxy = ((await enabledResponse.json()) as { data: DatabaseProxyBody }).data;
+    expect(refused.status).toBe(409);
+    const refusal = (await refused.json()) as FailureBody;
+    expect(refusal.error.code).toBe("database_proxy_unsupported");
+    expect(agent.proxies.has(created.id)).toBe(false);
 
-    expect(proxy.enabled).toBe(true);
-    expect(proxy.port).toBeGreaterThanOrEqual(20000);
-    expect(proxy.port).toBeLessThanOrEqual(29999);
-    // The Control Plane stores the agent's canonical CIDRs, not its own input.
-    expect(proxy.allowlist).toEqual(["198.51.100.0/24", "203.0.113.7/32"]);
-    expect(proxy.connectionString).toMatch(
-      new RegExp(`^postgres://app:[0-9a-f]{64}@[^/:]+:${proxy.port}/app\\?sslmode=require$`),
-    );
-    expect(agent.proxies.get(created.id)?.port).toBe(proxy.port);
-
-    // The Database read exposes the same endpoint to an owner.
+    // The Database read still reports no endpoint.
     const readResponse = await databaseRequest(owner.cookie, project.id);
     const read = ((await readResponse.json()) as { data: DatabaseListBody }).data;
-    expect(read.database?.proxy).toMatchObject({
-      enabled: true,
-      port: proxy.port,
-      allowlist: proxy.allowlist,
-      connectionString: proxy.connectionString,
+    expect(read.database?.proxy).toEqual({
+      enabled: false,
+      port: null,
+      allowlist: [],
+      connectionString: null,
     });
 
-    // A second PUT updates the allowlist but reuses the allocated port.
-    const updatedResponse = await proxyRequest(owner.cookie, project.id, {
-      method: "PUT",
-      body: { allowlist: ["192.0.2.0/24"] },
-    });
-    const updated = ((await updatedResponse.json()) as { data: DatabaseProxyBody }).data;
-    expect(updated.port).toBe(proxy.port);
-    expect(updated.allowlist).toEqual(["192.0.2.0/24"]);
-
-    const events = await queryRows<{ action: string; details: Record<string, unknown> }>(
-      'SELECT "action", "details" FROM "audit_event" WHERE "organizationId" = $1 AND "action" LIKE $2 ORDER BY "createdAt"',
+    // Disabling is a harmless no-op and records no AuditEvent.
+    expect((await proxyRequest(owner.cookie, project.id, { method: "DELETE" })).status).toBe(200);
+    const events = await queryRows<{ action: string }>(
+      'SELECT "action" FROM "audit_event" WHERE "organizationId" = $1 AND "action" LIKE $2',
       [owner.organizationId, "database.%"],
     );
-    const enabledEvents = events.filter((event) => event.action === "database.proxy_enabled");
-    expect(enabledEvents).toHaveLength(2);
-    expect(enabledEvents[0].details).toEqual({
-      projectId: project.id,
-      databaseId: created.id,
-      port: proxy.port,
-      allowlist: proxy.allowlist,
-    });
-    expect(JSON.stringify(enabledEvents[0].details)).not.toContain(
-      new URL(proxy.connectionString as string).password,
-    );
+    expect(events.map((event) => event.action)).toEqual(["database.created"]);
   });
 
-  it("lets members read the proxy state but never enable or disable it", async () => {
-    const owner = await signUp(uniqueName("dbproxymember") + "@example.test", uniqueName("dbproxymember"));
+  it("lets members read the proxy state but never change it", async () => {
+    const owner = await signUp(
+      uniqueName("dbproxymember") + "@example.test",
+      uniqueName("dbproxymember"),
+    );
     const project = await createProject(owner.cookie, "Database Proxy Roles");
     const member = await addMember(owner.cookie, owner.organizationId, "member");
 
     const createdResponse = await databaseRequest(owner.cookie, project.id, { method: "POST" });
-    const created = ((await createdResponse.json()) as { data: DatabaseBody }).data;
-
-    expect(
-      (
-        await proxyRequest(owner.cookie, project.id, {
-          method: "PUT",
-          body: { allowlist: ["203.0.113.0/24"] },
-        })
-      ).status,
-    ).toBe(200);
+    expect(createdResponse.status).toBe(201);
 
     const read = await proxyRequest(member.cookie, project.id);
     expect(read.status).toBe(200);
-    const proxy = ((await read.json()) as { data: DatabaseProxyBody }).data;
-    expect(proxy).toMatchObject({ enabled: true, port: expect.any(Number) });
-    expect(proxy.connectionString).toBeNull();
+    expect(((await read.json()) as { data: DatabaseProxyBody }).data).toEqual({
+      enabled: false,
+      port: null,
+      allowlist: [],
+      connectionString: null,
+    });
 
+    // Members are refused before the feature is even evaluated.
     expect(
       (
         await proxyRequest(member.cookie, project.id, {
@@ -988,23 +1087,15 @@ describe("Databases", () => {
       ).status,
     ).toBe(403);
     expect((await proxyRequest(member.cookie, project.id, { method: "DELETE" })).status).toBe(403);
-
-    // The member's attempts did not change the endpoint.
-    expect(agent.proxies.get(created.id)?.allowlist).toEqual(["203.0.113.0/24"]);
   });
 
-  it("disables the proxy, revokes the endpoint, and audits it", async () => {
-    const owner = await signUp(uniqueName("dbproxydisable") + "@example.test", uniqueName("dbproxydisable"));
+  it("disables the proxy without recording a change when none was enabled", async () => {
+    const owner = await signUp(
+      uniqueName("dbproxydisable") + "@example.test",
+      uniqueName("dbproxydisable"),
+    );
     const project = await createProject(owner.cookie, "Database Proxy Disable");
-
-    const createdResponse = await databaseRequest(owner.cookie, project.id, { method: "POST" });
-    const created = ((await createdResponse.json()) as { data: DatabaseBody }).data;
-
-    const enabledResponse = await proxyRequest(owner.cookie, project.id, {
-      method: "PUT",
-      body: { allowlist: ["203.0.113.0/24"] },
-    });
-    const enabled = ((await enabledResponse.json()) as { data: DatabaseProxyBody }).data;
+    await databaseRequest(owner.cookie, project.id, { method: "POST" });
 
     const removedResponse = await proxyRequest(owner.cookie, project.id, { method: "DELETE" });
     expect(removedResponse.status).toBe(200);
@@ -1015,16 +1106,6 @@ describe("Databases", () => {
       connectionString: null,
     });
 
-    // The agent stopped the listener and the row is gone.
-    expect(agent.proxies.has(created.id)).toBe(false);
-    expect(
-      await queryRows('SELECT "databaseId" FROM "database_proxy" WHERE "databaseId" = $1', [
-        created.id,
-      ]),
-    ).toHaveLength(0);
-
-    // A second disable is idempotent, and a read reports no endpoint.
-    expect((await proxyRequest(owner.cookie, project.id, { method: "DELETE" })).status).toBe(200);
     const read = await proxyRequest(owner.cookie, project.id);
     expect(((await read.json()) as { data: DatabaseProxyBody }).data).toEqual({
       enabled: false,
@@ -1033,26 +1114,22 @@ describe("Databases", () => {
       connectionString: null,
     });
 
-    const events = await queryRows<{ action: string; details: Record<string, unknown> }>(
-      'SELECT "action", "details" FROM "audit_event" WHERE "organizationId" = $1 AND "action" LIKE $2 ORDER BY "createdAt"',
+    const events = await queryRows<{ action: string }>(
+      'SELECT "action" FROM "audit_event" WHERE "organizationId" = $1 AND "action" LIKE $2',
       [owner.organizationId, "database.%"],
     );
-    expect(events.map((event) => event.action)).toEqual([
-      "database.created",
-      "database.proxy_enabled",
-      "database.proxy_disabled",
-    ]);
-    expect(events[1].details).toMatchObject({
-      projectId: project.id,
-      databaseId: created.id,
-      port: enabled.port,
-    });
-    expect(events[2].details).toEqual({ projectId: project.id, databaseId: created.id });
+    expect(events.map((event) => event.action)).toEqual(["database.created"]);
   });
 
   it("answers 404 for another Organization's proxy", async () => {
-    const owner = await signUp(uniqueName("dbproxyorg") + "@example.test", uniqueName("dbproxyorg"));
-    const other = await signUp(uniqueName("dbproxyother") + "@example.test", uniqueName("dbproxyother"));
+    const owner = await signUp(
+      uniqueName("dbproxyorg") + "@example.test",
+      uniqueName("dbproxyorg"),
+    );
+    const other = await signUp(
+      uniqueName("dbproxyother") + "@example.test",
+      uniqueName("dbproxyother"),
+    );
     const project = await createProject(owner.cookie, "Database Proxy Organization");
     await databaseRequest(owner.cookie, project.id, { method: "POST" });
 

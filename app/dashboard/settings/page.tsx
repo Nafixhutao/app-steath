@@ -416,7 +416,7 @@ export default function SettingsPage() {
               </div>
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Managed PostgreSQL 16 DBs</span>
+                <span>Managed databases</span>
               </div>
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
@@ -464,7 +464,7 @@ export default function SettingsPage() {
               <div className="p-3.5 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
                 <strong>Permanent Deletion Warning:</strong> Deleting{" "}
                 <strong>{organization?.name}</strong> will immediately terminate all running
-                containers, erase attached persistent volumes, remove managed PostgreSQL databases,
+                containers, erase attached persistent volumes, remove managed databases,
                 invalidate custom domain certificates, and revoke all member access. This operation
                 cannot be recovered.
               </div>

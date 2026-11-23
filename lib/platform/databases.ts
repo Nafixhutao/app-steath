@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { isIP } from "node:net";
 import { pool } from "./db.ts";
 import { createAgentClient } from "../../lib/agent-client.ts";
@@ -11,34 +11,70 @@ import { requireProject } from "./ownership.ts";
 import { bumpProjectRevisions, projectNeedsRedeploy } from "./revisions.ts";
 
 /**
- * A Project's one PostgreSQL Database. The Control Plane owns the row with the
- * credentials and the storage limit; the Node Agent runs the container on the
- * Project network with its own Volume, so only Services in the same Project can
- * reach it. The password is sealed with the platform encryption key before it
- * reaches the database.
+ * A Project's one Database. The Control Plane owns the row with the credentials
+ * and the storage limit; the Node Agent runs the container on the Project
+ * network with its own Volume, so only Services in the same Project can reach
+ * it. The password is sealed with the platform encryption key before it reaches
+ * the database.
+ *
+ * Two engines are offered. PostgreSQL is the default and keeps the public TLS
+ * proxy; MySQL cannot be proxied the same way, so it always ships with a
+ * phpMyAdmin container on the Platform Domain instead.
  */
 
 /** The spec limit for one Database. */
 export const MAX_DATABASE_STORAGE_MB = QUOTAS.databaseStorageMb;
 
-/** The only engine and version the platform supports. */
-export const DATABASE_ENGINE = "postgres";
-export const DATABASE_VERSION = "16";
+/** The engines a Project may choose from, and their pinned versions. */
+export const DATABASE_ENGINES = {
+  postgres: "16",
+  mysql: "8",
+} as const;
 
-/** Default database name and role. Kept short because they appear in the URL. */
-const DEFAULT_DATABASE_NAME = "app";
-const DEFAULT_USERNAME = "app";
+export type DatabaseEngine = keyof typeof DATABASE_ENGINES;
+
+/** Kept for the code that only ever needs the default engine. */
+export const DATABASE_ENGINE: DatabaseEngine = "postgres";
+export const DATABASE_VERSION = DATABASE_ENGINES.postgres;
+
+/**
+ * Derives the schema and role for a Database id. The Agent derives the same
+ * names with the same formula, so the connection string the Control Plane builds
+ * always names the objects the Agent created inside the shared server. Both names
+ * use a 24 character key from the id (96 bits of a UUID), which fits MySQL's
+ * 32-character user name limit and is collision-free in practice.
+ */
+export function databaseObjectNames(databaseId: string): { schema: string; role: string } {
+  const key = databaseId.replace(/[^A-Za-z0-9]/g, "").slice(0, 24) || "tenant";
+
+  return { schema: `db_${key}`, role: `u_${key}` };
+}
 
 /** The alias the agent gives the container on the Project network. */
 const DATABASE_HOSTNAME = "db";
-const DATABASE_PORT = 5432;
+const DATABASE_PORTS: Record<DatabaseEngine, number> = { postgres: 5432, mysql: 3306 };
 
-/** The public proxy may only publish a port in this range. */
+/** The public proxy is only available on PostgreSQL, and only in this range. */
 export const MIN_DATABASE_PROXY_PORT = 20000;
 export const MAX_DATABASE_PROXY_PORT = 29999;
 
 /** The generated nginx configuration stays bounded with this many entries. */
 export const MAX_DATABASE_PROXY_ALLOWLIST = 50;
+
+/**
+ * phpMyAdmin lives on the Platform Domain, like a Platform Subdomain, but there
+ * is only one of them: a single browser client serves every MySQL Database on
+ * the node, so its address is fixed rather than allocated per Project.
+ */
+const PHPMYADMIN_LABEL = "pma";
+
+/**
+ * The one phpMyAdmin address for this Platform. The wildcard certificate and the
+ * tunnel already cover it, so no per-Database address has to be managed.
+ */
+export function sharedPhpMyAdminHostname(): string {
+  return `${PHPMYADMIN_LABEL}.${getPlatformDomain()}`;
+}
 
 export type DatabaseStatus = "provisioning" | "running" | "stopped" | "failed";
 
@@ -57,23 +93,38 @@ export type DatabaseProxySummary = {
 export type DatabaseSummary = {
   id: string;
   projectId: string;
-  engine: "postgres";
-  version: "16";
+  engine: DatabaseEngine;
+  version: string;
   databaseName: string;
   username: string;
   storageLimitMb: number;
   status: DatabaseStatus;
-  /** True when PostgreSQL answers `pg_isready` on the node. */
+  /** True when the engine answers its readiness probe on the node. */
   healthy: boolean;
   /** Measured by the Node Agent; null when the node could not be asked. */
   usageMb: number | null;
   overQuota: boolean;
   /** The private URL; only owners and admins receive it, members get null. */
   connectionString: string | null;
-  /** The opt-in public TLS endpoint. Disabled until an owner or admin enables it. */
+  /** The opt-in public TLS endpoint. PostgreSQL only. */
   proxy: DatabaseProxySummary;
+  /** The browser client a MySQL Database always gets, at its Platform Domain. */
+  phpMyAdmin: DatabasePhpMyAdminSummary;
   createdAt: Date;
   updatedAt: Date;
+};
+
+/**
+ * The phpMyAdmin sidecar of a MySQL Database. It is always present while the
+ * Database is running, so the dashboard only needs the URL and its readiness.
+ */
+export type DatabasePhpMyAdminSummary = {
+  enabled: boolean;
+  /** Full URL on the Platform Domain, or null before the row was allocated. */
+  url: string | null;
+  hostname: string | null;
+  /** True when the sidecar container answers; always false for PostgreSQL. */
+  ready: boolean;
 };
 
 export type OrganizationDatabaseSummary = DatabaseSummary & { projectName: string };
@@ -87,22 +138,24 @@ export type ProjectDatabase = {
 type DatabaseRow = {
   id: string;
   projectId: string;
-  engine: string;
+  engine: DatabaseEngine;
   version: string;
   databaseName: string;
   username: string;
   encryptedPassword: string;
   storageLimitMb: number;
   status: DatabaseStatus;
+  phpMyAdminHostname: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
 const DATABASE_COLUMNS = `"id", "projectId", "engine", "version", "databaseName", "username",
-  "encryptedPassword", "storageLimitMb", "status", "createdAt", "updatedAt"`;
+  "encryptedPassword", "storageLimitMb", "status", "phpMyAdminHostname", "createdAt", "updatedAt"`;
 
 const PREFIXED_DATABASE_COLUMNS = `d."id", d."projectId", d."engine", d."version", d."databaseName",
-  d."username", d."encryptedPassword", d."storageLimitMb", d."status", d."createdAt", d."updatedAt"`;
+  d."username", d."encryptedPassword", d."storageLimitMb", d."status", d."phpMyAdminHostname",
+  d."createdAt", d."updatedAt"`;
 
 type DatabaseProxyRow = {
   databaseId: string;
@@ -117,7 +170,24 @@ type Measurement = {
   healthy: boolean;
   usageMb: number | null;
   overQuota: boolean;
+  phpMyAdminReady: boolean;
 };
+
+/** The engine a Database request asks for, defaulting to PostgreSQL. */
+export function normalizeEngine(value: unknown): DatabaseEngine {
+  if (value === undefined || value === null || value === "") {
+    return DATABASE_ENGINE;
+  }
+  if (value === "postgres" || value === "mysql") {
+    return value;
+  }
+
+  throw new ApiError(
+    400,
+    "invalid_database_engine",
+    'The Database engine must be "postgres" or "mysql".',
+  );
+}
 
 async function loadDatabaseRow(projectId: string): Promise<DatabaseRow | null> {
   const result = await pool.query<DatabaseRow>(
@@ -161,10 +231,16 @@ export function normalizeStorageLimitMb(value: unknown): number {
 
 /**
  * The private connection string. It uses the Project network alias, never a host
- * port, so it only resolves for Services in the same Project.
+ * port, so it only resolves for Services in the same Project. MySQL carries
+ * `?ssl-mode=REQUIRED` because the image has TLS on by default and the
+ * application should not silently fall back to plaintext.
  */
 function buildConnectionString(row: DatabaseRow, password: string): string {
-  return `postgres://${encodeURIComponent(row.username)}:${encodeURIComponent(password)}@${DATABASE_HOSTNAME}:${DATABASE_PORT}/${encodeURIComponent(row.databaseName)}`;
+  const port = DATABASE_PORTS[row.engine] ?? DATABASE_PORTS.postgres;
+  const scheme = row.engine === "mysql" ? "mysql" : "postgres";
+  const base = `${scheme}://${encodeURIComponent(row.username)}:${encodeURIComponent(password)}@${DATABASE_HOSTNAME}:${port}/${encodeURIComponent(row.databaseName)}`;
+
+  return row.engine === "mysql" ? `${base}?ssl-mode=REQUIRED` : base;
 }
 
 /**
@@ -304,10 +380,17 @@ async function measureDatabase(row: DatabaseRow): Promise<Measurement> {
         healthy: response.data.healthy,
         usageMb: response.data.usageMb,
         overQuota: response.data.overQuota ?? false,
+        phpMyAdminReady: response.data.phpMyAdminReady ?? false,
       };
     }
     if (response.response.status === 404) {
-      return { status: "failed", healthy: false, usageMb: 0, overQuota: false };
+      return {
+        status: "failed",
+        healthy: false,
+        usageMb: 0,
+        overQuota: false,
+        phpMyAdminReady: false,
+      };
     }
   } catch (error) {
     console.error(`could not read the state of Database ${row.id}`, error);
@@ -318,6 +401,7 @@ async function measureDatabase(row: DatabaseRow): Promise<Measurement> {
     healthy: false,
     usageMb: null,
     overQuota: false,
+    phpMyAdminReady: false,
   };
 }
 
@@ -342,6 +426,22 @@ async function persistStatus(row: DatabaseRow, status: DatabaseStatus): Promise<
   row.status = status;
 }
 
+function toPhpMyAdminSummary(
+  row: DatabaseRow,
+  measurement: Measurement,
+): DatabasePhpMyAdminSummary {
+  if (row.engine !== "mysql" || !row.phpMyAdminHostname) {
+    return { enabled: false, url: null, hostname: null, ready: false };
+  }
+
+  return {
+    enabled: true,
+    url: `https://${row.phpMyAdminHostname}`,
+    hostname: row.phpMyAdminHostname,
+    ready: measurement.phpMyAdminReady,
+  };
+}
+
 function toSummary(
   row: DatabaseRow,
   measurement: Measurement,
@@ -351,8 +451,8 @@ function toSummary(
   return {
     id: row.id,
     projectId: row.projectId,
-    engine: "postgres",
-    version: "16",
+    engine: row.engine,
+    version: row.version,
     databaseName: row.databaseName,
     username: row.username,
     storageLimitMb: row.storageLimitMb,
@@ -364,6 +464,7 @@ function toSummary(
       ? buildConnectionString(row, decryptPassword(row))
       : null,
     proxy: toProxySummary(row, proxyRow, includeConnectionString),
+    phpMyAdmin: toPhpMyAdminSummary(row, measurement),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -432,12 +533,19 @@ export async function listOrganizationDatabases(
  * Provisions the Project's one Database. The password is generated here, sealed
  * before it is stored, and only ever sent to the Node Agent in the request body.
  * A failed provisioning removes the row so the user can try again.
+ *
+ * The engine is chosen once. A MySQL Database also receives a phpMyAdmin
+ * hostname on the Platform Domain in the same transaction, so the dashboard
+ * never shows a Database whose browser client has no address.
  */
 export async function createProjectDatabase(input: {
   organizationId: string;
   projectId: string;
+  engine?: unknown;
   storageLimitMb?: unknown;
 }): Promise<DatabaseSummary> {
+  const engine = normalizeEngine(input.engine);
+  const version = DATABASE_ENGINES[engine];
   const storageLimitMb = normalizeStorageLimitMb(input.storageLimitMb);
   const project = await requireProject(input.organizationId, input.projectId);
 
@@ -446,29 +554,55 @@ export async function createProjectDatabase(input: {
   const password = randomBytes(32).toString("hex");
   const encryptedPassword = encryptSecret(password);
 
+  const client = await pool.connect();
   let row: DatabaseRow;
   try {
-    const inserted = await pool.query<DatabaseRow>(
-      `INSERT INTO "database" ("id", "projectId", "engine", "version", "databaseName",
-         "username", "encryptedPassword", "storageLimitMb", "status")
-       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, 'provisioning')
-       RETURNING ${DATABASE_COLUMNS}`,
-      [
-        input.projectId,
-        DATABASE_ENGINE,
-        DATABASE_VERSION,
-        DEFAULT_DATABASE_NAME,
-        DEFAULT_USERNAME,
-        encryptedPassword,
-        storageLimitMb,
-      ],
-    );
-    row = inserted.rows[0];
-  } catch (error) {
-    if ((error as { code?: string }).code === "23505") {
-      throw new QuotaExceededError("Database", QUOTAS.databasesPerProject, QUOTAS.databasesPerProject, "Project");
+    await client.query("BEGIN");
+
+    // The id is generated here rather than by the database, because the schema
+    // and role names the Agent creates are derived from it.
+    const id = randomUUID();
+    const names = databaseObjectNames(id);
+    // Every MySQL Database signs in through the one node-wide phpMyAdmin, so the
+    // address is the same for all of them and needs no per-row allocation.
+    const phpMyAdminHostname = engine === "mysql" ? sharedPhpMyAdminHostname() : null;
+    try {
+      const result = await client.query<DatabaseRow>(
+        `INSERT INTO "database" ("id", "projectId", "engine", "version", "databaseName",
+           "username", "encryptedPassword", "storageLimitMb", "status", "phpMyAdminHostname")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'provisioning', $9)
+         RETURNING ${DATABASE_COLUMNS}`,
+        [
+          id,
+          input.projectId,
+          engine,
+          version,
+          names.schema,
+          names.role,
+          encryptedPassword,
+          storageLimitMb,
+          phpMyAdminHostname,
+        ],
+      );
+      row = result.rows[0];
+    } catch (error) {
+      if ((error as { code?: string }).code === "23505") {
+        throw new QuotaExceededError(
+          "Database",
+          QUOTAS.databasesPerProject,
+          QUOTAS.databasesPerProject,
+          "Project",
+        );
+      }
+      throw error;
     }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
     throw error;
+  } finally {
+    client.release();
   }
 
   try {
@@ -489,6 +623,7 @@ export async function createProjectDatabase(input: {
     healthy: row.status === "running",
     usageMb: 0,
     overQuota: false,
+    phpMyAdminReady: engine === "mysql",
   };
 
   return toSummary(row, measurement, true);
@@ -508,6 +643,8 @@ async function provisionDatabase(
         databaseId: row.id,
         projectId,
         organizationId,
+        engine: row.engine,
+        ...(row.phpMyAdminHostname ? { phpMyAdminHostname: row.phpMyAdminHostname } : {}),
         databaseName: row.databaseName,
         username: row.username,
         password,
@@ -626,8 +763,7 @@ export async function rotateProjectDatabaseCredentials(input: {
     const response = await client.POST("/v1/databases/{databaseId}/rotate", {
       params: { path: { databaseId: row.id } },
       body: {
-        databaseName: row.databaseName,
-        username: row.username,
+        engine: row.engine,
         password,
       },
     });
@@ -672,10 +808,23 @@ export async function rotateProjectDatabaseCredentials(input: {
 }
 
 /**
- * Enables or updates the Database's public proxy. The allowlist is mandatory:
- * a public Database must never be reachable from every address by accident. The
- * agent returns the canonical CIDRs and the allocated port, which are what the
- * Control Plane stores and shows.
+ * Every Database now lives in a shared engine server, so a public TCP proxy can
+ * no longer isolate one tenant: one listener would forward to a single port that
+ * serves every Database. The endpoint is refused for every engine instead of
+ * silently publishing the whole server.
+ */
+function assertProxySupported(_row: DatabaseRow): void {
+  throw new ApiError(
+    409,
+    "database_proxy_unsupported",
+    "The public proxy is not available: a shared Database server cannot expose one Project without exposing the others. Reach the Database from a Service in the same Project, or use phpMyAdmin for MySQL.",
+  );
+}
+
+/**
+ * The public proxy is retired, so enabling it is refused for every Database. The
+ * allowlist is still validated first, so a caller that sends a malformed one gets
+ * the specific error rather than a generic refusal.
  */
 export async function enableProjectDatabaseProxy(input: {
   organizationId: string;
@@ -683,91 +832,22 @@ export async function enableProjectDatabaseProxy(input: {
   allowlist: unknown;
 }): Promise<{ databaseId: string; proxy: DatabaseProxySummary }> {
   await requireProject(input.organizationId, input.projectId);
-  const allowlist = normalizeProxyAllowlist(input.allowlist);
 
   const row = await loadDatabaseRow(input.projectId);
   if (!row) {
     throw new ApiError(404, "database_not_found", "This Project has no Database.");
   }
+  normalizeProxyAllowlist(input.allowlist);
+  assertProxySupported(row);
 
-  const existing = await loadProxyRow(row.id);
-  let port: number;
-  let canonicalAllowlist: string[];
-  try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.PUT("/v1/databases/{databaseId}/proxy", {
-      params: { path: { databaseId: row.id } },
-      body: {
-        databaseId: row.id,
-        projectId: input.projectId,
-        allowlist,
-        ...(existing ? { port: existing.port } : {}),
-      },
-    });
-
-    if (response.response.status === 404) {
-      throw new ApiError(
-        409,
-        "database_not_running",
-        "Start the Database before enabling its public proxy.",
-      );
-    }
-    if (!response.response.ok || !response.data) {
-      throw new ApiError(
-        502,
-        "database_proxy_enable_failed",
-        `The Node Agent rejected the public proxy (${response.response.status}).`,
-      );
-    }
-
-    port = response.data.port ?? 0;
-    canonicalAllowlist = response.data.allowlist ?? allowlist;
-    if (
-      !Number.isInteger(port) ||
-      port < MIN_DATABASE_PROXY_PORT ||
-      port > MAX_DATABASE_PROXY_PORT
-    ) {
-      throw new ApiError(
-        502,
-        "database_proxy_enable_failed",
-        "The Node Agent returned an invalid public port.",
-      );
-    }
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    console.error(`could not enable the public proxy of Database ${row.id}`, error);
-    throw new ApiError(
-      502,
-      "database_proxy_enable_failed",
-      "The Node Agent could not enable the public proxy. Try again when the node is healthy.",
-    );
-  }
-
-  await pool.query(
-    `INSERT INTO "database_proxy" ("databaseId", "port", "allowlist")
-     VALUES ($1, $2, $3)
-     ON CONFLICT ("databaseId")
-     DO UPDATE SET "port" = EXCLUDED."port", "allowlist" = EXCLUDED."allowlist"`,
-    [row.id, port, canonicalAllowlist],
-  );
-
-  return {
-    databaseId: row.id,
-    proxy: {
-      enabled: true,
-      port,
-      allowlist: canonicalAllowlist,
-      connectionString: buildPublicConnectionString(row, decryptPassword(row), port),
-    },
-  };
+  // Unreachable: assertProxySupported always throws. It is here so the return type
+  // stays honest for the caller that has not been taught about the refusal yet.
+  return { databaseId: row.id, proxy: toProxySummary(row, null, true) };
 }
 
 /**
- * Disables the public proxy. The agent stops the listener and revokes the port
- * before the row is removed, so the dashboard never shows an endpoint that is
- * already gone.
+ * Disables the public proxy. The agent tears down a listener left over from the
+ * per-Database model before the row is removed, so nothing is left open.
  */
 export async function disableProjectDatabaseProxy(input: {
   organizationId: string;

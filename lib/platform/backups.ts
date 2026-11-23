@@ -381,19 +381,22 @@ export function currentBackupStorageProvider(): BackupStorageProvider {
 type BackupListRow = BackupRow & {
   projectName: string | null;
   serviceName: string | null;
+  engine: string | null;
 };
 
 /**
  * The name the dashboard shows for a Backup target and the string a Restore
  * asks the user to type. It lives here so the Backup list, the Restore list, and
- * the confirmation check can never disagree.
+ * the confirmation check can never disagree. The engine is part of the name so a
+ * Database Backup can never be mistaken for the other engine's.
  */
 export function backupTargetName(row: {
   targetType: BackupTargetType;
   serviceName: string | null;
+  engine?: string | null;
 }): string {
   if (row.targetType === "database") {
-    return "PostgreSQL Database";
+    return row.engine === "mysql" ? "MySQL Database" : "PostgreSQL Database";
   }
   if (row.targetType === "volume") {
     return `${row.serviceName ?? "Service"} Volume`;
@@ -412,12 +415,14 @@ export async function listBackups(organizationId: string): Promise<BackupList> {
     `SELECT b."id", b."organizationId", b."projectId", b."targetType",
             b."targetId", b."status", b."storageKey", b."storageProvider",
             b."sizeBytes", b."errorMessage", b."createdAt", b."expiresAt",
-            p."name" AS "projectName", s."name" AS "serviceName"
+            p."name" AS "projectName", s."name" AS "serviceName", d."engine"
      FROM "backup" b
      LEFT JOIN "project" p ON p."id" = b."projectId"
      LEFT JOIN "volume" v
        ON b."targetType" = 'volume' AND v."dockerVolumeName" = b."targetId"
      LEFT JOIN "service" s ON s."id" = v."serviceId"
+     LEFT JOIN "database" d
+       ON b."targetType" = 'database' AND d."id" = b."targetId"
      WHERE b."organizationId" = $1 OR b."organizationId" IS NULL
      ORDER BY b."createdAt" DESC`,
     [organizationId],

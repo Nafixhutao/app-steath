@@ -141,9 +141,17 @@ export function DeploymentsPanel({
 
       {node ? (
         <p className={`deployment-node is-${node.status}`}>
-          Node <strong>{node.name}</strong>:{" "}
-          {nodeHealthy ? "healthy" : "unavailable: Deployments are blocked"}
-          {node.lastSeenAt ? ` (last heartbeat ${formatDateTime(node.lastSeenAt)})` : null}
+          <span className="deployment-node-name">
+            Node <strong>{node.name}</strong>
+          </span>
+          <span className="deployment-node-state">
+            {nodeHealthy ? "healthy" : "unavailable, Deployments are blocked"}
+          </span>
+          {node.lastSeenAt ? (
+            <span className="deployment-node-time">
+              Last heartbeat {formatDateTime(node.lastSeenAt)}
+            </span>
+          ) : null}
         </p>
       ) : (
         <p className="deployment-node is-unknown">
@@ -171,13 +179,13 @@ export function DeploymentsPanel({
           <table className="organization-table">
             <thead>
               <tr>
-                <th>Status</th>
-                <th>Commit</th>
-                <th>Started</th>
-                <th>Finished</th>
-                <th>Duration</th>
-                <th>Build log</th>
-                {canManage ? <th>Actions</th> : null}
+                <th scope="col">Status</th>
+                <th scope="col">Commit</th>
+                <th scope="col">Started</th>
+                <th scope="col">Finished</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Build log</th>
+                {canManage ? <th scope="col">Actions</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -186,7 +194,7 @@ export function DeploymentsPanel({
 
                 return (
                   <tr key={deployment.id}>
-                    <td>
+                    <td data-label="Status">
                       <span className={`role-label is-${deployment.status}`}>
                         {deploymentStatusLabel(deployment.status)}
                       </span>
@@ -194,13 +202,17 @@ export function DeploymentsPanel({
                         <small className="deployment-error">{deployment.errorMessage}</small>
                       ) : null}
                     </td>
-                    <td>
+                    <td data-label="Commit">
                       <code>{shortCommit(deployment.commitSha)}</code>
                     </td>
-                    <td>{formatDateTime(deployment.startedAt)}</td>
-                    <td>{formatDateTime(deployment.finishedAt)}</td>
-                    <td>{deploymentDuration(deployment) ?? "N/A"}</td>
-                    <td>
+                    <td data-label="Started" className="svc-cell-wide">
+                      {formatDateTime(deployment.startedAt)}
+                    </td>
+                    <td data-label="Finished" className="svc-cell-wide">
+                      {formatDateTime(deployment.finishedAt)}
+                    </td>
+                    <td data-label="Duration">{deploymentDuration(deployment) ?? "N/A"}</td>
+                    <td data-label="Build log">
                       <button
                         className="dashboard-link-button"
                         type="button"
@@ -210,7 +222,7 @@ export function DeploymentsPanel({
                       </button>
                     </td>
                     {canManage ? (
-                      <td>
+                      <td data-label="Actions" className="svc-cell-actions">
                         <div className="deployment-actions">
                           <button
                             className="dashboard-link-button"

@@ -57,11 +57,22 @@ Nilai konfigurasi yang disuntikkan ke Service saat runtime.
 _Avoid_: Env, config
 
 **Database**:
-Database PostgreSQL yang disediakan platform untuk sebuah Project; paling banyak satu per Project.
-_Avoid_: DB, schema
+Database yang disediakan platform untuk sebuah Project; paling banyak satu per Project. Sebuah Database bukan container: ia adalah satu schema dan satu role di dalam server bersama milik engine-nya. Engine dipilih saat provisioning dan tidak bisa diganti di tempat: PostgreSQL 16, atau MySQL 8.
+_Avoid_: DB
+
+**Database Engine**:
+PostgreSQL 16 atau MySQL 8. Menentukan server bersama mana yang menyimpan Database, pernyataan rotasi password, dan alat dump, sehingga terkunci pada Database yang sudah ada.
+
+**Shared Database Server**:
+Satu container per engine untuk seluruh node (`stealth-pgdb`, `stealth-mysql`). Setiap Project yang punya Database dipasangkan ke network-nya dengan alias `db`, dan isolasi antar Database dijaga oleh grant atas schema, bukan oleh container.
+_Avoid_: Database container, tenant server
+
+**phpMyAdmin**:
+Klien browser tunggal untuk seluruh node (`stealth-pma`, alias `pma`) di Platform Domain. Setiap Database MySQL masuk lewat alamat yang sama dengan kredensialnya sendiri.
+_Avoid_: PMA, sidecar
 
 **Public Database Proxy**:
-Endpoint TCP opsional yang membuka akses ke Database dari luar dengan allowlist.
+Endpoint TCP yang dulu membuka akses ke satu Database dari luar. Sudah dihapus untuk semua engine: satu listener pada server bersama akan mempublikasikan seluruh tenant, jadi permintaannya dijawab `409 database_proxy_unsupported`. Akses dari luar hanya lewat Service di Project yang sama.
 _Avoid_: Public DB, open port
 
 ### Addressing

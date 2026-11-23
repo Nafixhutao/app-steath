@@ -405,6 +405,13 @@ export async function deleteServiceCustomDomain(input: {
  * Called by Caddy's `ask` endpoint. Only a Platform Subdomain or an active
  * Custom Domain may receive a certificate, so the platform cannot be used to
  * issue certificates for arbitrary names.
+ *
+ * One name is special: the Cloudflare Tunnel dials Caddy as `https://caddy:443`
+ * and sends that origin hostname as the TLS SNI, not the public hostname in the
+ * Host header. Caddy still routes on the Host header, but it can only complete
+ * the handshake if it may issue a certificate for the name the tunnel asked
+ * for. Allowing exactly that fixed, internal name keeps on-demand issuance
+ * closed to everything else.
  */
 export async function isCertificateHostnameAllowed(hostname: string): Promise<boolean> {
   const normalized = hostname.trim().toLowerCase().replace(/\.$/, "");
@@ -412,10 +419,18 @@ export async function isCertificateHostnameAllowed(hostname: string): Promise<bo
     return false;
   }
 
+  const tunnelOrigin = process.env.TUNNEL_ORIGIN_HOSTNAME?.trim().toLowerCase() || "caddy";
+  if (normalized === tunnelOrigin) {
+    return true;
+  }
+
   const result = await pool.query(
     `SELECT 1 FROM "service" WHERE lower("platformHostname") = $1
      UNION ALL
      SELECT 1 FROM "custom_domain" WHERE lower("hostname") = $1 AND "status" = 'active'
+     UNION ALL
+     SELECT 1 FROM "database"
+     WHERE lower("phpMyAdminHostname") = $1 AND "engine" = 'mysql'
      LIMIT 1`,
     [normalized],
   );

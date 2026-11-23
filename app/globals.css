@@ -6648,6 +6648,77 @@ body {
   color: #ffffff;
 }
 
+/* Engine picker in the empty Database state. Two side-by-side options, the
+   selected one outlined; the choice is irreversible, so the note spells out the
+   client each engine ships with. */
+.db-engine-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.db-engine-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #2b2934;
+  border-radius: 8px;
+  background: #131217;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.db-engine-option:hover:not(:disabled) {
+  border-color: #3f3d4b;
+}
+
+.db-engine-option.is-selected {
+  border-color: #3ecf8e;
+  background: rgba(62, 207, 142, 0.07);
+}
+
+.db-engine-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.db-engine-option-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.db-engine-option-note {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #8b8b96;
+}
+
+.db-engine-option-tag {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #211f29;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #b4b3bd;
+}
+
+@media (max-width: 480px) {
+  .db-engine-choice {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Settings and Cards */
 .project-settings-card {
   border-radius: 8px;
@@ -8853,66 +8924,146 @@ body {
 }
 
 /* ==========================================================================
-   Service detail — same console design system as Projects / Create Project
+   Service detail — Vercel-style layout: flat neutral header, underlined
+   tab navigation, single-column content. Scoped to .supabase-service-page.
    ========================================================================== */
 .dashboard-content.supabase-service-page {
-  max-width: 1400px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 28px 32px 56px;
+  padding: 24px 32px 72px;
 }
-.supabase-service-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
-}
+
+/* --- Breadcrumb ------------------------------------------------------- */
 .supabase-service-breadcrumb {
-  margin: 0 0 8px;
-  color: #8e8c99;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 20px;
+  color: #a1a1aa;
+  font-size: 13px;
 }
 .supabase-service-breadcrumb a {
-  color: #bdb8c2;
+  color: #a1a1aa;
   text-decoration: none;
 }
 .supabase-service-breadcrumb a:hover {
-  color: #edecf1;
+  color: #ededf2;
 }
+.supabase-service-breadcrumb > span[aria-hidden] {
+  color: #52525b;
+  user-select: none;
+}
+.supabase-service-breadcrumb-current {
+  color: #ededf2;
+}
+
+/* --- Page header ------------------------------------------------------ */
 .supabase-service-title {
-  margin: 0 0 6px;
-  color: #edecf1;
+  margin: 0;
+  color: #fafafa;
   font-size: 24px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   /* The global h1 rule centers auth headings; console titles stay left. */
   text-align: left;
 }
 .supabase-service-subtitle {
-  margin: 0;
-  color: #8e8c99;
+  margin: 4px 0 0;
+  color: #a1a1aa;
+  font-size: 14px;
+}
+.svc-header {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding-bottom: 20px;
+}
+.svc-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.svc-header-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  min-width: 0;
+  color: #a1a1aa;
   font-size: 13px;
 }
-.supabase-service-url {
-  color: #3ecf8e;
+.svc-url-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  color: #ededf2;
   font-size: 13px;
   text-decoration: none;
+  border-bottom: 1px solid #3f3f46;
+  padding-bottom: 1px;
 }
-.supabase-service-url:hover {
-  text-decoration: underline;
+.svc-url-text {
+  overflow-wrap: anywhere;
 }
+.svc-url-link:hover {
+  color: #fff;
+  border-bottom-color: #a1a1aa;
+}
+.svc-url-icon {
+  color: #a1a1aa;
+}
+.svc-url-link:hover .svc-url-icon {
+  color: #ededf2;
+}
+/* Meta chips share one baseline and ellipsize instead of pushing the page
+   wider: a template repository URL can be far longer than the viewport. */
+.svc-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.svc-meta-item code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #27272a;
+  color: #d4d4d8;
+  font-size: 12px;
+}
+.svc-repo-chip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.svc-meta-branch {
+  flex-shrink: 0;
+  color: #a1a1aa;
+}
+.svc-meta-resources {
+  color: #a1a1aa;
+}
+
+/* --- Status badge ----------------------------------------------------- */
 .supabase-service-status {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid #2f2d38;
+  gap: 7px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: #1b1a20;
-  color: #bdb8c2;
-  font-size: 11px;
-  font-weight: 600;
+  background: #27272a;
+  color: #d4d4d8;
+  font-size: 12px;
+  font-weight: 500;
 }
 .supabase-service-status::before {
   content: "";
@@ -8922,177 +9073,277 @@ body {
   background: currentColor;
 }
 .supabase-service-status.is-running {
-  border-color: rgba(62, 207, 142, 0.3);
-  background: rgba(62, 207, 142, 0.1);
-  color: #3ecf8e;
+  background: rgba(0, 176, 107, 0.12);
+  color: #00e08c;
+}
+.supabase-service-status.is-running::before {
+  animation: service-status-pulse 2s ease-in-out infinite;
+}
+@keyframes service-status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 .supabase-service-status.is-deploying,
 .supabase-service-status.is-building {
-  border-color: rgba(251, 191, 36, 0.3);
-  background: rgba(251, 191, 36, 0.1);
-  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f5a623;
 }
 .supabase-service-status.is-failed,
 .supabase-service-status.is-suspended {
-  border-color: rgba(251, 113, 133, 0.3);
-  background: rgba(251, 113, 133, 0.1);
-  color: #fb7185;
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
 }
 
-.supabase-service-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  align-items: start;
-  gap: 16px;
+/* --- Tab bar (Vercel-style underline tabs) ----------------------------- */
+.svc-tabbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid #27272a;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.supabase-service-main,
-.supabase-service-side {
+.svc-tabbar::-webkit-scrollbar {
+  display: none;
+}
+.svc-tab {
+  position: relative;
+  padding: 10px 14px 12px;
+  border: 0;
+  background: none;
+  color: #a1a1aa;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.svc-tab:hover {
+  color: #ededf2;
+}
+.svc-tab.is-active {
+  color: #fafafa;
+}
+.svc-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #fafafa;
+}
+.svc-tab:focus-visible {
+  outline: 2px solid #fafafa;
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+.svc-tab-panel {
   min-width: 0;
 }
-.supabase-service-page .supabase-service-side .service-meta {
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-.supabase-service-side .dashboard-section:first-child {
-  position: sticky;
-  top: 64px;
-}
 
+/* --- Sections: flat cards, Vercel neutral ------------------------------ */
 .supabase-service-page .dashboard-section {
-  margin: 0 0 16px;
-  padding: 18px;
-  border: 1px solid #23222a;
+  margin: 0 0 24px;
+  padding: 20px;
+  border: 1px solid #27272a;
   border-radius: 8px;
-  background: #16151a;
+  background: #0c0c0d;
 }
 .supabase-service-page .dashboard-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   min-height: 0;
-  margin: -18px -18px 16px;
-  padding: 13px 18px;
-  border-bottom: 1px solid #23222a;
+  margin: -20px -20px 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #27272a;
 }
 .supabase-service-page .dashboard-section-heading h2 {
-  color: #edecf1;
-  font-size: 14px;
+  color: #fafafa;
+  font-size: 15px;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .supabase-service-page .dashboard-alert {
-  margin: 0 0 14px;
-  font-size: 12px;
+  margin: 0 0 16px;
+  font-size: 13px;
 }
+
+/* --- Definition list meta --------------------------------------------- */
 .supabase-service-page .service-meta {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 24px;
   margin: 0;
 }
 .supabase-service-page .service-meta > div {
   display: block;
+  min-width: 0;
 }
 .supabase-service-page .service-meta dt {
-  margin-bottom: 4px;
-  color: #8e8c99;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  margin-bottom: 5px;
+  color: #71717a;
+  font-size: 12px;
+  font-weight: 500;
 }
 .supabase-service-page .service-meta dd {
-  color: #edecf1;
+  margin: 0;
+  color: #ededf2;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
+.supabase-service-side .service-meta,
+.supabase-service-page .svc-panel-meta-two-col .service-meta {
+  grid-template-columns: 1fr;
+}
+
+/* --- Empty states ------------------------------------------------------ */
 .supabase-service-page .dashboard-empty-state {
-  padding: 28px 16px;
-  border: 1px dashed #2b2933;
+  padding: 32px 20px;
+  border: 1px dashed #3f3f46;
   border-radius: 8px;
-  background: #121014;
+  background: transparent;
+  text-align: center;
 }
 .supabase-service-page .dashboard-empty-state h3 {
   font-size: 14px;
 }
 .supabase-service-page .dashboard-empty-state p {
-  font-size: 12px;
+  font-size: 13px;
 }
 .supabase-service-page .dashboard-table-empty {
-  padding: 18px;
-  color: #8e8c99;
-  font-size: 12px;
+  padding: 20px;
+  color: #71717a;
+  font-size: 13px;
   text-align: center;
 }
+
+/* --- Tables ------------------------------------------------------------ */
 .supabase-service-page .organization-table-wrap {
-  border: 1px solid #23222a;
-  border-radius: 6px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0c0c0d;
   overflow-x: auto;
 }
 .supabase-service-page .organization-table {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
 }
 .supabase-service-page .organization-table th,
 .supabase-service-page .organization-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #23222a;
+  padding: 10px 14px;
+  border-bottom: 1px solid #1f1f22;
 }
 .supabase-service-page .organization-table th {
-  background: #121014;
-  color: #8e8c99;
-  font-size: 11px;
+  background: #111113;
+  color: #71717a;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 .supabase-service-page .organization-table td {
-  color: #d6d3da;
+  color: #d4d4d8;
+  vertical-align: middle;
+}
+.supabase-service-page .organization-table tbody tr {
+  transition: background 0.12s ease;
+}
+.supabase-service-page .organization-table tbody tr:hover {
+  background: #131316;
 }
 .supabase-service-page .organization-table tbody tr:last-child td {
   border-bottom: 0;
 }
-.supabase-service-page .dashboard-link-button {
-  padding: 4px 6px;
-  border: 0;
+.supabase-service-page .organization-table code {
+  padding: 2px 6px;
   border-radius: 4px;
+  background: #27272a;
+  color: #d4d4d8;
+  font-size: 12px;
+}
+
+/* --- Buttons & link buttons -------------------------------------------- */
+.supabase-service-page .dashboard-link-button {
+  padding: 5px 10px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
   background: transparent;
-  color: #bdb8c2;
+  color: #d4d4d8;
   font-size: 12px;
   cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 .supabase-service-page .dashboard-link-button:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: #27272a;
+  border-color: #52525b;
   color: #fff;
 }
-.supabase-service-page .dashboard-link-button.is-danger {
-  color: #fb7185;
+.supabase-service-page .dashboard-link-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
+.supabase-service-page .dashboard-link-button.is-danger {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.supabase-service-page .dashboard-link-button.is-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fca5a5;
+}
+
+/* --- Forms -------------------------------------------------------------- */
 .supabase-service-page .organization-settings-form,
 .supabase-service-page .environment-form {
   display: grid;
   gap: 14px;
   margin: 0 0 16px;
-  padding: 14px;
-  border: 1px solid #23222a;
-  border-radius: 6px;
-  background: #121014;
+  padding: 16px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #111113;
+}
+.supabase-service-page .organization-settings-form:last-child,
+.supabase-service-page .environment-form:last-child {
+  margin-bottom: 0;
 }
 .supabase-service-page .organization-settings-form label,
 .supabase-service-page .environment-form label {
   display: grid;
   gap: 6px;
-  color: #bdb8c2;
-  font-size: 12px;
+  color: #d4d4d8;
+  font-size: 13px;
 }
 .supabase-service-page .organization-settings-form input,
 .supabase-service-page .environment-form input {
   width: 100%;
   height: 38px;
   padding: 0 12px;
-  border: 1px solid #2b2935;
+  border: 1px solid #3f3f46;
   border-radius: 6px;
-  background: #1a1920;
-  color: #fff;
+  background: #0c0c0d;
+  color: #fafafa;
   font-size: 13px;
   outline: none;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 .supabase-service-page .organization-settings-form input:focus,
 .supabase-service-page .environment-form input:focus {
-  border-color: #3ecf8e;
+  border-color: #a1a1aa;
+  box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.08);
 }
 .supabase-service-page .environment-form-actions,
 .supabase-service-page .deployment-actions,
@@ -9103,95 +9354,335 @@ body {
   flex-wrap: wrap;
 }
 .supabase-service-page .environment-redeploy-banner {
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: 6px;
-  background: rgba(251, 191, 36, 0.07);
-  color: #fbbf24;
-  font-size: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #f5a623;
+  font-size: 13px;
 }
+
+/* --- Node status & logs ------------------------------------------------- */
+/* A status strip, not a pill: the heartbeat timestamp is long, and a pill that
+   wraps splits the node name and the state across ragged lines. */
 .supabase-service-page .deployment-node {
-  margin: 0 0 14px;
-  color: #8e8c99;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 16px;
+  padding: 7px 12px;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  background: transparent;
+  color: #71717a;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.supabase-service-page .deployment-node-name {
+  white-space: nowrap;
+}
+.supabase-service-page .deployment-node strong {
+  color: #d4d4d8;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.supabase-service-page .deployment-node-state {
+  font-weight: 500;
+}
+.supabase-service-page .deployment-node-time {
+  opacity: 0.75;
 }
 .supabase-service-page .deployment-node.is-healthy {
-  color: #3ecf8e;
+  border-color: rgba(0, 176, 107, 0.35);
+  color: #00e08c;
+}
+.supabase-service-page .deployment-node.is-healthy strong {
+  color: #00e08c;
+}
+.supabase-service-page .deployment-node.is-unknown {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
 }
 .supabase-service-page .deployment-log {
   margin-top: 16px;
-  border: 1px solid #23222a;
-  border-radius: 6px;
-  background: #121014;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #09090b;
   overflow: hidden;
 }
 .supabase-service-page .deployment-log-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  border-bottom: 1px solid #23222a;
+  padding: 10px 14px;
+  border-bottom: 1px solid #27272a;
+  background: #111113;
 }
 .supabase-service-page .deployment-log-head h3 {
   margin: 0;
-  color: #bdb8c2;
+  color: #d4d4d8;
   font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 .supabase-service-page .deployment-log pre {
-  max-height: 320px;
+  max-height: 380px;
   margin: 0;
-  padding: 12px;
+  padding: 14px;
   overflow: auto;
-  color: #d6d3da;
-  font-size: 11px;
+  color: #c8c8ce;
+  font-size: 12px;
+  line-height: 1.6;
 }
+
+/* DNS instructions sit directly under the Custom Domain meta list; browser
+   default heading and paragraph margins were the only spacing they had. */
+.supabase-service-page .custom-domain-records {
+  margin-top: 20px;
+}
+.supabase-service-page .custom-domain-records h3 {
+  margin: 0 0 4px;
+  color: #d4d4d8;
+  font-size: 13px;
+  font-weight: 600;
+}
+.supabase-service-page .custom-domain-records p {
+  margin: 0 0 12px;
+  color: #71717a;
+  font-size: 12.5px;
+}
+
+/* --- Misc ---------------------------------------------------------------- */
 .supabase-service-page .dashboard-back-link a {
-  color: #3ecf8e;
+  color: #00e08c;
   font-size: 13px;
   text-decoration: none;
 }
+.svc-back-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: #a1a1aa;
+  font-size: 13px;
+  text-decoration: none;
+}
+.svc-back-link:hover {
+  color: #ededf2;
+}
+.svc-not-found {
+  padding: 48px 32px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0c0c0d;
+}
+.svc-page-loader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: #71717a;
+  font-size: 13px;
+}
+.svc-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #3f3f46;
+  border-top-color: #ededf2;
+  border-radius: 50%;
+  animation: svc-spin 0.7s linear infinite;
+}
+@keyframes svc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .supabase-service-page .organization-danger-zone {
-  border-color: #5b2b35;
-  background: #1a1216;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: #0c0c0d;
 }
 .supabase-service-page .organization-danger-zone .dashboard-section-heading h2 {
-  color: #fb7185;
+  color: #f87171;
+}
+.supabase-service-page .organization-danger-zone p {
+  color: #a1a1aa;
+  font-size: 13px;
+  margin: 0 0 14px;
 }
 
-@media (max-width: 1023px) {
-  .supabase-service-layout {
-    display: flex;
-    flex-direction: column;
-    /* Override the desktop grid's align-items:start so panels match the
-       viewport width instead of expanding to their max-content size. */
-    align-items: stretch;
-  }
-  /* Configuration first, then the operational panels, then Danger zone. */
-  .supabase-service-side {
-    order: -1;
-  }
-  .supabase-service-side .dashboard-section:first-child {
-    position: static;
-  }
-}
-
-@media (max-width: 760px) {
+/* --- Responsive ----------------------------------------------------------- */
+@media (max-width: 860px) {
   .dashboard-content.supabase-service-page {
-    padding: 20px 16px 40px;
+    padding: 20px 20px 56px;
   }
-  .supabase-service-hero {
-    flex-direction: column;
+  .supabase-service-page .service-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Seven table columns cannot fit a phone. Below 720px each row becomes a
+   two-column card with a label above every value, so status and actions stay
+   reachable without panning sideways. */
+@media (max-width: 720px) {
+  .supabase-service-page .organization-table-wrap {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .supabase-service-page .organization-table,
+  .supabase-service-page .organization-table tbody,
+  .supabase-service-page .organization-table tr,
+  .supabase-service-page .organization-table td {
+    display: block;
+    width: auto;
+  }
+  .supabase-service-page .organization-table thead {
+    display: none;
+  }
+  .supabase-service-page .organization-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+  .supabase-service-page .organization-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    padding: 14px;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    background: #0c0c0d;
+  }
+  .supabase-service-page .organization-table tbody tr:hover {
+    background: #0c0c0d;
+  }
+  .supabase-service-page .organization-table td {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .supabase-service-page .organization-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: #71717a;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  /* Full-width cells pair a label with its value on one line. A timestamp
+     contains a non-breaking space in some locales, so it cannot wrap inside a
+     half-width column and would collide with the next field. */
+  .supabase-service-page .organization-table .svc-cell-wide,
+  .supabase-service-page .organization-table .svc-cell-actions {
+    grid-column: 1 / -1;
+  }
+  .supabase-service-page .organization-table .svc-cell-wide {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+  }
+  .supabase-service-page .organization-table .svc-cell-wide::before {
+    margin-bottom: 0;
+  }
+  .supabase-service-page .organization-table .svc-cell-actions {
+    padding-top: 12px;
+    border-top: 1px solid #1f1f22;
+  }
+  .supabase-service-page .organization-table code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  /* A DNS record has three long values and no short pair worth sharing a row,
+     so every field gets its own labeled line instead of breaking a hostname
+     across a half-width column. */
+  .supabase-service-page .svc-table-records td,
+  .supabase-service-page .svc-table-records td.svc-cell-wide {
+    display: block;
+    grid-column: 1 / -1;
+  }
+  .supabase-service-page .svc-table-records td.svc-cell-wide::before {
+    margin-bottom: 4px;
+  }
+  .supabase-service-page .deployment-log pre {
+    font-size: 11.5px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Underline tabs stay on one row like the desktop bar. The strip scrolls
+     sideways instead of wrapping into boxes, and the next label peeks in at
+     the right edge so the swipe is discoverable. */
+  .svc-tabbar {
+    gap: 0;
+    margin-bottom: 20px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .svc-tab {
+    min-height: 44px;
+    padding: 10px 8px 12px;
+    font-size: 13px;
+    scroll-snap-align: start;
+  }
+  .svc-tab.is-active::after {
+    left: 4px;
+    right: 4px;
+  }
+  /* Fade the trailing edge only while more tabs are off-screen, so the swipe
+     is discoverable without changing the underline look of the bar. */
+  .svc-tabbar[data-overflow="true"] {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+  .svc-tab:focus-visible {
+    outline-offset: -2px;
+  }
+  .supabase-service-page .supabase-btn-green,
+  .supabase-service-page .dashboard-link-button {
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+  .supabase-service-page .deployment-actions {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-content.supabase-service-page {
+    padding: 16px 16px 48px;
+  }
+  .supabase-service-title {
+    font-size: 20px;
   }
   .supabase-service-page .service-meta {
     grid-template-columns: 1fr;
-    gap: 12px;
   }
   .supabase-service-page .dashboard-section {
-    padding: 14px;
+    padding: 16px;
   }
   .supabase-service-page .dashboard-section-heading {
-    margin: -14px -14px 14px;
-    padding: 12px 14px;
+    margin: -16px -16px 14px;
+    padding: 12px 16px;
+  }
+  .supabase-service-page .dashboard-section-heading h2 {
+    font-size: 14.5px;
+  }
+  .supabase-service-breadcrumb {
+    row-gap: 4px;
+  }
+  .supabase-service-breadcrumb-current {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

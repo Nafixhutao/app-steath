@@ -89,6 +89,12 @@ func main() {
 	// A Restore artifact is staged here while it is loaded into a Database or
 	// Volume. The agent removes each file when the Restore finishes.
 	services.SetRestoreDir(filepath.Join(workRoot, "restores"))
+	// Every Project Database is a schema inside a shared engine server, so the
+	// agent provisions and drops tenants through each server's admin account.
+	services.SetDatabaseServerPasswords(
+		os.Getenv("MYSQL_ROOT_PASSWORD"),
+		os.Getenv("PGDB_POSTGRES_PASSWORD"),
+	)
 	// Caddy runs as a container on this node, so it must join each Project
 	// network to resolve the alias a route dials.
 	services.SetNetworkAttacher(runtime.NewCaddyAttacher(

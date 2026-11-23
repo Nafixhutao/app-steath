@@ -28,6 +28,15 @@ import { DatabasePanel } from "./database-panel";
 
 type ProjectTab = "services" | "database" | "settings";
 
+/** The engine named in the Project header, or `No Database` when there is none. */
+function databaseLabel(engine: string | null, count: number): string {
+  if (count === 0) {
+    return "No Database";
+  }
+
+  return engine === "mysql" ? "MySQL 8" : "PostgreSQL 16";
+}
+
 export function ProjectDetail({ projectId }: { projectId: string }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -119,7 +128,8 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           <Boxes className="w-12 h-12 text-zinc-600 mb-3" />
           <h2>Project not found</h2>
           <p className="text-zinc-400 text-sm mt-1 mb-4">
-            This project does not exist in the active organization or you do not have permission to view it.
+            This project does not exist in the active organization or you do not have permission to
+            view it.
           </p>
           <Link href="/dashboard/projects" className="supabase-btn-secondary">
             Back to Projects
@@ -184,7 +194,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             </div>
             <div className="project-stat-pill">
               <Database className="w-3.5 h-3.5 text-zinc-400" />
-              <span>{project.databaseCount > 0 ? "Postgres 16" : "No Database"}</span>
+              <span>{databaseLabel(project.databaseEngine, project.databaseCount)}</span>
             </div>
           </div>
         </div>
@@ -264,12 +274,18 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
               projectId={project.id}
               projectName={project.name}
               canManage={canManage}
+              onChanged={() => void refreshSummary()}
             />
           </div>
         )}
 
         {activeTab === "settings" && (
-          <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" className="space-y-6">
+          <div
+            id="panel-settings"
+            role="tabpanel"
+            aria-labelledby="tab-settings"
+            className="space-y-6"
+          >
             {/* General Settings */}
             <div className="project-settings-card">
               <div className="project-settings-card-head">
@@ -350,7 +366,8 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                     <h2 className="project-danger-title">Delete Project</h2>
                   </div>
                   <p className="project-danger-desc">
-                    Permanently delete this project and all associated services, PostgreSQL database records, persistent volumes, and backups. This action cannot be undone.
+                    Permanently delete this project and all associated services, database records,
+                    persistent volumes, and backups. This action cannot be undone.
                   </p>
                 </div>
 

@@ -43,6 +43,14 @@ func (m *Manager) SetRestoreDir(dir string) {
 	m.restoreDir = dir
 }
 
+// SetDatabaseServerPasswords sets the superuser passwords of the shared MySQL
+// and PostgreSQL servers. The agent provisions every tenant schema through them,
+// so they come from the environment rather than being baked into the image.
+func (m *Manager) SetDatabaseServerPasswords(mysql, postgres string) {
+	m.mysqlRootPassword = mysql
+	m.postgresAdminPassword = postgres
+}
+
 // Restore stages the artifact body, applies it to the original target, and
 // removes the staged file. The body is streamed to disk so a large Backup never
 // has to fit in memory.
@@ -89,21 +97,15 @@ func (m *Manager) Restore(
 
 	switch request.TargetType {
 	case RestoreTargetDatabase:
-		containerName := databaseContainerName(request.TargetID)
+		// A Database is a schema inside the shared server, so the restore runs
+		// against the shared container and names the tenant schema explicitly.
+		engine := m.engineForDatabase(ctx, request.TargetID)
+		containerName := sharedServerFor(engine).Name
 		info, err := m.docker.InspectContainer(ctx, containerName)
 		if err != nil {
 			return RestoreResult{}, fmt.Errorf(
 				"%w: Database %s is not on this node",
 				ErrRestoreTargetNotFound,
-				request.TargetID,
-			)
-		}
-		databaseName := info.Labels[LabelDatabaseName]
-		username := info.Labels[LabelDatabaseUsername]
-		if databaseName == "" || username == "" {
-			return RestoreResult{}, fmt.Errorf(
-				"%w: Database %s has no restore metadata",
-				ErrInvalidRestore,
 				request.TargetID,
 			)
 		}
@@ -115,7 +117,12 @@ func (m *Manager) Restore(
 			)
 		}
 
-		if err := m.docker.RestoreDatabase(ctx, containerName, databaseName, username, path); err != nil {
+		schema := schemaNameFor(request.TargetID)
+		_, username := databaseObjectNames(request.TargetID)
+
+		if err := m.docker.RestoreDatabase(
+			ctx, containerName, schema, username, engine, path,
+		); err != nil {
 			return RestoreResult{}, fmt.Errorf("restore Database %s: %w", request.TargetID, err)
 		}
 	case RestoreTargetVolume:

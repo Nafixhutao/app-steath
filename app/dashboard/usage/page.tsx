@@ -248,7 +248,7 @@ export default function UsagePage() {
                 </div>
               </div>
               <span className="usage-metric-val">{formatMb(usageData.totals.databaseMb)}</span>
-              <span className="text-[11px] text-zinc-400">Managed PostgreSQL engines</span>
+              <span className="text-[11px] text-zinc-400">Managed database engines</span>
             </div>
           </section>
 
@@ -400,7 +400,7 @@ export default function UsagePage() {
                 <div className="flex items-center gap-2">
                   <Database className="w-4 h-4 text-blue-400" />
                   <h2 id="databases-usage-heading" className="text-sm font-semibold text-white">
-                    PostgreSQL Database Storage
+                    Database Storage
                   </h2>
                 </div>
                 <span className="usage-count-pill">{usageData.databases.length} Databases</span>
@@ -422,7 +422,10 @@ export default function UsagePage() {
                         <td>
                           <div className="flex items-center gap-2">
                             <Database className="w-3.5 h-3.5 text-blue-400" />
-                            <span className="font-medium text-white text-xs">PostgreSQL 16</span>
+                            <span className="font-medium text-white text-xs">
+                              {database.engine === "mysql" ? "MySQL" : "PostgreSQL"}{" "}
+                              {database.version}
+                            </span>
                           </div>
                         </td>
                         <td>

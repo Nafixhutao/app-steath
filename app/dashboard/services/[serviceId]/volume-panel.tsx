@@ -188,20 +188,20 @@ export function VolumePanel({
           <table className="organization-table">
             <thead>
               <tr>
-                <th>Mount path</th>
-                <th>Size</th>
-                <th>Usage</th>
-                <th>Created</th>
-                {canManage ? <th>Actions</th> : null}
+                <th scope="col">Mount path</th>
+                <th scope="col">Size</th>
+                <th scope="col">Usage</th>
+                <th scope="col">Created</th>
+                {canManage ? <th scope="col">Actions</th> : null}
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>
+                <td data-label="Mount path">
                   <code className="environment-key">{volume.mountPath}</code>
                 </td>
-                <td>{volume.sizeMb} MB</td>
-                <td>
+                <td data-label="Size">{volume.sizeMb} MB</td>
+                <td data-label="Usage" className="svc-cell-wide">
                   <div className="volume-usage">
                     <span>{usageLabel(volume)}</span>
                     {volume.exists && volume.usageMb !== null ? (
@@ -215,9 +215,11 @@ export function VolumePanel({
                     ) : null}
                   </div>
                 </td>
-                <td>{formatDateTime(volume.createdAt)}</td>
+                <td data-label="Created" className="svc-cell-wide">
+                  {formatDateTime(volume.createdAt)}
+                </td>
                 {canManage ? (
-                  <td>
+                  <td data-label="Actions" className="svc-cell-actions">
                     <div className="deployment-actions">
                       <button
                         className="dashboard-link-button is-danger"
