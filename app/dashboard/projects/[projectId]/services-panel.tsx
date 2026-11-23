@@ -263,7 +263,7 @@ export function ServicesPanel({
         <div className="supabase-modal-backdrop" role="presentation">
           <div className="supabase-modal-dialog max-w-lg" role="dialog" aria-modal="true" aria-labelledby="create-service-title">
             <div className="supabase-modal-header">
-              <h2 id="create-service-title">Deploy a New Service</h2>
+              <h2 id="create-service-title">Create a new service</h2>
               <button
                 type="button"
                 className="supabase-modal-close"
@@ -276,6 +276,10 @@ export function ServicesPanel({
 
             <form onSubmit={submit}>
               <div className="supabase-modal-body space-y-3.5">
+                <p className="text-sm text-zinc-400 mb-4">
+                  Each service builds from a public Git repository and runs as an isolated Docker
+                  container with its own subdomain.
+                </p>
                 <div>
                   <label htmlFor="service-name-input" className="supabase-modal-label">
                     Service Name
@@ -383,7 +387,7 @@ export function ServicesPanel({
                       Creating...
                     </>
                   ) : (
-                    "Deploy Service"
+                    "Create service"
                   )}
                 </button>
               </div>

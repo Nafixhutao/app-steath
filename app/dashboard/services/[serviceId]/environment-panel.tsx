@@ -11,6 +11,7 @@ import {
 } from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
+import { SupabaseModal } from "@/components/supabase-modal";
 
 type DraftState = {
   mode: "create" | "edit";
@@ -132,44 +133,63 @@ export function EnvironmentPanel({
       ) : null}
 
       {draft ? (
-        <form className="organization-settings-form environment-form" onSubmit={save}>
-          <label>
-            Key
-            <input
-              value={draft.key}
-              onChange={(event) => setDraft({ ...draft, key: event.target.value })}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="API_TOKEN"
-              required
-            />
-          </label>
-          <label>
-            {draft.mode === "edit" ? "New value (leave empty to keep)" : "Value"}
-            <input
-              value={draft.value}
-              onChange={(event) =>
-                setDraft({ ...draft, value: event.target.value, valueTouched: true })
-              }
-              autoComplete="off"
-              spellCheck={false}
-              type="password"
-            />
-          </label>
-          <div className="environment-form-actions">
-            <button className="supabase-btn-secondary" type="submit" disabled={busy}>
-              {busy ? "Saving..." : draft.mode === "create" ? "Add" : "Save"}
-            </button>
-            <button
-              className="dashboard-link-button"
-              type="button"
-              onClick={() => setDraft(null)}
-              disabled={busy}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <SupabaseModal
+          title={draft.mode === "create" ? "Add environment variable" : "Edit environment variable"}
+          onClose={() => setDraft(null)}
+        >
+          <form onSubmit={save}>
+            <div className="supabase-modal-body">
+              <p className="text-sm text-zinc-400 mb-4">
+                Values are encrypted at rest and stay masked in the table. Redeploy the Service to
+                apply changes.
+              </p>
+              <div className="mb-4">
+                <label htmlFor="env-key-input" className="supabase-modal-label">
+                  Key
+                </label>
+                <input
+                  id="env-key-input"
+                  className="supabase-modal-input"
+                  value={draft.key}
+                  onChange={(event) => setDraft({ ...draft, key: event.target.value })}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="API_TOKEN"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="env-value-input" className="supabase-modal-label">
+                  {draft.mode === "edit" ? "New value (leave empty to keep)" : "Value"}
+                </label>
+                <input
+                  id="env-value-input"
+                  className="supabase-modal-input"
+                  value={draft.value}
+                  onChange={(event) =>
+                    setDraft({ ...draft, value: event.target.value, valueTouched: true })
+                  }
+                  autoComplete="off"
+                  spellCheck={false}
+                  type="password"
+                />
+              </div>
+            </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setDraft(null)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="supabase-btn-green" disabled={busy}>
+                {busy ? "Saving..." : draft.mode === "create" ? "Add variable" : "Save changes"}
+              </button>
+            </div>
+          </form>
+        </SupabaseModal>
       ) : null}
 
       {loading ? (

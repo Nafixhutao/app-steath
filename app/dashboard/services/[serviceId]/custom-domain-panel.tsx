@@ -10,6 +10,7 @@ import {
 } from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
+import { SupabaseModal } from "@/components/supabase-modal";
 
 function statusLabel(status: CustomDomainSummary["status"]): string {
   switch (status) {
@@ -114,32 +115,42 @@ export function CustomDomainPanel({
       ) : null}
 
       {adding ? (
-        <form className="organization-settings-form environment-form" onSubmit={add}>
-          <label>
-            Hostname
-            <input
-              value={hostname}
-              onChange={(event) => setHostname(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="app.example.com"
-              required
-            />
-          </label>
-          <div className="environment-form-actions">
-            <button className="supabase-btn-secondary" type="submit" disabled={busy}>
-              {busy ? "Saving..." : "Add"}
-            </button>
-            <button
-              className="dashboard-link-button"
-              type="button"
-              onClick={() => setAdding(false)}
-              disabled={busy}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <SupabaseModal title="Add a custom domain" onClose={() => setAdding(false)}>
+          <form onSubmit={add}>
+            <div className="supabase-modal-body">
+              <p className="text-sm text-zinc-400 mb-4">
+                Point the hostname at the platform IP, then verify ownership with the TXT record
+                shown after you add it.
+              </p>
+              <label htmlFor="domain-hostname-input" className="supabase-modal-label">
+                Hostname
+              </label>
+              <input
+                id="domain-hostname-input"
+                className="supabase-modal-input"
+                value={hostname}
+                onChange={(event) => setHostname(event.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="app.example.com"
+                required
+              />
+            </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setAdding(false)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="supabase-btn-green" disabled={busy}>
+                {busy ? "Saving..." : "Add domain"}
+              </button>
+            </div>
+          </form>
+        </SupabaseModal>
       ) : null}
 
       {domain.loading ? (

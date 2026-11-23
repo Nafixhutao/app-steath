@@ -111,100 +111,106 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         </span>
       </div>
 
-      {error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
-          {error || actionError}
-        </p>
-      ) : null}
+      <div className="supabase-service-layout">
+        <div className="supabase-service-main">
+          {error || actionError ? (
+            <p className="dashboard-alert is-error" role="alert">
+              {error || actionError}
+            </p>
+          ) : null}
 
-      <section className="dashboard-section" aria-labelledby="configuration-heading">
-        <div className="dashboard-section-heading">
-          <h2 id="configuration-heading">Configuration</h2>
-        </div>
-        <dl className="service-meta">
-          <div>
-            <dt>Repository</dt>
-            <dd>
-              {service.repoUrl} @ {service.branch}
-            </dd>
-          </div>
-          <div>
-            <dt>Dockerfile</dt>
-            <dd>{service.dockerfilePath}</dd>
-          </div>
-          <div>
-            <dt>Container port</dt>
-            <dd>{service.containerPort}</dd>
-          </div>
-          <div>
-            <dt>Health path</dt>
-            <dd>{service.healthPath ?? "None"}</dd>
-          </div>
-          <div>
-            <dt>Platform Subdomain</dt>
-            <dd>{service.platformHostname}</dd>
-          </div>
-          <div>
-            <dt>Resource limits</dt>
-            <dd>
-              {service.cpuLimit} vCPU · {service.memoryLimitMb} MB RAM
-            </dd>
-          </div>
-        </dl>
-      </section>
+          <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} canManage={canManage} />
 
-      <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} canManage={canManage} />
+          {canManage ? (
+            <EnvironmentPanel serviceId={service.id} needsRedeploy={service.needsRedeploy} />
+          ) : null}
 
-      {canManage ? (
-        <EnvironmentPanel serviceId={service.id} needsRedeploy={service.needsRedeploy} />
-      ) : null}
+          <VolumePanel
+            serviceId={service.id}
+            needsRedeploy={service.needsRedeploy}
+            canManage={canManage}
+          />
 
-      <VolumePanel
-        serviceId={service.id}
-        needsRedeploy={service.needsRedeploy}
-        canManage={canManage}
-      />
+          <CustomDomainPanel serviceId={service.id} canManage={canManage} />
 
-      <CustomDomainPanel serviceId={service.id} canManage={canManage} />
+          <RuntimePanel
+            serviceId={service.id}
+            canManage={canManage}
+            hostname={service.platformHostname}
+          />
 
-      <RuntimePanel
-        serviceId={service.id}
-        canManage={canManage}
-        hostname={service.platformHostname}
-      />
-
-      {canManage ? (
-        <section
-          className="dashboard-section organization-danger-zone"
-          aria-labelledby="danger-heading"
-        >
-          <div className="dashboard-section-heading">
-            <h2 id="danger-heading">Danger zone</h2>
-          </div>
-          <p>
-            Deleting this Service stops its container and removes its Volume, Environment Variables,
-            and Domains.
-          </p>
-          <form className="organization-settings-form" onSubmit={remove}>
-            <label>
-              Type <strong>{service.name}</strong> to confirm
-              <input
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-                autoComplete="off"
-                required
-              />
-            </label>
-            <button
-              className="supabase-btn-danger"
-              type="submit"
-              disabled={busy || confirmation !== service.name}
+          {canManage ? (
+            <section
+              className="dashboard-section organization-danger-zone"
+              aria-labelledby="danger-heading"
             >
-              {busy ? "Deleting..." : "Delete Service"}
-            </button>
-          </form>
-        </section>
-      ) : null}
+              <div className="dashboard-section-heading">
+                <h2 id="danger-heading">Danger zone</h2>
+              </div>
+              <p>
+                Deleting this Service stops its container and removes its Volume, Environment
+                Variables, and Domains.
+              </p>
+              <form className="organization-settings-form" onSubmit={remove}>
+                <label>
+                  Type <strong>{service.name}</strong> to confirm
+                  <input
+                    value={confirmation}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                    autoComplete="off"
+                    required
+                  />
+                </label>
+                <button
+                  className="supabase-btn-danger"
+                  type="submit"
+                  disabled={busy || confirmation !== service.name}
+                >
+                  {busy ? "Deleting..." : "Delete Service"}
+                </button>
+              </form>
+            </section>
+          ) : null}
+        </div>
+
+        <aside className="supabase-service-side">
+          <section className="dashboard-section" aria-labelledby="configuration-heading">
+            <div className="dashboard-section-heading">
+              <h2 id="configuration-heading">Configuration</h2>
+            </div>
+            <dl className="service-meta">
+              <div>
+                <dt>Repository</dt>
+                <dd>
+                  {service.repoUrl} @ {service.branch}
+                </dd>
+              </div>
+              <div>
+                <dt>Dockerfile</dt>
+                <dd>{service.dockerfilePath}</dd>
+              </div>
+              <div>
+                <dt>Container port</dt>
+                <dd>{service.containerPort}</dd>
+              </div>
+              <div>
+                <dt>Health path</dt>
+                <dd>{service.healthPath ?? "None"}</dd>
+              </div>
+              <div>
+                <dt>Platform Subdomain</dt>
+                <dd>{service.platformHostname}</dd>
+              </div>
+              <div>
+                <dt>Resource limits</dt>
+                <dd>
+                  {service.cpuLimit} vCPU · {service.memoryLimitMb} MB RAM
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }
