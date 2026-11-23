@@ -1,54 +1,103 @@
 "use client";
 
 import Link from "next/link";
+import {
+  Gauge,
+  Cpu,
+  Activity,
+  HardDrive,
+  Database,
+  Layers,
+  RefreshCw,
+  ExternalLink,
+  ShieldAlert,
+  Server,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
 import { useResource } from "@/lib/resource";
 import { getOrganizationUsage } from "@/lib/usage-client";
 import { formatDateTime } from "@/lib/format";
+import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 
-function megabytes(value: number): string {
-  return `${value} MB`;
+function formatMb(mb: number): string {
+  if (mb < 1024) return `${mb} MB`;
+  return `${(mb / 1024).toFixed(2)} GB`;
 }
 
-function QuotaRow({
+function calculatePercent(used: number, limit: number): number {
+  if (limit <= 0) return 0;
+  const pct = Math.round((used / limit) * 100);
+  return Math.min(pct, 100);
+}
+
+function QuotaMeter({
   label,
   used,
   limit,
   unit = "",
+  description,
 }: {
   label: string;
   used: number;
   limit: number;
   unit?: string;
+  description?: string;
 }) {
+  const percent = calculatePercent(used, limit);
   const atLimit = limit > 0 && used >= limit;
+  const nearLimit = limit > 0 && percent >= 80 && !atLimit;
 
   return (
-    <tr>
-      <td>{label}</td>
-      <td>
-        {used}
-        {unit}
-      </td>
-      <td>
-        {limit}
-        {unit}
-      </td>
-      <td>
-        <span className={`role-label is-${atLimit ? "failed" : "running"}`}>
-          {atLimit ? "At limit" : "Within Quota"}
+    <div className="usage-meter-card">
+      <div className="flex items-center justify-between mb-2">
+        <span className="usage-meter-label">{label}</span>
+        <span
+          className={`usage-meter-pill ${
+            atLimit ? "is-failed" : nearLimit ? "is-pending" : "is-healthy"
+          }`}
+        >
+          {atLimit ? "At Limit" : nearLimit ? "Near Limit" : "Within Quota"}
         </span>
-      </td>
-    </tr>
+      </div>
+
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="usage-meter-numbers">
+          <strong>
+            {used}
+            {unit}
+          </strong>{" "}
+          <span className="text-zinc-400">
+            of {limit}
+            {unit}
+          </span>
+        </span>
+        <span className="text-xs font-mono font-medium text-zinc-300 tabular-nums">{percent}%</span>
+      </div>
+
+      <div
+        className="usage-progress-track"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${label} usage`}
+      >
+        <div
+          className={`usage-progress-fill ${
+            atLimit ? "is-failed" : nearLimit ? "is-pending" : "is-healthy"
+          }`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      {description ? <p className="text-[11px] text-zinc-400 mt-2">{description}</p> : null}
+    </div>
   );
 }
 
-/**
- * Organization Quota and measured usage. Every role sees the counts and the
- * latest measurement; owners and admins also get the fixed per-resource limit
- * detail. Opening the page triggers a fresh measurement before the data is
- * rendered, and the worker refreshes it again every five minutes.
- */
 export default function UsagePage() {
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
@@ -62,201 +111,345 @@ export default function UsagePage() {
   const loading = usage.loading;
   const error = usage.error;
 
-  if (loading) {
-    return (
-      <div className="dashboard-content">
-        <p className="dashboard-table-empty" role="status">
-          Loading Quota...
-        </p>
-      </div>
-    );
-  }
-
   const maxServicesPerProject =
     usageData?.projects.reduce((max, project) => Math.max(max, project.serviceCount), 0) ?? 0;
   const maxDatabasesPerProject =
     usageData?.projects.reduce((max, project) => Math.max(max, project.databaseCount), 0) ?? 0;
 
+  const containerRef = useGsapEntrance<HTMLDivElement>(
+    [
+      { targets: ".usage-metric-card", y: 20, duration: 0.5, stagger: 0.08, ease: "power2.out" },
+      {
+        targets: ".usage-meter-card",
+        y: 20,
+        duration: 0.5,
+        stagger: 0.08,
+        delay: 0.12,
+        ease: "power2.out",
+      },
+      {
+        targets: ".usage-table-card, .usage-policy-card",
+        y: 24,
+        duration: 0.55,
+        delay: 0.22,
+        ease: "power2.out",
+      },
+    ],
+    [Boolean(usageData)],
+  );
+
   return (
-    <div className="dashboard-content">
-      <div className="dashboard-page-heading">
-        <div>
-          <h1>Usage &amp; Quota</h1>
-          <p>
-            Limits and measured usage for {organization?.name ?? "your Organization"}. CPU, memory,
-            Volume, and Database storage are refreshed every five minutes and when this page opens.
-          </p>
+    <div ref={containerRef} className="usage-page-container">
+      {/* Header */}
+      <header className="usage-page-header">
+        <div className="flex items-center gap-3">
+          <div className="usage-header-icon" aria-hidden="true">
+            <Gauge className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="usage-page-title">Usage &amp; Quotas</h1>
+              <span className="supabase-plan-badge">FREE PLAN</span>
+            </div>
+            <p className="usage-page-subtitle">
+              Resource consumption, billing quotas, and system limits for{" "}
+              {organization?.name ?? "your organization"}.
+            </p>
+          </div>
         </div>
-        {usageData?.capturedAt ? (
-          <span className="project-quota">Measured {formatDateTime(usageData.capturedAt)}</span>
-        ) : null}
-      </div>
+
+        <button
+          type="button"
+          className="supabase-btn-secondary"
+          onClick={() => void usage.refresh()}
+          disabled={loading}
+          aria-busy={loading}
+          title="Refresh measured usage"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+          <span>Refresh</span>
+        </button>
+      </header>
 
       {error ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <div className="dashboard-alert is-error my-4" role="alert">
           {error}
-        </p>
+        </div>
       ) : null}
 
-      {!usageData ? (
-        <div className="dashboard-empty-state">
-          <h3>Quota unavailable</h3>
-          <p>The Organization Quota could not be loaded. Try again in a moment.</p>
+      {loading && !usageData ? (
+        <div className="p-8 space-y-4" aria-label="Loading usage data">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="usage-metric-skeleton">
+                <div className="supabase-skeleton-box h-4 w-24 rounded" />
+                <div className="supabase-skeleton-box h-7 w-20 rounded mt-2" />
+                <div className="supabase-skeleton-box h-3 w-32 rounded mt-2" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : !usageData ? (
+        <div className="usage-empty-state">
+          <AlertCircle className="w-8 h-8 text-zinc-400 mb-2" />
+          <h2 className="text-sm font-semibold text-white">Quota unavailable</h2>
+          <p className="text-xs text-zinc-400 mt-1">
+            The organization quota could not be loaded. Try refreshing in a moment.
+          </p>
         </div>
       ) : (
         <>
-          <section className="dashboard-section" aria-labelledby="quota-heading">
-            <div className="dashboard-section-heading">
-              <h2 id="quota-heading">Quota</h2>
-              <button
-                className="dashboard-link-button"
-                type="button"
-                onClick={() => void usage.refresh()}
-              >
-                Refresh
-              </button>
+          {/* Top 4 Metrics Grid */}
+          <section
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+            aria-label="Measured resource totals"
+          >
+            <div className="usage-metric-card">
+              <div className="flex items-center justify-between">
+                <span className="usage-metric-label">CPU Consumption</span>
+                <div className="usage-metric-icon-badge is-emerald">
+                  <Cpu className="w-4 h-4" />
+                </div>
+              </div>
+              <span className="usage-metric-val">
+                {usageData.totals.cpu.toFixed(2)}{" "}
+                <small className="text-xs font-normal text-zinc-400">vCPU</small>
+              </span>
+              <span className="text-[11px] text-zinc-400">Active container cores</span>
             </div>
 
-            <div className="organization-table-wrap">
-              <table className="organization-table">
-                <thead>
-                  <tr>
-                    <th>Resource</th>
-                    <th>Usage</th>
-                    <th>Limit</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <QuotaRow
-                    label="Projects"
-                    used={usageData.counts.projects.used}
-                    limit={usageData.counts.projects.limit}
-                  />
-                  <QuotaRow
-                    label="Services in this Organization"
-                    used={usageData.counts.services.used}
-                    limit={usageData.counts.services.limit}
-                  />
-                  <QuotaRow
-                    label="Services in the busiest Project"
-                    used={maxServicesPerProject}
-                    limit={usageData.limits.servicesPerProject}
-                  />
-                  <QuotaRow
-                    label="Databases in the busiest Project"
-                    used={maxDatabasesPerProject}
-                    limit={usageData.limits.databasesPerProject}
-                  />
-                </tbody>
-              </table>
+            <div className="usage-metric-card">
+              <div className="flex items-center justify-between">
+                <span className="usage-metric-label">RAM Consumed</span>
+                <div className="usage-metric-icon-badge is-cyan">
+                  <Activity className="w-4 h-4" />
+                </div>
+              </div>
+              <span className="usage-metric-val">{formatMb(usageData.totals.memoryMb)}</span>
+              <span className="text-[11px] text-zinc-400">Container memory footprint</span>
+            </div>
+
+            <div className="usage-metric-card">
+              <div className="flex items-center justify-between">
+                <span className="usage-metric-label">Volume Storage</span>
+                <div className="usage-metric-icon-badge is-amber">
+                  <HardDrive className="w-4 h-4" />
+                </div>
+              </div>
+              <span className="usage-metric-val">{formatMb(usageData.totals.volumeMb)}</span>
+              <span className="text-[11px] text-zinc-400">Persistent mounted disks</span>
+            </div>
+
+            <div className="usage-metric-card">
+              <div className="flex items-center justify-between">
+                <span className="usage-metric-label">Database Storage</span>
+                <div className="usage-metric-icon-badge is-blue">
+                  <Database className="w-4 h-4" />
+                </div>
+              </div>
+              <span className="usage-metric-val">{formatMb(usageData.totals.databaseMb)}</span>
+              <span className="text-[11px] text-zinc-400">Managed PostgreSQL engines</span>
             </div>
           </section>
 
-          <section className="dashboard-section" aria-labelledby="usage-heading">
-            <div className="dashboard-section-heading">
-              <h2 id="usage-heading">Measured usage</h2>
+          {/* Quotas & Capacity Section */}
+          <section className="mb-8" aria-labelledby="quotas-section-heading">
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-emerald-400" />
+                <h2 id="quotas-section-heading" className="text-sm font-semibold text-white">
+                  Organization Quotas &amp; Limits
+                </h2>
+              </div>
+              <span className="text-xs text-zinc-400">Updated automatically</span>
             </div>
 
-            <dl className="service-meta">
-              <div>
-                <dt>CPU</dt>
-                <dd>{usageData.totals.cpu.toFixed(2)} vCPU</dd>
-              </div>
-              <div>
-                <dt>Memory</dt>
-                <dd>{megabytes(usageData.totals.memoryMb)}</dd>
-              </div>
-              <div>
-                <dt>Volume</dt>
-                <dd>{megabytes(usageData.totals.volumeMb)}</dd>
-              </div>
-              <div>
-                <dt>Database storage</dt>
-                <dd>{megabytes(usageData.totals.databaseMb)}</dd>
-              </div>
-            </dl>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <QuotaMeter
+                label="Projects"
+                used={usageData.counts.projects.used}
+                limit={usageData.counts.projects.limit}
+                description="Total isolated project workspaces"
+              />
+              <QuotaMeter
+                label="Total Services"
+                used={usageData.counts.services.used}
+                limit={usageData.counts.services.limit}
+                description="Deployed Docker services in organization"
+              />
+              <QuotaMeter
+                label="Services (Busiest Project)"
+                used={maxServicesPerProject}
+                limit={usageData.limits.servicesPerProject}
+                description="Max services allowed within 1 project"
+              />
+              <QuotaMeter
+                label="Databases (Busiest Project)"
+                used={maxDatabasesPerProject}
+                limit={usageData.limits.databasesPerProject}
+                description="Max Postgres instances within 1 project"
+              />
+            </div>
+          </section>
 
-            {usageData.services.length === 0 ? (
-              <p className="dashboard-table-empty">No Services yet.</p>
-            ) : (
-              <div className="organization-table-wrap">
-                <table className="organization-table">
+          {/* Measured Services Table */}
+          <section className="mb-8" aria-labelledby="services-usage-heading">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Server className="w-4 h-4 text-emerald-400" />
+                <h2 id="services-usage-heading" className="text-sm font-semibold text-white">
+                  Active Services Resource Breakdown
+                </h2>
+              </div>
+              <span className="usage-count-pill">{usageData.services.length} Services</span>
+            </div>
+
+            <div className="usage-table-card">
+              {usageData.services.length === 0 ? (
+                <div className="usage-empty-box">
+                  <Server className="w-7 h-7 text-zinc-600 mb-2" />
+                  <p className="text-sm text-zinc-300 font-medium">No deployed services</p>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Deploy a service from a project to start measuring container compute and RAM.
+                  </p>
+                </div>
+              ) : (
+                <table className="usage-table">
                   <thead>
                     <tr>
-                      <th>Service</th>
-                      <th>Project</th>
-                      <th>CPU</th>
-                      <th>Memory</th>
-                      <th>Volume</th>
-                      <th>Status</th>
+                      <th scope="col">Service</th>
+                      <th scope="col">Project</th>
+                      <th scope="col">CPU</th>
+                      <th scope="col">Memory (RAM)</th>
+                      <th scope="col">Volume Disk</th>
+                      <th scope="col">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {usageData.services.map((service) => (
                       <tr key={service.id}>
                         <td>
-                          <Link href={`/dashboard/services/${service.id}`}>{service.name}</Link>
-                        </td>
-                        <td>
-                          <Link href={`/dashboard/projects/${service.projectId}`}>
-                            {service.projectName}
+                          <Link
+                            href={`/dashboard/services/${service.id}`}
+                            className="group font-medium text-white hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
+                          >
+                            <span>{service.name}</span>
+                            <ExternalLink className="w-3 h-3 text-zinc-400 opacity-70 group-hover:opacity-100 transition-opacity" />
                           </Link>
                         </td>
                         <td>
+                          <Link
+                            href={`/dashboard/projects/${service.projectId}`}
+                            className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                          >
+                            {service.projectName}
+                          </Link>
+                        </td>
+                        <td className="text-xs font-mono tabular-nums text-zinc-200">
                           {service.cpuUsage.toFixed(2)}
-                          {canSeeLimitDetail ? ` of ${service.cpuLimit} vCPU` : " vCPU"}
+                          {canSeeLimitDetail ? (
+                            <span className="text-zinc-400"> / {service.cpuLimit} vCPU</span>
+                          ) : (
+                            " vCPU"
+                          )}
+                        </td>
+                        <td className="text-xs font-mono tabular-nums text-zinc-200">
+                          {formatMb(service.memoryUsageMb)}
+                          {canSeeLimitDetail ? (
+                            <span className="text-zinc-400">
+                              {" "}
+                              / {formatMb(service.memoryLimitMb)}
+                            </span>
+                          ) : null}
+                        </td>
+                        <td className="text-xs font-mono tabular-nums text-zinc-200">
+                          {formatMb(service.volumeUsageMb)}
+                          {canSeeLimitDetail ? (
+                            <span className="text-zinc-400">
+                              {" "}
+                              / {formatMb(service.volumeLimitMb)}
+                            </span>
+                          ) : null}
                         </td>
                         <td>
-                          {canSeeLimitDetail
-                            ? `${megabytes(service.memoryUsageMb)} of ${megabytes(service.memoryLimitMb)}`
-                            : megabytes(service.memoryUsageMb)}
-                        </td>
-                        <td>
-                          {canSeeLimitDetail
-                            ? `${megabytes(service.volumeUsageMb)} of ${megabytes(service.volumeLimitMb)}`
-                            : megabytes(service.volumeUsageMb)}
-                        </td>
-                        <td>
-                          <span className="role-label">{service.status}</span>
+                          <span
+                            className={`usage-status-pill ${
+                              service.status === "running"
+                                ? "is-running"
+                                : service.status === "failed"
+                                  ? "is-failed"
+                                  : "is-pending"
+                            }`}
+                          >
+                            <span className="project-status-dot" aria-hidden="true" />
+                            <span className="capitalize">{service.status}</span>
+                          </span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
+              )}
+            </div>
+          </section>
 
-            {usageData.databases.length > 0 ? (
-              <div className="organization-table-wrap">
-                <table className="organization-table">
+          {/* Measured Databases Table (if any) */}
+          {usageData.databases.length > 0 && (
+            <section className="mb-8" aria-labelledby="databases-usage-heading">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Database className="w-4 h-4 text-blue-400" />
+                  <h2 id="databases-usage-heading" className="text-sm font-semibold text-white">
+                    PostgreSQL Database Storage
+                  </h2>
+                </div>
+                <span className="usage-count-pill">{usageData.databases.length} Databases</span>
+              </div>
+
+              <div className="usage-table-card">
+                <table className="usage-table">
                   <thead>
                     <tr>
-                      <th>Database</th>
-                      <th>Project</th>
-                      <th>Storage</th>
-                      <th>Status</th>
+                      <th scope="col">Database</th>
+                      <th scope="col">Project</th>
+                      <th scope="col">Measured Storage</th>
+                      <th scope="col">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {usageData.databases.map((database) => (
                       <tr key={database.id}>
-                        <td>PostgreSQL</td>
                         <td>
-                          <Link href={`/dashboard/projects/${database.projectId}`}>
+                          <div className="flex items-center gap-2">
+                            <Database className="w-3.5 h-3.5 text-blue-400" />
+                            <span className="font-medium text-white text-xs">PostgreSQL 16</span>
+                          </div>
+                        </td>
+                        <td>
+                          <Link
+                            href={`/dashboard/projects/${database.projectId}`}
+                            className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                          >
                             {database.projectName}
                           </Link>
                         </td>
-                        <td>
-                          {canSeeLimitDetail
-                            ? `${megabytes(database.usageMb)} of ${megabytes(database.storageLimitMb)}`
-                            : megabytes(database.usageMb)}
+                        <td className="text-xs font-mono tabular-nums text-zinc-200">
+                          {formatMb(database.usageMb)}
+                          {canSeeLimitDetail ? (
+                            <span className="text-zinc-400">
+                              {" "}
+                              / {formatMb(database.storageLimitMb)}
+                            </span>
+                          ) : null}
                         </td>
                         <td>
                           <span
-                            className={`role-label is-${database.overQuota ? "failed" : "running"}`}
+                            className={`usage-status-pill ${
+                              database.overQuota ? "is-failed" : "is-running"
+                            }`}
                           >
-                            {database.overQuota ? "Over Quota" : database.status}
+                            <span className="project-status-dot" aria-hidden="true" />
+                            <span>{database.overQuota ? "Over Quota" : database.status}</span>
                           </span>
                         </td>
                       </tr>
@@ -264,57 +457,86 @@ export default function UsagePage() {
                   </tbody>
                 </table>
               </div>
-            ) : null}
-          </section>
-
-          {canSeeLimitDetail ? (
-            <section className="dashboard-section" aria-labelledby="limit-detail-heading">
-              <div className="dashboard-section-heading">
-                <h2 id="limit-detail-heading">Limit detail</h2>
-              </div>
-
-              <div className="organization-table-wrap">
-                <table className="organization-table">
-                  <thead>
-                    <tr>
-                      <th>Resource</th>
-                      <th>Limit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>CPU per Service</td>
-                      <td>{usageData.limits.cpuPerService} vCPU</td>
-                    </tr>
-                    <tr>
-                      <td>RAM per Service</td>
-                      <td>{megabytes(usageData.limits.memoryMbPerService)}</td>
-                    </tr>
-                    <tr>
-                      <td>Volume per Service</td>
-                      <td>{megabytes(usageData.limits.volumeMbPerService)}</td>
-                    </tr>
-                    <tr>
-                      <td>Storage per Database</td>
-                      <td>{megabytes(usageData.limits.databaseStorageMb)}</td>
-                    </tr>
-                    <tr>
-                      <td>Build concurrency per node</td>
-                      <td>{usageData.limits.buildConcurrencyPerNode}</td>
-                    </tr>
-                    <tr>
-                      <td>Log retention</td>
-                      <td>{usageData.limits.logRetentionDays} days</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <p className="project-quota-note">
-                Lowering a Quota never deletes an existing resource. Resources keep running until an
-                owner or admin deletes them.
-              </p>
             </section>
+          )}
+
+          {/* Detailed Platform Constraints & Policy */}
+          {canSeeLimitDetail ? (
+            <section className="mb-8" aria-labelledby="limit-detail-heading">
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldAlert className="w-4 h-4 text-emerald-400" />
+                <h2 id="limit-detail-heading" className="text-sm font-semibold text-white">
+                  Platform Allocation Policy
+                </h2>
+              </div>
+
+              <div className="usage-policy-card">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 p-5">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-medium">CPU Cap per Service</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
+                      {usageData.limits.cpuPerService} vCPU
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-medium">RAM Cap per Service</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
+                      {formatMb(usageData.limits.memoryMbPerService)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-medium">
+                      Volume Cap per Service
+                    </span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
+                      {formatMb(usageData.limits.volumeMbPerService)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-medium">Database Storage Cap</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
+                      {formatMb(usageData.limits.databaseStorageMb)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-medium">Build Concurrency</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
+                      {usageData.limits.buildConcurrencyPerNode} simultaneous jobs / node
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-medium">Log Retention</span>
+                    <p className="text-sm font-mono font-medium text-white tabular-nums">
+                      {usageData.limits.logRetentionDays} days automatic prune
+                    </p>
+                  </div>
+                </div>
+
+                <div className="usage-policy-footer">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <p className="text-xs text-zinc-400">
+                    Lowering a quota never deletes an existing resource. All services and databases
+                    continue running until an owner or admin deletes them.
+                  </p>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {/* Footer timestamp */}
+          {usageData.capturedAt ? (
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400 pt-2 pb-6">
+              <Clock className="w-3.5 h-3.5" />
+              <span>
+                Last measured {formatDateTime(usageData.capturedAt)}. System metrics refresh every 5
+                minutes.
+              </span>
+            </div>
           ) : null}
         </>
       )}

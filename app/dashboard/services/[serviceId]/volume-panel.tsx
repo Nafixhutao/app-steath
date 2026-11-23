@@ -6,7 +6,7 @@ import {
   deleteServiceVolume,
   getServiceVolume,
   type VolumeSummary,
-} from "@/lib/volumes-client";
+} from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 

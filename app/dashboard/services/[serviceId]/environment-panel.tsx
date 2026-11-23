@@ -8,7 +8,7 @@ import {
   revealEnvironmentVariable,
   updateEnvironmentVariable,
   type EnvironmentVariableSummary,
-} from "@/lib/environment-variables-client";
+} from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 

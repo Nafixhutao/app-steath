@@ -15,7 +15,7 @@ import {
   type BuildLog,
   type DeploymentSummary,
   type NodeSummary,
-} from "@/lib/deployments-client";
+} from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 

@@ -82,17 +82,16 @@ type IconName =
   | "admin";
 
 const primaryItems: Array<{ label: string; icon: IconName; href: string }> = [
-  { label: "Overview", icon: "chart", href: "/dashboard" },
-  { label: "Usage", icon: "gauge", href: "/dashboard/usage" },
   { label: "Projects", icon: "projects", href: "/dashboard/projects" },
+  { label: "Team", icon: "user", href: "/dashboard/members" },
   { label: "Services", icon: "services", href: "/dashboard/services" },
   { label: "Databases", icon: "databases", href: "/dashboard/databases" },
   { label: "Backups", icon: "backups", href: "/dashboard/backups" },
   { label: "Domains", icon: "domains", href: "/dashboard/domains" },
+  { label: "Usage", icon: "gauge", href: "/dashboard/usage" },
 ];
 
 const secondaryItems: Array<{ label: string; icon: IconName; href: string }> = [
-  { label: "Members", icon: "face", href: "/dashboard/members" },
   { label: "Organization settings", icon: "settings", href: "/dashboard/settings" },
 ];
 
@@ -658,63 +657,67 @@ export function Sidebar({
               ))
             : null}
         </nav>
-        <div className="sidebar-divider" />
-        <div className={`profile-area ${collapsed && !mobile ? "is-collapsed" : ""}`}>
-          {profileOpen && !mobile ? (
-            <div
-              className={`profile-menu ${collapsed ? "is-collapsed" : ""}`}
-              role="menu"
-              aria-label="User menu"
-            >
-              <div className="profile-menu-user">
-                <span className="profile-avatar large" aria-hidden="true">
-                  {getInitials(user.name)}
-                </span>
-                <div>
-                  <strong title={user.name}>{user.name}</strong>
-                  <small>{user.role}</small>
-                </div>
-              </div>
-              <div className="sidebar-divider" />
+        {mobile ? (
+          <>
+            <div className="sidebar-divider" />
+            <div className={`profile-area ${collapsed && !mobile ? "is-collapsed" : ""}`}>
+              {profileOpen && !mobile ? (
+                <div
+                  className={`profile-menu ${collapsed ? "is-collapsed" : ""}`}
+                  role="menu"
+                  aria-label="User menu"
+                >
+                  <div className="profile-menu-user">
+                    <span className="profile-avatar large" aria-hidden="true">
+                      {getInitials(user.name)}
+                    </span>
+                    <div>
+                      <strong title={user.name}>{user.name}</strong>
+                      <small>{user.role}</small>
+                    </div>
+                  </div>
+                  <div className="sidebar-divider" />
 
-              <button
-                type="button"
-                className="profile-menu-row logout-row"
-                onClick={async () => {
-                  await signOut();
-                  router.replace("/");
-                }}
-              >
-                <Icon name="logout" size={15} />
-                Log out
-              </button>
-            </div>
-          ) : null}
-          <div className="profile-controls">
-            <button
-              type="button"
-              className="profile-button"
-              onClick={() => setProfileOpen((value) => !value)}
-              aria-label={profileOpen ? "Close user menu" : "Open user menu"}
-              title={collapsed && !mobile ? "User menu" : undefined}
-              aria-haspopup="menu"
-              aria-expanded={profileOpen}
-            >
-              <span className="profile-avatar" aria-hidden="true">
-                {getInitials(user.name)}
-              </span>
-              {!collapsed || mobile ? (
-                <>
-                  <span className="profile-copy">
-                    <strong title={user.name}>{user.name}</strong>
-                    <small>{user.role}</small>
-                  </span>
-                  <Icon name="chevrons" size={16} />
-                </>
+                  <button
+                    type="button"
+                    className="profile-menu-row logout-row"
+                    onClick={async () => {
+                      await signOut();
+                      router.replace("/");
+                    }}
+                  >
+                    <Icon name="logout" size={15} />
+                    Log out
+                  </button>
+                </div>
               ) : null}
-            </button>
-          </div>
-        </div>
+              <div className="profile-controls">
+                <button
+                  type="button"
+                  className="profile-button"
+                  onClick={() => setProfileOpen((value) => !value)}
+                  aria-label={profileOpen ? "Close user menu" : "Open user menu"}
+                  title={collapsed && !mobile ? "User menu" : undefined}
+                  aria-haspopup="menu"
+                  aria-expanded={profileOpen}
+                >
+                  <span className="profile-avatar" aria-hidden="true">
+                    {getInitials(user.name)}
+                  </span>
+                  {!collapsed || mobile ? (
+                    <>
+                      <span className="profile-copy">
+                        <strong title={user.name}>{user.name}</strong>
+                        <small>{user.role}</small>
+                      </span>
+                      <Icon name="chevrons" size={16} />
+                    </>
+                  ) : null}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );

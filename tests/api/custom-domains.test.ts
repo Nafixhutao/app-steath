@@ -448,11 +448,13 @@ describe("Custom Domain", () => {
     expect(added.status).toBe(200);
     const domain = ((await added.json()) as { data: CustomDomainBody }).data;
 
-    const { setDnsResolver } = await import("@/lib/platform/custom-domains");
-    setDnsResolver({
-      resolveTxt: async () => [[domain.instructions.txt.value]],
-      lookup: async () => [{ address: "203.0.113.10", family: 4 }],
-    });
+    const { FakeDnsResolver, setDnsResolver } = await import("@/lib/platform/custom-domains");
+    setDnsResolver(
+      new FakeDnsResolver({
+        txt: [[domain.instructions.txt.value]],
+        addresses: [{ address: "203.0.113.10", family: 4 }],
+      }),
+    );
 
     try {
       const verified = await verifyRequest(owner.cookie, service.id);
@@ -498,15 +500,13 @@ describe("Custom Domain", () => {
     expect(added.status).toBe(200);
     const domain = ((await added.json()) as { data: CustomDomainBody }).data;
 
-    const { setDnsResolver } = await import("@/lib/platform/custom-domains");
-    setDnsResolver({
-      resolveTxt: async () => {
-        throw new Error("NXDOMAIN");
-      },
-      lookup: async () => {
-        throw new Error("NXDOMAIN");
-      },
-    });
+    const { FakeDnsResolver, setDnsResolver } = await import("@/lib/platform/custom-domains");
+    setDnsResolver(
+      new FakeDnsResolver({
+        txt: () => Promise.reject(new Error("NXDOMAIN")),
+        addresses: () => Promise.reject(new Error("NXDOMAIN")),
+      }),
+    );
 
     try {
       const verified = await verifyRequest(owner.cookie, service.id);
@@ -557,11 +557,13 @@ describe("Custom Domain", () => {
     });
     const domain = ((await added.json()) as { data: CustomDomainBody }).data;
 
-    const { setDnsResolver } = await import("@/lib/platform/custom-domains");
-    setDnsResolver({
-      resolveTxt: async () => [[domain.instructions.txt.value]],
-      lookup: async () => [{ address: "203.0.113.10", family: 4 }],
-    });
+    const { FakeDnsResolver, setDnsResolver } = await import("@/lib/platform/custom-domains");
+    setDnsResolver(
+      new FakeDnsResolver({
+        txt: [[domain.instructions.txt.value]],
+        addresses: [{ address: "203.0.113.10", family: 4 }],
+      }),
+    );
 
     try {
       expect((await verifyRequest(owner.cookie, service.id)).status).toBe(200);

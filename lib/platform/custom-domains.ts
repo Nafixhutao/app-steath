@@ -66,10 +66,43 @@ export type DnsResolver = {
   lookup(name: string): Promise<Array<{ address: string; family: number }>>;
 };
 
-const defaultResolver: DnsResolver = {
-  resolveTxt: (name) => resolveTxt(name),
-  lookup: (name) => lookup(name, { all: true, verbatim: true }),
-};
+/** Production adapter using Node.js DNS resolver. */
+export class SystemDnsResolver implements DnsResolver {
+  resolveTxt(name: string): Promise<string[][]> {
+    return resolveTxt(name);
+  }
+  lookup(name: string): Promise<Array<{ address: string; family: number }>> {
+    return lookup(name, { all: true, verbatim: true });
+  }
+}
+
+/** In-memory fake resolver adapter for unit tests. */
+export class FakeDnsResolver implements DnsResolver {
+  constructor(
+    private readonly config: {
+      txt?: string[][] | ((name: string) => Promise<string[][]>);
+      addresses?:
+        | Array<{ address: string; family: number }>
+        | ((name: string) => Promise<Array<{ address: string; family: number }>>);
+    } = {},
+  ) {}
+
+  async resolveTxt(name: string): Promise<string[][]> {
+    if (typeof this.config.txt === "function") {
+      return this.config.txt(name);
+    }
+    return this.config.txt ?? [];
+  }
+
+  async lookup(name: string): Promise<Array<{ address: string; family: number }>> {
+    if (typeof this.config.addresses === "function") {
+      return this.config.addresses(name);
+    }
+    return this.config.addresses ?? [{ address: "203.0.113.10", family: 4 }];
+  }
+}
+
+const defaultResolver: DnsResolver = new SystemDnsResolver();
 
 /**
  * The resolver verification uses. It is swappable so tests can prove the TXT and
@@ -430,6 +463,43 @@ export async function removeServiceCustomDomainOnNode(
   hostname: string,
 ): Promise<void> {
   await removeCustomDomainRoute(serviceId, hostname);
+}
+
+export type OrganizationCustomDomainSummary = CustomDomainSummary & {
+  serviceName: string;
+  projectId: string;
+  projectName: string;
+};
+
+export async function listOrganizationCustomDomains(
+  organizationId: string,
+): Promise<OrganizationCustomDomainSummary[]> {
+  const result = await pool.query<
+    CustomDomainRow & {
+      serviceName: string;
+      projectId: string;
+      projectName: string;
+    }
+  >(
+    `SELECT cd."id", cd."serviceId", cd."hostname", cd."status", cd."verificationToken",
+            cd."certificateStatus", cd."verifiedAt", cd."lastError", cd."createdAt", cd."updatedAt",
+            s."name" AS "serviceName",
+            p."id" AS "projectId",
+            p."name" AS "projectName"
+     FROM "custom_domain" cd
+     JOIN "service" s ON s."id" = cd."serviceId"
+     JOIN "project" p ON p."id" = s."projectId"
+     WHERE p."organizationId" = $1
+     ORDER BY cd."createdAt" DESC`,
+    [organizationId],
+  );
+
+  return result.rows.map((row) => ({
+    ...toSummary(row),
+    serviceName: row.serviceName,
+    projectId: row.projectId,
+    projectName: row.projectName,
+  }));
 }
 
 export { loadDomainById };

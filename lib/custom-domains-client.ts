@@ -51,3 +51,13 @@ export function deleteServiceCustomDomain(
     method: "DELETE",
   });
 }
+
+export type OrganizationCustomDomainSummary = CustomDomainSummary & {
+  serviceName: string;
+  projectId: string;
+  projectName: string;
+};
+
+export function listOrganizationCustomDomains(): Promise<OrganizationCustomDomainSummary[]> {
+  return request<OrganizationCustomDomainSummary[]>("/api/domains");
+}

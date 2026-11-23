@@ -2,8 +2,7 @@ import { randomBytes } from "node:crypto";
 import { pool } from "./db.ts";
 import { ApiError } from "./api-error.ts";
 import { buildPlatformHostname } from "@/lib/platform/platform-domain";
-import { QuotaExceededError } from "@/lib/platform/quota";
-import { QUOTAS } from "@/lib/platform/quota-limits";
+import { assertQuota } from "@/lib/platform/quota";
 import { removeServiceRuntime } from "@/lib/platform/runtime";
 import { requireProject } from "@/lib/platform/ownership";
 import { SERVICE_NEEDS_REDEPLOY } from "@/lib/platform/revisions";
@@ -373,30 +372,11 @@ export async function createService(input: {
       `service-quota:${input.organizationId}`,
     ]);
 
-    const perProject = await client.query<{ count: string }>(
-      'SELECT count(*) FROM "service" WHERE "projectId" = $1',
-      [input.projectId],
-    );
-    const projectUsage = Number(perProject.rows[0]?.count ?? 0);
-    if (projectUsage >= QUOTAS.servicesPerProject) {
-      throw new QuotaExceededError("Service", QUOTAS.servicesPerProject, projectUsage, "Project");
-    }
-
-    const perOrganization = await client.query<{ count: string }>(
-      `SELECT count(*) FROM "service" s
-       JOIN "project" p ON p."id" = s."projectId"
-       WHERE p."organizationId" = $1`,
-      [input.organizationId],
-    );
-    const organizationUsage = Number(perOrganization.rows[0]?.count ?? 0);
-    if (organizationUsage >= QUOTAS.servicesPerOrganization) {
-      throw new QuotaExceededError(
-        "Service",
-        QUOTAS.servicesPerOrganization,
-        organizationUsage,
-        "Organization",
-      );
-    }
+    await assertQuota(client, {
+      type: "service",
+      organizationId: input.organizationId,
+      projectId: input.projectId,
+    });
 
     let inserted: ServiceRow | undefined;
     for (let attempt = 0; attempt < HOSTNAME_ATTEMPTS && !inserted; attempt += 1) {
@@ -489,3 +469,31 @@ export async function deleteService(input: {
     projectId: current.projectId,
   };
 }
+
+/**
+ * Updates a Service status in the database, preserving suspension if active.
+ */
+export async function setServiceStatus(
+  serviceId: string,
+  status: "running" | "stopped" | "deploying",
+): Promise<void> {
+  await pool.query(
+    `UPDATE "service" SET "status" = $2, "updatedAt" = now() WHERE "id" = $1 AND "status" <> 'suspended'`,
+    [serviceId, status],
+  );
+}
+
+/**
+ * Marks the Service stopped in the database when its container stops.
+ */
+export function markServiceStopped(serviceId: string): Promise<void> {
+  return setServiceStatus(serviceId, "stopped");
+}
+
+/**
+ * Marks the Service running in the database after a start or restart.
+ */
+export function markServiceRunning(serviceId: string): Promise<void> {
+  return setServiceStatus(serviceId, "running");
+}
+

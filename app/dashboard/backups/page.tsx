@@ -1,11 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Archive,
+  Database,
+  HardDrive,
+  RotateCcw,
+  RefreshCw,
+  AlertTriangle,
+  Clock,
+  Search,
+  X,
+  Loader2,
+  Layers,
+  Cloud,
+  Server,
+} from "lucide-react";
 import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
 import { getError, useResource } from "@/lib/resource";
 import { getBackups, type BackupSummary } from "@/lib/backups-client";
 import { getRestores, requestRestore } from "@/lib/restores-client";
 import { formatDateTime } from "@/lib/format";
+import { useToast } from "@/components/toast-context";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -15,34 +31,25 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-function statusClass(status: string): string {
-  if (status === "completed") return "running";
-  if (status === "failed") return "failed";
-
-  return "pending";
-}
-
-/** Restores that still occupy a target, so its button can be disabled. */
 function isActive(status: string): boolean {
   return status === "pending" || status === "running";
 }
 
 type RestoreTarget = Pick<BackupSummary, "id" | "targetType" | "targetName" | "projectName">;
 
-/**
- * Daily Backups of every Database, Volume, and the platform PostgreSQL, plus the
- * Restores started from them. The list shows the target, when it ran, its size,
- * and its status. When S3 is not configured the page warns that the local copy
- * does not survive losing the VPS.
- */
 export default function BackupsPage() {
+  const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
-  const [notice, setNotice] = useState("");
+
   const [target, setTarget] = useState<RestoreTarget | null>(null);
   const [confirmation, setConfirmation] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+
   const organizationId = organization?.id;
   const canRestore = activeMember?.role === "owner" || activeMember?.role === "admin";
 
@@ -54,22 +61,34 @@ export default function BackupsPage() {
     [organizationId],
     { enabled: Boolean(organizationId) },
   );
+
   const list = board.data?.backups ?? null;
   const restores = board.data?.restores ?? null;
   const loading = board.loading;
   const error = board.error;
 
-  // A Restore runs in the worker, so the page polls while one is in flight to
-  // show the final status without a manual refresh.
   const restoring = restores?.restores.some((restore) => isActive(restore.status)) ?? false;
   const refreshBoard = board.refresh;
+
   useEffect(() => {
     if (!restoring) return;
-
-    const timer = setInterval(() => void refreshBoard(), 5_000);
-
+    const timer = setInterval(() => void refreshBoard(), 5000);
     return () => clearInterval(timer);
   }, [restoring, refreshBoard]);
+
+  const backupsList = useMemo(() => list?.backups ?? [], [list?.backups]);
+
+  const filteredBackups = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return backupsList.filter((b) => {
+      if (typeFilter !== "all" && b.targetType !== typeFilter) return false;
+      if (!q) return true;
+      return (
+        b.targetName.toLowerCase().includes(q) ||
+        (b.projectName && b.projectName.toLowerCase().includes(q))
+      );
+    });
+  }, [backupsList, search, typeFilter]);
 
   function activeRestoreFor(backup: BackupSummary) {
     return restores?.restores.find(
@@ -84,12 +103,13 @@ export default function BackupsPage() {
   function beginRestore(backup: BackupSummary) {
     setTarget(backup);
     setConfirmation("");
-    setNotice("");
+    setSubmitError("");
   }
 
   function cancelRestore() {
     setTarget(null);
     setConfirmation("");
+    setSubmitError("");
   }
 
   async function submitRestore(event: React.FormEvent<HTMLFormElement>) {
@@ -97,239 +117,414 @@ export default function BackupsPage() {
     if (!target) return;
 
     setSubmitting(true);
+    setSubmitError("");
     try {
       await requestRestore(target.id, confirmation);
-      setNotice(
-        `Restore of ${target.targetName} queued. The affected Services are stopped while it runs and start again afterwards.`,
+      toast.success(
+        "Restore queued",
+        `Restore of ${target.targetName} scheduled. Services will restart automatically after completion.`,
       );
       setTarget(null);
       setConfirmation("");
       await board.refresh();
     } catch (cause) {
-      // The submit failure shares the page's error banner; the board's own
-      // error slot stays reserved for load failures.
       setSubmitError(getError(cause));
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (loading) {
-    return (
-      <div className="dashboard-content">
-        <p className="dashboard-table-empty" role="status">
-          Loading Backups...
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="dashboard-content">
-      <div className="dashboard-page-heading">
-        <div>
-          <h1>Backups</h1>
-          <p>
-            Daily Backups for {organization?.name ?? "your Organization"}. Every Database, Volume,
-            and the platform PostgreSQL is copied at 02.00 UTC and kept for seven days.
-          </p>
+    <div className="backups-page-container">
+      {/* Header */}
+      <header className="backups-page-header">
+        <div className="flex items-center gap-3">
+          <div className="backups-header-icon" aria-hidden="true">
+            <Archive className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h1 className="backups-page-title">Backups & Restores</h1>
+            <p className="backups-page-subtitle">
+              Automated daily disaster recovery snapshots for {organization?.name ?? "your organization"}.
+            </p>
+          </div>
         </div>
+
         <button
-          className="dashboard-link-button"
           type="button"
+          className="supabase-btn-secondary"
           onClick={() => void board.refresh()}
+          disabled={loading}
+          title="Refresh backup records"
         >
-          Refresh
+          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+          <span>Refresh</span>
         </button>
+      </header>
+
+      {/* Global Alerts */}
+      {error || submitError ? (
+        <div className="dashboard-alert is-error my-4" role="alert">
+          {error || submitError}
+        </div>
+      ) : null}
+
+      {/* Local Storage Warning */}
+      {list?.storageProvider === "local" && (
+        <div className="backups-warning-banner" role="status">
+          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-amber-200">
+            <strong>Local Storage Notice:</strong> S3 credentials are not configured, so backup archives are stored on this node only. They will not survive catastrophic VPS disk failure. Configure S3 environment variables to persist backups off-site.
+          </div>
+        </div>
+      )}
+
+      {/* Overview Cards */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" aria-label="Backup metrics">
+        <div className="backups-metric-card">
+          <div className="flex items-center justify-between">
+            <span className="backups-metric-label">Total Backups</span>
+            <Archive className="w-4 h-4 text-emerald-400" />
+          </div>
+          <span className="backups-metric-val">{backupsList.length}</span>
+          <span className="text-[11px] text-zinc-500">Retained for 7 days</span>
+        </div>
+
+        <div className="backups-metric-card">
+          <div className="flex items-center justify-between">
+            <span className="backups-metric-label">Storage Backend</span>
+            {list?.storageProvider === "s3" ? (
+              <Cloud className="w-4 h-4 text-cyan-400" />
+            ) : (
+              <Server className="w-4 h-4 text-zinc-500" />
+            )}
+          </div>
+          <span className="backups-metric-val text-sm font-mono mt-1">
+            {list?.storageProvider === "s3" ? "S3 Object Storage" : "Local Node Storage"}
+          </span>
+          <span className="text-[11px] text-zinc-500">
+            {list?.storageProvider === "s3" ? "Offsite redundancy active" : "Host directory storage"}
+          </span>
+        </div>
+
+        <div className="backups-metric-card">
+          <div className="flex items-center justify-between">
+            <span className="backups-metric-label">Backup Schedule</span>
+            <Clock className="w-4 h-4 text-zinc-400" />
+          </div>
+          <span className="backups-metric-val text-sm font-mono mt-1">Daily at 02:00 UTC</span>
+          <span className="text-[11px] text-zinc-500">Automated cron worker</span>
+        </div>
+
+        <div className="backups-metric-card">
+          <div className="flex items-center justify-between">
+            <span className="backups-metric-label">Restores in Flight</span>
+            <RotateCcw className={`w-4 h-4 ${restoring ? "text-amber-400 animate-spin" : "text-zinc-500"}`} />
+          </div>
+          <span className="backups-metric-val">{restores?.restores.filter((r) => isActive(r.status)).length ?? 0}</span>
+          <span className="text-[11px] text-zinc-500">
+            {restoring ? "Restoration in progress" : "No active restores"}
+          </span>
+        </div>
+      </section>
+
+      {/* Toolbar */}
+      <div className="backups-toolbar">
+        <div className="backups-search-box">
+          <Search className="backups-search-icon" aria-hidden="true" />
+          <input
+            type="search"
+            placeholder="Search backups by target or project..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="backups-search-input"
+          />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="backups-search-clear"
+              aria-label="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="supabase-filter-select"
+            aria-label="Filter by target type"
+          >
+            <option value="all">All Targets</option>
+            <option value="database">Databases</option>
+            <option value="volume">Volumes</option>
+          </select>
+
+          <span className="backups-count-pill">{filteredBackups.length} Snapshots</span>
+        </div>
       </div>
 
-      {error || submitError ? (
-        <p className="dashboard-alert is-error" role="alert">
-          {error || submitError}
-        </p>
-      ) : null}
-
-      {notice ? (
-        <p className="dashboard-alert is-success" role="status">
-          {notice}
-        </p>
-      ) : null}
-
-      {list?.storageProvider === "local" ? (
-        <p className="dashboard-alert" role="status">
-          S3 credentials are not configured, so Backups are stored on this node only. They will not
-          survive losing the VPS. Configure <code>S3_ENDPOINT</code>, <code>S3_BUCKET</code>,{" "}
-          <code>S3_ACCESS_KEY_ID</code>, and <code>S3_SECRET_ACCESS_KEY</code> to store them off the
-          node.
-        </p>
-      ) : null}
-
-      {target ? (
-        <form
-          className="organization-settings-form environment-form"
-          onSubmit={submitRestore}
-          aria-labelledby="restore-heading"
-        >
-          <h2 id="restore-heading">Restore {target.targetName}</h2>
-          <p className="dashboard-alert is-error">
-            Restoring replaces the current data of {target.targetName} in{" "}
-            {target.projectName ?? "this Project"} with the Backup. Every Service in the Project is
-            stopped while the Restore runs, so the Project is unavailable until it finishes. This
-            cannot be undone.
-          </p>
-          <label>
-            Type <strong>{target.targetName}</strong> to confirm
-            <input
-              value={confirmation}
-              onChange={(event) => setConfirmation(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={target.targetName}
-              required
-            />
-          </label>
-          <div className="environment-form-actions">
-            <button
-              className="dashboard-danger-button"
-              type="submit"
-              disabled={submitting || confirmation.trim() !== target.targetName}
-            >
-              {submitting ? "Restoring..." : "Restore Backup"}
-            </button>
-            <button
-              className="dashboard-link-button"
-              type="button"
-              onClick={cancelRestore}
-              disabled={submitting}
-            >
-              Cancel
-            </button>
+      {/* Backups Table Card */}
+      <div className="backups-table-card">
+        {loading ? (
+          <div className="p-6 space-y-4" aria-label="Loading backups">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="flex items-center gap-3">
+                <div className="supabase-skeleton-box w-8 h-8 rounded flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="supabase-skeleton-box h-4 w-32 rounded" />
+                  <div className="supabase-skeleton-box h-3 w-48 rounded" />
+                </div>
+                <div className="supabase-skeleton-box h-6 w-16 rounded" />
+              </div>
+            ))}
           </div>
-        </form>
-      ) : null}
-
-      <section className="dashboard-section" aria-labelledby="backups-heading">
-        <div className="dashboard-section-heading">
-          <h2 id="backups-heading">Backup list</h2>
-        </div>
-
-        {!list || list.backups.length === 0 ? (
-          <div className="dashboard-empty-state">
-            <h3>No Backups yet</h3>
-            <p>The first daily Backup will appear here after 02.00 UTC.</p>
+        ) : filteredBackups.length === 0 ? (
+          <div className="backups-empty-box">
+            <Archive className="w-8 h-8 text-zinc-600 mb-2" />
+            <p className="text-sm text-zinc-300 font-medium">No backups found</p>
+            <p className="text-xs text-zinc-500 mt-1">
+              {search
+                ? "No snapshot matches your search query."
+                : "The first automated daily snapshot will be captured at 02:00 UTC."}
+            </p>
           </div>
         ) : (
-          <div className="organization-table-wrap">
-            <table className="organization-table">
+          <table className="backups-table">
+            <thead>
+              <tr>
+                <th scope="col">Target</th>
+                <th scope="col">Project</th>
+                <th scope="col">Captured</th>
+                <th scope="col">Size</th>
+                <th scope="col">Storage</th>
+                <th scope="col">Status</th>
+                {canRestore ? <th scope="col" className="text-right">Action</th> : null}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBackups.map((backup) => {
+                const isDb = backup.targetType === "database";
+                const isVolume = backup.targetType === "volume";
+                const restorable = isDb || isVolume;
+                const active = activeRestoreFor(backup);
+                const isSuccess = backup.status === "completed";
+
+                return (
+                  <tr key={backup.id}>
+                    <td>
+                      <div className="flex items-center gap-2.5">
+                        <div className="backups-row-icon" aria-hidden="true">
+                          {isDb ? (
+                            <Database className="w-3.5 h-3.5 text-blue-400" />
+                          ) : (
+                            <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-medium text-white text-xs">{backup.targetName}</span>
+                          <span className="text-[11px] text-zinc-500 block capitalize">{backup.targetType}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-300">
+                        <Layers className="w-3 h-3 text-zinc-500" />
+                        <span>{backup.projectName ?? "Platform"}</span>
+                      </div>
+                    </td>
+
+                    <td className="text-xs text-zinc-400 font-mono">
+                      {formatDateTime(backup.createdAt)}
+                    </td>
+
+                    <td className="text-xs font-mono text-zinc-300">
+                      {backup.status === "completed" ? formatSize(backup.sizeBytes) : "-"}
+                    </td>
+
+                    <td>
+                      <span className="backups-storage-badge">
+                        {backup.storageProvider === "s3" ? "S3" : "Local"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span
+                        className={`backups-status-pill ${
+                          isSuccess ? "is-completed" : backup.status === "failed" ? "is-failed" : "is-pending"
+                        }`}
+                      >
+                        <span className="project-status-dot" aria-hidden="true" />
+                        <span className="capitalize">{backup.status}</span>
+                      </span>
+                      {backup.errorMessage ? (
+                        <p className="text-[11px] text-rose-400 mt-1 max-w-xs">{backup.errorMessage}</p>
+                      ) : null}
+                    </td>
+
+                    {canRestore ? (
+                      <td className="text-right">
+                        {restorable && isSuccess ? (
+                          <button
+                            type="button"
+                            className="supabase-btn-secondary text-xs h-7 px-2.5"
+                            onClick={() => beginRestore(backup)}
+                            disabled={Boolean(active) || Boolean(target)}
+                          >
+                            <RotateCcw className={`w-3 h-3 mr-1 ${active ? "animate-spin" : ""}`} />
+                            <span>{active ? "Restoring..." : "Restore"}</span>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-zinc-600">-</span>
+                        )}
+                      </td>
+                    ) : null}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Recent Restores History */}
+      {restores && restores.restores.length > 0 && (
+        <section className="mt-8 space-y-3" aria-labelledby="recent-restores-heading">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="w-4 h-4 text-cyan-400" />
+            <h2 id="recent-restores-heading" className="text-sm font-semibold text-white">
+              Recent Restores
+            </h2>
+            <span className="backups-count-pill">{restores.restores.length}</span>
+          </div>
+
+          <div className="backups-table-card">
+            <table className="backups-table">
               <thead>
                 <tr>
-                  <th>Target</th>
-                  <th>Project</th>
-                  <th>Taken</th>
-                  <th>Size</th>
-                  <th>Storage</th>
-                  <th>Status</th>
-                  {canRestore ? <th>Actions</th> : null}
+                  <th scope="col">Target</th>
+                  <th scope="col">Project</th>
+                  <th scope="col">Requested</th>
+                  <th scope="col">Finished</th>
+                  <th scope="col">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {list.backups.map((backup) => {
-                  const restorable =
-                    backup.targetType === "database" || backup.targetType === "volume";
-                  const active = activeRestoreFor(backup);
+                {restores.restores.map((restore) => {
+                  const isDone = restore.status === "completed";
+                  const isFail = restore.status === "failed";
 
                   return (
-                    <tr key={backup.id}>
-                      <td>{backup.targetName}</td>
-                      <td>{backup.projectName ?? "Platform"}</td>
-                      <td>{formatDateTime(backup.createdAt)}</td>
-                      <td>{backup.status === "completed" ? formatSize(backup.sizeBytes) : "-"}</td>
+                    <tr key={restore.id}>
                       <td>
-                        <span className="role-label">
-                          {backup.storageProvider === "s3"
-                            ? "S3"
-                            : backup.storageProvider === "local"
-                              ? "Local"
-                              : "-"}
-                        </span>
+                        <span className="font-medium text-white text-xs">{restore.targetName}</span>
+                      </td>
+                      <td className="text-xs text-zinc-300">
+                        {restore.projectName ?? "Platform"}
+                      </td>
+                      <td className="text-xs font-mono text-zinc-400">
+                        {formatDateTime(restore.createdAt)}
+                      </td>
+                      <td className="text-xs font-mono text-zinc-400">
+                        {restore.finishedAt ? formatDateTime(restore.finishedAt) : "-"}
                       </td>
                       <td>
-                        <span className={`role-label is-${statusClass(backup.status)}`}>
-                          {backup.status}
+                        <span
+                          className={`backups-status-pill ${
+                            isDone ? "is-completed" : isFail ? "is-failed" : "is-pending"
+                          }`}
+                        >
+                          <span className="project-status-dot" aria-hidden="true" />
+                          <span className="capitalize">{restore.status}</span>
                         </span>
-                        {backup.errorMessage ? (
-                          <p className="project-quota-note">{backup.errorMessage}</p>
+                        {restore.errorMessage ? (
+                          <p className="text-[11px] text-rose-400 mt-1 max-w-xs">{restore.errorMessage}</p>
                         ) : null}
                       </td>
-                      {canRestore ? (
-                        <td>
-                          {restorable && backup.status === "completed" ? (
-                            <button
-                              className="dashboard-link-button"
-                              type="button"
-                              onClick={() => beginRestore(backup)}
-                              disabled={Boolean(active) || Boolean(target)}
-                            >
-                              {active ? "Restoring..." : "Restore"}
-                            </button>
-                          ) : (
-                            <span className="project-quota-note">-</span>
-                          )}
-                        </td>
-                      ) : null}
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      <section className="dashboard-section" aria-labelledby="restores-heading">
-        <div className="dashboard-section-heading">
-          <h2 id="restores-heading">Recent Restores</h2>
+      {/* Modal: Restore Confirmation */}
+      {target && (
+        <div className="supabase-modal-backdrop" role="presentation">
+          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="restore-modal-title">
+            <div className="supabase-modal-header border-rose-900/40">
+              <div className="flex items-center gap-2 text-rose-400">
+                <RotateCcw className="w-4 h-4" />
+                <h2 id="restore-modal-title">Restore {target.targetName}</h2>
+              </div>
+              <button
+                type="button"
+                className="supabase-modal-close"
+                onClick={cancelRestore}
+                aria-label="Close dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={submitRestore}>
+              <div className="supabase-modal-body space-y-3.5">
+                <div className="p-3 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
+                  <strong>Warning:</strong> Restoring will overwrite the current live data of <strong>{target.targetName}</strong> with this snapshot. Services attached to it in <strong>{target.projectName ?? "this project"}</strong> will be stopped temporarily and will restart automatically once completed. This operation cannot be undone.
+                </div>
+
+                <div>
+                  <label htmlFor="confirm-restore-input" className="supabase-modal-label">
+                    Type <strong>{target.targetName}</strong> to confirm:
+                  </label>
+                  <input
+                    id="confirm-restore-input"
+                    value={confirmation}
+                    onChange={(e) => setConfirmation(e.target.value)}
+                    placeholder={target.targetName}
+                    autoComplete="off"
+                    spellCheck="false"
+                    required
+                    className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="supabase-modal-footer">
+                <button
+                  type="button"
+                  className="supabase-btn-secondary"
+                  onClick={cancelRestore}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="project-btn-danger"
+                  disabled={submitting || confirmation.trim() !== target.targetName}
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                      Restoring...
+                    </>
+                  ) : (
+                    "Restore Snapshot"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-
-        {!restores || restores.restores.length === 0 ? (
-          <div className="dashboard-empty-state">
-            <h3>No Restores yet</h3>
-            <p>Restore a completed Database or Volume Backup from the list above.</p>
-          </div>
-        ) : (
-          <div className="organization-table-wrap">
-            <table className="organization-table">
-              <thead>
-                <tr>
-                  <th>Target</th>
-                  <th>Project</th>
-                  <th>Requested</th>
-                  <th>Finished</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {restores.restores.map((restore) => (
-                  <tr key={restore.id}>
-                    <td>{restore.targetName}</td>
-                    <td>{restore.projectName ?? "-"}</td>
-                    <td>{formatDateTime(restore.createdAt)}</td>
-                    <td>{restore.finishedAt ? formatDateTime(restore.finishedAt) : "-"}</td>
-                    <td>
-                      <span className={`role-label is-${statusClass(restore.status)}`}>
-                        {restore.status}
-                      </span>
-                      {restore.errorMessage ? (
-                        <p className="project-quota-note">{restore.errorMessage}</p>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      )}
     </div>
   );
 }

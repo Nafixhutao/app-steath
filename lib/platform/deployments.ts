@@ -520,26 +520,7 @@ export async function markDeploymentRunning(deploymentId: string): Promise<void>
   );
 }
 
-/**
- * Marks the Service `stopped` without touching its Deployment history, which is
- * what the runtime does when the user stops a Service.
- */
-export async function markServiceStopped(serviceId: string): Promise<void> {
-  await pool.query(
-    `UPDATE "service" SET "status" = 'stopped', "updatedAt" = now() WHERE "id" = $1 AND "status" <> 'suspended'`,
-    [serviceId],
-  );
-}
-
-/**
- * Marks the Service `running` again after a start or restart.
- */
-export async function markServiceRunning(serviceId: string): Promise<void> {
-  await pool.query(
-    `UPDATE "service" SET "status" = 'running', "updatedAt" = now() WHERE "id" = $1 AND "status" <> 'suspended'`,
-    [serviceId],
-  );
-}
+export { markServiceRunning, markServiceStopped, setServiceStatus } from "./services.ts";
 
 /**
  * Appends Build log lines. The sequence continues from the highest stored value
