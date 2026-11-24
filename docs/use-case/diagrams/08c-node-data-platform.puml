@@ -1,0 +1,33 @@
+@startuml
+title Gambar 8c — Data dan Suspensi atas Permintaan Control Plane
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EEF6F8
+  BorderColor #3B6B7A
+  FontSize 12
+}
+
+actor "Instance Server\n(Node Agent)" as IS
+
+rectangle "Stealth Hosting — Control Plane" {
+  usecase "UC-33\nMenyediakan Database" as UC33
+  usecase "UC-36\nMerotasi Kredensial" as UC36
+  usecase "UC-37\nMenghapus Database" as UC37
+  usecase "UC-40\nMemverifikasi Domain" as UC40
+  usecase "UC-41\nMenghapus Domain" as UC41
+  usecase "UC-43\nMemulihkan Backup" as UC43
+  usecase "UC-54\nMenangguhkan Service" as UC54
+}
+
+IS --> UC33
+IS --> UC36
+IS --> UC37
+IS --> UC40
+IS --> UC41
+IS --> UC43
+IS --> UC54
+
+@enduml

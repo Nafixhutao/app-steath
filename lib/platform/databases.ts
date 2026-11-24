@@ -647,6 +647,10 @@ export async function createProjectDatabase(input: {
   let row: DatabaseRow;
   try {
     await client.query("BEGIN");
+    // Serialize role allocation with the insert below. The cheap SELECT in
+    // uniqueReadableRole is otherwise a check-then-act race between two
+    // concurrent Database creations, which could give two tenants one user.
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('database_username_alloc'))");
 
     // The id is generated here rather than by the database, because the schema
     // the Agent creates is derived from it.
@@ -678,7 +682,18 @@ export async function createProjectDatabase(input: {
       );
       row = result.rows[0];
     } catch (error) {
-      if ((error as { code?: string }).code === "23505") {
+      const pgError = error as { code?: string; constraint?: string };
+      if (pgError.code === "23505") {
+        // The one Database per Project rule lives in `database_projectId_key`.
+        // A `database_username_key` violation is the last-resort guard for the
+        // username the advisory lock above is meant to keep unique.
+        if (pgError.constraint === "database_username_key") {
+          throw new ApiError(
+            503,
+            "database_username_conflict",
+            "Database user name collision. Try again.",
+          );
+        }
         throw new QuotaExceededError(
           "Database",
           QUOTAS.databasesPerProject,

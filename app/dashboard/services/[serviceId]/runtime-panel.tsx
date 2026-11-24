@@ -49,6 +49,8 @@ export function RuntimePanel({
 
   // The log stream stays open while the panel is shown and is aborted when it
   // closes, so a Service that logs a lot does not keep a request open forever.
+  const loggedServiceRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!logOpen) return;
 
@@ -59,7 +61,11 @@ export function RuntimePanel({
       LOG_TAIL,
       (line) => {
         setLogLines((current) => {
-          const next = [...current, line];
+          // A new Service (or a fresh follow) starts a new log, never mixing
+          // lines from the previous stream.
+          const base = loggedServiceRef.current === serviceId ? current : [];
+          loggedServiceRef.current = serviceId;
+          const next = [...base, line];
           return next.length > MAX_LOG_LINES ? next.slice(next.length - MAX_LOG_LINES) : next;
         });
       },
@@ -165,10 +171,11 @@ export function RuntimePanel({
             type="button"
             onClick={() => {
               setLogError("");
-              setLogOpen((open) => {
-                if (open) setLogLines([]);
-                return !open;
-              });
+              if (!logOpen) {
+                loggedServiceRef.current = null;
+                setLogLines([]);
+              }
+              setLogOpen(!logOpen);
             }}
             disabled={status === "absent"}
           >

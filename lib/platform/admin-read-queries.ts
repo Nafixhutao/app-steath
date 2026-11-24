@@ -309,9 +309,11 @@ export async function getAdminDbMetrics(windowMinutes: number): Promise<DbMetric
     timestamp: new Date(row.timestamp).toISOString(),
   }));
   const current = history[history.length - 1] ?? null;
-  const reachable = current !== undefined;
 
+  // "Reachable" means the database answered version(), not that the sampler
+  // happened to write a row in this window. An empty history is still honest.
   const versionResult = await pool.query<{ version: string }>("SELECT version() AS version");
+  const reachable = versionResult.rows.length > 0;
   const serverVersion = reachable ? (versionResult.rows[0]?.version ?? "") : "";
 
   return {

@@ -275,7 +275,7 @@ export async function claimBuildJob(types: string[] = [BUILD_JOB_TYPE]): Promise
  */
 export async function completeJob(
   jobId: string,
-  outcome: "succeeded" | "failed" = "succeeded",
+  outcome: "succeeded" | "failed" | "cancelled" = "succeeded",
 ): Promise<void> {
   await pool.query('UPDATE "job" SET "status" = $2, "lockedAt" = NULL WHERE "id" = $1', [
     jobId,
@@ -336,19 +336,6 @@ export async function markDeploymentFailed(deploymentId: string, message: string
        AND s."status" = 'deploying'`,
     [deploymentId],
   );
-}
-
-/**
- * Marks a Deployment failed after its Build did not succeed, so the Job outcome
- * and the Deployment state never disagree.
- */
-export async function failDeployment(
-  jobId: string,
-  deploymentId: string,
-  message: string,
-): Promise<void> {
-  await markDeploymentFailed(deploymentId, message);
-  await completeJob(jobId, "failed");
 }
 
 /**

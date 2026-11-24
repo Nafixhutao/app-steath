@@ -70,7 +70,7 @@ export async function recordNodeHostMetrics(): Promise<number> {
 /** Deletes host metric rows older than the retention window. */
 export async function pruneNodeHostMetrics(): Promise<number> {
   const result = await pool.query(
-    `DELETE FROM "node_host_metric" WHERE "capturedAt" < now() - interval '1' * $1`,
+    `DELETE FROM "node_host_metric" WHERE "capturedAt" < now() - make_interval(hours => $1)`,
     [HOST_METRIC_RETENTION_HOURS],
   );
 
@@ -102,8 +102,22 @@ type GroupedMetricRow = {
   nodeStatus: string;
   lastSeenAt: Date | null;
 } & (
-  | { capturedAt: Date; cpuPercent: string; memoryUsedMb: number; memoryTotalMb: number; storageUsedMb: number; storageTotalMb: number }
-  | { capturedAt: null; cpuPercent: null; memoryUsedMb: null; memoryTotalMb: null; storageUsedMb: null; storageTotalMb: null }
+  | {
+      capturedAt: Date;
+      cpuPercent: string;
+      memoryUsedMb: number;
+      memoryTotalMb: number;
+      storageUsedMb: number;
+      storageTotalMb: number;
+    }
+  | {
+      capturedAt: null;
+      cpuPercent: null;
+      memoryUsedMb: null;
+      memoryTotalMb: null;
+      storageUsedMb: null;
+      storageTotalMb: null;
+    }
 );
 
 /**
@@ -157,9 +171,7 @@ export function groupByNode(rows: GroupedMetricRow[]): HostMetricNodeReport[] {
   return [...nodes.values()];
 }
 
-async function fetchNodeHostSample(
-  node: NodeEndpointRow,
-): Promise<NodeHostSample | null> {
+async function fetchNodeHostSample(node: NodeEndpointRow): Promise<NodeHostSample | null> {
   try {
     const client = createAgentClient(node.baseUrl, nodeConfig().token);
     const response = await client.GET("/v1/host-metrics");

@@ -295,6 +295,11 @@ export async function runBackupJob(job: {
     return { status: "completed" };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    // A failed Backup still leaves a staged artifact on the Agent. Clean it up
+    // here too, otherwise failed runs leak dump files on the node forever.
+    await client
+      .DELETE("/v1/backups/{backupId}", { params: { path: { backupId } } })
+      .catch(() => undefined);
     await pool.query(
       `UPDATE "backup" SET "status" = 'failed', "errorMessage" = $2 WHERE "id" = $1`,
       [backupId, message],

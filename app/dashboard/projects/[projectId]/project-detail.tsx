@@ -51,7 +51,12 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   const [actionError, setActionError] = useState("");
   // Null means the edit form follows the server values; typing detaches it.
   const [draft, setDraft] = useState<{ name: string; slug: string } | null>(null);
-  const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Better Auth stores multiple roles as a comma-separated string, so check the
+  // parsed set rather than the raw value.
+  const canManage =
+    activeMember?.role
+      .split(",")
+      .some((role) => role.trim() === "owner" || role.trim() === "admin") ?? false;
 
   const panel = useResource(() => getProject(projectId), [projectId]);
   const project: ProjectSummary | null = panel.data;

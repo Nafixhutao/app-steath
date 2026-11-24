@@ -47,7 +47,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const activeOrganizationId = session?.session.activeOrganizationId;
   const needsOrganization = !organizationsPending && (organizations?.length ?? 0) === 0;
   const needsActiveOrganization =
-    !organizationsPending && !needsOrganization && !!session && !activeOrganizationId && !isOrgsPage;
+    !organizationsPending &&
+    !needsOrganization &&
+    !!session &&
+    !activeOrganizationId &&
+    !isOrgsPage;
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -100,11 +104,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 organization={defaultOrganization}
                 user={{
                   name: session?.user.name || session?.user.email || defaultUser.name,
+                  email: session?.user.email,
+                  image: session?.user.image,
                   role: "Member",
                 }}
               />
             </Suspense>
-            <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden">
+            <main
+              id="dashboard-content"
+              className="console-main user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden"
+            >
               {needsOrganization ? <OrganizationOnboarding /> : children}
             </main>
           </div>

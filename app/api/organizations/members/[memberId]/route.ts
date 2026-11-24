@@ -25,7 +25,9 @@ export async function PATCH(
     });
     const target = current.members.find((member) => member.id === memberId);
     if (!target) return apiError(new ApiError(404, "member_not_found", "Member not found."));
-    if (actor.role !== "owner" && target.role === "owner") {
+    const actorRoles = actor.role.split(",").map((role) => role.trim());
+    const targetRoles = target.role.split(",").map((role) => role.trim());
+    if (!actorRoles.includes("owner") && targetRoles.includes("owner")) {
       return apiError(new ApiError(403, "forbidden", "Admins cannot change the owner role."));
     }
 

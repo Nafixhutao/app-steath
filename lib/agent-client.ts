@@ -72,7 +72,9 @@ export async function streamServiceLogs(
   });
 
   if (!response.response.ok || !response.data) {
-    throw new Error(`The Node Agent rejected the runtime log stream (${response.response.status}).`);
+    throw new Error(
+      `The Node Agent rejected the runtime log stream (${response.response.status}).`,
+    );
   }
 
   await readNdjson(response.data, onEvent);
@@ -90,24 +92,35 @@ async function readNdjson<T>(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    let newline = buffer.indexOf("\n");
-    while (newline !== -1) {
-      const line = buffer.slice(0, newline).trim();
-      buffer = buffer.slice(newline + 1);
-      if (line) {
-        await onEvent(JSON.parse(line) as T);
-      }
-      newline = buffer.indexOf("\n");
+  const emit = async (line: string) => {
+    try {
+      await onEvent(JSON.parse(line) as T);
+    } catch (error) {
+      // One broken event must not leave the log connection hanging. These
+      // streams are human-readable logs, so dropping a malformed line with a
+      // warning beats failing the whole stream.
+      console.warn("ignoring malformed agent NDJSON event", line.slice(0, 200), error);
     }
-  }
+  };
 
-  const remainder = buffer.trim();
-  if (remainder) {
-    await onEvent(JSON.parse(remainder) as T);
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      let newline = buffer.indexOf("\n");
+      while (newline !== -1) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (line) await emit(line);
+        newline = buffer.indexOf("\n");
+      }
+    }
+
+    const remainder = buffer.trim();
+    if (remainder) await emit(remainder);
+  } finally {
+    await reader.cancel().catch(() => undefined);
   }
 }

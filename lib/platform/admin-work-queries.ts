@@ -310,7 +310,7 @@ export async function listOperations(window: OperationsWindow): Promise<{
   ORDER BY "created_at" DESC
   LIMIT ${limit}
 `,
-    to ? [from, to] : [from ?? String(windowMinutes)],
+    [from ?? String(windowMinutes), ...(to ? [to] : [])],
   );
 
   return {
@@ -411,7 +411,7 @@ export async function listErrorGroups(window: ErrorGroupWindow): Promise<{
   ORDER BY "last_seen" DESC
   LIMIT 250
 `,
-    to ? [from, to] : [from ?? String(windowHours)],
+    [from ?? String(windowHours), ...(to ? [to] : [])],
   );
 
   const groups = new Map<

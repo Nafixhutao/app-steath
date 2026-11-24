@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   cancelDeployment,
   deploymentDuration,
@@ -39,6 +39,11 @@ export function DeploymentsPanel({
   canManage: boolean;
 }) {
   const [selected, setSelected] = useState<BuildLog | null>(null);
+  const selectedRef = useRef<BuildLog | null>(null);
+  const updateSelected = useCallback((log: BuildLog | null) => {
+    selectedRef.current = log;
+    setSelected(log);
+  }, []);
   const [busy, setBusy] = useState(false);
   const [actingOn, setActingOn] = useState<string | null>(null);
   // Deploy, redeploy, and cancel failures share one slot next to the load error.
@@ -60,17 +65,19 @@ export function DeploymentsPanel({
 
     const timer = setInterval(() => {
       void refreshHistory();
-      setSelected((current) => {
-        if (!current || !isDeploymentActive(current.deployment.status)) return current;
-        void getBuildLog(current.deployment.id)
-          .then(setSelected)
-          .catch(() => undefined);
-        return current;
-      });
+      const current = selectedRef.current;
+      if (!current || !isDeploymentActive(current.deployment.status)) return;
+      const deploymentId = current.deployment.id;
+      void getBuildLog(deploymentId)
+        .then((log) => {
+          // A newer selection (or Close) must not be overwritten by this poll.
+          if (selectedRef.current?.deployment.id === deploymentId) updateSelected(log);
+        })
+        .catch(() => undefined);
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [active, refreshHistory]);
+  }, [active, refreshHistory, updateSelected]);
 
   async function deploy() {
     setBusy(true);
@@ -87,7 +94,7 @@ export function DeploymentsPanel({
 
   async function openLog(deployment: DeploymentSummary) {
     try {
-      setSelected(await getBuildLog(deployment.id));
+      updateSelected(await getBuildLog(deployment.id));
       setActionError("");
     } catch (cause) {
       setActionError(getError(cause));
@@ -260,7 +267,7 @@ export function DeploymentsPanel({
             <button
               className="dashboard-link-button"
               type="button"
-              onClick={() => setSelected(null)}
+              onClick={() => updateSelected(null)}
             >
               Close
             </button>

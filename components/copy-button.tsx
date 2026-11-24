@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { copyToClipboard } from "@/lib/clipboard";
 
 /** Copy-to-clipboard button with a brief "copied" confirmation. */
 export function CopyButton({
@@ -24,9 +25,8 @@ export function CopyButton({
     [],
   );
 
-  const handleCopy = () => {
-    // Mock-data friendly: clipboard may be unavailable; feedback is local state.
-    void navigator.clipboard?.writeText(text).catch(() => undefined);
+  const handleCopy = async () => {
+    if (!(await copyToClipboard(text))) return;
     setCopied(true);
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => setCopied(false), 1400);

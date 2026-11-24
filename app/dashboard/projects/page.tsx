@@ -27,7 +27,12 @@ export default function ProjectsPage() {
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
   const organizationId = organization?.id;
-  const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Better Auth stores multiple roles as a comma-separated string, so check the
+  // parsed set rather than the raw value.
+  const canManage =
+    activeMember?.role
+      .split(",")
+      .some((role) => role.trim() === "owner" || role.trim() === "admin") ?? false;
   const limit = QUOTAS.projectsPerOrganization;
 
   const [search, setSearch] = useState("");

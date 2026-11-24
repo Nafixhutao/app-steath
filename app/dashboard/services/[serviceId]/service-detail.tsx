@@ -53,7 +53,12 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
   const [busy, setBusy] = useState(false);
   // Delete failures share one slot next to the load error.
   const [actionError, setActionError] = useState("");
-  const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Better Auth stores multiple roles as a comma-separated string, so check the
+  // parsed set rather than the raw value.
+  const canManage =
+    activeMember?.role
+      .split(",")
+      .some((role) => role.trim() === "owner" || role.trim() === "admin") ?? false;
   // Members are read-only for resources but may still trigger a Deployment.
   const canDeploy = Boolean(activeMember?.role);
 

@@ -4,6 +4,22 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // Dashboard HTML is authenticated UI that changes on every deploy. Next.js
+  // marks prerendered routes with s-maxage=31536000, which keeps browsers on a
+  // stale shell long after a new build ships. Keep these responses uncached.
+  async headers() {
+    return [
+      {
+        source: "/dashboard/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-store, max-age=0, must-revalidate",
+          },
+        ],
+      },
+    ];
+  },
   // The admin console moved out of the customer dashboard into the standalone
   // /admin area; old links keep working through these redirects.
   async redirects() {

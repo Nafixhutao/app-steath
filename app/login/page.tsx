@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth-form";
 import { AuthPageFallback } from "@/components/auth-page-fallback";
 import { auth } from "@/lib/auth";
+import { safeReturnTo } from "@/lib/return-to";
 
 export const metadata: Metadata = {
   title: "Sign in · Stealth Hosting",
@@ -16,21 +17,29 @@ export const metadata: Metadata = {
  * straight to the console instead of showing the form again. `headers()` is
  * request data, so it stays inside the page's Suspense boundary.
  */
-async function LoginGate() {
+type LoginSearchParams = { returnTo?: string | string[] };
+
+async function LoginGate({ searchParams }: { searchParams: Promise<LoginSearchParams> }) {
+  const params = await searchParams;
+  const returnTo = safeReturnTo(params.returnTo);
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (session) {
-    redirect("/dashboard");
+    redirect(returnTo ?? "/dashboard");
   }
 
   return <AuthForm initialMode="signin" />;
 }
 
 /** The dedicated sign-in page, so login has its own address and tab title. */
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<LoginSearchParams>;
+}) {
   return (
     <Suspense fallback={<AuthPageFallback />}>
-      <LoginGate />
+      <LoginGate searchParams={searchParams} />
     </Suspense>
   );
 }

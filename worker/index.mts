@@ -89,7 +89,8 @@ const JOB_HANDLERS: Record<string, JobHandler> = {
 const BUILD_HANDLER: JobHandler = async (job) => {
   const deploymentId = job.payload.deploymentId;
   if (!deploymentId) {
-    await failJob(job.id, "Build Job is missing its deploymentId.");
+    // Missing deploymentId is a static payload problem that won't fix itself on
+    // retry, so fail the Job immediately rather than burning the retry budget.
     return { status: "failed", subject: "unknown-deployment" };
   }
 
@@ -98,7 +99,6 @@ const BUILD_HANDLER: JobHandler = async (job) => {
     [deploymentId],
   );
   if (!current.rowCount || current.rows[0].status === "cancelled") {
-    await completeJob(job.id);
     return { status: "cancelled", subject: deploymentId };
   }
 
@@ -106,7 +106,6 @@ const BUILD_HANDLER: JobHandler = async (job) => {
     const result = await runBuildJob(job);
 
     if (result.status === "failed") {
-      await completeJob(job.id, "failed");
       workerLogger.log(`deployment ${deploymentId} build failed - ${result.message}`);
       return { status: "failed", subject: deploymentId };
     }
@@ -119,7 +118,6 @@ const BUILD_HANDLER: JobHandler = async (job) => {
     // Deployment only becomes `running` once the container answers its health
     // check, so a broken deployment never replaces a working one.
     const deployed = await runDeployment(deploymentId);
-    await completeJob(job.id, deployed.status === "failed" ? "failed" : "succeeded");
     log(
       `deployment ${deploymentId} ${deployed.status}`,
       deployed.message ? `- ${deployed.message}` : "",
@@ -127,9 +125,8 @@ const BUILD_HANDLER: JobHandler = async (job) => {
     return { status: deployed.status, subject: deploymentId };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await failJob(job.id, message);
     workerLogger.error(`deployment ${deploymentId} job failed: ${message}`, error);
-    return { status: "failed", subject: deploymentId };
+    throw error;
   }
 };
 

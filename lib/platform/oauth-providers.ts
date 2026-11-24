@@ -96,5 +96,15 @@ export async function deleteOAuthProvider(provider: OAuthProviderName): Promise<
 export async function socialProviderConfig(
   provider: OAuthProviderName,
 ): Promise<{ clientId: string; clientSecret: string } | null> {
-  return storedOAuthProvider(provider);
+  const stored = await storedOAuthProvider(provider);
+  if (stored) return stored;
+
+  // Admin-saved credentials win, but deployments that configure providers via
+  // environment variables must work too: the sign-in page advertises them.
+  const prefix = provider === "github" ? "GITHUB" : "GOOGLE";
+  const clientId =
+    process.env[`${prefix}_CLIENT_ID`] ?? process.env[`BETTER_AUTH_${prefix}_CLIENT_ID`];
+  const clientSecret =
+    process.env[`${prefix}_CLIENT_SECRET`] ?? process.env[`BETTER_AUTH_${prefix}_CLIENT_SECRET`];
+  return clientId && clientSecret ? { clientId, clientSecret } : null;
 }

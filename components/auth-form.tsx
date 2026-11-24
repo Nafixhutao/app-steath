@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, signUp } from "@/lib/auth-client";
+import { safeReturnTo } from "@/lib/return-to";
 
 export type AuthFormMode = "signin" | "signup";
 
@@ -115,10 +116,13 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
 
   async function socialSignIn(provider: "google" | "github") {
     setSocialBusy(provider);
+    const returnTo =
+      safeReturnTo(new URLSearchParams(window.location.search).get("returnTo")) ??
+      "/dashboard/organizations";
     try {
       const result = await signIn.social({
         provider,
-        callbackURL: "/dashboard/organizations",
+        callbackURL: returnTo,
         errorCallbackURL: "/login",
       });
       if (result?.error) {
@@ -136,10 +140,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
     event.preventDefault();
 
     const requestedReturnTo = new URLSearchParams(window.location.search).get("returnTo");
-    const returnTo =
-      requestedReturnTo?.startsWith("/") && !requestedReturnTo.startsWith("//")
-        ? requestedReturnTo
-        : "/dashboard/organizations";
+    const returnTo = safeReturnTo(requestedReturnTo) ?? "/dashboard/organizations";
 
     if (!email || !password) {
       setNotice("Enter your email and password to continue.");
@@ -161,7 +162,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           password,
           name: username,
           username,
-          callbackURL: "/dashboard/organizations",
+          callbackURL: returnTo,
         });
 
         if (result.error) {
@@ -175,7 +176,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           email,
           password,
           rememberMe: rememberEmail,
-          callbackURL: "/dashboard/organizations",
+          callbackURL: returnTo,
         });
 
         if (result.error) {

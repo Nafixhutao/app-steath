@@ -74,16 +74,28 @@ func (SystemExecutor) Stream(ctx context.Context, options Options, onLine func(s
 	}
 
 	var readers sync.WaitGroup
+	var readMu sync.Mutex
+	var readErr error
 	readers.Add(2)
 	for _, stream := range []io.Reader{stdout, stderr} {
 		go func(stream io.Reader) {
 			defer readers.Done()
-			forwardLines(stream, onLine)
+			if err := forwardLines(stream, onLine); err != nil {
+				readMu.Lock()
+				if readErr == nil {
+					readErr = err
+				}
+				readMu.Unlock()
+			}
 		}(stream)
 	}
 	readers.Wait()
 
-	return cmd.Wait()
+	waitErr := cmd.Wait()
+	if readErr != nil {
+		return fmt.Errorf("read %s output: %w", options.Name, readErr)
+	}
+	return waitErr
 }
 
 // Output runs the command and returns its standard output. On failure the
@@ -189,7 +201,7 @@ func (SystemExecutor) RunFile(ctx context.Context, options Options, path string)
 	return nil
 }
 
-func forwardLines(stream io.Reader, onLine func(string)) {
+func forwardLines(stream io.Reader, onLine func(string)) error {
 	scanner := bufio.NewScanner(stream)
 	// Build output can contain long lines from progress rendering.
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
@@ -197,4 +209,5 @@ func forwardLines(stream io.Reader, onLine func(string)) {
 	for scanner.Scan() {
 		onLine(scanner.Text())
 	}
+	return scanner.Err()
 }

@@ -3,8 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  Layers,
-  Server,
   Search,
   X,
   ExternalLink,
@@ -15,10 +13,7 @@ import {
   GitBranch,
   Copy,
   Check,
-  Cpu,
-  Activity,
   ArrowUpRight,
-  ShieldAlert,
   Loader2,
 } from "lucide-react";
 import { useActiveMember, useActiveOrganization } from "@/lib/auth-client";
@@ -32,13 +27,19 @@ import {
 } from "@/lib/services-client";
 import { listProjects, type ProjectSummary } from "@/lib/projects-client";
 import { useToast } from "@/components/toast-context";
+import { copyToClipboard } from "@/lib/clipboard";
 
 export default function ServicesPage() {
   const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
   const organizationId = organization?.id;
-  const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Better Auth stores multiple roles as a comma-separated string, so check the
+  // parsed set rather than the raw value.
+  const canManage =
+    activeMember?.role
+      .split(",")
+      .some((role) => role.trim() === "owner" || role.trim() === "admin") ?? false;
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -46,61 +47,63 @@ export default function ServicesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Resource queries
-  const servicesResource = useResource(
-    () => listOrganizationServices(),
-    [organizationId],
-    { enabled: Boolean(organizationId) },
-  );
+  const servicesResource = useResource(() => listOrganizationServices(), [organizationId], {
+    enabled: Boolean(organizationId),
+  });
   const serviceList: OrganizationService[] = useMemo(
     () => servicesResource.data ?? [],
     [servicesResource.data],
   );
 
-  const projectsResource = useResource(
-    () => listProjects(),
-    [organizationId],
-    { enabled: Boolean(organizationId) },
-  );
+  const projectsResource = useResource(() => listProjects(), [organizationId], {
+    enabled: Boolean(organizationId),
+  });
   const projectList: ProjectSummary[] = useMemo(
     () => projectsResource.data ?? [],
     [projectsResource.data],
   );
 
   const loading = servicesResource.loading;
+  const hasFilters = Boolean(search) || statusFilter !== "all" || projectFilter !== "all";
 
-  // Filtered services
   const filteredServices = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return serviceList.filter((s) => {
-      if (statusFilter !== "all" && s.status !== statusFilter) return false;
-      if (projectFilter !== "all" && s.projectId !== projectFilter) return false;
+    return serviceList.filter((service) => {
+      if (statusFilter !== "all" && service.status !== statusFilter) return false;
+      if (projectFilter !== "all" && service.projectId !== projectFilter) return false;
       if (!q) return true;
       return (
-        s.name.toLowerCase().includes(q) ||
-        s.projectName.toLowerCase().includes(q) ||
-        s.repoUrl.toLowerCase().includes(q) ||
-        s.platformHostname.toLowerCase().includes(q)
+        service.name.toLowerCase().includes(q) ||
+        service.projectName.toLowerCase().includes(q) ||
+        service.repoUrl.toLowerCase().includes(q) ||
+        service.platformHostname.toLowerCase().includes(q)
       );
     });
   }, [serviceList, search, statusFilter, projectFilter]);
 
-  // Status counters
-  const runningCount = useMemo(
-    () => serviceList.filter((s) => s.status === "running").length,
-    [serviceList],
-  );
-  const deployingCount = useMemo(
-    () => serviceList.filter((s) => s.status === "deploying").length,
-    [serviceList],
-  );
-  const stoppedCount = useMemo(
-    () => serviceList.filter((s) => s.status === "stopped" || s.status === "failed").length,
-    [serviceList],
-  );
+  // Grouping is the page's hierarchy: a service is always read inside its
+  // project, so the project name becomes a label instead of a repeated column.
+  const groups = useMemo(() => {
+    const byProject = new Map<string, { name: string; items: OrganizationService[] }>();
+    for (const service of filteredServices) {
+      const group = byProject.get(service.projectId) ?? { name: service.projectName, items: [] };
+      group.items.push(service);
+      byProject.set(service.projectId, group);
+    }
+    return Array.from(byProject, ([id, value]) => ({ id, ...value }));
+  }, [filteredServices]);
 
-  function copyUrl(url: string, id: string) {
-    void navigator.clipboard.writeText(url);
+  const runningCount = serviceList.filter((service) => service.status === "running").length;
+  const deployingCount = serviceList.filter((service) => service.status === "deploying").length;
+  const attentionCount = serviceList.filter(
+    (service) => service.status === "failed" || service.status === "stopped",
+  ).length;
+
+  async function copyUrl(url: string, id: string) {
+    if (!(await copyToClipboard(url))) {
+      toast.error("Copy failed", "Clipboard access is unavailable.");
+      return;
+    }
     setCopiedId(id);
     toast.success("Copied to clipboard", url);
     setTimeout(() => {
@@ -109,24 +112,23 @@ export default function ServicesPage() {
   }
 
   function renderStatusPill(status: ServiceStatus) {
-    const isRunning = status === "running";
-    const isDeploying = status === "deploying";
-    const isFailed = status === "failed";
+    const variant =
+      status === "running"
+        ? "is-running"
+        : status === "deploying"
+          ? "is-deploying"
+          : status === "failed"
+            ? "is-failed"
+            : status === "suspended"
+              ? "is-suspended"
+              : status === "not_deployed"
+                ? "is-not-deployed"
+                : "is-stopped";
 
     return (
-      <span
-        className={`services-status-pill ${
-          isRunning
-            ? "is-running"
-            : isDeploying
-            ? "is-deploying"
-            : isFailed
-            ? "is-failed"
-            : "is-stopped"
-        }`}
-      >
-        {isDeploying ? (
-          <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+      <span className={`services-status-pill ${variant}`}>
+        {status === "deploying" ? (
+          <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
         ) : (
           <span className="project-status-dot" aria-hidden="true" />
         )}
@@ -135,38 +137,48 @@ export default function ServicesPage() {
     );
   }
 
+  function renderCopyButton(service: OrganizationService) {
+    return (
+      <button
+        type="button"
+        onClick={() => copyUrl(service.url, service.id)}
+        className="services-copy-btn"
+        title="Copy full HTTPS URL"
+        aria-label={`Copy URL for ${service.name}`}
+      >
+        {copiedId === service.id ? (
+          <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+        ) : (
+          <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+        )}
+      </button>
+    );
+  }
+
   return (
     <div className="services-page-container">
-      {/* Header */}
       <header className="services-page-header">
-        <div className="flex items-center gap-3">
-          <div className="services-header-icon" aria-hidden="true">
-            <Server className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="services-page-title">Services</h1>
-              <span className="supabase-plan-badge">DOCKER WORKERS</span>
-            </div>
-            <p className="services-page-subtitle">
-              Containerized web applications running with automated HTTPS routing across {organization?.name ?? "your organization"}.
-            </p>
-          </div>
+        <div className="min-w-0">
+          <h1 className="services-page-title">Services</h1>
+          <p className="services-page-subtitle">
+            Containers, builds and public routing for {organization?.name ?? "your organization"}.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="services-header-actions">
           <button
             type="button"
             className="supabase-btn-secondary"
             onClick={() => void servicesResource.refresh()}
             disabled={loading}
-            title="Refresh services"
           >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
             <span>Refresh</span>
           </button>
-
-          {canManage && (
+          {canManage ? (
             <Link
               href="/dashboard/projects"
               className="supabase-btn-green inline-flex items-center"
@@ -175,174 +187,140 @@ export default function ServicesPage() {
               <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
               <span>New Service</span>
             </Link>
-          )}
+          ) : null}
         </div>
       </header>
 
-      {/* Global Alerts */}
       {servicesResource.error ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert is-error services-alert" role="alert">
           {servicesResource.error}
         </div>
       ) : null}
 
-      {/* Overview Metric Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" aria-label="Services overview">
-        <div className="services-metric-card">
-          <div className="flex items-center justify-between">
-            <span className="services-metric-label">Total Services</span>
-            <Server className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="services-metric-val">{serviceList.length}</span>
-            <span className="text-xs text-zinc-500 font-mono">/ {QUOTAS.servicesPerOrganization} limit</span>
-          </div>
-          <span className="text-[11px] text-zinc-500">Across all projects</span>
+      <div className="services-summary" aria-label="Services summary">
+        <div className="services-summary-total">
+          <strong>{serviceList.length}</strong>
+          <span>services across {projectList.length} projects</span>
         </div>
-
-        <div className="services-metric-card">
-          <div className="flex items-center justify-between">
-            <span className="services-metric-label">Healthy &amp; Running</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(62,207,142,0.6)]" />
-          </div>
-          <span className="services-metric-val text-emerald-400">{runningCount}</span>
-          <span className="text-[11px] text-zinc-500">Handling live traffic</span>
+        <div className="services-summary-states">
+          <span className="services-summary-state is-running">
+            <span className="project-status-dot" aria-hidden="true" />
+            {runningCount} running
+          </span>
+          <span className="services-summary-state is-deploying">{deployingCount} deploying</span>
+          <span className="services-summary-state is-attention">
+            {attentionCount} need attention
+          </span>
         </div>
+        <span className="services-summary-quota">
+          {serviceList.length} / {QUOTAS.servicesPerOrganization} used
+        </span>
+      </div>
 
-        <div className="services-metric-card">
-          <div className="flex items-center justify-between">
-            <span className="services-metric-label">Deploying</span>
-            <Loader2 className={`w-4 h-4 ${deployingCount > 0 ? "text-amber-400 animate-spin" : "text-zinc-500"}`} />
-          </div>
-          <span className="services-metric-val text-amber-400">{deployingCount}</span>
-          <span className="text-[11px] text-zinc-500">Builds in queue or progress</span>
-        </div>
-
-        <div className="services-metric-card">
-          <div className="flex items-center justify-between">
-            <span className="services-metric-label">Stopped / Suspended</span>
-            <ShieldAlert className="w-4 h-4 text-zinc-500" />
-          </div>
-          <span className="services-metric-val">{stoppedCount}</span>
-          <span className="text-[11px] text-zinc-500">Idle or failed containers</span>
-        </div>
-      </section>
-
-      {/* Toolbar */}
       <div className="services-toolbar">
         <div className="services-toolbar-left">
           <div className="services-search-box">
             <Search className="services-search-icon" aria-hidden="true" />
             <input
               type="search"
-              placeholder="Search services by name, repo, or project..."
+              placeholder="Search name, repo or hostname..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
               className="services-search-input"
+              aria-label="Search services"
             />
-            {search && (
+            {search ? (
               <button
                 type="button"
                 onClick={() => setSearch("")}
                 className="services-search-clear"
                 aria-label="Clear search"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
-            )}
+            ) : null}
           </div>
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(event) => setStatusFilter(event.target.value)}
             className="supabase-filter-select"
             aria-label="Filter by service status"
           >
-            <option value="all">All Statuses</option>
+            <option value="all">All statuses</option>
             <option value="running">Running</option>
             <option value="deploying">Deploying</option>
             <option value="stopped">Stopped</option>
             <option value="failed">Failed</option>
-            <option value="not_deployed">Not Deployed</option>
+            <option value="suspended">Suspended</option>
+            <option value="not_deployed">Not deployed</option>
           </select>
 
-          {projectList.length > 0 && (
+          {projectList.length > 0 ? (
             <select
               value={projectFilter}
-              onChange={(e) => setProjectFilter(e.target.value)}
+              onChange={(event) => setProjectFilter(event.target.value)}
               className="supabase-filter-select"
               aria-label="Filter by project"
             >
-              <option value="all">All Projects</option>
-              {projectList.map((p) => (
-                <option key={p.id} value={p.id}>
-                  Project: {p.name}
+              <option value="all">All projects</option>
+              {projectList.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
                 </option>
               ))}
             </select>
-          )}
+          ) : null}
         </div>
 
         <div className="services-toolbar-right">
-          <span className="services-count-pill">{filteredServices.length} Services</span>
-
-          <div className="supabase-view-toggle-group">
+          <span className="services-count">{filteredServices.length} shown</span>
+          <div className="supabase-view-toggle-group" role="group" aria-label="View mode">
             <button
               type="button"
               className={`supabase-view-btn ${viewMode === "grid" ? "is-active" : ""}`}
               onClick={() => setViewMode("grid")}
               aria-label="Grid view"
+              aria-pressed={viewMode === "grid"}
               title="Grid view"
             >
-              <LayoutGrid className="w-4 h-4" />
+              <LayoutGrid className="w-4 h-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               className={`supabase-view-btn ${viewMode === "list" ? "is-active" : ""}`}
               onClick={() => setViewMode("list")}
               aria-label="List view"
+              aria-pressed={viewMode === "list"}
               title="List view"
             >
-              <List className="w-4 h-4" />
+              <List className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Services List / Grid */}
       {loading && serviceList.length === 0 ? (
-        <div className="services-grid" aria-label="Loading services">
-          {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="services-skeleton-card" aria-hidden="true">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="supabase-skeleton-box w-9 h-9 rounded-lg" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="supabase-skeleton-box h-4 w-36 rounded" />
-                  <div className="supabase-skeleton-box h-3 w-24 rounded" />
-                </div>
-              </div>
-              <div className="supabase-skeleton-box h-4 w-full rounded mb-3" />
+        <div className="services-grid" role="status" aria-label="Loading services">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="services-skeleton-card" aria-hidden="true">
+              <div className="supabase-skeleton-box h-4 w-36 rounded mb-3" />
+              <div className="supabase-skeleton-box h-3 w-24 rounded mb-4" />
               <div className="supabase-skeleton-box h-3 w-2/3 rounded" />
             </div>
           ))}
         </div>
       ) : filteredServices.length === 0 ? (
         <div className="services-empty-box">
-          <div className="services-empty-halo" aria-hidden="true">
-            <Server className="w-7 h-7 text-emerald-400" />
-          </div>
-          <h2 className="text-base font-semibold text-white mt-3">
-            {search || statusFilter !== "all" || projectFilter !== "all"
-              ? "No services match your filters"
-              : "No services deployed yet"}
+          <h2 className="services-empty-title">
+            {hasFilters ? "No services match these filters" : "No services yet"}
           </h2>
-          <p className="text-xs text-zinc-400 max-w-md mt-1 mb-5">
-            {search || statusFilter !== "all" || projectFilter !== "all"
-              ? "Try resetting your search query or filters to see all services."
-              : "Deploy your first web application from a Git repository inside a project with automated Docker builds and zero-downtime HTTPS."}
+          <p className="services-empty-copy">
+            {hasFilters
+              ? "Clear the search or filters to see the rest of the fleet."
+              : "Create a project, then deploy a service from a Git repository. HTTPS routing is set up for you."}
           </p>
-
-          {search || statusFilter !== "all" || projectFilter !== "all" ? (
+          {hasFilters ? (
             <button
               type="button"
               className="supabase-btn-secondary"
@@ -352,219 +330,175 @@ export default function ServicesPage() {
                 setProjectFilter("all");
               }}
             >
-              Reset Filters
+              Reset filters
             </button>
           ) : (
-            <Link href="/dashboard/projects" className="supabase-btn-green inline-flex items-center">
-              <Plus className="w-4 h-4 mr-1.5" />
+            <Link
+              href="/dashboard/projects"
+              className="supabase-btn-green inline-flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
               <span>Go to Projects</span>
             </Link>
           )}
         </div>
       ) : viewMode === "grid" ? (
-        /* GRID VIEW */
-        <div className="services-grid">
-          {filteredServices.map((service) => (
-            <div key={service.id} className="services-card">
-              {/* Card Top */}
-              <div className="services-card-header">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="services-card-icon-box" aria-hidden="true">
-                    <Server className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <Link
-                      href={`/dashboard/services/${service.id}`}
-                      className="services-card-name hover:text-emerald-400 transition-colors block truncate"
-                      title={service.name}
-                    >
-                      {service.name}
-                    </Link>
-                    <Link
-                      href={`/dashboard/projects/${service.projectId}`}
-                      className="services-card-project-link inline-flex items-center gap-1"
-                    >
-                      <Layers className="w-3 h-3 text-zinc-500" />
-                      <span className="truncate">{service.projectName}</span>
-                    </Link>
-                  </div>
-                </div>
-
-                {renderStatusPill(service.status)}
-              </div>
-
-              {/* Git Repository Info */}
-              <div className="services-card-git-box">
-                <div className="flex items-center gap-1.5 text-xs text-zinc-300 min-w-0">
-                  <GitBranch className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
-                  <span className="font-mono text-[11px] text-zinc-400 font-semibold px-1.5 py-0.5 rounded bg-zinc-800">
-                    {service.branch}
-                  </span>
-                  <span className="text-[11px] text-zinc-500 truncate" title={service.repoUrl}>
-                    {service.repoUrl.replace(/^https?:\/\//, "")}
-                  </span>
-                </div>
-              </div>
-
-              {/* Platform URL */}
-              <div className="services-card-url-box">
-                <a
-                  href={service.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="services-card-url text-xs font-mono text-emerald-400 hover:underline truncate"
-                  title="Open live service in new tab"
-                >
-                  {service.platformHostname}
-                </a>
-                <button
-                  type="button"
-                  onClick={() => copyUrl(service.url, service.id)}
-                  className="text-zinc-500 hover:text-white transition-colors p-1"
-                  title="Copy full HTTPS URL"
-                  aria-label={`Copy URL for ${service.name}`}
-                >
-                  {copiedId === service.id ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </div>
-
-              {/* Card Footer */}
-              <div className="services-card-footer">
-                <div className="flex items-center gap-3 text-xs text-zinc-500 font-mono">
-                  <span className="flex items-center gap-1" title="CPU Allocation">
-                    <Cpu className="w-3.5 h-3.5" />
-                    <span>{service.cpuLimit} vCPU</span>
-                  </span>
-                  <span className="flex items-center gap-1" title="Memory Limit">
-                    <Activity className="w-3.5 h-3.5" />
-                    <span>{service.memoryLimitMb} MB</span>
-                  </span>
-                </div>
-
-                <Link
-                  href={`/dashboard/services/${service.id}`}
-                  className="services-card-manage-link"
-                >
-                  <span>Manage</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+        <div className="services-view">
+          {groups.map((group) => (
+            <section key={group.id} className="services-group" aria-label={`Project ${group.name}`}>
+              <div className="services-group-head">
+                <h2 className="services-group-name">{group.name}</h2>
+                <span className="services-group-count">{group.items.length}</span>
+                <Link href={`/dashboard/projects/${group.id}`} className="services-group-link">
+                  Open project
+                  <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
                 </Link>
               </div>
-            </div>
+              <div className="services-grid">
+                {group.items.map((service) => (
+                  <article key={service.id} className="services-card">
+                    <div className="services-card-header">
+                      <div className="min-w-0">
+                        <Link
+                          href={`/dashboard/services/${service.id}`}
+                          className="services-card-name"
+                          title={service.name}
+                        >
+                          {service.name}
+                        </Link>
+                        <div className="services-card-meta">
+                          <GitBranch className="w-3 h-3" aria-hidden="true" />
+                          <span className="services-mono">{service.branch}</span>
+                          <span aria-hidden="true">·</span>
+                          <span title={service.repoUrl}>
+                            {service.repoUrl.replace(/^https?:\/\//, "").split("/")[0]}
+                          </span>
+                        </div>
+                      </div>
+                      {renderStatusPill(service.status)}
+                    </div>
+
+                    <div className="services-card-url-row">
+                      <a
+                        href={service.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="services-card-url"
+                        title="Open live service in a new tab"
+                      >
+                        {service.platformHostname}
+                      </a>
+                      {renderCopyButton(service)}
+                    </div>
+
+                    <div className="services-card-footer">
+                      <span className="services-specs">
+                        {service.cpuLimit} vCPU · {service.memoryLimitMb} MB · :
+                        {service.containerPort}
+                      </span>
+                      <Link
+                        href={`/dashboard/services/${service.id}`}
+                        className="services-card-manage-link"
+                      >
+                        Manage
+                        <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       ) : (
-        /* LIST VIEW */
         <div className="services-table-card">
           <table className="services-table">
             <thead>
               <tr>
-                <th scope="col">Service Name</th>
-                <th scope="col">Project</th>
+                <th scope="col">Service</th>
                 <th scope="col">Status</th>
                 <th scope="col">Platform URL</th>
                 <th scope="col">Specs</th>
                 <th scope="col">Port</th>
-                <th scope="col" className="text-right">Action</th>
+                <th scope="col" className="text-right">
+                  Action
+                </th>
               </tr>
             </thead>
-            <tbody>
-              {filteredServices.map((service) => (
-                <tr key={service.id}>
-                  <td>
-                    <div className="flex items-center gap-2.5">
-                      <div className="services-row-icon" aria-hidden="true">
-                        <Server className="w-3.5 h-3.5 text-emerald-400" />
-                      </div>
-                      <div>
-                        <Link
-                          href={`/dashboard/services/${service.id}`}
-                          className="font-semibold text-white hover:text-emerald-400 transition-colors text-xs block"
-                        >
-                          {service.name}
-                        </Link>
-                        <div className="flex items-center gap-1 text-[11px] text-zinc-500 font-mono mt-0.5">
-                          <GitBranch className="w-3 h-3" />
-                          <span>{service.branch}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td>
-                    <Link
-                      href={`/dashboard/projects/${service.projectId}`}
-                      className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors inline-flex items-center gap-1"
-                    >
-                      <Layers className="w-3 h-3 text-zinc-500" />
-                      <span>{service.projectName}</span>
+            {groups.map((group) => (
+              <tbody key={group.id}>
+                <tr className="services-group-row">
+                  <th colSpan={6} scope="rowgroup">
+                    <span className="services-group-name">{group.name}</span>
+                    <span className="services-group-count">{group.items.length}</span>
+                    <Link href={`/dashboard/projects/${group.id}`} className="services-group-link">
+                      Open project
+                      <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
                     </Link>
-                  </td>
-
-                  <td>{renderStatusPill(service.status)}</td>
-
-                  <td>
-                    <div className="flex items-center gap-1.5">
-                      <a
-                        href={service.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs font-mono text-emerald-400 hover:underline max-w-[200px] truncate"
-                        title={service.url}
-                      >
-                        {service.platformHostname}
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => copyUrl(service.url, service.id)}
-                        className="text-zinc-500 hover:text-white transition-colors"
-                        title="Copy full URL"
-                      >
-                        {copiedId === service.id ? (
-                          <Check className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
-                  </td>
-
-                  <td className="text-xs font-mono text-zinc-400">
-                    {service.cpuLimit} vCPU · {service.memoryLimitMb} MB
-                  </td>
-
-                  <td className="text-xs font-mono text-zinc-400">
-                    :{service.containerPort}
-                  </td>
-
-                  <td className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <a
-                        href={service.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="supabase-btn-secondary text-xs h-7 px-2 inline-flex items-center gap-1"
-                        title="Visit live site"
-                      >
-                        <span>Visit</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-
+                  </th>
+                </tr>
+                {group.items.map((service) => (
+                  <tr key={service.id}>
+                    <td>
                       <Link
                         href={`/dashboard/services/${service.id}`}
-                        className="supabase-btn-secondary text-xs h-7 px-2.5 inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300"
+                        className="services-row-name"
                       >
-                        <span>Manage</span>
-                        <ArrowUpRight className="w-3 h-3" />
+                        {service.name}
                       </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+                      <div className="services-card-meta">
+                        <GitBranch className="w-3 h-3" aria-hidden="true" />
+                        <span className="services-mono">{service.branch}</span>
+                        <span aria-hidden="true">·</span>
+                        <span title={service.repoUrl}>
+                          {service.repoUrl.replace(/^https?:\/\//, "").split("/")[0]}
+                        </span>
+                      </div>
+                    </td>
+                    <td>{renderStatusPill(service.status)}</td>
+                    <td>
+                      <div className="services-url-cell">
+                        <a
+                          href={service.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="services-card-url"
+                          title={service.url}
+                        >
+                          {service.platformHostname}
+                        </a>
+                        {renderCopyButton(service)}
+                      </div>
+                    </td>
+                    <td className="services-specs">
+                      {service.cpuLimit} vCPU · {service.memoryLimitMb} MB
+                    </td>
+                    <td className="services-mono">:{service.containerPort}</td>
+                    <td>
+                      <div className="services-row-actions">
+                        <a
+                          href={service.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="supabase-btn-secondary services-row-btn"
+                          title="Visit live site"
+                        >
+                          <span>Visit</span>
+                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                        </a>
+                        <Link
+                          href={`/dashboard/services/${service.id}`}
+                          className="supabase-btn-secondary services-row-btn services-row-btn-accent"
+                        >
+                          <span>Manage</span>
+                          <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            ))}
           </table>
         </div>
       )}
