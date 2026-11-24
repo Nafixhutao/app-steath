@@ -924,7 +924,7 @@ export async function revealProjectDatabasePassword(input: {
  * serves every Database. The endpoint is refused for every engine instead of
  * silently publishing the whole server.
  */
-function assertProxySupported(_row: DatabaseRow): void {
+function assertProxySupported(): never {
   throw new ApiError(
     409,
     "database_proxy_unsupported",
@@ -949,11 +949,10 @@ export async function enableProjectDatabaseProxy(input: {
     throw new ApiError(404, "database_not_found", "This Project has no Database.");
   }
   normalizeProxyAllowlist(input.allowlist);
-  assertProxySupported(row);
 
-  // Unreachable: assertProxySupported always throws. It is here so the return type
-  // stays honest for the caller that has not been taught about the refusal yet.
-  return { databaseId: row.id, proxy: toProxySummary(row, null, true) };
+  // Always refuses: a shared server cannot publish one tenant, so this throws
+  // instead of returning. Postgres has no browser client to fall back to.
+  assertProxySupported();
 }
 
 /**
