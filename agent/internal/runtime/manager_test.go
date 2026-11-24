@@ -363,6 +363,19 @@ func (f *fakeDocker) sharedServerOutput(containerID string, command []string, st
 	}
 
 	switch {
+	// The role lookup asks the server which role owns a schema, because a
+	// readable role cannot be derived from the schema name.
+	case strings.Contains(joined, "FROM mysql.db WHERE Db ="),
+		strings.Contains(joined, "pg_get_userbyid(datdba) FROM pg_database WHERE datname ="):
+		// The statement quotes the schema, so the fixture is matched by the
+		// schema it mentions rather than by the container.
+		for _, name := range f.tenantList[container.Name] {
+			if strings.Contains(joined, name) {
+				return testRoleForSchema(name), true
+			}
+		}
+
+		return "", true
 	case strings.Contains(joined, "information_schema.schemata"),
 		strings.Contains(joined, "FROM pg_database"):
 		names := f.tenantList[container.Name]
@@ -377,9 +390,11 @@ func (f *fakeDocker) sharedServerOutput(containerID string, command []string, st
 
 			return "0", true
 		}
+		// A tenant listing carries the schema and the role that owns it, because
+		// a readable role cannot be derived from the schema name.
 		lines := ""
 		for _, name := range names {
-			lines += name + "\n"
+			lines += name + "\t" + testRoleForSchema(name) + "\n"
 		}
 
 		return lines, true
@@ -722,6 +737,13 @@ func testManager(t *testing.T, docker *fakeDocker, router *fakeRouter) *Manager 
 	manager.pollInterval = time.Millisecond
 
 	return manager
+}
+
+// testRoleForSchema is the role the fake server reports for a schema. It mirrors
+// the legacy derived name so a test that only seeds a schema still exercises the
+// same role the old code assumed.
+func testRoleForSchema(schema string) string {
+	return "u_" + strings.TrimPrefix(schema, schemaPrefix())
 }
 
 func sampleRequest() DeployRequest {

@@ -109,7 +109,7 @@ func (m *Manager) Backup(ctx context.Context, request BackupRequest) (BackupArti
 		}
 
 		schema := schemaNameFor(request.TargetID)
-		_, username := databaseObjectNames(request.TargetID)
+		username := m.databaseRole(ctx, engine, request.TargetID)
 
 		// MySQL writes a plain SQL dump and PostgreSQL a custom-format one, so the
 		// artifact keeps the extension the matching Restore expects.

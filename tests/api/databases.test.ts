@@ -634,7 +634,6 @@ describe("Databases", () => {
       engine: "postgres",
       version: "16",
       databaseName: names.schema,
-      username: names.role,
       storageLimitMb: 1024,
       status: "running",
       healthy: true,
@@ -642,9 +641,11 @@ describe("Databases", () => {
       overQuota: false,
     });
     expect(names.schema).toMatch(/^db_[A-Za-z0-9]{24}$/);
-    expect(names.role).toMatch(/^u_[A-Za-z0-9]{24}$/);
+    // The role is readable now (`{project}_{6 random}`), not a hash, so it is
+    // checked for shape rather than compared to the derived name.
+    expect(database.username).toMatch(/^database_project_[a-z0-9]{6}$/);
     expect(database.connectionString).toBe(
-      `postgres://${names.role}:[0-9a-f]{64}@db:5432/${names.schema}`.replace("[0-9a-f]{64}", new URL(database.connectionString as string).password),
+      `postgres://${database.username}:[0-9a-f]{64}@db:5432/${names.schema}`.replace("[0-9a-f]{64}", new URL(database.connectionString as string).password),
     );
     expect(new URL(database.connectionString as string).port).toBe("5432");
 
@@ -719,7 +720,6 @@ describe("Databases", () => {
       engine: "mysql",
       version: "8",
       databaseName: names.schema,
-      username: names.role,
       status: "running",
       healthy: true,
     });
@@ -727,7 +727,7 @@ describe("Databases", () => {
     // would be meaningless for it.
     expect(database.connectionString).toMatch(
       new RegExp(
-        `^mysql://${names.role}:[0-9a-f]{64}@db:3306/${names.schema}\\?ssl-mode=REQUIRED$`,
+        `^mysql://${database.username}:[0-9a-f]{64}@db:3306/${names.schema}\\?ssl-mode=REQUIRED$`,
       ),
     );
 
@@ -1170,5 +1170,64 @@ describe("Databases", () => {
         })
       ).status,
     ).toBe(404);
+  });
+
+  it("reveals the password on demand and only to owners and admins", async () => {
+    const owner = await signUp(uniqueName("dbreveal") + "@example.test", uniqueName("dbreveal"));
+    const project = await createProject(owner.cookie, "Reveal Project");
+    const created = (
+      (await (await databaseRequest(owner.cookie, project.id, { method: "POST" })).json()) as {
+        data: DatabaseBody;
+      }
+    ).data;
+
+    const { GET } = await import("@/app/api/projects/[projectId]/database/password/route");
+    const response = await GET(
+      new Request(`${BASE_URL}/api/projects/${project.id}/database/password`, {
+        headers: { cookie: owner.cookie, origin: BASE_URL },
+      }),
+      { params: Promise.resolve({ projectId: project.id }) },
+    );
+    expect(response.status).toBe(200);
+
+    const revealed = ((await response.json()) as { data: { password: string } }).data.password;
+    // The revealed value is the one the connection string already carries, so the
+    // dashboard never shows a password that does not work.
+    const fromUri = new URL(created.connectionString as string).password;
+    expect(revealed).toBe(fromUri);
+    expect(revealed).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("mints a one-time, expiring phpMyAdmin sign-in link for a MySQL Database", async () => {
+    const owner = await signUp(uniqueName("dbpma") + "@example.test", uniqueName("dbpma"));
+    const project = await createProject(owner.cookie, "Pma Project");
+    await databaseRequest(owner.cookie, project.id, { method: "POST", body: { engine: "mysql" } });
+
+    const { POST } = await import("@/app/api/projects/[projectId]/database/phpmyadmin/route");
+    const response = await POST(
+      new Request(`${BASE_URL}/api/projects/${project.id}/database/phpmyadmin`, {
+        method: "POST",
+        headers: { cookie: owner.cookie, origin: BASE_URL },
+      }),
+      { params: Promise.resolve({ projectId: project.id }) },
+    );
+    expect(response.status).toBe(200);
+
+    const session = ((await response.json()) as {
+      data: { url: string; expiresInSeconds: number };
+    }).data;
+    expect(session.expiresInSeconds).toBe(60);
+    // The link must live on the phpMyAdmin host: its session cookie is
+    // same-origin and `__Secure-`, so any other host could not hold a session.
+    expect(session.url).toMatch(/^https:\/\/pma\.[^/]+\/_sso\?token=/);
+
+    // The token is single use: the bridge consumes it on the first attempt.
+    const { consumePhpMyAdminToken } = await import("@/lib/platform/phpmyadmin-sso");
+    const token = new URL(session.url).searchParams.get("token") as string;
+    const first = await consumePhpMyAdminToken(token);
+    expect(first.databaseId).toHaveLength(36);
+    await expect(consumePhpMyAdminToken(token)).rejects.toMatchObject({
+      code: "sso_token_invalid",
+    });
   });
 });

@@ -9686,3 +9686,177 @@ body {
     white-space: nowrap;
   }
 }
+
+/* Database credential card.
+   One card, one row per credential, so Host/Database/User/Password read as a
+   single block instead of four separate boxes. Values are monospace and wrap
+   with break-all: a 24-character schema must never push the card sideways on a
+   360px screen. The copy button is 44px tall, the minimum comfortable target.
+   Shared by the MySQL and PostgreSQL panels. */
+.db-cred-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  background-color: #141318;
+  border: 1px solid #232129;
+  overflow: hidden;
+}
+
+.db-cred-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+
+.db-cred-row + .db-cred-row {
+  border-top: 1px solid #232129;
+}
+
+.db-cred-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #636170;
+}
+
+/* The copied confirmation sits next to the label so the value itself never
+   shifts or reflows when it appears. */
+.db-cred-copied {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #3ecf8e;
+}
+
+.db-cred-value-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.db-cred-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ffffff;
+  /* Long names must wrap rather than overflow: no horizontal scroll, no
+     ellipsis hiding a character that matters when copying by eye. */
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.db-cred-value.is-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.db-cred-password-value {
+  /* The password is 64 hex characters; wrapping it keeps the row height stable
+     whether it is hidden or revealed. */
+  min-height: 21px;
+}
+
+.db-cred-muted {
+  color: #716f7c;
+  font-family: inherit;
+}
+
+.db-cred-error {
+  font-size: 11.5px;
+  color: #ff7a82;
+  margin-top: 6px;
+}
+
+.db-cred-copy {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 6px;
+  background-color: #1f1e26;
+  border: 1px solid #2e2c39;
+  color: #8e8c99;
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    color 120ms,
+    border-color 120ms;
+}
+
+.db-cred-copy:hover:not(:disabled) {
+  background-color: #272532;
+  border-color: #3a3846;
+  color: #ffffff;
+}
+
+.db-cred-copy:focus-visible,
+.db-cred-action:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+.db-cred-copy:disabled,
+.db-cred-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* The password has two labelled buttons rather than an ambiguous icon, so the
+   action is readable without hovering. */
+.db-cred-password-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.db-cred-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background-color: #1f1e26;
+  border: 1px solid #2e2c39;
+  color: #d4d4d8;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    color 120ms,
+    border-color 120ms;
+}
+
+.db-cred-action:hover:not(:disabled) {
+  background-color: #272532;
+  border-color: #3a3846;
+  color: #ffffff;
+}
+
+/* 360px: trim the row padding so the copy button never forces a scrollbar. */
+@media (max-width: 400px) {
+  .db-cred-row {
+    padding: 10px 12px;
+  }
+
+  .db-cred-password-actions {
+    width: 100%;
+  }
+
+  .db-cred-action {
+    flex: 1 1 auto;
+  }
+}

@@ -88,6 +88,12 @@ const (
 	phpMyAdminPort  = 80
 	phpMyAdminAlias = "pma"
 
+	// phpMyAdminSsoPathPattern is the public path the dashboard's "Open
+	// phpMyAdmin" link uses for an automatic sign-in. It is served by the Control
+	// Plane on the phpMyAdmin hostname, then rewritten to the internal API route.
+	phpMyAdminSsoPathPattern = "/_sso*"
+	phpMyAdminSsoRewritePath = "/api/phpmyadmin/sso"
+
 	// phpMyAdminMaxUploadMB bounds an import through the browser client.
 	phpMyAdminMaxUploadMB = 64
 
@@ -480,10 +486,7 @@ func (m *Manager) ensurePhpMyAdmin(ctx context.Context, hostname string) error {
 				}
 			}
 
-			return m.router.PutRoute(ctx, Route{
-				Hostname: hostname,
-				Upstream: upstream(phpMyAdminAlias, phpMyAdminPort),
-			})
+			return m.routePhpMyAdmin(ctx, hostname)
 		}
 	}
 
@@ -506,10 +509,7 @@ func (m *Manager) ensurePhpMyAdmin(ctx context.Context, hostname string) error {
 		return fmt.Errorf("could not start phpMyAdmin: %w", err)
 	}
 
-	if err := m.router.PutRoute(ctx, Route{
-		Hostname: hostname,
-		Upstream: upstream(phpMyAdminAlias, phpMyAdminPort),
-	}); err != nil {
+	if err := m.routePhpMyAdmin(ctx, hostname); err != nil {
 		// A browser client with no route is unreachable and would keep holding
 		// memory, so it is removed with the failed attempt.
 		_ = m.docker.RemoveContainer(ctx, containerID, true)
@@ -517,6 +517,32 @@ func (m *Manager) ensurePhpMyAdmin(ctx context.Context, hostname string) error {
 	}
 
 	return nil
+}
+
+// routePhpMyAdmin programs both routes the phpMyAdmin host needs: the browser
+// client for every path, and a sign-in bridge that lets the dashboard open a
+// logged-in session without the user typing credentials.
+//
+// The bridge is a path-scoped route on the same hostname, proxying to the Control
+// Plane. It must stay on this hostname: phpMyAdmin's session cookie is
+// `__Secure-` and same-site, so a session started anywhere else would not be sent
+// back to it.
+func (m *Manager) routePhpMyAdmin(ctx context.Context, hostname string) error {
+	if m.phpMyAdminUpstream != "" {
+		if err := m.router.PutRoute(ctx, Route{
+			Hostname:  hostname,
+			Path:      phpMyAdminSsoPathPattern,
+			Upstream:  m.phpMyAdminUpstream,
+			RewriteTo: phpMyAdminSsoRewritePath,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return m.router.PutRoute(ctx, Route{
+		Hostname: hostname,
+		Upstream: upstream(phpMyAdminAlias, phpMyAdminPort),
+	})
 }
 
 // GetDatabase reports a Database's health and storage usage.
@@ -570,7 +596,11 @@ func (m *Manager) removeDatabaseObjects(ctx context.Context, engine, databaseID 
 		return nil
 	}
 
-	schema, role := databaseObjectNames(databaseID)
+	schema := schemaNameFor(databaseID)
+	// Removal must drop the role that actually owns the schema, which a readable
+	// role makes impossible to re-derive. Resolving it first keeps the old
+	// derived name as the fallback.
+	role := m.databaseRole(ctx, engine, databaseID)
 
 	if engine == DatabaseEngineMySQL {
 		statement := strings.Join([]string{
@@ -623,7 +653,7 @@ func (m *Manager) RotateDatabasePassword(
 		return DatabaseState{}, ErrUnknownDatabase
 	}
 
-	_, role := databaseObjectNames(request.DatabaseID)
+	role := m.databaseRole(ctx, engine, request.DatabaseID)
 
 	if engine == DatabaseEngineMySQL {
 		statement := fmt.Sprintf(
@@ -698,8 +728,12 @@ func (m *Manager) tenants(ctx context.Context, engine string) []tenant {
 	prefix := schemaPrefix()
 	var statement string
 	if engine == DatabaseEngineMySQL {
+		// The schema's owner comes from `mysql.db`, because a readable role cannot
+		// be recovered from the schema name.
 		statement = fmt.Sprintf(
-			"SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE %s;",
+			"SELECT s.SCHEMA_NAME, COALESCE(MIN(d.User), '') FROM information_schema.SCHEMATA s "+
+				"LEFT JOIN mysql.db d ON d.Db = s.SCHEMA_NAME "+
+				"WHERE s.SCHEMA_NAME LIKE %s GROUP BY s.SCHEMA_NAME;",
 			quoteMySQLLiteral(prefix+"%"),
 		)
 		output, err := m.docker.Exec(ctx, info.ID, mysqlRootQueryCommand(), statement)
@@ -712,7 +746,8 @@ func (m *Manager) tenants(ctx context.Context, engine string) []tenant {
 	}
 
 	statement = fmt.Sprintf(
-		"SELECT datname FROM pg_database WHERE datname LIKE %s;", quoteSQLString(prefix+"%"),
+		"SELECT datname, pg_get_userbyid(datdba) FROM pg_database WHERE datname LIKE %s;",
+		quoteSQLString(prefix+"%"),
 	)
 	output, err := m.docker.Exec(ctx, info.ID, postgresAdminQueryCommand(), statement)
 	if err != nil {
@@ -896,10 +931,7 @@ func (m *Manager) reconcilePhpMyAdmin(ctx context.Context) {
 		return
 	}
 
-	if err := m.router.PutRoute(ctx, Route{
-		Hostname: hostname,
-		Upstream: upstream(phpMyAdminAlias, phpMyAdminPort),
-	}); err != nil {
+	if err := m.routePhpMyAdmin(ctx, hostname); err != nil {
 		log.Printf("reconcile phpMyAdmin: could not restore the route: %v", err)
 	}
 }
@@ -998,6 +1030,67 @@ func schemaNameFor(databaseID string) string {
 	return schema
 }
 
+// roleForSchema returns the role that owns a schema inside the shared server. New
+// Databases have a readable role that cannot be re-derived from the schema, so the
+// server is the only source of truth. The second result is false when the schema
+// is unknown or the lookup failed, which callers treat as "fall back".
+func (m *Manager) roleForSchema(ctx context.Context, engine, schema string) (string, bool) {
+	server := sharedServerFor(engine)
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
+		return "", false
+	}
+
+	if engine == DatabaseEngineMySQL {
+		statement := fmt.Sprintf(
+			"SELECT COALESCE(MIN(User), '') FROM mysql.db WHERE Db = %s;",
+			quoteMySQLLiteral(schema),
+		)
+		output, err := m.docker.Exec(ctx, info.ID, mysqlRootQueryCommand(), statement)
+		if err != nil {
+			return "", false
+		}
+		role := strings.TrimSpace(output)
+		// The value is about to be interpolated into a SQL statement, so anything
+		// that is not a legal role means the lookup did not answer and the caller
+		// must fall back rather than trust it.
+		if !validDatabaseRole(role) {
+			return "", false
+		}
+
+		return role, true
+	}
+
+	statement := fmt.Sprintf(
+		"SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = %s;",
+		quoteSQLString(schema),
+	)
+	output, err := m.docker.Exec(ctx, info.ID, postgresAdminQueryCommand(), statement)
+	if err != nil {
+		return "", false
+	}
+	role := strings.TrimSpace(output)
+	// The shared server's own superuser owns nothing a tenant should reuse.
+	if !validDatabaseRole(role) || role == sharedPostgresAdmin {
+		return "", false
+	}
+
+	return role, true
+}
+
+// databaseRole resolves a Database's role, preferring the server and falling back
+// to the legacy derived name so Databases created before readable usernames keep
+// working.
+func (m *Manager) databaseRole(ctx context.Context, engine, databaseID string) string {
+	if role, ok := m.roleForSchema(ctx, engine, schemaNameFor(databaseID)); ok {
+		return role
+	}
+
+	_, role := databaseObjectNames(databaseID)
+
+	return role
+}
+
 // mysqlRootCommand runs the mysql client as root inside the shared server. The
 // password comes from the container environment, so it never appears in an
 // argument.
@@ -1034,20 +1127,41 @@ func postgresAdminQueryCommand() []string {
 	}
 }
 
-// tenantsFromOutput parses the one-name-per-line output of a tenant listing.
+// tenantsFromOutput parses the one-schema-per-line output of a tenant listing and
+// resolves each schema's role from the server. A readable role cannot be derived
+// from the schema, so the listing query returns the owner alongside the name.
 func tenantsFromOutput(output, engine string) []tenant {
 	found := make([]tenant, 0)
 	seen := make(map[string]bool)
 
 	for _, line := range strings.Split(output, "\n") {
-		schema := strings.TrimSpace(line)
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// One `<schema>\t<role>` pair per line; a missing role is skipped rather
+		// than guessed, because locking the wrong role would cut off another
+		// tenant.
+		parts := strings.SplitN(line, "\t", 2)
+		schema := strings.TrimSpace(parts[0])
 		if schema == "" || seen[schema] || !strings.HasPrefix(schema, schemaPrefix()) {
+			continue
+		}
+		role := ""
+		if len(parts) == 2 {
+			role = strings.TrimSpace(parts[1])
+			// MySQL reports the grantee as `'user'@'%'`; only the user matters.
+			if at := strings.Index(role, "@"); at > 0 {
+				role = strings.Trim(role[:at], "'`\"")
+			}
+		}
+		if !validDatabaseRole(role) {
 			continue
 		}
 		seen[schema] = true
 
-		key := strings.TrimPrefix(schema, schemaPrefix())
-		found = append(found, tenant{schema: schema, role: "u_" + key})
+		found = append(found, tenant{schema: schema, role: role})
 	}
 
 	return found
@@ -1072,15 +1186,15 @@ func (r DatabaseRequest) validate() error {
 		return fmt.Errorf("%w: storageLimitMb must be between 1 and %d", ErrInvalidDatabase, MaxDatabaseStorageMB)
 	}
 
-	// The names reach a SQL statement, so they are re-derived from the id rather
-	// than trusted from the request. A mismatch is a caller bug, not a valid
-	// request.
-	schema, role := databaseObjectNames(r.DatabaseID)
-	if r.DatabaseName != "" && r.DatabaseName != schema {
+	// The schema still has to match its derived form: the id decides where the
+	// data lives. The role is chosen by the Control Plane, because a readable user
+	// name cannot be derived from the id, so it is validated as an identifier
+	// instead of compared to a formula.
+	if r.DatabaseName != "" && r.DatabaseName != schemaNameFor(r.DatabaseID) {
 		return fmt.Errorf("%w: databaseName does not match the derived schema", ErrInvalidDatabase)
 	}
-	if r.Username != "" && r.Username != role {
-		return fmt.Errorf("%w: username does not match the derived role", ErrInvalidDatabase)
+	if !validDatabaseRole(r.Username) {
+		return fmt.Errorf("%w: username must be 1-32 letters, digits or underscores", ErrInvalidDatabase)
 	}
 
 	return r.validatePhpMyAdmin()
@@ -1129,6 +1243,32 @@ func (r DatabasePasswordRequest) validate() error {
 
 func validPassword(value string) bool {
 	return value != "" && len(value) <= 256 && !strings.ContainsRune(value, '\x00')
+}
+
+// validDatabaseRole accepts a role the shared server can hold. Both engines allow
+// letters, digits and underscores; MySQL additionally caps the name at 32
+// characters, which is the tighter bound and therefore the one enforced.
+//
+// The names each server's own administrator uses are refused: a tenant role that
+// collided with `root` or `stealth` would be grantable to a Project, which is a
+// privilege escalation rather than a naming problem.
+func validDatabaseRole(value string) bool {
+	if value == "" || len(value) > 32 {
+		return false
+	}
+	switch strings.ToLower(value) {
+	case "root", "mysql", "postgres", sharedPostgresAdmin, "admin", "public":
+		return false
+	}
+	for _, char := range value {
+		switch {
+		case char >= 'a' && char <= 'z', char >= 'A' && char <= 'Z', char >= '0' && char <= '9', char == '_':
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 // quoteMySQLLiteral quotes a MySQL string literal. MySQL treats a backslash as

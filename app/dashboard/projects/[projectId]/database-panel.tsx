@@ -22,13 +22,16 @@ import {
   disableProjectDatabaseProxy,
   enableProjectDatabaseProxy,
   getProjectDatabase,
+  revealProjectDatabasePassword,
   rotateProjectDatabaseCredentials,
+  startPhpMyAdminSession,
   type DatabaseEngine,
   type DatabaseSummary,
 } from "@/lib/databases-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
+import { CredentialRow, PasswordRow } from "./database-credentials";
 
 function usageLabel(database: DatabaseSummary): string {
   if (database.usageMb === null) {
@@ -91,6 +94,10 @@ export function DatabasePanel({
   const [revealPublicUri, setRevealPublicUri] = useState(false);
   const [copiedPrivate, setCopiedPrivate] = useState(false);
   const [copiedPublic, setCopiedPublic] = useState(false);
+  /** Which credential row last copied, so its icon can show a tick. */
+  const [copiedCredential, setCopiedCredential] = useState<string | null>(null);
+  const [pmaSigningIn, setPmaSigningIn] = useState(false);
+  const [credentialError, setCredentialError] = useState("");
 
   const panel = useResource(
     useCallback(async () => {
@@ -104,6 +111,8 @@ export function DatabasePanel({
   const loading = panel.loading;
   const allowlist =
     allowlistDraft ?? (database?.proxy.enabled ? database.proxy.allowlist.join("\n") : "");
+  /** The internal address a Service in this Project dials, with its port. */
+  const databaseHost = `db:${database?.engine === "mysql" ? "3306" : "5432"}`;
 
   function copyText(text: string, type: "private" | "public") {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -117,6 +126,59 @@ export function DatabasePanel({
         }
         toast.success("Copied connection URI", "Ready to paste into your environment.");
       });
+    }
+  }
+
+  /**
+   * Copies one credential and ticks its row for 1.5 seconds. The value is the
+   * full one, even when the row shows a shortened form.
+   */
+  function copyCredential(label: string, value: string) {
+    if (typeof navigator === "undefined" || !navigator.clipboard) {
+      return;
+    }
+    void navigator.clipboard.writeText(value).then(() => {
+      setCopiedCredential(label);
+      setTimeout(() => {
+        setCopiedCredential((current) => (current === label ? null : current));
+      }, 1500);
+    });
+  }
+
+  /**
+   * Opens phpMyAdmin already signed in. The API mints a one-time link on the
+   * phpMyAdmin host, which logs in server-side and returns the session cookie.
+   *
+   * The tab is opened synchronously, because a `window.open` that follows an
+   * `await` is no longer tied to the click and mobile browsers block it. It is
+   * opened with `about:blank`, then navigated by the opener once the link arrives:
+   * with `noopener` the opener keeps no handle on the new window, so the URL is
+   * set from a script in this page instead of by `tab.location`.
+   */
+  async function openPhpMyAdmin() {
+    setPmaSigningIn(true);
+    setCredentialError("");
+
+    const tab = window.open("about:blank", "_blank");
+    try {
+      const session = await startPhpMyAdminSession(projectId);
+      if (tab && !tab.closed) {
+        // `noopener` is not used above for exactly this reason: a handle is
+        // needed to send the new tab to the signed-in URL. The URL is
+        // same-origin-safe (the platform's own phpMyAdmin host) and carries a
+        // one-time token, and the opener relationship is then severed.
+        tab.opener = null;
+        tab.location.replace(session.url);
+      } else {
+        // The popup was blocked; navigating the current tab still signs in, and
+        // the browser's Back button returns to the dashboard.
+        window.location.assign(session.url);
+      }
+    } catch (cause) {
+      tab?.close();
+      setCredentialError(getError(cause));
+    } finally {
+      setPmaSigningIn(false);
     }
   }
 
@@ -458,27 +520,52 @@ export function DatabasePanel({
                 </p>
               )}
 
-              {/* Host and Credential breakdown */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                <div className="project-spec-pill">
-                  <span className="project-spec-label">Host</span>
-                  <span className="project-spec-val">db</span>
+              {database.engine === "postgres" ? (
+                <div className="db-cred-card">
+                  <CredentialRow
+                    label="Host"
+                    value={databaseHost}
+                    onCopy={copyCredential}
+                    copied={copiedCredential === "Host"}
+                  />
+                  <CredentialRow
+                    label="Database"
+                    value={database.databaseName}
+                    onCopy={copyCredential}
+                    copied={copiedCredential === "Database"}
+                  />
+                  <CredentialRow
+                    label="User"
+                    value={database.username}
+                    onCopy={copyCredential}
+                    copied={copiedCredential === "User"}
+                  />
+                  {canManage ? (
+                    <PasswordRow
+                      fetchPassword={() =>
+                        revealProjectDatabasePassword(projectId).then((r) => r.password)
+                      }
+                      onCopied={(value) => copyCredential("Password", value)}
+                      onError={setCredentialError}
+                      copied={copiedCredential === "Password"}
+                    />
+                  ) : (
+                    <div className="db-cred-row">
+                      <span className="db-cred-label">Password</span>
+                      <div className="db-cred-value-wrap">
+                        <span className="db-cred-value db-cred-muted">Owner or admin only</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="project-spec-pill">
-                  <span className="project-spec-label">Port</span>
-                  <span className="project-spec-val">
-                    {database.engine === "mysql" ? "3306" : "5432"}
-                  </span>
-                </div>
-                <div className="project-spec-pill">
-                  <span className="project-spec-label">Database</span>
-                  <span className="project-spec-val">{database.databaseName}</span>
-                </div>
-                <div className="project-spec-pill">
-                  <span className="project-spec-label">User</span>
-                  <span className="project-spec-val">{database.username}</span>
-                </div>
-              </div>
+              ) : null}
+
+              {credentialError && database.engine === "postgres" ? (
+                <p className="db-cred-error" role="alert">
+                  <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
+                  {credentialError}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -492,8 +579,8 @@ export function DatabasePanel({
                     <h3 className="project-settings-title">phpMyAdmin</h3>
                   </div>
                   <p className="project-settings-desc">
-                    A browser client for this Database, served on the Platform Domain over HTTPS. It
-                    reaches MySQL through the private Project network.
+                    A browser client for this Database, served on the Platform Domain over HTTPS.
+                    It reaches MySQL through the private Project network.
                   </p>
                 </div>
                 <span
@@ -509,28 +596,70 @@ export function DatabasePanel({
               <div className="p-5 space-y-4">
                 {database.phpMyAdmin.url ? (
                   <>
-                    <a
+                    <button
+                      type="button"
                       className="supabase-btn-green"
-                      href={database.phpMyAdmin.url}
-                      target="_blank"
-                      rel="noreferrer"
+                      onClick={() => void openPhpMyAdmin()}
+                      disabled={pmaSigningIn}
                     >
-                      <Globe className="w-4 h-4 mr-1.5" />
-                      Open phpMyAdmin
-                    </a>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="project-spec-pill">
-                        <span className="project-spec-label">Sign in as</span>
-                        <span className="project-spec-val">{database.username}</span>
-                      </div>
-                      <div className="project-spec-pill">
-                        <span className="project-spec-label">Password</span>
-                        <span className="project-spec-val">From DATABASE_URL</span>
-                      </div>
+                      {pmaSigningIn ? (
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      ) : (
+                        <Globe className="w-4 h-4 mr-1.5" />
+                      )}
+                      {pmaSigningIn ? "Signing in…" : "Open phpMyAdmin"}
+                    </button>
+
+                    {credentialError ? (
+                      <p className="db-cred-error" role="alert">
+                        <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
+                        {credentialError}
+                      </p>
+                    ) : null}
+
+                    <div className="db-cred-card">
+                      <CredentialRow
+                        label="Host"
+                        value={databaseHost}
+                        onCopy={copyCredential}
+                        copied={copiedCredential === "Host"}
+                      />
+                      <CredentialRow
+                        label="Database"
+                        value={database.databaseName}
+                        onCopy={copyCredential}
+                        copied={copiedCredential === "Database"}
+                      />
+                      <CredentialRow
+                        label="User"
+                        value={database.username}
+                        onCopy={copyCredential}
+                        copied={copiedCredential === "User"}
+                      />
+                      {canManage ? (
+                        <PasswordRow
+                          fetchPassword={() =>
+                            revealProjectDatabasePassword(projectId).then((r) => r.password)
+                          }
+                          onCopied={(value) => copyCredential("Password", value)}
+                          onError={setCredentialError}
+                          copied={copiedCredential === "Password"}
+                        />
+                      ) : (
+                        <div className="db-cred-row">
+                          <span className="db-cred-label">Password</span>
+                          <div className="db-cred-value-wrap">
+                            <span className="db-cred-value db-cred-muted">
+                              Owner or admin only
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
+
                     <p className="text-[11px] text-zinc-500">
-                      No password is shown here on purpose: use the one in the connection string
-                      above, or rotate it first.
+                      Sign in here only with the credentials above; this page is shared by every MySQL
+                      Database on the platform.
                     </p>
                   </>
                 ) : (

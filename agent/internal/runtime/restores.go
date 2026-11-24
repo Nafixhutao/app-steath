@@ -118,7 +118,7 @@ func (m *Manager) Restore(
 		}
 
 		schema := schemaNameFor(request.TargetID)
-		_, username := databaseObjectNames(request.TargetID)
+		username := m.databaseRole(ctx, engine, request.TargetID)
 
 		if err := m.docker.RestoreDatabase(
 			ctx, containerName, schema, username, engine, path,

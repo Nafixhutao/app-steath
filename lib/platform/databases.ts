@@ -43,11 +43,80 @@ export const DATABASE_VERSION = DATABASE_ENGINES.postgres;
  * always names the objects the Agent created inside the shared server. Both names
  * use a 24 character key from the id (96 bits of a UUID), which fits MySQL's
  * 32-character user name limit and is collision-free in practice.
+ *
+ * This is the legacy formula, kept for Databases that predate readable user
+ * names. New Databases get `readableDatabaseRole` instead, and the Agent resolves
+ * a Database's role from the server rather than assuming this one.
  */
 export function databaseObjectNames(databaseId: string): { schema: string; role: string } {
   const key = databaseId.replace(/[^A-Za-z0-9]/g, "").slice(0, 24) || "tenant";
 
   return { schema: `db_${key}`, role: `u_${key}` };
+}
+
+/** MySQL caps a user name at 32 characters, so the readable role stays short. */
+const READABLE_ROLE_SUFFIX_LENGTH = 6;
+const READABLE_ROLE_MAX_PROJECT = 20;
+
+/**
+ * Builds the role a new Database signs in as: `{project}_{6 random base36}`, for
+ * example `apap_a1b2c3`. A readable name is what makes phpMyAdmin usable without
+ * the connection string, and the random suffix keeps it unique across a shared
+ * server that holds every tenant.
+ *
+ * The suffix is random rather than derived from the id, because a collision would
+ * make two Databases share one MySQL user. The caller checks the Database table
+ * for a duplicate and retries, which keeps the name unpredictable and unique.
+ *
+ * The schema keeps the legacy `db_<key>` shape: it is derived from the id, never
+ * shown to a person, and changing it would orphan rows that already exist.
+ */
+export function readableDatabaseRole(projectName: string, suffix: string): string {
+  const prefix = projectName
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, READABLE_ROLE_MAX_PROJECT)
+    .replace(/_+$/g, "");
+
+  return `${prefix || "db"}_${suffix.slice(0, READABLE_ROLE_SUFFIX_LENGTH)}`;
+}
+
+/** A lowercase base36 suffix sized for `READABLE_ROLE_SUFFIX_LENGTH`. */
+export function readableRoleSuffix(): string {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = randomBytes(READABLE_ROLE_SUFFIX_LENGTH);
+  let suffix = "";
+  for (const byte of bytes) {
+    suffix += alphabet[byte % alphabet.length];
+  }
+
+  return suffix;
+}
+
+/**
+ * Chooses a readable role no other Database already holds. A collision would give
+ * two tenants the same MySQL user, so a duplicate is retried a few times before
+ * giving up rather than silently reusing it.
+ */
+async function uniqueReadableRole(projectName: string): Promise<string> {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const candidate = readableDatabaseRole(projectName, readableRoleSuffix());
+    const existing = await pool.query('SELECT 1 FROM "database" WHERE "username" = $1', [
+      candidate,
+    ]);
+    if (existing.rowCount === 0) {
+      return candidate;
+    }
+  }
+
+  throw new ApiError(
+    503,
+    "database_username_conflict",
+    "Could not allocate a unique Database user name. Try again.",
+  );
 }
 
 /** The alias the agent gives the container on the Project network. */
@@ -196,6 +265,26 @@ async function loadDatabaseRow(projectId: string): Promise<DatabaseRow | null> {
   );
 
   return result.rows[0] ?? null;
+}
+
+/**
+ * Reads a Database's sign-in credentials by id, for the phpMyAdmin bridge. The
+ * bridge has already verified a signed one-time token, so it does not carry a
+ * user session; this is how it resolves the tenant the token names.
+ */
+export async function databaseSignInCredentials(
+  databaseId: string,
+): Promise<{ engine: DatabaseEngine; username: string; password: string } | null> {
+  const result = await pool.query<DatabaseRow>(
+    `SELECT ${DATABASE_COLUMNS} FROM "database" WHERE "id" = $1`,
+    [databaseId],
+  );
+  const row = result.rows[0];
+  if (!row) {
+    return null;
+  }
+
+  return { engine: row.engine, username: row.username, password: decryptPassword(row) };
 }
 
 async function loadProxyRow(databaseId: string): Promise<DatabaseProxyRow | null> {
@@ -560,9 +649,12 @@ export async function createProjectDatabase(input: {
     await client.query("BEGIN");
 
     // The id is generated here rather than by the database, because the schema
-    // and role names the Agent creates are derived from it.
+    // the Agent creates is derived from it.
     const id = randomUUID();
     const names = databaseObjectNames(id);
+    // New Databases get a readable role so phpMyAdmin needs no lookup; the
+    // schema keeps the derived shape because nobody is ever shown it.
+    const role = await uniqueReadableRole(project.name);
     // Every MySQL Database signs in through the one node-wide phpMyAdmin, so the
     // address is the same for all of them and needs no per-row allocation.
     const phpMyAdminHostname = engine === "mysql" ? sharedPhpMyAdminHostname() : null;
@@ -578,7 +670,7 @@ export async function createProjectDatabase(input: {
           engine,
           version,
           names.schema,
-          names.role,
+          role,
           encryptedPassword,
           storageLimitMb,
           phpMyAdminHostname,
@@ -805,6 +897,25 @@ export async function rotateProjectDatabaseCredentials(input: {
   const measurement = await measureDatabase(row);
 
   return toSummary(row, measurement, true, await loadProxyRow(row.id));
+}
+
+/**
+ * Returns the Database password for the dashboard's reveal button. It is the
+ * same value the private connection string carries, so it is an owner/admin-only
+ * read; the route records an AuditEvent and never logs the value.
+ */
+export async function revealProjectDatabasePassword(input: {
+  organizationId: string;
+  projectId: string;
+}): Promise<{ password: string }> {
+  await requireProject(input.organizationId, input.projectId);
+
+  const row = await loadDatabaseRow(input.projectId);
+  if (!row) {
+    throw new ApiError(404, "database_not_found", "This Project has no Database.");
+  }
+
+  return { password: decryptPassword(row) };
 }
 
 /**

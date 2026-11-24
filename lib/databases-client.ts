@@ -90,8 +90,31 @@ export function rotateProjectDatabaseCredentials(projectId: string): Promise<Dat
   );
 }
 
-export function listOrganizationDatabases(): Promise<OrganizationDatabaseSummary[]> {
-  return request<OrganizationDatabaseSummary[]>("/api/databases");
+/**
+ * Reads the Database password on demand, for the Reveal button. It is fetched
+ * only when the user asks, so the value is never part of the page payload the
+ * browser caches or a log record. The API answers `{ password }`.
+ */
+export function revealProjectDatabasePassword(projectId: string): Promise<{ password: string }> {
+  return request<{ password: string }>(
+    `/api/projects/${encodeURIComponent(projectId)}/database/password`,
+  );
+}
+
+/**
+ * Asks the API for a one-time phpMyAdmin sign-in link. The returned URL is on the
+ * phpMyAdmin hostname, expires in 60 seconds, and works once.
+ */
+export function startPhpMyAdminSession(
+  projectId: string,
+): Promise<{ url: string; expiresInSeconds: number }> {
+  return request<{ url: string; expiresInSeconds: number }>(
+    `/api/projects/${encodeURIComponent(projectId)}/database/phpmyadmin`,
+    { method: "POST" },
+  );
+}
+
+export function listOrganizationDatabases(): Promise<OrganizationDatabaseSummary[]> {  return request<OrganizationDatabaseSummary[]>("/api/databases");
 }
 
 export function getProjectDatabaseProxy(projectId: string): Promise<DatabaseProxySummary> {
