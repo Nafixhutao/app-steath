@@ -6,8 +6,11 @@ services:
       POSTGRES_USER: stealth
       POSTGRES_PASSWORD: stealth_dev_password
       POSTGRES_DB: stealth_hosting
+    # Bound to loopback on purpose: the dev password is a well-known constant, so
+    # publishing on 0.0.0.0 would hand a database to anything that can reach the
+    # host. Only this machine needs it.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -27,7 +30,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "2019:2019"
+      # The admin API can rewrite any route without authentication, so it is
+      # loopback-only: the Agent runs on this host and is the only client.
+      - "127.0.0.1:2019:2019"
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

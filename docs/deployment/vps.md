@@ -201,6 +201,13 @@ disimpan di volume `agent_work` dan diunduh Control Plane. Untuk produksi, isi
   cloud) atau lewati uji ini.
 - ClamAV tidak dibundel di image agent (database virus butuh ~1 GB RAM/disk).
   Scanner melaporkan ketiadaannya sebagai temuan informasional, bukan kegagalan.
+- Container bantu untuk tes lokal (`stealth-test-postgres`, `stealth-test-redis`)
+  **wajib** dipublish ke `127.0.0.1`, bukan `0.0.0.0`. Password-nya konstanta yang
+  tertulis di repo dan Redis tanpa auth, jadi binding ke semua interface sama
+  dengan menyerahkan database dan Redis ke jaringan. Kalau dibuat dengan
+  `docker run`, tulis `-p 127.0.0.1:5432:5432` / `-p 127.0.0.1:6379:6379`, dan
+  jangan pakai `--rm` supaya datanya tidak hilang saat container berhenti.
+  Verifikasi dengan `ss -ltn | grep -E '5432|6379'`: alamatnya harus `127.0.0.1`.
 
 ## 10. Perawatan disk
 
