@@ -3,7 +3,10 @@ import { OrganizationAccessError, requireActiveOrganization } from "@/lib/platfo
 
 export async function requireOrganizationRole(headers: Headers, allowed: string[]) {
   const organization = await requireActiveOrganization(headers);
-  if (!allowed.includes(organization.role)) {
+  // Better Auth stores multiple roles as a comma-separated string. An exact
+  // string match would deny "admin,member" even though it includes "admin".
+  const roles = organization.role.split(",").map((role) => role.trim());
+  if (!roles.some((role) => allowed.includes(role))) {
     throw new OrganizationAccessError(403, "Insufficient Organization role");
   }
   return organization;

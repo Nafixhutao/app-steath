@@ -51,7 +51,12 @@ export default function BackupsPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const organizationId = organization?.id;
-  const canRestore = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Better Auth stores multiple roles as a comma-separated string, so check the
+  // parsed set rather than the raw value.
+  const canRestore =
+    activeMember?.role
+      .split(",")
+      .some((role) => role.trim() === "owner" || role.trim() === "admin") ?? false;
 
   const board = useResource(
     useCallback(async () => {
@@ -145,7 +150,8 @@ export default function BackupsPage() {
           <div>
             <h1 className="backups-page-title">Backups & Restores</h1>
             <p className="backups-page-subtitle">
-              Automated daily disaster recovery snapshots for {organization?.name ?? "your organization"}.
+              Automated daily disaster recovery snapshots for{" "}
+              {organization?.name ?? "your organization"}.
             </p>
           </div>
         </div>
@@ -174,13 +180,18 @@ export default function BackupsPage() {
         <div className="backups-warning-banner" role="status">
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="text-xs text-amber-200">
-            <strong>Local Storage Notice:</strong> S3 credentials are not configured, so backup archives are stored on this node only. They will not survive catastrophic VPS disk failure. Configure S3 environment variables to persist backups off-site.
+            <strong>Local Storage Notice:</strong> S3 credentials are not configured, so backup
+            archives are stored on this node only. They will not survive catastrophic VPS disk
+            failure. Configure S3 environment variables to persist backups off-site.
           </div>
         </div>
       )}
 
       {/* Overview Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" aria-label="Backup metrics">
+      <section
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+        aria-label="Backup metrics"
+      >
         <div className="backups-metric-card">
           <div className="flex items-center justify-between">
             <span className="backups-metric-label">Total Backups</span>
@@ -203,7 +214,9 @@ export default function BackupsPage() {
             {list?.storageProvider === "s3" ? "S3 Object Storage" : "Local Node Storage"}
           </span>
           <span className="text-[11px] text-zinc-500">
-            {list?.storageProvider === "s3" ? "Offsite redundancy active" : "Host directory storage"}
+            {list?.storageProvider === "s3"
+              ? "Offsite redundancy active"
+              : "Host directory storage"}
           </span>
         </div>
 
@@ -219,9 +232,13 @@ export default function BackupsPage() {
         <div className="backups-metric-card">
           <div className="flex items-center justify-between">
             <span className="backups-metric-label">Restores in Flight</span>
-            <RotateCcw className={`w-4 h-4 ${restoring ? "text-amber-400 animate-spin" : "text-zinc-500"}`} />
+            <RotateCcw
+              className={`w-4 h-4 ${restoring ? "text-amber-400 animate-spin" : "text-zinc-500"}`}
+            />
           </div>
-          <span className="backups-metric-val">{restores?.restores.filter((r) => isActive(r.status)).length ?? 0}</span>
+          <span className="backups-metric-val">
+            {restores?.restores.filter((r) => isActive(r.status)).length ?? 0}
+          </span>
           <span className="text-[11px] text-zinc-500">
             {restoring ? "Restoration in progress" : "No active restores"}
           </span>
@@ -302,7 +319,11 @@ export default function BackupsPage() {
                 <th scope="col">Size</th>
                 <th scope="col">Storage</th>
                 <th scope="col">Status</th>
-                {canRestore ? <th scope="col" className="text-right">Action</th> : null}
+                {canRestore ? (
+                  <th scope="col" className="text-right">
+                    Action
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -325,8 +346,12 @@ export default function BackupsPage() {
                           )}
                         </div>
                         <div>
-                          <span className="font-medium text-white text-xs">{backup.targetName}</span>
-                          <span className="text-[11px] text-zinc-500 block capitalize">{backup.targetType}</span>
+                          <span className="font-medium text-white text-xs">
+                            {backup.targetName}
+                          </span>
+                          <span className="text-[11px] text-zinc-500 block capitalize">
+                            {backup.targetType}
+                          </span>
                         </div>
                       </div>
                     </td>
@@ -355,14 +380,20 @@ export default function BackupsPage() {
                     <td>
                       <span
                         className={`backups-status-pill ${
-                          isSuccess ? "is-completed" : backup.status === "failed" ? "is-failed" : "is-pending"
+                          isSuccess
+                            ? "is-completed"
+                            : backup.status === "failed"
+                              ? "is-failed"
+                              : "is-pending"
                         }`}
                       >
                         <span className="project-status-dot" aria-hidden="true" />
                         <span className="capitalize">{backup.status}</span>
                       </span>
                       {backup.errorMessage ? (
-                        <p className="text-[11px] text-rose-400 mt-1 max-w-xs">{backup.errorMessage}</p>
+                        <p className="text-[11px] text-rose-400 mt-1 max-w-xs">
+                          {backup.errorMessage}
+                        </p>
                       ) : null}
                     </td>
 
@@ -423,9 +454,7 @@ export default function BackupsPage() {
                       <td>
                         <span className="font-medium text-white text-xs">{restore.targetName}</span>
                       </td>
-                      <td className="text-xs text-zinc-300">
-                        {restore.projectName ?? "Platform"}
-                      </td>
+                      <td className="text-xs text-zinc-300">{restore.projectName ?? "Platform"}</td>
                       <td className="text-xs font-mono text-zinc-400">
                         {formatDateTime(restore.createdAt)}
                       </td>
@@ -442,7 +471,9 @@ export default function BackupsPage() {
                           <span className="capitalize">{restore.status}</span>
                         </span>
                         {restore.errorMessage ? (
-                          <p className="text-[11px] text-rose-400 mt-1 max-w-xs">{restore.errorMessage}</p>
+                          <p className="text-[11px] text-rose-400 mt-1 max-w-xs">
+                            {restore.errorMessage}
+                          </p>
                         ) : null}
                       </td>
                     </tr>
@@ -457,7 +488,12 @@ export default function BackupsPage() {
       {/* Modal: Restore Confirmation */}
       {target && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="restore-modal-title">
+          <div
+            className="supabase-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="restore-modal-title"
+          >
             <div className="supabase-modal-header border-rose-900/40">
               <div className="flex items-center gap-2 text-rose-400">
                 <RotateCcw className="w-4 h-4" />
@@ -476,7 +512,11 @@ export default function BackupsPage() {
             <form onSubmit={submitRestore}>
               <div className="supabase-modal-body space-y-3.5">
                 <div className="p-3 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
-                  <strong>Warning:</strong> Restoring will overwrite the current live data of <strong>{target.targetName}</strong> with this snapshot. Services attached to it in <strong>{target.projectName ?? "this project"}</strong> will be stopped temporarily and will restart automatically once completed. This operation cannot be undone.
+                  <strong>Warning:</strong> Restoring will overwrite the current live data of{" "}
+                  <strong>{target.targetName}</strong> with this snapshot. Services attached to it
+                  in <strong>{target.projectName ?? "this project"}</strong> will be stopped
+                  temporarily and will restart automatically once completed. This operation cannot
+                  be undone.
                 </div>
 
                 <div>

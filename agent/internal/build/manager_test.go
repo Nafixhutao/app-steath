@@ -18,8 +18,13 @@ import (
 type fakeExecutor struct {
 	mu       sync.Mutex
 	commands []string
+	dirs     []string
 	stream   func(ctx context.Context, options exec.Options, onLine func(string)) error
 	output   func(ctx context.Context, options exec.Options) (string, error)
+	// noDockerfile makes the fake checkout look like a repository without one,
+	// so the zero-config path is exercised. files are extra checked out files.
+	noDockerfile bool
+	files        map[string]string
 }
 
 func (f *fakeExecutor) Stream(
@@ -28,7 +33,7 @@ func (f *fakeExecutor) Stream(
 	onLine func(string),
 ) error {
 	f.record(options)
-	prepareCheckout(options)
+	f.prepareCheckout(options)
 
 	if f.stream != nil {
 		return f.stream(ctx, options, onLine)
@@ -40,14 +45,21 @@ func (f *fakeExecutor) Stream(
 
 // prepareCheckout stands in for the clone by creating the checked out tree the
 // Manager later inspects for the Dockerfile.
-func prepareCheckout(options exec.Options) {
+func (f *fakeExecutor) prepareCheckout(options exec.Options) {
 	if options.Name != "git" || len(options.Args) < 2 || options.Args[0] != "clone" {
 		return
 	}
 
 	checkout := options.Args[len(options.Args)-1]
 	_ = os.MkdirAll(checkout, 0o750)
-	_ = os.WriteFile(filepath.Join(checkout, "Dockerfile"), []byte("FROM busybox\n"), 0o600)
+	if !f.noDockerfile {
+		_ = os.WriteFile(filepath.Join(checkout, "Dockerfile"), []byte("FROM busybox\n"), 0o600)
+	}
+	for relative, contents := range f.files {
+		path := filepath.Join(checkout, filepath.FromSlash(relative))
+		_ = os.MkdirAll(filepath.Dir(path), 0o750)
+		_ = os.WriteFile(path, []byte(contents), 0o600)
+	}
 }
 
 func (f *fakeExecutor) Output(ctx context.Context, options exec.Options) (string, error) {
@@ -76,6 +88,14 @@ func (f *fakeExecutor) record(options exec.Options) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.commands = append(f.commands, options.Name+" "+strings.Join(options.Args, " "))
+	f.dirs = append(f.dirs, options.Dir)
+}
+
+func (f *fakeExecutor) recordedDirs() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return append([]string(nil), f.dirs...)
 }
 
 func (f *fakeExecutor) recorded() []string {
@@ -514,5 +534,67 @@ func TestUnknownBuildIsReported(t *testing.T) {
 	}
 	if _, _, err := manager.EventsSince("nope", 0); !errors.Is(err, ErrUnknownBuild) {
 		t.Fatalf("expected an unknown build error, got %v", err)
+	}
+}
+
+func TestNormalizeRepoRequestTurnsGitHubPageURLsIntoCloneURLs(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name       string
+		rawURL     string
+		branch     string
+		wantURL    string
+		wantBranch string
+		wantRoot   string
+	}{
+		{
+			name:       "tree URL with a subfolder names the branch and the project root",
+			rawURL:     "https://github.com/designmodo/html-website-templates/tree/master/Horizontal%20Scroll%20One%20Page%20Template%20Website",
+			branch:     "main",
+			wantURL:    "https://github.com/designmodo/html-website-templates.git",
+			wantBranch: "master",
+			wantRoot:   "Horizontal Scroll One Page Template Website",
+		},
+		{
+			name:       "tree URL on the repository root has no project root",
+			rawURL:     "https://github.com/octocat/Hello-World/tree/main",
+			branch:     "main",
+			wantURL:    "https://github.com/octocat/Hello-World.git",
+			wantBranch: "main",
+		},
+		{
+			name:       "blob URL on the root",
+			rawURL:     "https://github.com/octocat/Hello-World/blob/main/README",
+			branch:     "main",
+			wantURL:    "https://github.com/octocat/Hello-World.git",
+			wantBranch: "main",
+		},
+		{
+			name:       "a clone URL is left alone",
+			rawURL:     "https://github.com/octocat/Hello-World.git",
+			branch:     "main",
+			wantURL:    "https://github.com/octocat/Hello-World.git",
+			wantBranch: "main",
+		},
+		{
+			name:       "a non-GitHub URL is left alone",
+			rawURL:     "https://gitlab.com/octocat/hello/-/tree/main",
+			branch:     "main",
+			wantURL:    "https://gitlab.com/octocat/hello/-/tree/main",
+			wantBranch: "main",
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			gotURL, gotBranch, gotRoot := normalizeRepoRequest(testCase.rawURL, testCase.branch)
+			if gotURL != testCase.wantURL || gotBranch != testCase.wantBranch || gotRoot != testCase.wantRoot {
+				t.Fatalf("normalizeRepoRequest(%q) = (%q, %q, %q), want (%q, %q, %q)",
+					testCase.rawURL, gotURL, gotBranch, gotRoot,
+					testCase.wantURL, testCase.wantBranch, testCase.wantRoot)
+			}
+		})
 	}
 }

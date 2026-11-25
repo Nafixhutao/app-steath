@@ -1,0 +1,41 @@
+@startuml
+title Gambar 2 — Use Case Modul Autentikasi dan Onboarding
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #FFF8E7
+  BorderColor #8A6D3B
+  FontSize 12
+}
+
+actor "Customer" as C
+
+rectangle "Stealth Hosting — Console (Control Plane)" {
+
+  package "Akun" {
+    usecase "UC-01\nMendaftar Akun" as UC01
+    usecase "UC-02\nMasuk ke Aplikasi" as UC02
+    usecase "UC-03\nKeluar dari Aplikasi" as UC03
+    usecase "UC-04\nMereset Password" as UC04
+  }
+
+  package "Onboarding" {
+    usecase "UC-05\nMembuat Organisasi" as UC05
+    usecase "UC-06\nMemilih Organisasi Aktif" as UC06
+    usecase "UC-07\nMenerima Undangan" as UC07
+  }
+}
+
+C --> UC01
+C --> UC02
+C --> UC03
+C --> UC04
+C --> UC05
+C --> UC06
+C --> UC07
+
+UC07 ..> UC02 : <<include>>
+
+@enduml

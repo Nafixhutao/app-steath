@@ -125,6 +125,7 @@ func (s server) StartBuild(w http.ResponseWriter, r *http.Request) {
 		Branch:         request.Branch,
 		DockerfilePath: request.DockerfilePath,
 		ImageTag:       request.ImageTag,
+		ContainerPort:  derefInt(request.ContainerPort),
 		CommitSHA:      deref(request.CommitSha),
 	})
 	if errors.Is(err, build.ErrInvalidRequest) {

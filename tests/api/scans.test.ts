@@ -242,8 +242,11 @@ async function createFixture(): Promise<Fixture> {
     [service.id],
   );
   const database = await queryRows<{ id: string }>(
-    `INSERT INTO "database" ("id", "projectId", "encryptedPassword", "status")
-     VALUES (gen_random_uuid()::text, $1, 'sealed-database-password', 'running')
+    `INSERT INTO "database" ("id", "projectId", "engine", "version", "databaseName",
+       "username", "encryptedPassword", "status")
+     VALUES (gen_random_uuid()::text, $1, 'postgres', '16', 'app',
+       'u_' || left(regexp_replace(gen_random_uuid()::text, '[^a-z0-9]', '', 'g'), 24),
+       'sealed-database-password', 'running')
      RETURNING "id"`,
     [project.id],
   );
@@ -283,10 +286,7 @@ async function queryRows<T extends Record<string, unknown>>(
   }
 }
 
-async function findingsRequest(
-  cookie: string,
-  query = "",
-): Promise<Response> {
+async function findingsRequest(cookie: string, query = ""): Promise<Response> {
   const { GET } = await import("@/app/api/admin/findings/route");
 
   return GET(

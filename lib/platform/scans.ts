@@ -1,6 +1,5 @@
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 
 /**
  * Image scanning. The Node Agent runs Trivy and ClamAV; the Control Plane stores
@@ -157,18 +156,12 @@ export async function runScanJob(job: {
     return { status: "completed" };
   }
 
-  const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
+  const imageRef = row.imageRef;
 
   try {
-    const response = await client.POST("/v1/scans", {
-      body: { deploymentId, imageRef: row.imageRef },
-    });
+    const scan = await nodeAgent.scanImage({ deploymentId, imageRef });
 
-    if (!response.response.ok || !response.data) {
-      throw new Error(`the Node Agent rejected the Scan (${response.response.status})`);
-    }
-
-    const findings = (response.data.findings ?? []).map((finding: AgentFinding) => ({
+    const findings = (scan.findings ?? []).map((finding: AgentFinding) => ({
       scanner: finding.scanner ?? "trivy",
       severity: finding.severity ?? "unknown",
       title: finding.title ?? "Finding",

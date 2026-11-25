@@ -1,0 +1,42 @@
+@startuml
+title Gambar 4 — Use Case Modul Project dan Service
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EAF4EA
+  BorderColor #3B6B3B
+  FontSize 12
+}
+
+actor "Customer" as C
+actor "Instance Server\n(Node Agent)" as IS
+
+rectangle "Stealth Hosting — Console (Control Plane)" {
+
+  package "Project" {
+    usecase "UC-16\nMembuat Project" as UC16
+    usecase "UC-17\nMelihat Daftar Project" as UC17
+    usecase "UC-18\nMemperbarui Project" as UC18
+    usecase "UC-19\nMenghapus Project" as UC19
+  }
+
+  package "Service" {
+    usecase "UC-20\nMembuat Service" as UC20
+    usecase "UC-21\nMelihat Detail Service" as UC21
+    usecase "UC-22\nMenghapus Service" as UC22
+  }
+}
+
+C --> UC16
+C --> UC17
+C --> UC18
+C --> UC19
+C --> UC20
+C --> UC21
+C --> UC22
+
+IS --> UC22
+
+@enduml

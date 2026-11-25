@@ -9,6 +9,7 @@ import {
 } from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
+import { SupabaseModal } from "@/components/supabase-modal";
 
 function usageLabel(volume: VolumeSummary): string {
   if (!volume.exists) {
@@ -92,7 +93,7 @@ export function VolumePanel({
         <h2 id="volume-heading">Volume</h2>
         {canManage && !volume ? (
           <button
-            className="create-project-button"
+            className="supabase-btn-green"
             type="button"
             onClick={() => setCreating(true)}
             disabled={creating}
@@ -115,43 +116,59 @@ export function VolumePanel({
       ) : null}
 
       {creating ? (
-        <form className="organization-settings-form environment-form" onSubmit={create}>
-          <label>
-            Mount path
-            <input
-              value={mountPath}
-              onChange={(event) => setMountPath(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="/data"
-              required
-            />
-          </label>
-          <label>
-            Size (MB)
-            <input
-              value={sizeMb}
-              onChange={(event) => setSizeMb(Number(event.target.value))}
-              type="number"
-              min={1}
-              max={1024}
-              required
-            />
-          </label>
-          <div className="environment-form-actions">
-            <button className="dashboard-secondary-button" type="submit" disabled={busy}>
-              {busy ? "Saving..." : "Add"}
-            </button>
-            <button
-              className="dashboard-link-button"
-              type="button"
-              onClick={() => setCreating(false)}
-              disabled={busy}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <SupabaseModal title="Add a volume" onClose={() => setCreating(false)}>
+          <form onSubmit={create}>
+            <div className="supabase-modal-body">
+              <p className="text-sm text-zinc-400 mb-4">
+                A Volume keeps files across restarts and redeploys. The size is fixed until the next
+                Deployment.
+              </p>
+              <div className="mb-4">
+                <label htmlFor="volume-path-input" className="supabase-modal-label">
+                  Mount path
+                </label>
+                <input
+                  id="volume-path-input"
+                  className="supabase-modal-input"
+                  value={mountPath}
+                  onChange={(event) => setMountPath(event.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="/data"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="volume-size-input" className="supabase-modal-label">
+                  Size (MB)
+                </label>
+                <input
+                  id="volume-size-input"
+                  className="supabase-modal-input"
+                  value={sizeMb}
+                  onChange={(event) => setSizeMb(Number(event.target.value))}
+                  type="number"
+                  min={1}
+                  max={1024}
+                  required
+                />
+              </div>
+            </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setCreating(false)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="supabase-btn-green" disabled={busy}>
+                {busy ? "Saving..." : "Add volume"}
+              </button>
+            </div>
+          </form>
+        </SupabaseModal>
       ) : null}
 
       {loading ? (
@@ -171,20 +188,20 @@ export function VolumePanel({
           <table className="organization-table">
             <thead>
               <tr>
-                <th>Mount path</th>
-                <th>Size</th>
-                <th>Usage</th>
-                <th>Created</th>
-                {canManage ? <th>Actions</th> : null}
+                <th scope="col">Mount path</th>
+                <th scope="col">Size</th>
+                <th scope="col">Usage</th>
+                <th scope="col">Created</th>
+                {canManage ? <th scope="col">Actions</th> : null}
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>
+                <td data-label="Mount path">
                   <code className="environment-key">{volume.mountPath}</code>
                 </td>
-                <td>{volume.sizeMb} MB</td>
-                <td>
+                <td data-label="Size">{volume.sizeMb} MB</td>
+                <td data-label="Usage" className="svc-cell-wide">
                   <div className="volume-usage">
                     <span>{usageLabel(volume)}</span>
                     {volume.exists && volume.usageMb !== null ? (
@@ -198,9 +215,11 @@ export function VolumePanel({
                     ) : null}
                   </div>
                 </td>
-                <td>{formatDateTime(volume.createdAt)}</td>
+                <td data-label="Created" className="svc-cell-wide">
+                  {formatDateTime(volume.createdAt)}
+                </td>
                 {canManage ? (
-                  <td>
+                  <td data-label="Actions" className="svc-cell-actions">
                     <div className="deployment-actions">
                       <button
                         className="dashboard-link-button is-danger"

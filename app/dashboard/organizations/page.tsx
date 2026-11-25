@@ -46,10 +46,17 @@ export default function OrganizationsPage() {
 
   async function handleSelectOrg(orgId: string) {
     setSwitchingId(orgId);
+    setError("");
     try {
-      await authClient.organization.setActive({ organizationId: orgId });
+      const result = await authClient.organization.setActive({ organizationId: orgId });
+      if (result.error) {
+        setError(result.error.message ?? "Could not switch Organization.");
+        setSwitchingId(null);
+        return;
+      }
       router.push("/dashboard/projects");
-    } catch {
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not switch Organization.");
       setSwitchingId(null);
     }
   }

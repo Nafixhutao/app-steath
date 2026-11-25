@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Tokens used by ported beUI components (copy-paste source from beui.dev).
+   They map to the console palette so the components inherit the same system. */
+@theme {
+  --color-background: #121014;
+  --color-foreground: #edecf1;
+  --color-muted: #23212b;
+  --color-muted-foreground: #a1a1aa;
+  --color-border: #2a2833;
+  --color-ring: #818cf8;
+}
+
 /*
  * Palette (deliberate, semantic). Neutrals: #0f0f0f / #121014 / #17171a ...
  * #232127 for surface, #edecf1 text, grey stops for secondary text/borders.
@@ -1982,9 +1993,6 @@ a:hover {
   }
   .view-toggle {
     width: 28px;
-  }
-  .create-project-button {
-    display: none;
   }
   .project-grid {
     grid-template-columns: 1fr;
@@ -4557,6 +4565,26 @@ body {
    ========================================================================== */
 
 /* Topbar */
+/* The new global header replaces the old fixed mobile topbar; its menu button
+   is the only way to open the navigation sheet on small screens. */
+.supabase-mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #edecf1;
+  cursor: pointer;
+}
+
+.supabase-mobile-menu-btn:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
 .supabase-topbar {
   position: sticky;
   top: 0;
@@ -4807,6 +4835,86 @@ body {
   border: 1px solid #3a3845;
 }
 
+/* Account avatar: provider photo when present, initials otherwise. The
+   fallback uses the console's existing neutral avatar surface so no new
+   palette color is introduced for a placeholder. */
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  line-height: 1;
+}
+
+.user-avatar-fallback {
+  background: #2b2930;
+  color: #edecf1;
+  font-weight: 600;
+  border: 1px solid #3a3845;
+}
+
+/* The Supabase topbar is the only header on mobile now: the old fixed
+   `.user-mobile-topbar` is hidden, and the topbar trims its secondary actions
+   so the org switcher and avatar fit without horizontal overflow. */
+@media (max-width: 1023px) {
+  .user-mobile-topbar {
+    display: none;
+  }
+  .supabase-topbar {
+    height: 52px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .supabase-topbar-left {
+    min-width: 0;
+    gap: 8px;
+  }
+  .supabase-topbar-sep,
+  .supabase-topbar-link,
+  .supabase-icon-btn {
+    display: none;
+  }
+  .supabase-mobile-menu-btn {
+    display: inline-flex;
+  }
+  .supabase-org-name {
+    max-width: 96px;
+  }
+  .supabase-search-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+  .supabase-search-label,
+  .supabase-search-kbd {
+    display: none;
+  }
+  .supabase-topbar-right {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .console-main {
+    min-height: calc(100dvh - 52px);
+  }
+  .dashboard-content {
+    min-height: calc(100dvh - 52px);
+    padding-top: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .supabase-org-name {
+    max-width: 64px;
+  }
+  .supabase-org-dropdown-btn {
+    gap: 6px;
+    padding: 4px;
+  }
+}
+
 /* Dropdown menus (org & user) */
 .supabase-dropdown-menu {
   position: absolute;
@@ -4836,17 +4944,40 @@ body {
 }
 
 .supabase-dropdown-user-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
   padding: 6px 8px 8px;
 }
 
-.supabase-dropdown-user-header strong {
+.supabase-dropdown-user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.supabase-dropdown-user-header strong,
+.supabase-dropdown-user-header small,
+.supabase-user-handle {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supabase-dropdown-user-header strong {
   font-size: 13px;
   color: #edecf1;
 }
 
 .supabase-dropdown-user-header small {
-  display: block;
+  font-size: 11px;
+  color: #a1a1aa;
+}
+
+.supabase-user-handle {
   font-size: 11px;
   color: #716f7c;
 }
@@ -6571,6 +6702,77 @@ body {
   color: #ffffff;
 }
 
+/* Engine picker in the empty Database state. Two side-by-side options, the
+   selected one outlined; the choice is irreversible, so the note spells out the
+   client each engine ships with. */
+.db-engine-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.db-engine-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #2b2934;
+  border-radius: 8px;
+  background: #131217;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.db-engine-option:hover:not(:disabled) {
+  border-color: #3f3d4b;
+}
+
+.db-engine-option.is-selected {
+  border-color: #3ecf8e;
+  background: rgba(62, 207, 142, 0.07);
+}
+
+.db-engine-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.db-engine-option-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.db-engine-option-note {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #8b8b96;
+}
+
+.db-engine-option-tag {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #211f29;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #b4b3bd;
+}
+
+@media (max-width: 480px) {
+  .db-engine-choice {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Settings and Cards */
 .project-settings-card {
   border-radius: 8px;
@@ -7349,35 +7551,23 @@ body {
    ========================================================================== */
 
 .usage-page-container {
-  padding: 28px 36px 64px;
-  max-width: 1200px;
+  padding: 24px 32px 56px;
+  max-width: 1280px;
   margin: 0 auto;
   width: 100%;
 }
 
 .usage-page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 24px;
-}
-
-.usage-header-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background-color: rgba(62, 207, 142, 0.1);
-  border: 1px solid rgba(62, 207, 142, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  margin-bottom: 18px;
 }
 
 .usage-page-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   color: #ffffff;
   letter-spacing: -0.015em;
@@ -7386,119 +7576,245 @@ body {
 
 .usage-page-subtitle {
   font-size: 13px;
-  color: #878492;
+  color: #a1a1aa;
   margin-top: 4px;
   line-height: 1.4;
 }
 
-.usage-metric-card {
-  background: linear-gradient(180deg, #191820 0%, #141318 100%);
-  border: 1px solid #282632;
-  border-radius: 12px;
-  padding: 18px 20px;
+.usage-alert {
+  margin-bottom: 16px;
+}
+
+/* Totals read as one line of facts, not four framed cards with four accents. */
+.usage-totals {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 0;
+  padding: 12px 0;
+  margin-bottom: 24px;
+  border-top: 1px solid #25232c;
+  border-bottom: 1px solid #25232c;
+}
+
+.usage-totals > div {
+  display: flex;
+  align-items: baseline;
   gap: 8px;
-  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
+  padding: 0 20px;
+  border-right: 1px solid #25232c;
 }
 
-.usage-metric-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+.usage-totals > div:first-child {
+  padding-left: 0;
 }
 
-.usage-metric-card:hover {
-  border-color: #3e3b4d;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+.usage-totals > div:last-child {
+  border-right: none;
 }
 
-.usage-metric-icon-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+.usage-totals span {
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.usage-totals strong {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f4f4f5;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-section {
+  margin-bottom: 26px;
+}
+
+.usage-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.usage-section-head h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #edecf1;
+  margin: 0;
+}
+
+.usage-section-head span {
+  font-size: 11px;
+  color: #a1a1aa;
+  white-space: nowrap;
+}
+
+.usage-section-intro {
+  margin: -4px 0 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #a1a1aa;
+}
+
+.usage-status-line {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: transform 200ms ease;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 12px;
+  color: #a1a1aa;
 }
 
-.usage-metric-card:hover .usage-metric-icon-badge {
-  transform: scale(1.08);
+.usage-status-line.is-healthy .project-status-dot {
+  background-color: #3ecf8e;
 }
 
-.usage-metric-icon-badge.is-emerald {
-  background-color: rgba(62, 207, 142, 0.12);
-  border: 1px solid rgba(62, 207, 142, 0.25);
-  color: #3ecf8e;
-}
-
-.usage-metric-icon-badge.is-cyan {
-  background-color: rgba(34, 211, 238, 0.12);
-  border: 1px solid rgba(34, 211, 238, 0.25);
-  color: #22d3ee;
-}
-
-.usage-metric-icon-badge.is-amber {
-  background-color: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.25);
+.usage-status-line.is-attention {
   color: #fbbf24;
 }
 
-.usage-metric-icon-badge.is-blue {
-  background-color: rgba(96, 165, 250, 0.12);
-  border: 1px solid rgba(96, 165, 250, 0.25);
-  color: #60a5fa;
+.usage-status-line.is-attention .project-status-dot {
+  background-color: #fbbf24;
 }
 
-.usage-metric-label {
+/* One primary quota plus its supporting limits. The asymmetry is intentional:
+   the operator's next decision is about service capacity, not four equal tiles. */
+.usage-capacity {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 18px;
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 8px;
+}
+
+.usage-capacity-primary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding-right: 20px;
+  border-right: 1px solid #25232c;
+}
+
+.usage-capacity-label {
   font-size: 11px;
-  font-weight: 500;
-  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  color: #a1a1aa;
 }
 
-.usage-metric-val {
-  font-size: 22px;
+.usage-capacity-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 4px 0 12px;
+}
+
+.usage-capacity-value strong {
+  font-size: 30px;
   font-weight: 600;
-  color: #ffffff;
+  line-height: 1;
+  color: #f4f4f5;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  line-height: 1.2;
 }
 
-.usage-meter-card {
-  background: linear-gradient(180deg, #191820 0%, #141318 100%);
-  border: 1px solid #282632;
-  border-radius: 12px;
-  padding: 18px 20px;
-  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
+.usage-capacity-value span {
+  font-size: 13px;
+  color: #a1a1aa;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.usage-capacity-primary p {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: #a1a1aa;
+}
+
+.usage-capacity-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.usage-health-card {
+  padding: 16px 18px;
+  border: 1px solid #25232c;
+  border-radius: 8px;
+  background-color: #17161b;
+}
+
+.usage-project-list {
+  border: 1px solid #25232c;
+  border-radius: 8px;
+  background-color: #17161b;
   overflow: hidden;
 }
 
-.usage-meter-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+.usage-project-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  padding: 11px 16px;
+  border-bottom: 1px solid #1f1d25;
 }
 
-.usage-meter-card:hover {
-  border-color: #3e3b4d;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+.usage-project-row:last-child {
+  border-bottom: none;
+}
+
+.usage-project-metric {
+  min-width: 0;
+}
+
+.usage-project-metric span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  color: #a1a1aa;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-mini-track {
+  height: 4px;
+  border-radius: 9999px;
+  background-color: #23212b;
+  overflow: hidden;
+}
+
+.usage-mini-track > div {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: #3ecf8e;
+}
+
+.usage-meters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 28px;
+  padding: 16px 18px;
+  background-color: #17161b;
+  border: 1px solid #25232c;
+  border-radius: 8px;
+}
+
+.usage-meter-row {
+  min-width: 0;
+}
+
+.usage-meter-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 
 .usage-meter-label {
@@ -7507,121 +7823,157 @@ body {
   color: #edecf1;
 }
 
-.usage-meter-numbers {
-  font-size: 13px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+.usage-meter-numbers,
+.usage-meter-percent {
+  margin-left: auto;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
-  color: #edecf1;
+  color: #f4f4f5;
 }
 
-.usage-meter-pill {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.usage-meter-numbers span {
+  color: #a1a1aa;
 }
 
-.usage-meter-pill.is-healthy {
-  background-color: #0f2e21;
-  border: 1px solid #1d4a36;
-  color: #3ecf8e;
+.usage-meter-percent {
+  margin-left: 0;
+  min-width: 36px;
+  text-align: right;
+  color: #a1a1aa;
 }
 
-.usage-meter-pill.is-pending {
-  background-color: #2a2012;
-  border: 1px solid #48381c;
+.usage-meter-percent.is-pending {
   color: #fbbf24;
 }
 
-.usage-meter-pill.is-failed {
-  background-color: #2d1419;
-  border: 1px solid #4d222a;
-  color: #f43f5e;
+.usage-meter-percent.is-failed {
+  color: #fda4af;
 }
 
 .usage-progress-track {
-  height: 8px;
+  height: 6px;
   width: 100%;
   background-color: #1a1922;
-  border: 1px solid #2b2836;
   border-radius: 9999px;
   overflow: hidden;
-  padding: 1px;
 }
 
 .usage-progress-fill {
   height: 100%;
   border-radius: 9999px;
-  transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.usage-progress-fill.is-healthy {
-  background: linear-gradient(90deg, #10b981 0%, #3ecf8e 100%);
-  box-shadow: 0 0 10px rgba(62, 207, 142, 0.35);
+  background-color: #3ecf8e;
 }
 
 .usage-progress-fill.is-pending {
-  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.45);
+  background-color: #fbbf24;
 }
 
 .usage-progress-fill.is-failed {
-  background: linear-gradient(90deg, #e11d48 0%, #f43f5e 100%);
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.45);
+  background-color: #f43f5e;
 }
 
-.usage-count-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 10px;
-  border-radius: 9999px;
+.usage-meter-desc {
+  margin: 6px 0 0;
   font-size: 11px;
-  font-weight: 500;
-  background-color: #1d1b22;
-  border: 1px solid #282632;
-  color: #878492;
+  color: #a1a1aa;
 }
 
 .usage-table-card {
   background-color: #17161b;
   border: 1px solid #25232c;
-  border-radius: 10px;
-  overflow: hidden;
+  border-radius: 8px;
+  overflow-x: auto;
 }
 
 .usage-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   text-align: left;
 }
 
-.usage-table th {
+.usage-table thead th {
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #878492;
-  padding: 12px 18px;
+  color: #a1a1aa;
+  padding: 10px 14px;
   border-bottom: 1px solid #25232c;
   background-color: #131217;
 }
 
-.usage-table td {
-  padding: 14px 18px;
+.usage-table tbody td {
+  padding: 11px 14px;
   border-bottom: 1px solid #1f1d25;
   font-size: 13px;
   vertical-align: middle;
 }
 
-.usage-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
 .usage-table tbody tr:hover td {
   background-color: rgba(255, 255, 255, 0.015);
+}
+
+.usage-table .usage-group-row th {
+  padding: 9px 14px;
+  background-color: #131217;
+  border-bottom: 1px solid #25232c;
+  font-weight: 400;
+  text-align: left;
+}
+
+.usage-group-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #edecf1;
+}
+
+.usage-group-count {
+  margin-left: 8px;
+  font-size: 11px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  color: #a1a1aa;
+}
+
+.usage-group-link {
+  margin-left: 12px;
+  font-size: 11px;
+  color: #3ecf8e;
+}
+
+.usage-group-link:hover {
+  color: #6ee7b7;
+}
+
+.usage-row-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+a.usage-row-name:hover {
+  color: #6ee7b7;
+}
+
+.usage-subtle-link {
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.usage-subtle-link:hover {
+  color: #edecf1;
+}
+
+.usage-number {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #f4f4f5;
+}
+
+.usage-number span {
+  color: #a1a1aa;
 }
 
 .usage-status-pill {
@@ -7643,18 +7995,16 @@ body {
 
 .usage-status-pill.is-running .project-status-dot {
   background-color: #3ecf8e;
-  box-shadow: 0 0 6px rgba(62, 207, 142, 0.55);
 }
 
 .usage-status-pill.is-failed {
   background-color: #2d1419;
   border: 1px solid #4d222a;
-  color: #f43f5e;
+  color: #fda4af;
 }
 
 .usage-status-pill.is-failed .project-status-dot {
-  background-color: #f43f5e;
-  box-shadow: 0 0 6px rgba(244, 63, 94, 0.55);
+  background-color: #fda4af;
 }
 
 .usage-status-pill.is-pending {
@@ -7670,45 +8020,120 @@ body {
 .usage-policy-card {
   background-color: #17161b;
   border: 1px solid #25232c;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
-.usage-policy-footer {
+.usage-policy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 24px;
+  padding: 18px;
+}
+
+.usage-policy-grid > div {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.usage-policy-grid span {
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.usage-policy-grid strong {
+  font-size: 13px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-weight: 500;
+  color: #f4f4f5;
+}
+
+.usage-policy-footer {
   padding: 12px 18px;
   background-color: #131217;
   border-top: 1px solid #25232c;
+  font-size: 12px;
+  color: #a1a1aa;
 }
 
 .usage-empty-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 20px;
+  padding: 40px 20px;
   text-align: center;
 }
 
 .usage-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 20px;
+  padding: 48px 20px;
   text-align: center;
-  background-color: #17161b;
-  border: 1px dashed #25232c;
-  border-radius: 10px;
+  border: 1px dashed #2a2833;
+  border-radius: 8px;
 }
 
-.usage-metric-skeleton {
-  background-color: #17161b;
-  border: 1px solid #25232c;
-  border-radius: 10px;
-  padding: 16px 18px;
+.usage-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 0 0 6px;
+}
+
+.usage-empty-copy {
+  max-width: 460px;
+  margin: 0 auto;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #a1a1aa;
+}
+
+.usage-skeleton {
+  padding: 16px 0;
+}
+
+.usage-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0 24px;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+@media (max-width: 860px) {
+  .usage-meters,
+  .usage-policy-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .usage-capacity {
+    grid-template-columns: 1fr;
+  }
+
+  .usage-capacity-primary {
+    padding-right: 0;
+    padding-bottom: 14px;
+    border-right: none;
+    border-bottom: 1px solid #25232c;
+  }
+}
+
+@media (max-width: 720px) {
+  .usage-page-container {
+    padding: 20px 16px 48px;
+  }
+
+  .usage-totals > div {
+    padding: 0 12px;
+  }
+
+  .usage-meters,
+  .usage-policy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .usage-project-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 /* ==========================================================================
@@ -8131,35 +8556,23 @@ body {
    ========================================================================== */
 
 .services-page-container {
-  padding: 28px 36px 64px;
-  max-width: 1200px;
+  padding: 24px 32px 56px;
+  max-width: 1280px;
   margin: 0 auto;
   width: 100%;
 }
 
 .services-page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 24px;
-}
-
-.services-header-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background-color: rgba(62, 207, 142, 0.1);
-  border: 1px solid rgba(62, 207, 142, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  margin-bottom: 18px;
 }
 
 .services-page-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   color: #ffffff;
   letter-spacing: -0.015em;
@@ -8168,40 +8581,119 @@ body {
 
 .services-page-subtitle {
   font-size: 13px;
-  color: #878492;
+  color: #a1a1aa;
   margin-top: 4px;
   line-height: 1.4;
 }
 
-.services-metric-card {
-  background-color: #17161b;
-  border: 1px solid #25232c;
-  border-radius: 10px;
-  padding: 16px 18px;
+.services-header-actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  transition: border-color 150ms ease;
+  align-items: center;
+  gap: 8px;
 }
 
-.services-metric-card:hover {
-  border-color: #34313c;
+.services-alert {
+  margin-bottom: 16px;
 }
 
-.services-metric-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: #878492;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+/* One quiet status line replaces the four-card overview. Counts describe the
+   fleet, so they belong in the reading flow, not in separate framed tiles. */
+.services-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 12px 0;
+  margin-bottom: 18px;
+  border-top: 1px solid #25232c;
+  border-bottom: 1px solid #25232c;
 }
 
-.services-metric-val {
-  font-size: 22px;
-  font-weight: 600;
-  color: #ffffff;
+.services-summary-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #a1a1aa;
+  font-size: 12px;
+}
+
+.services-summary-total strong {
+  color: #f4f4f5;
+  font-size: 18px;
   font-variant-numeric: tabular-nums;
-  line-height: 1.2;
+}
+
+.services-summary-states {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.services-summary-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #a1a1aa;
+  font-variant-numeric: tabular-nums;
+}
+
+.services-summary-state.is-running .project-status-dot {
+  background-color: #3ecf8e;
+}
+
+.services-summary-state.is-attention {
+  color: #fda4af;
+}
+
+.services-summary-quota {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  color: #a1a1aa;
+}
+
+/* Project groups give the list its hierarchy without repeated columns. */
+.services-group {
+  margin-bottom: 22px;
+}
+
+.services-group:last-child {
+  margin-bottom: 0;
+}
+
+.services-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.services-group-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #edecf1;
+  margin: 0;
+}
+
+.services-group-count {
+  font-size: 11px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  color: #a1a1aa;
+}
+
+.services-group-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  font-size: 11px;
+  color: #3ecf8e;
+}
+
+.services-group-link:hover {
+  color: #6ee7b7;
 }
 
 .services-toolbar {
@@ -8280,38 +8772,37 @@ body {
   color: #edecf1;
 }
 
-.services-count-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 10px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 500;
-  background-color: #1d1b22;
-  border: 1px solid #282632;
-  color: #878492;
+.services-count {
+  font-size: 12px;
+  color: #a1a1aa;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.services-view {
+  display: flex;
+  flex-direction: column;
 }
 
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
 }
 
 .services-card {
   background-color: #17161b;
   border: 1px solid #25232c;
-  border-radius: 10px;
-  padding: 18px;
+  border-radius: 8px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  transition: all 150ms ease;
+  min-width: 0;
+  transition: border-color 120ms ease;
 }
 
 .services-card:hover {
-  border-color: #383542;
-  transform: translateY(-1px);
+  border-color: #3a3744;
 }
 
 .services-card-header {
@@ -8319,71 +8810,100 @@ body {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
-}
-
-.services-card-icon-box {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background-color: rgba(62, 207, 142, 0.08);
-  border: 1px solid rgba(62, 207, 142, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.services-card-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-  line-height: 1.3;
-}
-
-.services-card-project-link {
-  font-size: 11px;
-  color: #878492;
-  margin-top: 2px;
-  transition: color 120ms ease;
-}
-
-.services-card-project-link:hover {
-  color: #edecf1;
-}
-
-.services-card-git-box {
-  background-color: #131217;
-  border: 1px solid #211f29;
-  border-radius: 6px;
-  padding: 8px 10px;
   margin-bottom: 10px;
 }
 
-.services-card-url-box {
+.services-card-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f4f4f5;
+  line-height: 1.3;
+}
+
+.services-card-name:hover {
+  color: #6ee7b7;
+}
+
+.services-card-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background-color: rgba(0, 0, 0, 0.25);
-  border: 1px solid #23212b;
-  border-radius: 6px;
-  padding: 6px 10px;
-  margin-bottom: 14px;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #a1a1aa;
+}
+
+.services-card-meta > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.services-mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.services-card-url-row,
+.services-url-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-bottom: 10px;
 }
 
 .services-card-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #3ecf8e;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 12px;
-  transition: color 120ms ease;
+}
+
+.services-card-url:hover {
+  color: #6ee7b7;
+}
+
+.services-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+
+.services-copy-btn:hover {
+  background: #23212b;
+  color: #edecf1;
 }
 
 .services-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 12px;
+  gap: 10px;
+  padding-top: 10px;
   border-top: 1px solid #211f29;
   margin-top: auto;
+}
+
+.services-specs {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: #a1a1aa;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .services-card-manage-link {
@@ -8393,12 +8913,10 @@ body {
   font-size: 12px;
   font-weight: 500;
   color: #3ecf8e;
-  transition: all 120ms ease;
 }
 
 .services-card-manage-link:hover {
   color: #6ee7b7;
-  gap: 6px;
 }
 
 .services-status-pill {
@@ -8449,37 +8967,59 @@ body {
   background-color: #878492;
 }
 
+.services-status-pill.is-suspended {
+  background-color: #2a2012;
+  border: 1px solid #48381c;
+  color: #fbbf24;
+}
+
+.services-status-pill.is-suspended .project-status-dot {
+  background-color: #fbbf24;
+}
+
+.services-status-pill.is-not-deployed {
+  background-color: #1d1b22;
+  border: 1px solid #282632;
+  color: #a1a1aa;
+}
+
+.services-status-pill.is-not-deployed .project-status-dot {
+  background-color: #a1a1aa;
+}
+
 .services-skeleton-card {
   background-color: #17161b;
   border: 1px solid #25232c;
-  border-radius: 10px;
-  padding: 18px;
+  border-radius: 8px;
+  padding: 16px;
 }
 
 .services-empty-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 56px 20px;
+  padding: 48px 20px;
+  border: 1px dashed #2a2833;
+  border-radius: 8px;
   text-align: center;
 }
 
-.services-empty-halo {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background-color: rgba(62, 207, 142, 0.08);
-  border: 1px solid rgba(62, 207, 142, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.services-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 0 0 6px;
+}
+
+.services-empty-copy {
+  max-width: 460px;
+  margin: 0 auto 18px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #a1a1aa;
 }
 
 .services-table-card {
   background-color: #17161b;
   border: 1px solid #25232c;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -8489,42 +9029,103 @@ body {
   text-align: left;
 }
 
-.services-table th {
+.services-table thead th {
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #878492;
-  padding: 12px 18px;
+  color: #a1a1aa;
+  padding: 10px 14px;
   border-bottom: 1px solid #25232c;
   background-color: #131217;
 }
 
-.services-table td {
-  padding: 14px 18px;
+.services-table tbody td {
+  padding: 11px 14px;
   border-bottom: 1px solid #1f1d25;
   font-size: 13px;
   vertical-align: middle;
-}
-
-.services-table tbody tr:last-child td {
-  border-bottom: none;
 }
 
 .services-table tbody tr:hover td {
   background-color: rgba(255, 255, 255, 0.015);
 }
 
-.services-row-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  background-color: #1f1d26;
-  border: 1px solid #2d2a37;
+.services-table .services-group-row th {
+  padding: 9px 14px;
+  background-color: #131217;
+  border-bottom: 1px solid #25232c;
+  font-weight: 400;
+  text-align: left;
+}
+
+.services-table .services-group-row .services-group-name,
+.services-table .services-group-row .services-group-count {
+  font-size: 12px;
+  color: #edecf1;
+}
+
+.services-table .services-group-row .services-group-count {
+  color: #a1a1aa;
+}
+
+.services-table .services-group-row .services-group-link {
+  font-size: 11px;
+}
+
+.services-row-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.services-row-name:hover {
+  color: #6ee7b7;
+}
+
+.services-table .services-url-cell {
+  margin-bottom: 0;
+}
+
+.services-row-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.services-table .services-row-btn {
+  height: 28px;
+  padding: 0 9px;
+  font-size: 11px;
+  gap: 5px;
+}
+
+.services-table .services-row-btn-accent {
+  color: #3ecf8e;
+}
+
+@media (max-width: 720px) {
+  .services-page-container {
+    padding: 20px 16px 48px;
+  }
+
+  .services-summary {
+    gap: 10px 16px;
+  }
+
+  .services-summary-quota {
+    margin-left: 0;
+  }
+
+  .services-table-card {
+    overflow-x: auto;
+  }
+
+  .services-table {
+    min-width: 680px;
+  }
 }
 
 /* ==========================================================================
@@ -8773,4 +9374,942 @@ body {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* ==========================================================================
+   Service detail — Vercel-style layout: flat neutral header, underlined
+   tab navigation, single-column content. Scoped to .supabase-service-page.
+   ========================================================================== */
+.dashboard-content.supabase-service-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 32px 72px;
+}
+
+/* --- Breadcrumb ------------------------------------------------------- */
+.supabase-service-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 20px;
+  color: #a1a1aa;
+  font-size: 13px;
+}
+.supabase-service-breadcrumb a {
+  color: #a1a1aa;
+  text-decoration: none;
+}
+.supabase-service-breadcrumb a:hover {
+  color: #ededf2;
+}
+.supabase-service-breadcrumb > span[aria-hidden] {
+  color: #52525b;
+  user-select: none;
+}
+.supabase-service-breadcrumb-current {
+  color: #ededf2;
+}
+
+/* --- Page header ------------------------------------------------------ */
+.supabase-service-title {
+  margin: 0;
+  color: #fafafa;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  /* The global h1 rule centers auth headings; console titles stay left. */
+  text-align: left;
+}
+.supabase-service-subtitle {
+  margin: 4px 0 0;
+  color: #a1a1aa;
+  font-size: 14px;
+}
+.svc-header {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding-bottom: 20px;
+}
+.svc-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.svc-header-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  min-width: 0;
+  color: #a1a1aa;
+  font-size: 13px;
+}
+.svc-url-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  color: #ededf2;
+  font-size: 13px;
+  text-decoration: none;
+  border-bottom: 1px solid #3f3f46;
+  padding-bottom: 1px;
+}
+.svc-url-text {
+  overflow-wrap: anywhere;
+}
+.svc-url-link:hover {
+  color: #fff;
+  border-bottom-color: #a1a1aa;
+}
+.svc-url-icon {
+  color: #a1a1aa;
+}
+.svc-url-link:hover .svc-url-icon {
+  color: #ededf2;
+}
+/* Meta chips share one baseline and ellipsize instead of pushing the page
+   wider: a template repository URL can be far longer than the viewport. */
+.svc-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.svc-meta-item code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #27272a;
+  color: #d4d4d8;
+  font-size: 12px;
+}
+.svc-repo-chip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.svc-meta-branch {
+  flex-shrink: 0;
+  color: #a1a1aa;
+}
+.svc-meta-resources {
+  color: #a1a1aa;
+}
+
+/* --- Status badge ----------------------------------------------------- */
+.supabase-service-status {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #27272a;
+  color: #d4d4d8;
+  font-size: 12px;
+  font-weight: 500;
+}
+.supabase-service-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.supabase-service-status.is-running {
+  background: rgba(0, 176, 107, 0.12);
+  color: #00e08c;
+}
+.supabase-service-status.is-running::before {
+  animation: service-status-pulse 2s ease-in-out infinite;
+}
+@keyframes service-status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+.supabase-service-status.is-deploying,
+.supabase-service-status.is-building {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f5a623;
+}
+.supabase-service-status.is-failed,
+.supabase-service-status.is-suspended {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+/* --- Tab bar (Vercel-style underline tabs) ----------------------------- */
+.svc-tabbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid #27272a;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.svc-tabbar::-webkit-scrollbar {
+  display: none;
+}
+.svc-tab {
+  position: relative;
+  padding: 10px 14px 12px;
+  border: 0;
+  background: none;
+  color: #a1a1aa;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.svc-tab:hover {
+  color: #ededf2;
+}
+.svc-tab.is-active {
+  color: #fafafa;
+}
+.svc-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #fafafa;
+}
+.svc-tab:focus-visible {
+  outline: 2px solid #fafafa;
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+.svc-tab-panel {
+  min-width: 0;
+}
+
+/* --- Sections: flat cards, Vercel neutral ------------------------------ */
+.supabase-service-page .dashboard-section {
+  margin: 0 0 24px;
+  padding: 20px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0c0c0d;
+}
+.supabase-service-page .dashboard-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 0;
+  margin: -20px -20px 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #27272a;
+}
+.supabase-service-page .dashboard-section-heading h2 {
+  color: #fafafa;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.supabase-service-page .dashboard-alert {
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+/* --- Definition list meta --------------------------------------------- */
+.supabase-service-page .service-meta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 24px;
+  margin: 0;
+}
+.supabase-service-page .service-meta > div {
+  display: block;
+  min-width: 0;
+}
+.supabase-service-page .service-meta dt {
+  margin-bottom: 5px;
+  color: #71717a;
+  font-size: 12px;
+  font-weight: 500;
+}
+.supabase-service-page .service-meta dd {
+  margin: 0;
+  color: #ededf2;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.supabase-service-side .service-meta,
+.supabase-service-page .svc-panel-meta-two-col .service-meta {
+  grid-template-columns: 1fr;
+}
+
+/* --- Empty states ------------------------------------------------------ */
+.supabase-service-page .dashboard-empty-state {
+  padding: 32px 20px;
+  border: 1px dashed #3f3f46;
+  border-radius: 8px;
+  background: transparent;
+  text-align: center;
+}
+.supabase-service-page .dashboard-empty-state h3 {
+  font-size: 14px;
+}
+.supabase-service-page .dashboard-empty-state p {
+  font-size: 13px;
+}
+.supabase-service-page .dashboard-table-empty {
+  padding: 20px;
+  color: #71717a;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* --- Tables ------------------------------------------------------------ */
+.supabase-service-page .organization-table-wrap {
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0c0c0d;
+  overflow-x: auto;
+}
+.supabase-service-page .organization-table {
+  margin: 0;
+  font-size: 13px;
+}
+.supabase-service-page .organization-table th,
+.supabase-service-page .organization-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #1f1f22;
+}
+.supabase-service-page .organization-table th {
+  background: #111113;
+  color: #71717a;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.supabase-service-page .organization-table td {
+  color: #d4d4d8;
+  vertical-align: middle;
+}
+.supabase-service-page .organization-table tbody tr {
+  transition: background 0.12s ease;
+}
+.supabase-service-page .organization-table tbody tr:hover {
+  background: #131316;
+}
+.supabase-service-page .organization-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.supabase-service-page .organization-table code {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #27272a;
+  color: #d4d4d8;
+  font-size: 12px;
+}
+
+/* --- Buttons & link buttons -------------------------------------------- */
+.supabase-service-page .dashboard-link-button {
+  padding: 5px 10px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: transparent;
+  color: #d4d4d8;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+.supabase-service-page .dashboard-link-button:hover {
+  background: #27272a;
+  border-color: #52525b;
+  color: #fff;
+}
+.supabase-service-page .dashboard-link-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.supabase-service-page .dashboard-link-button.is-danger {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.supabase-service-page .dashboard-link-button.is-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fca5a5;
+}
+
+/* --- Forms -------------------------------------------------------------- */
+.supabase-service-page .organization-settings-form,
+.supabase-service-page .environment-form {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #111113;
+}
+.supabase-service-page .organization-settings-form:last-child,
+.supabase-service-page .environment-form:last-child {
+  margin-bottom: 0;
+}
+.supabase-service-page .organization-settings-form label,
+.supabase-service-page .environment-form label {
+  display: grid;
+  gap: 6px;
+  color: #d4d4d8;
+  font-size: 13px;
+}
+.supabase-service-page .organization-settings-form input,
+.supabase-service-page .environment-form input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #0c0c0d;
+  color: #fafafa;
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.supabase-service-page .organization-settings-form input:focus,
+.supabase-service-page .environment-form input:focus {
+  border-color: #a1a1aa;
+  box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.08);
+}
+.supabase-service-page .environment-form-actions,
+.supabase-service-page .deployment-actions,
+.supabase-service-page .runtime-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.supabase-service-page .environment-redeploy-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #f5a623;
+  font-size: 13px;
+}
+
+/* --- Node status & logs ------------------------------------------------- */
+/* A status strip, not a pill: the heartbeat timestamp is long, and a pill that
+   wraps splits the node name and the state across ragged lines. */
+.supabase-service-page .deployment-node {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 16px;
+  padding: 7px 12px;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  background: transparent;
+  color: #71717a;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.supabase-service-page .deployment-node-name {
+  white-space: nowrap;
+}
+.supabase-service-page .deployment-node strong {
+  color: #d4d4d8;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.supabase-service-page .deployment-node-state {
+  font-weight: 500;
+}
+.supabase-service-page .deployment-node-time {
+  opacity: 0.75;
+}
+.supabase-service-page .deployment-node.is-healthy {
+  border-color: rgba(0, 176, 107, 0.35);
+  color: #00e08c;
+}
+.supabase-service-page .deployment-node.is-healthy strong {
+  color: #00e08c;
+}
+.supabase-service-page .deployment-node.is-unknown {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+.supabase-service-page .deployment-log {
+  margin-top: 16px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #09090b;
+  overflow: hidden;
+}
+.supabase-service-page .deployment-log-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #27272a;
+  background: #111113;
+}
+.supabase-service-page .deployment-log-head h3 {
+  margin: 0;
+  color: #d4d4d8;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.supabase-service-page .deployment-log pre {
+  max-height: 380px;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  color: #c8c8ce;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* DNS instructions sit directly under the Custom Domain meta list; browser
+   default heading and paragraph margins were the only spacing they had. */
+.supabase-service-page .custom-domain-records {
+  margin-top: 20px;
+}
+.supabase-service-page .custom-domain-records h3 {
+  margin: 0 0 4px;
+  color: #d4d4d8;
+  font-size: 13px;
+  font-weight: 600;
+}
+.supabase-service-page .custom-domain-records p {
+  margin: 0 0 12px;
+  color: #71717a;
+  font-size: 12.5px;
+}
+
+/* --- Misc ---------------------------------------------------------------- */
+.supabase-service-page .dashboard-back-link a {
+  color: #00e08c;
+  font-size: 13px;
+  text-decoration: none;
+}
+.svc-back-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: #a1a1aa;
+  font-size: 13px;
+  text-decoration: none;
+}
+.svc-back-link:hover {
+  color: #ededf2;
+}
+.svc-not-found {
+  padding: 48px 32px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0c0c0d;
+}
+.svc-page-loader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: #71717a;
+  font-size: 13px;
+}
+.svc-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #3f3f46;
+  border-top-color: #ededf2;
+  border-radius: 50%;
+  animation: svc-spin 0.7s linear infinite;
+}
+@keyframes svc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.supabase-service-page .organization-danger-zone {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: #0c0c0d;
+}
+.supabase-service-page .organization-danger-zone .dashboard-section-heading h2 {
+  color: #f87171;
+}
+.supabase-service-page .organization-danger-zone p {
+  color: #a1a1aa;
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+
+/* --- Responsive ----------------------------------------------------------- */
+@media (max-width: 860px) {
+  .dashboard-content.supabase-service-page {
+    padding: 20px 20px 56px;
+  }
+  .supabase-service-page .service-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Seven table columns cannot fit a phone. Below 720px each row becomes a
+   two-column card with a label above every value, so status and actions stay
+   reachable without panning sideways. */
+@media (max-width: 720px) {
+  .supabase-service-page .organization-table-wrap {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .supabase-service-page .organization-table,
+  .supabase-service-page .organization-table tbody,
+  .supabase-service-page .organization-table tr,
+  .supabase-service-page .organization-table td {
+    display: block;
+    width: auto;
+  }
+  .supabase-service-page .organization-table thead {
+    display: none;
+  }
+  .supabase-service-page .organization-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+  .supabase-service-page .organization-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    padding: 14px;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    background: #0c0c0d;
+  }
+  .supabase-service-page .organization-table tbody tr:hover {
+    background: #0c0c0d;
+  }
+  .supabase-service-page .organization-table td {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .supabase-service-page .organization-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: #71717a;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  /* Full-width cells pair a label with its value on one line. A timestamp
+     contains a non-breaking space in some locales, so it cannot wrap inside a
+     half-width column and would collide with the next field. */
+  .supabase-service-page .organization-table .svc-cell-wide,
+  .supabase-service-page .organization-table .svc-cell-actions {
+    grid-column: 1 / -1;
+  }
+  .supabase-service-page .organization-table .svc-cell-wide {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+  }
+  .supabase-service-page .organization-table .svc-cell-wide::before {
+    margin-bottom: 0;
+  }
+  .supabase-service-page .organization-table .svc-cell-actions {
+    padding-top: 12px;
+    border-top: 1px solid #1f1f22;
+  }
+  .supabase-service-page .organization-table code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  /* A DNS record has three long values and no short pair worth sharing a row,
+     so every field gets its own labeled line instead of breaking a hostname
+     across a half-width column. */
+  .supabase-service-page .svc-table-records td,
+  .supabase-service-page .svc-table-records td.svc-cell-wide {
+    display: block;
+    grid-column: 1 / -1;
+  }
+  .supabase-service-page .svc-table-records td.svc-cell-wide::before {
+    margin-bottom: 4px;
+  }
+  .supabase-service-page .deployment-log pre {
+    font-size: 11.5px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Underline tabs stay on one row like the desktop bar. The strip scrolls
+     sideways instead of wrapping into boxes, and the next label peeks in at
+     the right edge so the swipe is discoverable. */
+  .svc-tabbar {
+    gap: 0;
+    margin-bottom: 20px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .svc-tab {
+    min-height: 44px;
+    padding: 10px 8px 12px;
+    font-size: 13px;
+    scroll-snap-align: start;
+  }
+  .svc-tab.is-active::after {
+    left: 4px;
+    right: 4px;
+  }
+  /* Fade the trailing edge only while more tabs are off-screen, so the swipe
+     is discoverable without changing the underline look of the bar. */
+  .svc-tabbar[data-overflow="true"] {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+  .svc-tab:focus-visible {
+    outline-offset: -2px;
+  }
+  .supabase-service-page .supabase-btn-green,
+  .supabase-service-page .dashboard-link-button {
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+  .supabase-service-page .deployment-actions {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-content.supabase-service-page {
+    padding: 16px 16px 48px;
+  }
+  .supabase-service-title {
+    font-size: 20px;
+  }
+  .supabase-service-page .service-meta {
+    grid-template-columns: 1fr;
+  }
+  .supabase-service-page .dashboard-section {
+    padding: 16px;
+  }
+  .supabase-service-page .dashboard-section-heading {
+    margin: -16px -16px 14px;
+    padding: 12px 16px;
+  }
+  .supabase-service-page .dashboard-section-heading h2 {
+    font-size: 14.5px;
+  }
+  .supabase-service-breadcrumb {
+    row-gap: 4px;
+  }
+  .supabase-service-breadcrumb-current {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Database credential card.
+   One card, one row per credential, so Host/Database/User/Password read as a
+   single block instead of four separate boxes. Values are monospace and wrap
+   with break-all: a 24-character schema must never push the card sideways on a
+   360px screen. The copy button is 44px tall, the minimum comfortable target.
+   Shared by the MySQL and PostgreSQL panels. */
+.db-cred-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  background-color: #141318;
+  border: 1px solid #232129;
+  overflow: hidden;
+}
+
+.db-cred-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+
+.db-cred-row + .db-cred-row {
+  border-top: 1px solid #232129;
+}
+
+.db-cred-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #636170;
+}
+
+/* The copied confirmation sits next to the label so the value itself never
+   shifts or reflows when it appears. */
+.db-cred-copied {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #3ecf8e;
+}
+
+.db-cred-value-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.db-cred-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ffffff;
+  /* Long names must wrap rather than overflow: no horizontal scroll, no
+     ellipsis hiding a character that matters when copying by eye. */
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.db-cred-value.is-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.db-cred-password-value {
+  /* The password is 64 hex characters; wrapping it keeps the row height stable
+     whether it is hidden or revealed. */
+  min-height: 21px;
+}
+
+.db-cred-muted {
+  color: #716f7c;
+  font-family: inherit;
+}
+
+.db-cred-error {
+  font-size: 11.5px;
+  color: #ff7a82;
+  margin-top: 6px;
+}
+
+.db-cred-copy {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 6px;
+  background-color: #1f1e26;
+  border: 1px solid #2e2c39;
+  color: #8e8c99;
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    color 120ms,
+    border-color 120ms;
+}
+
+.db-cred-copy:hover:not(:disabled) {
+  background-color: #272532;
+  border-color: #3a3846;
+  color: #ffffff;
+}
+
+.db-cred-copy:focus-visible,
+.db-cred-action:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+.db-cred-copy:disabled,
+.db-cred-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* The password has two labelled buttons rather than an ambiguous icon, so the
+   action is readable without hovering. */
+.db-cred-password-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.db-cred-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background-color: #1f1e26;
+  border: 1px solid #2e2c39;
+  color: #d4d4d8;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    color 120ms,
+    border-color 120ms;
+}
+
+.db-cred-action:hover:not(:disabled) {
+  background-color: #272532;
+  border-color: #3a3846;
+  color: #ffffff;
+}
+
+/* 360px: trim the row padding so the copy button never forces a scrollbar. */
+@media (max-width: 400px) {
+  .db-cred-row {
+    padding: 10px 12px;
+  }
+
+  .db-cred-password-actions {
+    width: 100%;
+  }
+
+  .db-cred-action {
+    flex: 1 1 auto;
+  }
 }

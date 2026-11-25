@@ -1,0 +1,58 @@
+@startuml
+title Gambar 7 — Use Case Layanan Publik dan Admin Console
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #F8EDF5
+  BorderColor #7A4A6B
+  FontSize 12
+}
+
+actor "Pengunjung Publik" as V
+actor "Platform Admin" as PA
+actor "Instance Server\n(Node Agent)" as IS
+
+rectangle "Stealth Hosting — Batas Sistem Control Plane" {
+
+  package "Layanan Publik" {
+    usecase "UC-45\nMelaporkan Konten\nAbuse" as UC45
+  }
+
+  package "Admin: Observability" {
+    usecase "UC-46\nMelihat Overview\nPlatform" as UC46
+    usecase "UC-47\nMemantau Infrastruktur" as UC47
+    usecase "UC-48\nMenelusuri Log, Trace\n& Error" as UC48
+  }
+
+  package "Admin: Operasi" {
+    usecase "UC-49\nMelihat Antrean &\nAgent Run" as UC49
+    usecase "UC-50\nMengelola Insiden" as UC50
+  }
+
+  package "Admin: Platform & Abuse" {
+    usecase "UC-51\nMelihat Daftar Akun" as UC51
+    usecase "UC-52\nMeninjau Scan Findings" as UC52
+    usecase "UC-53\nMenangani Abuse Report" as UC53
+    usecase "UC-54\nMenangguhkan\nService/Organisasi" as UC54
+    usecase "UC-55\nMengatur Provider\nSign-in & Status Page" as UC55
+  }
+}
+
+V --> UC45
+
+PA --> UC46
+PA --> UC47
+PA --> UC48
+PA --> UC49
+PA --> UC50
+PA --> UC51
+PA --> UC52
+PA --> UC53
+PA --> UC54
+PA --> UC55
+
+IS --> UC54
+
+@enduml

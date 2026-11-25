@@ -37,18 +37,21 @@ func TestUsageMeasuresServicesAndDatabases(t *testing.T) {
 	}
 	docker.stats["svc-2"] = ContainerStats{CPUUsage: 0.9, MemoryUsageMB: 300}
 
-	docker.containers["db-1"] = &fakeContainer{
-		ID:    "db-1",
-		Name:  "stealth-db-database-1",
-		State: "running",
-		Labels: map[string]string{
-			LabelType:       ResourceTypeDatabase,
-			LabelDatabaseID: "database-1",
-		},
+	// A Database has no container of its own: the shared server is what carries
+	// the ResourceTypeDatabase label, and usage is the size of the tenant schema.
+	if _, err := docker.CreateContainer(context.Background(), ContainerSpec{
+		Name:         SharedPostgresContainerName,
+		Network:      "stealth_default",
+		NetworkAlias: SharedPostgresContainerName,
+		Image:        SharedPostgresImage,
+		Port:         DatabasePort,
+		Labels:       map[string]string{LabelType: ResourceTypeDatabase},
+	}); err != nil {
+		t.Fatalf("seed the shared server: %v", err)
 	}
-	docker.volumes["stealth-dbvol-database-1"] = &fakeVolume{
-		Name:    "stealth-dbvol-database-1",
-		UsageMB: 200,
+	docker.tenantUsage = map[string]int64{schemaNameFor("database-1"): 200}
+	docker.tenantList = map[string][]string{
+		SharedPostgresContainerName: {schemaNameFor("database-1")},
 	}
 
 	report, err := manager.Usage(context.Background())
@@ -73,7 +76,7 @@ func TestUsageMeasuresServicesAndDatabases(t *testing.T) {
 	if len(report.Databases) != 1 {
 		t.Fatalf("expected one Database, got %+v", report.Databases)
 	}
-	if report.Databases[0].DatabaseID != "database-1" || report.Databases[0].UsageMB != 200 {
+	if report.Databases[0].DatabaseName != schemaNameFor("database-1") || report.Databases[0].UsageMB != 200 {
 		t.Fatalf("unexpected Database usage: %+v", report.Databases[0])
 	}
 }

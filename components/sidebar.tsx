@@ -20,6 +20,7 @@ import {
   type OrganizationIdentity,
   type UserIdentity,
 } from "./identity";
+import { UserAvatar } from "./user-avatar";
 
 // lucide-react: one consistent 1.7pt-stroke icon language across the console;
 // each glyph maps to a real destination (Inbox -> Inbox, ChartPie -> Overview).
@@ -379,6 +380,16 @@ export function Sidebar({
   const [organizationError, setOrganizationError] = useState("");
   const [organizationBusy, setOrganizationBusy] = useState(false);
 
+  useEffect(() => {
+    // The Supabase topbar owns the global header now, so its mobile menu
+    // button asks the sidebar to open the navigation sheet.
+    function openMobileNav() {
+      setMobileOpen(true);
+    }
+    window.addEventListener("stealth:open-mobile-nav", openMobileNav);
+    return () => window.removeEventListener("stealth:open-mobile-nav", openMobileNav);
+  }, []);
+
   const activeOrganizationId = session?.session.activeOrganizationId;
   const activeOrganization = organizations?.find((item) => item.id === activeOrganizationId);
   const sidebarOrganization: OrganizationIdentity = activeOrganization
@@ -440,10 +451,8 @@ export function Sidebar({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setSearchOpen(true);
-      }
+      // Ctrl/Cmd+K belongs to the dashboard shell's CommandPalette. Handling it
+      // here as well opened two stacked aria-modal dialogs.
       if (event.key === "Escape") {
         setMobileOpen(false);
         setProfileOpen(false);
@@ -668,9 +677,7 @@ export function Sidebar({
                   aria-label="User menu"
                 >
                   <div className="profile-menu-user">
-                    <span className="profile-avatar large" aria-hidden="true">
-                      {getInitials(user.name)}
-                    </span>
+                    <UserAvatar user={user} size={36} className="profile-avatar-image large" />
                     <div>
                       <strong title={user.name}>{user.name}</strong>
                       <small>{user.role}</small>
@@ -701,9 +708,7 @@ export function Sidebar({
                   aria-haspopup="menu"
                   aria-expanded={profileOpen}
                 >
-                  <span className="profile-avatar" aria-hidden="true">
-                    {getInitials(user.name)}
-                  </span>
+                  <UserAvatar user={user} size={32} className="profile-avatar" decorative />
                   {!collapsed || mobile ? (
                     <>
                       <span className="profile-copy">
@@ -743,9 +748,7 @@ export function Sidebar({
             aria-label="User menu"
             aria-expanded={mobileAccountOpen}
           >
-            <span className="mobile-account-avatar" aria-hidden="true">
-              {getInitials(user.name)}
-            </span>
+            <UserAvatar user={user} size={26} className="mobile-account-avatar" decorative />
           </button>
           <button
             type="button"

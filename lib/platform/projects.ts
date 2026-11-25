@@ -12,6 +12,8 @@ export type ProjectSummary = {
   slug: string;
   serviceCount: number;
   databaseCount: number;
+  /** The engine of the Project's Database, so the header names the real one. */
+  databaseEngine: string | null;
   status: "empty" | "active";
   createdAt: Date;
   updatedAt: Date;
@@ -23,6 +25,7 @@ type ProjectRow = {
   slug: string;
   serviceCount: string | number;
   databaseCount: string | number;
+  databaseEngine: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -91,7 +94,8 @@ function summarize(row: ProjectRow): ProjectSummary {
 
 const PROJECT_SELECT = `SELECT p."id", p."name", p."slug", p."createdAt", p."updatedAt",
   (SELECT count(*) FROM "service" s WHERE s."projectId" = p."id") AS "serviceCount",
-  (SELECT count(*) FROM "database" d WHERE d."projectId" = p."id") AS "databaseCount"
+  (SELECT count(*) FROM "database" d WHERE d."projectId" = p."id") AS "databaseCount",
+  (SELECT d."engine" FROM "database" d WHERE d."projectId" = p."id" LIMIT 1) AS "databaseEngine"
   FROM "project" p`;
 
 export async function listProjects(organizationId: string): Promise<ProjectSummary[]> {

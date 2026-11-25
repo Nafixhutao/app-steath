@@ -7,11 +7,37 @@ import { SupabaseTopbar } from "@/components/supabase-topbar";
 import { CommandPalette } from "@/components/command-palette";
 import { ToastProvider } from "@/components/toast-context";
 import { OrganizationOnboarding } from "@/components/organization-onboarding";
-import { getAdminStatus } from "@/lib/admin-client";
 import { authClient, useListOrganizations, useSession } from "@/lib/auth-client";
 import { defaultOrganization, defaultUser } from "@/components/identity";
 
+/**
+ * `usePathname` cannot be resolved while prerendering a route with an unknown
+ * dynamic param (for example `/dashboard/projects/[projectId]`). Cache
+ * Components therefore requires the component that reads it to sit inside a
+ * Suspense boundary, so the shell streams in instead of failing the build.
+ * The static fallback keeps the console background so there is no white flash.
+ */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<DashboardLayoutFallback />}>
+      <DashboardShell>{children}</DashboardShell>
+    </Suspense>
+  );
+}
+
+function DashboardLayoutFallback() {
+  return (
+    <div className="console-layout flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
+      <div className="dashboard-gate">
+        <div className="dashboard-loading" role="status">
+          Loading your Organization...
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const isOrgsPage = pathname === "/dashboard/organizations";
@@ -21,8 +47,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const activeOrganizationId = session?.session.activeOrganizationId;
   const needsOrganization = !organizationsPending && (organizations?.length ?? 0) === 0;
   const needsActiveOrganization =
-    !organizationsPending && !needsOrganization && !!session && !activeOrganizationId && !isOrgsPage;
-  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+    !organizationsPending &&
+    !needsOrganization &&
+    !!session &&
+    !activeOrganizationId &&
+    !isOrgsPage;
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -39,29 +68,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!isPending && !session) router.replace("/");
   }, [isPending, router, session]);
-
-  useEffect(() => {
-    // The sidebar fetches the same status; the layout needs it too, so a
-    // Platform Admin with no Organization membership still gets a usable
-    // landing page instead of the Organization onboarding gate.
-    let cancelled = false;
-    getAdminStatus()
-      .then((status) => {
-        if (!cancelled) setIsPlatformAdmin(status.platformAdmin);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [session]);
-
-  useEffect(() => {
-    // A Platform Admin is admin-only: the admin console is their whole
-    // surface, so the user dashboard never renders for them even if a
-    // leftover Organization membership exists.
-    if (!isPlatformAdmin) return;
-    router.replace("/admin");
-  }, [isPlatformAdmin, router]);
 
   useEffect(() => {
     // Leaving or deleting an Organization clears the active id. Fall back to a
@@ -98,12 +104,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 organization={defaultOrganization}
                 user={{
                   name: session?.user.name || session?.user.email || defaultUser.name,
+                  email: session?.user.email,
+                  image: session?.user.image,
                   role: "Member",
                 }}
               />
             </Suspense>
-            <main id="dashboard-content" className="console-main user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden">
-              {needsOrganization && !isPlatformAdmin ? <OrganizationOnboarding /> : children}
+            <main
+              id="dashboard-content"
+              className="console-main user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden"
+            >
+              {needsOrganization ? <OrganizationOnboarding /> : children}
             </main>
           </div>
         )}

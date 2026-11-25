@@ -43,7 +43,17 @@ export function useResource<T>(
 
   const load = useCallback(
     async () => {
-      if (!enabled) return;
+      if (!enabled) {
+        // Invalidate any in-flight request so a stale organization's response
+        // cannot commit after the resource was disabled. This only stops the
+        // state commit; it does not abort the request itself, so a fetcher
+        // with side effects would still run to completion.
+        ticketRef.current++;
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
 
       // A response from a request that started before the newest one is stale:
       // the user may have navigated or the deps may have changed. Only the
@@ -64,7 +74,7 @@ export function useResource<T>(
     // The fetcher is re-created by the caller on every render; `deps` is the
     // real identity. Exactly what useCallback/useEffect callers pass today.
     // eslint-disable-next-line -- spread is the point
-    [...deps] as React.DependencyList,
+    [...deps, enabled] as React.DependencyList,
   );
 
   useEffect(() => {

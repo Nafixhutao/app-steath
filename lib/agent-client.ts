@@ -15,6 +15,12 @@ export type AgentDeployment = components["schemas"]["Deployment"];
 export type AgentServiceState = components["schemas"]["ServiceState"];
 export type AgentRuntimeLogEvent = components["schemas"]["RuntimeLogEvent"];
 export type AgentDeploymentAbort = components["schemas"]["DeploymentAbort"];
+export type AgentBackupRequest =
+  paths["/v1/backups"]["post"]["requestBody"]["content"]["application/json"];
+export type AgentUsage = paths["/v1/usage"]["get"]["responses"][200]["content"]["application/json"];
+export type AgentHostMetrics = components["schemas"]["HostMetricsSnapshot"];
+export type AgentScanReport =
+  paths["/v1/scans"]["post"]["responses"][200]["content"]["application/json"];
 
 export type AgentClient = ReturnType<typeof createAgentClient>;
 
@@ -72,7 +78,9 @@ export async function streamServiceLogs(
   });
 
   if (!response.response.ok || !response.data) {
-    throw new Error(`The Node Agent rejected the runtime log stream (${response.response.status}).`);
+    throw new Error(
+      `The Node Agent rejected the runtime log stream (${response.response.status}).`,
+    );
   }
 
   await readNdjson(response.data, onEvent);
@@ -90,24 +98,42 @@ async function readNdjson<T>(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    let newline = buffer.indexOf("\n");
-    while (newline !== -1) {
-      const line = buffer.slice(0, newline).trim();
-      buffer = buffer.slice(newline + 1);
-      if (line) {
-        await onEvent(JSON.parse(line) as T);
-      }
-      newline = buffer.indexOf("\n");
+  const emit = async (line: string) => {
+    let event: T;
+    try {
+      event = JSON.parse(line) as T;
+    } catch (error) {
+      // One broken line must not leave the log connection hanging. These streams
+      // are human-readable logs, so dropping a malformed line with a warning
+      // beats failing the whole stream.
+      console.warn("ignoring malformed agent NDJSON event", line.slice(0, 200), error);
+      return;
     }
-  }
 
-  const remainder = buffer.trim();
-  if (remainder) {
-    await onEvent(JSON.parse(remainder) as T);
+    // The consumer's own failure is not a parse problem, so it must not be
+    // swallowed here: a log write that keeps failing has to stop the stream
+    // rather than drop every remaining line silently.
+    await onEvent(event);
+  };
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      let newline = buffer.indexOf("\n");
+      while (newline !== -1) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (line) await emit(line);
+        newline = buffer.indexOf("\n");
+      }
+    }
+
+    const remainder = buffer.trim();
+    if (remainder) await emit(remainder);
+  } finally {
+    await reader.cancel().catch(() => undefined);
   }
 }

@@ -359,14 +359,25 @@ func (s server) EnsureDatabase(w http.ResponseWriter, r *http.Request, databaseI
 		return
 	}
 
+	engine := ""
+	if request.Engine != nil {
+		engine = string(*request.Engine)
+	}
+	phpMyAdminHostname := ""
+	if request.PhpMyAdminHostname != nil {
+		phpMyAdminHostname = *request.PhpMyAdminHostname
+	}
+
 	state, err := s.runtime.EnsureDatabase(r.Context(), runtime.DatabaseRequest{
-		DatabaseID:     databaseID,
-		ProjectID:      request.ProjectId,
-		OrganizationID: request.OrganizationId,
-		DatabaseName:   request.DatabaseName,
-		Username:       request.Username,
-		Password:       request.Password,
-		StorageLimitMB: request.StorageLimitMb,
+		DatabaseID:         databaseID,
+		ProjectID:          request.ProjectId,
+		OrganizationID:     request.OrganizationId,
+		Engine:             engine,
+		PhpMyAdminHostname: phpMyAdminHostname,
+		DatabaseName:       request.DatabaseName,
+		Username:           request.Username,
+		Password:           request.Password,
+		StorageLimitMB:     request.StorageLimitMb,
 	})
 	if errors.Is(err, runtime.ErrInvalidDatabase) {
 		writeError(w, http.StatusBadRequest, "invalid_database_request", err.Error())
@@ -453,11 +464,15 @@ func (s server) RotateDatabasePassword(
 		return
 	}
 
+	engine := ""
+	if request.Engine != nil {
+		engine = string(*request.Engine)
+	}
+
 	state, err := s.runtime.RotateDatabasePassword(r.Context(), runtime.DatabasePasswordRequest{
-		DatabaseID:   databaseID,
-		DatabaseName: request.DatabaseName,
-		Username:     request.Username,
-		Password:     request.Password,
+		DatabaseID: databaseID,
+		Engine:     engine,
+		Password:   request.Password,
 	})
 	if errors.Is(err, runtime.ErrInvalidDatabase) {
 		writeError(w, http.StatusBadRequest, "invalid_database_request", err.Error())
@@ -515,6 +530,13 @@ func (s server) EnsureDatabaseProxy(
 	}
 	if errors.Is(err, runtime.ErrUnknownDatabase) {
 		writeError(w, http.StatusNotFound, "database_not_found", "The Database has no running container on this node.")
+		return
+	}
+	// A shared server listens on one port for every tenant, so no public listener
+	// can be offered. The Control Plane turns this into the product-level refusal
+	// the dashboard shows, rather than a generic node failure.
+	if errors.Is(err, runtime.ErrDatabaseProxyDisabled) {
+		writeError(w, http.StatusConflict, "database_proxy_unsupported", err.Error())
 		return
 	}
 	if err != nil {
@@ -982,8 +1004,8 @@ func toUsageReport(report runtime.UsageReport) UsageReport {
 	}
 	for _, database := range report.Databases {
 		result.Databases = append(result.Databases, DatabaseUsage{
-			DatabaseId: database.DatabaseID,
-			UsageMb:    int(database.UsageMB),
+			DatabaseName: database.DatabaseName,
+			UsageMb:      int(database.UsageMB),
 		})
 	}
 
@@ -1000,13 +1022,19 @@ func toVolumeInfo(state runtime.VolumeState) VolumeInfo {
 }
 
 func toDatabaseState(state runtime.DatabaseState) DatabaseState {
+	engine := DatabaseStateEngine(state.Engine)
+	if !engine.Valid() {
+		engine = DatabaseStateEnginePostgres
+	}
 	result := DatabaseState{
-		DatabaseId:     state.DatabaseID,
-		Status:         DatabaseStateStatus(state.Status),
-		StorageLimitMb: state.StorageLimitMB,
-		UsageMb:        state.UsageMB,
-		Healthy:        state.Healthy,
-		OverQuota:      &state.OverQuota,
+		DatabaseId:      state.DatabaseID,
+		Engine:          &engine,
+		Status:          DatabaseStateStatus(state.Status),
+		StorageLimitMb:  state.StorageLimitMB,
+		UsageMb:         state.UsageMB,
+		Healthy:         state.Healthy,
+		PhpMyAdminReady: &state.PhpMyAdminReady,
+		OverQuota:       &state.OverQuota,
 	}
 	if state.ContainerID != "" {
 		result.ContainerId = &state.ContainerID

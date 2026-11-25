@@ -89,12 +89,24 @@ func main() {
 	// A Restore artifact is staged here while it is loaded into a Database or
 	// Volume. The agent removes each file when the Restore finishes.
 	services.SetRestoreDir(filepath.Join(workRoot, "restores"))
+	// Every Project Database is a schema inside a shared engine server, so the
+	// agent provisions and drops tenants through each server's admin account.
+	services.SetDatabaseServerPasswords(
+		os.Getenv("MYSQL_ROOT_PASSWORD"),
+		os.Getenv("PGDB_POSTGRES_PASSWORD"),
+	)
 	// Caddy runs as a container on this node, so it must join each Project
 	// network to resolve the alias a route dials.
 	services.SetNetworkAttacher(runtime.NewCaddyAttacher(
 		runtime.NewCLIDocker(executor, os.Getenv("AGENT_PROBE_IMAGE")),
 		os.Getenv("CADDY_CONTAINER_NAME"),
 	))
+	// The phpMyAdmin host also carries the dashboard's automatic sign-in bridge,
+	// which proxies to the Control Plane. Without the address no bridge route is
+	// programmed, so "Open phpMyAdmin" stays a plain link.
+	if controlPlaneURL != "" {
+		services.SetPhpMyAdminUpstream(controlPlaneUpstream(controlPlaneURL))
+	}
 
 	// Scans run after a Deployment and stage the exported image filesystem under
 	// the work root. Trivy and ClamAV are host binaries; an installation that
@@ -205,4 +217,31 @@ func caddyAskURL(controlPlane string, token string) string {
 	}
 
 	return base + "/api/internal/caddy/ask?token=" + url.QueryEscape(token)
+}
+
+// controlPlaneUpstream is the `host:port` Caddy dials for the phpMyAdmin sign-in
+// bridge. Caddy answers a loopback address differently from the Node Agent, so the
+// host gateway is used for a local Control Plane just as it is for the ask URL.
+func controlPlaneUpstream(controlPlane string) string {
+	base := strings.TrimRight(controlPlane, "/")
+	parsed, err := url.Parse(base)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+
+	host := parsed.Hostname()
+	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+		host = "host.docker.internal"
+	}
+	port := parsed.Port()
+	if port == "" {
+		switch parsed.Scheme {
+		case "https":
+			port = "443"
+		default:
+			port = "80"
+		}
+	}
+
+	return host + ":" + port
 }

@@ -9,8 +9,9 @@ import {
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
 /**
- * Reads a Project's Database, its health, and its usage. Every role may see the
- * state; only owners and admins receive the private connection string.
+ * Reads a Project's Database, its health, its usage, and the phpMyAdmin address
+ * a MySQL Database serves. Every role may see the state; only owners and admins
+ * receive the private connection string.
  */
 export async function GET(
   request: Request,
@@ -29,16 +30,21 @@ export async function GET(
 }
 
 /**
- * Provisions the Project's one PostgreSQL Database. Owners and admins manage
- * configuration; the Node Agent starts the container on the Project network.
+ * Provisions the Project's one Database, PostgreSQL or MySQL, chosen by the
+ * caller and fixed afterwards. Owners and admins manage configuration; the Node
+ * Agent starts the container on the Project network, plus a phpMyAdmin sidecar
+ * for MySQL.
  */
 export async function POST(
   request: Request,
   context: RouteContext<"/api/projects/[projectId]/database">,
 ) {
-  let input: { storageLimitMb?: unknown };
+  let input: { engine?: unknown; storageLimitMb?: unknown };
   try {
-    input = (await request.json().catch(() => ({}))) as { storageLimitMb?: unknown };
+    input = (await request.json().catch(() => ({}))) as {
+      engine?: unknown;
+      storageLimitMb?: unknown;
+    };
   } catch {
     return apiError(new ApiError(400, "invalid_body", "Invalid request body."));
   }
@@ -49,6 +55,7 @@ export async function POST(
     const created = await createProjectDatabase({
       organizationId: actor.organizationId,
       projectId,
+      engine: input.engine,
       storageLimitMb: input.storageLimitMb,
     });
 

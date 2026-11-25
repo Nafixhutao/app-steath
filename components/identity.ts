@@ -5,6 +5,8 @@ export type OrganizationIdentity = {
 export type UserIdentity = {
   name: string;
   role: string;
+  email?: string | null;
+  image?: string | null;
 };
 
 export const defaultOrganization: OrganizationIdentity = {

@@ -119,6 +119,11 @@ services:
       CADDY_CONTAINER_NAME: stealth-caddy
       AGENT_PROBE_IMAGE: busybox:1.36
       TRIVY_BIN: /usr/local/bin/trivy
+      # The Agent creates and drops tenants inside the shared engine servers it
+      # starts, so it needs each server's admin password. Both servers are
+      # containers the Agent owns; neither is reachable from the host.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      PGDB_POSTGRES_PASSWORD: ${PGDB_POSTGRES_PASSWORD}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - agent_work:/var/lib/stealth-agent

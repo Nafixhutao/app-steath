@@ -19,8 +19,10 @@ import {
   Calendar,
 } from "lucide-react";
 import { authClient, useActiveMember, useActiveOrganization } from "@/lib/auth-client";
+import { QUOTAS } from "@/lib/platform/quota-limits";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
+import { copyToClipboard } from "@/lib/clipboard";
 import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 
 export default function SettingsPage() {
@@ -36,7 +38,9 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const isOwner = activeMember?.role === "owner";
+  // Better Auth stores multiple roles as a comma-separated string.
+  const activeRoles = activeMember?.role.split(",").map((role) => role.trim()) ?? [];
+  const isOwner = activeRoles.includes("owner");
   const organizationName = organization?.name ?? "";
 
   const containerRef = useGsapEntrance([
@@ -54,8 +58,11 @@ export default function SettingsPage() {
     };
   }, [organizationName]);
 
-  function copyText(text: string, key: string, label: string) {
-    void navigator.clipboard.writeText(text);
+  async function copyText(text: string, key: string, label: string) {
+    if (!(await copyToClipboard(text))) {
+      toast.error("Copy failed", "Clipboard access is unavailable.");
+      return;
+    }
     setCopiedKey(key);
     toast.success("Copied to clipboard", `${label}: ${text}`);
     setTimeout(() => {
@@ -108,6 +115,7 @@ export default function SettingsPage() {
         throw new Error(result.error?.message ?? "Could not delete this organization.");
       }
       toast.success("Organization deleted", "Redirecting to your organizations...");
+      setBusy(false);
       router.push("/dashboard/organizations");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not delete this organization.");
@@ -139,6 +147,7 @@ export default function SettingsPage() {
         throw new Error(result.error?.message ?? "Could not leave this organization.");
       }
       toast.success("Left organization", `You have left ${organization.name}.`);
+      setBusy(false);
       router.push("/dashboard/organizations");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not leave this organization.");
@@ -169,7 +178,7 @@ export default function SettingsPage() {
         <div className="flex items-center gap-2">
           <span
             className={`settings-role-badge ${
-              isOwner ? "is-owner" : activeMember?.role === "admin" ? "is-admin" : "is-member"
+              isOwner ? "is-owner" : activeRoles.includes("admin") ? "is-admin" : "is-member"
             }`}
           >
             <Shield className="w-3.5 h-3.5 mr-1" />
@@ -408,15 +417,18 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Up to 5 Projects</span>
+                <span>Up to {QUOTAS.projectsPerOrganization} Projects</span>
               </div>
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Up to 20 Docker Services</span>
+                <span>
+                  Up to {QUOTAS.servicesPerOrganization} Docker Services (
+                  {QUOTAS.servicesPerProject} per Project)
+                </span>
               </div>
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Managed PostgreSQL 16 DBs</span>
+                <span>Managed databases</span>
               </div>
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
@@ -464,9 +476,9 @@ export default function SettingsPage() {
               <div className="p-3.5 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
                 <strong>Permanent Deletion Warning:</strong> Deleting{" "}
                 <strong>{organization?.name}</strong> will immediately terminate all running
-                containers, erase attached persistent volumes, remove managed PostgreSQL databases,
-                invalidate custom domain certificates, and revoke all member access. This operation
-                cannot be recovered.
+                containers, erase attached persistent volumes, remove managed databases, invalidate
+                custom domain certificates, and revoke all member access. This operation cannot be
+                recovered.
               </div>
 
               <form onSubmit={handleDeleteOrganization} className="space-y-3">

@@ -360,9 +360,14 @@ async function deploymentRequest(
 
 async function deploymentDetail(cookie: string, deploymentId: string): Promise<Response> {
   const { GET } = await import("@/app/api/deployments/[deploymentId]/route");
-  return GET(new Request(`${BASE_URL}/api/deployments/${deploymentId}`, { headers: { cookie, origin: BASE_URL } }), {
-    params: Promise.resolve({ deploymentId }),
-  });
+  return GET(
+    new Request(`${BASE_URL}/api/deployments/${deploymentId}`, {
+      headers: { cookie, origin: BASE_URL },
+    }),
+    {
+      params: Promise.resolve({ deploymentId }),
+    },
+  );
 }
 
 async function deploymentLogs(cookie: string, deploymentId: string): Promise<Response> {
@@ -431,7 +436,9 @@ async function queryRows<T extends Record<string, unknown>>(
  * does, including the Job outcome. Any Job left behind by an earlier test is
  * completed first so the assertion always observes its own Deployment.
  */
-async function runJobFor(deploymentId: string): Promise<{ status: string; message: string } | null> {
+async function runJobFor(
+  deploymentId: string,
+): Promise<{ status: string; message: string } | null> {
   const { claimBuildJob, completeJob, runBuildJob } = await import("@/lib/platform/deployments");
 
   for (let attempt = 0; attempt < 25; attempt += 1) {
@@ -512,10 +519,13 @@ describe("Deployment Build pipeline", () => {
     expect(deployment.serviceId).toBe(service.id);
 
     // The Job exists so a worker can pick it up.
-    const jobs = await queryRows<{ type: string; status: string; payload: { deploymentId: string } }>(
-      'SELECT "type", "status", "payload" FROM "job" WHERE "payload"->>\'deploymentId\' = $1',
-      [deployment.id],
-    );
+    const jobs = await queryRows<{
+      type: string;
+      status: string;
+      payload: { deploymentId: string };
+    }>('SELECT "type", "status", "payload" FROM "job" WHERE "payload"->>\'deploymentId\' = $1', [
+      deployment.id,
+    ]);
     expect(jobs).toHaveLength(1);
     expect(jobs[0]).toMatchObject({ type: "build", status: "queued" });
 
@@ -751,7 +761,9 @@ describe("Deployment Build pipeline", () => {
 
     // The duration is derived from the two timestamps, so it must not be negative
     // and must be measurable.
-    const duration = new Date(entry.finishedAt as string).getTime() - new Date(entry.startedAt as string).getTime();
+    const duration =
+      new Date(entry.finishedAt as string).getTime() -
+      new Date(entry.startedAt as string).getTime();
     expect(duration).toBeGreaterThanOrEqual(0);
   });
 
@@ -815,7 +827,11 @@ describe("Deployment Build pipeline", () => {
     const body = (await response.json()) as {
       data: {
         deployment: DeploymentBody;
-        aborted: { buildCancelled: boolean; containersRemoved: number; imageRemoved: boolean } | null;
+        aborted: {
+          buildCancelled: boolean;
+          containersRemoved: number;
+          imageRemoved: boolean;
+        } | null;
       };
     };
     expect(body.data.deployment.status).toBe("cancelled");
@@ -849,11 +865,167 @@ describe("Deployment Build pipeline", () => {
     await runJobFor(retried.id);
   });
 
+  it("marks the Deployment failed when its Build Job runs out of attempts", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(
+      uniqueName("depexhaust") + "@example.test",
+      uniqueName("depexhaust"),
+    );
+    const project = await createProject(owner.cookie, "Exhaust");
+    const service = await createService(owner.cookie, project.id, "Exhaust App");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+
+    // Pretend the worker already burned its whole retry budget on this Job.
+    const { MAX_BUILD_ATTEMPTS, failJob } = await import("@/lib/platform/deployments");
+    const jobs = await queryRows<{ id: string }>(
+      'SELECT "id" FROM "job" WHERE "payload"->>\'deploymentId\' = $1',
+      [deployment.id],
+    );
+    await queryRows('UPDATE "job" SET "status" = \'running\', "attempts" = $2 WHERE "id" = $1', [
+      jobs[0].id,
+      MAX_BUILD_ATTEMPTS,
+    ]);
+
+    await failJob(jobs[0].id, "The Node Agent could not be reached.");
+
+    // Nothing else moves a Deployment, so the row must not stay `queued` with a
+    // dead Job behind it.
+    const deployments = await queryRows<{ status: string; errorMessage: string | null }>(
+      'SELECT "status", "errorMessage" FROM "deployment" WHERE "id" = $1',
+      [deployment.id],
+    );
+    expect(deployments[0].status).toBe("failed");
+    expect(deployments[0].errorMessage).toBe("The Node Agent could not be reached.");
+
+    const { getService } = await import("@/lib/platform/services");
+    expect((await getService(owner.organizationId, service.id)).status).toBe("not_deployed");
+  });
+
+  it("requeues the Job a dead worker was holding so its Deployment is not stuck", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("depstale") + "@example.test", uniqueName("depstale"));
+    const project = await createProject(owner.cookie, "Stale");
+    const service = await createService(owner.cookie, project.id, "Stale App");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+
+    // A hard kill during a Build leaves the Job `running` with a lock nobody
+    // will release, so nothing would ever move this Deployment again.
+    const jobs = await queryRows<{ id: string }>(
+      'SELECT "id" FROM "job" WHERE "payload"->>\'deploymentId\' = $1',
+      [deployment.id],
+    );
+    await queryRows('UPDATE "job" SET "status" = \'running\', "lockedAt" = now() WHERE "id" = $1', [
+      jobs[0].id,
+    ]);
+
+    const { recoverStaleJobs } = await import("@/lib/platform/deployments");
+    // The suite shares one database, so other files may have left their own
+    // `running` Jobs behind; only this Job's outcome is asserted.
+    await recoverStaleJobs();
+
+    const recovered = await queryRows<{ status: string; lockedAt: Date | null }>(
+      'SELECT "status", "lockedAt" FROM "job" WHERE "id" = $1',
+      [jobs[0].id],
+    );
+    expect(recovered[0].status).toBe("queued");
+    expect(recovered[0].lockedAt).toBeNull();
+
+    // The re-queued Job is claimable again, so the Deployment can finish.
+    expect(await runJobFor(deployment.id)).not.toBeNull();
+  });
+
+  it("closes out a Job that used its last attempt before the worker died", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(
+      uniqueName("depstalemax") + "@example.test",
+      uniqueName("depstalemax"),
+    );
+    const project = await createProject(owner.cookie, "Stale Max");
+    const service = await createService(owner.cookie, project.id, "Stale Max App");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+
+    const { MAX_BUILD_ATTEMPTS, recoverStaleJobs } = await import("@/lib/platform/deployments");
+    const jobs = await queryRows<{ id: string }>(
+      'SELECT "id" FROM "job" WHERE "payload"->>\'deploymentId\' = $1',
+      [deployment.id],
+    );
+    await queryRows(
+      'UPDATE "job" SET "status" = \'running\', "lockedAt" = now(), "attempts" = $2 WHERE "id" = $1',
+      [jobs[0].id, MAX_BUILD_ATTEMPTS],
+    );
+
+    // Re-queueing here would let a Job that keeps killing its worker loop, so it
+    // is failed and its Deployment closed out.
+    await recoverStaleJobs();
+
+    const jobsAfter = await queryRows<{ status: string }>(
+      'SELECT "status" FROM "job" WHERE "id" = $1',
+      [jobs[0].id],
+    );
+    expect(jobsAfter[0].status).toBe("failed");
+
+    const deployments = await queryRows<{ status: string }>(
+      'SELECT "status" FROM "deployment" WHERE "id" = $1',
+      [deployment.id],
+    );
+    expect(deployments[0].status).toBe("failed");
+  });
+
+  it("cancels a queued Deployment even when the Node Agent cannot be reached", async () => {
+    agent.reset();
+    await sendHeartbeat();
+
+    const owner = await signUp(uniqueName("depdown") + "@example.test", uniqueName("depdown"));
+    const project = await createProject(owner.cookie, "Cancel Down");
+    const service = await createService(owner.cookie, project.id, "Down App");
+
+    const created = await deploymentRequest(owner.cookie, service.id, { method: "POST" });
+    const deployment = ((await created.json()) as { data: DeploymentBody }).data;
+    expect(deployment.status).toBe("queued");
+
+    // A node that is gone must not turn the user's cancel into an error: the
+    // worker refuses to build a cancelled Deployment, so the row has to change
+    // even when the agent never hears about it.
+    const reachable = process.env.AGENT_BASE_URL;
+    process.env.AGENT_BASE_URL = "http://127.0.0.1:1";
+    try {
+      const response = await cancelRequest(owner.cookie, deployment.id);
+      expect(response.status).toBe(200);
+
+      const body = (await response.json()) as {
+        data: { deployment: DeploymentBody; aborted: unknown };
+      };
+      expect(body.data.deployment.status).toBe("cancelled");
+      expect(body.data.aborted).toBeNull();
+    } finally {
+      process.env.AGENT_BASE_URL = reachable;
+    }
+
+    const { getService } = await import("@/lib/platform/services");
+    expect((await getService(owner.organizationId, service.id)).status).toBe("not_deployed");
+    expect(await runJobFor(deployment.id)).toBeNull();
+  });
+
   it("keeps a running Service serving when a later Deployment is cancelled", async () => {
     agent.reset();
     await sendHeartbeat();
 
-    const owner = await signUp(uniqueName("depcancelrun") + "@example.test", uniqueName("depcancelrun"));
+    const owner = await signUp(
+      uniqueName("depcancelrun") + "@example.test",
+      uniqueName("depcancelrun"),
+    );
     const project = await createProject(owner.cookie, "Cancel Running");
     const service = await createService(owner.cookie, project.id, "Live App");
 
@@ -883,7 +1055,10 @@ describe("Deployment Build pipeline", () => {
     agent.reset();
     await sendHeartbeat();
 
-    const owner = await signUp(uniqueName("depcanceldone") + "@example.test", uniqueName("depcanceldone"));
+    const owner = await signUp(
+      uniqueName("depcanceldone") + "@example.test",
+      uniqueName("depcanceldone"),
+    );
     const project = await createProject(owner.cookie, "Cancel Finished");
     const service = await createService(owner.cookie, project.id, "Finished App");
 
@@ -922,7 +1097,10 @@ describe("Deployment Build pipeline", () => {
     agent.reset();
     await sendHeartbeat();
 
-    const owner = await signUp(uniqueName("depcancelaudit") + "@example.test", uniqueName("depcancelaudit"));
+    const owner = await signUp(
+      uniqueName("depcancelaudit") + "@example.test",
+      uniqueName("depcancelaudit"),
+    );
     const project = await createProject(owner.cookie, "Cancel Audit");
     const service = await createService(owner.cookie, project.id, "Audited Cancel");
 

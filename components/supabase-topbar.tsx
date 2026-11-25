@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   HelpCircle,
+  Menu,
   Search,
   ChevronsUpDown,
   Check,
@@ -22,6 +23,7 @@ import {
   useSession,
 } from "@/lib/auth-client";
 import { getInitials } from "@/components/identity";
+import { UserAvatar } from "@/components/user-avatar";
 import { useToast } from "@/components/toast-context";
 
 export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) {
@@ -47,13 +49,27 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
         setUserDropdownOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOrgDropdownOpen(false);
+        setUserDropdownOpen(false);
+      }
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   async function handleSelectOrg(orgId: string) {
     setOrgDropdownOpen(false);
-    await authClient.organization.setActive({ organizationId: orgId });
+    const result = await authClient.organization.setActive({ organizationId: orgId });
+    if (result.error) {
+      toast.error("Could not switch Organization", result.error.message ?? "Try again.");
+      return;
+    }
     router.push("/dashboard/projects");
   }
 
@@ -63,6 +79,14 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
   return (
     <header className="supabase-topbar" aria-label="Global header">
       <div className="supabase-topbar-left">
+        <button
+          type="button"
+          className="supabase-mobile-menu-btn"
+          onClick={() => window.dispatchEvent(new Event("stealth:open-mobile-nav"))}
+          aria-label="Open navigation"
+        >
+          <Menu className="w-5 h-5" aria-hidden="true" />
+        </button>
         <Link
           href="/dashboard/organizations"
           className="supabase-logo-link"
@@ -197,32 +221,36 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
             aria-haspopup="menu"
             aria-label="User account menu"
           >
-            <Image
-              src="/kurama-avatar.png"
-              alt={userName}
-              width={26}
-              height={26}
-              className="supabase-avatar-img"
-            />
+            <UserAvatar user={user} size={26} className="supabase-avatar-img" decorative />
           </button>
 
           {userDropdownOpen && (
             <div className="supabase-dropdown-menu right-aligned" role="menu">
               <div className="supabase-dropdown-user-header">
-                <strong>{userName}</strong>
-                <small>{user?.email}</small>
+                <UserAvatar user={user} size={36} />
+                <div className="supabase-dropdown-user-meta">
+                  <strong title={userName}>{userName}</strong>
+                  <small title={user?.email ?? undefined}>
+                    {user?.email ?? "No email on file"}
+                  </small>
+                  {user?.username ? (
+                    <span className="supabase-user-handle">@{user.username}</span>
+                  ) : null}
+                </div>
               </div>
               <div className="supabase-dropdown-divider" />
               <Link
                 href="/dashboard/settings"
                 className="supabase-dropdown-item"
+                role="menuitem"
                 onClick={() => setUserDropdownOpen(false)}
               >
                 <Settings className="w-4 h-4 text-zinc-400" aria-hidden="true" />
-                <span>Account settings</span>
+                <span>Organization settings</span>
               </Link>
               <button
                 type="button"
+                role="menuitem"
                 className="supabase-dropdown-item text-rose-400"
                 onClick={async () => {
                   setUserDropdownOpen(false);

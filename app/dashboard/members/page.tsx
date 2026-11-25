@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -73,13 +73,22 @@ export default function MembersPage() {
   const [error, setError] = useState("");
 
   const organizationId = organization?.id;
-  const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Better Auth can store more than one role per member as a comma-separated
+  // string, so membership checks must look at the parsed set, not the raw value.
+  const activeRoles = activeMember?.role.split(",").map((role) => role.trim()) ?? [];
+  const canManage = activeRoles.includes("owner") || activeRoles.includes("admin");
   const organizationName =
     organizations?.find((item) => item.id === organizationId)?.name ?? "this Organization";
-  const canRemoveMembers = activeMember?.role === "owner";
+  const canRemoveMembers = activeRoles.includes("owner");
+
+  const refreshTicket = useRef(0);
 
   async function refresh() {
-    if (!organizationId) return;
+    const ticket = ++refreshTicket.current;
+    if (!organizationId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [memberResult, invitationResult] = await Promise.all([
@@ -88,6 +97,8 @@ export default function MembersPage() {
           ? authClient.organization.listInvitations({ query: { organizationId } })
           : Promise.resolve({ data: null, error: null }),
       ]);
+
+      if (ticket !== refreshTicket.current) return;
 
       if (memberResult.error) {
         setError(memberResult.error.message ?? "Could not load members.");
@@ -111,9 +122,9 @@ export default function MembersPage() {
         );
       }
     } catch (cause) {
-      setError(getError(cause));
+      if (ticket === refreshTicket.current) setError(getError(cause));
     } finally {
-      setLoading(false);
+      if (ticket === refreshTicket.current) setLoading(false);
     }
   }
 
@@ -125,11 +136,16 @@ export default function MembersPage() {
   const filteredMembers = useMemo(() => {
     const q = search.trim().toLowerCase();
     return members.filter((member) => {
-      if (roleFilter !== "all" && member.role !== roleFilter) return false;
+      // Role filters match any of a member's comma-separated roles.
+      if (
+        roleFilter !== "all" &&
+        !member.role.split(",").some((role) => role.trim() === roleFilter)
+      ) {
+        return false;
+      }
       if (!q) return true;
       return (
-        member.user.name.toLowerCase().includes(q) ||
-        member.user.email.toLowerCase().includes(q)
+        member.user.name.toLowerCase().includes(q) || member.user.email.toLowerCase().includes(q)
       );
     });
   }, [members, roleFilter, search]);
@@ -269,7 +285,7 @@ export default function MembersPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          {activeMember?.role !== "owner" && (
+          {!activeRoles.includes("owner") && (
             <button
               type="button"
               className="supabase-btn-secondary text-rose-400 hover:text-rose-300"
@@ -364,7 +380,9 @@ export default function MembersPage() {
             <Users className="w-8 h-8 text-zinc-600 mb-2" />
             <p className="text-sm text-zinc-300 font-medium">No team members match this query</p>
             <p className="text-xs text-zinc-500 mt-1">
-              {search ? "Try searching with a different term." : "Invite people to collaborate on your projects."}
+              {search
+                ? "Try searching with a different term."
+                : "Invite people to collaborate on your projects."}
             </p>
           </div>
         ) : (
@@ -374,14 +392,21 @@ export default function MembersPage() {
                 <th scope="col">User</th>
                 <th scope="col">Role</th>
                 <th scope="col">Joined</th>
-                {canRemoveMembers ? <th scope="col" className="text-right">Actions</th> : null}
+                {canRemoveMembers ? (
+                  <th scope="col" className="text-right">
+                    Actions
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
               {filteredMembers.map((member) => {
                 const isCurrentUser = member.userId === activeMember?.userId;
-                const isOwner = member.role === "owner";
-                const isAdmin = member.role === "admin";
+                // Member rows can also carry comma-separated roles; an owner is
+                // anyone whose role set includes "owner".
+                const memberRoles = member.role.split(",").map((role) => role.trim());
+                const isOwner = memberRoles.includes("owner");
+                const isAdmin = memberRoles.includes("admin");
 
                 return (
                   <tr key={member.id}>
@@ -393,9 +418,7 @@ export default function MembersPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="members-user-name">{member.user.name}</span>
-                            {isCurrentUser && (
-                              <span className="members-you-badge">You</span>
-                            )}
+                            {isCurrentUser && <span className="members-you-badge">You</span>}
                           </div>
                           <span className="members-user-email">{member.user.email}</span>
                         </div>
@@ -403,7 +426,7 @@ export default function MembersPage() {
                     </td>
 
                     <td>
-                      {activeMember?.role === "owner" && !isOwner ? (
+                      {activeRoles.includes("owner") && !isOwner ? (
                         <select
                           aria-label={`Role for ${member.user.email}`}
                           value={member.role}
@@ -475,7 +498,9 @@ export default function MembersPage() {
                   <th scope="col">Invited Email</th>
                   <th scope="col">Role</th>
                   <th scope="col">Expires</th>
-                  <th scope="col" className="text-right">Action</th>
+                  <th scope="col" className="text-right">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -518,7 +543,12 @@ export default function MembersPage() {
       {/* Modal: Invite Member */}
       {inviteModalOpen && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title">
+          <div
+            className="supabase-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="invite-modal-title"
+          >
             <div className="supabase-modal-header">
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-emerald-400" />
@@ -537,7 +567,8 @@ export default function MembersPage() {
             {inviteUrl ? (
               <div className="supabase-modal-body space-y-4">
                 <div className="p-3.5 rounded-lg bg-emerald-950/20 border border-emerald-800/40 text-emerald-300 text-xs">
-                  Invitation link created! Send this link to your team member to let them join {organizationName}.
+                  Invitation link created! Send this link to your team member to let them join{" "}
+                  {organizationName}.
                 </div>
 
                 <div>
@@ -613,9 +644,13 @@ export default function MembersPage() {
                       onChange={(e) => setInviteRole(e.target.value as InviteRole)}
                       className="supabase-modal-input"
                     >
-                      <option value="member">Member - Can view resources and trigger deployments</option>
-                      {activeMember?.role === "owner" && (
-                        <option value="admin">Admin - Full access to manage resources and invite members</option>
+                      <option value="member">
+                        Member - Can view resources and trigger deployments
+                      </option>
+                      {activeRoles.includes("owner") && (
+                        <option value="admin">
+                          Admin - Full access to manage resources and invite members
+                        </option>
                       )}
                     </select>
                   </div>
@@ -654,7 +689,12 @@ export default function MembersPage() {
       {/* Modal: Remove Member Confirmation */}
       {removeTarget && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="remove-member-dialog-title">
+          <div
+            className="supabase-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="remove-member-dialog-title"
+          >
             <div className="supabase-modal-header border-rose-900/40">
               <div className="flex items-center gap-2 text-rose-400">
                 <AlertTriangle className="w-4 h-4" />
@@ -673,11 +713,14 @@ export default function MembersPage() {
             <div className="supabase-modal-body space-y-3">
               <p className="text-xs text-zinc-300">
                 Are you sure you want to remove{" "}
-                <strong className="text-white">{removeTarget.user.name || removeTarget.user.email}</strong>{" "}
+                <strong className="text-white">
+                  {removeTarget.user.name || removeTarget.user.email}
+                </strong>{" "}
                 from <strong className="text-white">{organizationName}</strong>?
               </p>
               <p className="text-xs text-zinc-500">
-                They will immediately lose access to all projects, services, databases, and environments inside this organization.
+                They will immediately lose access to all projects, services, databases, and
+                environments inside this organization.
               </p>
             </div>
 

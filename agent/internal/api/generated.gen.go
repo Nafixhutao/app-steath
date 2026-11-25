@@ -59,6 +59,60 @@ func (e BuildStatus) Valid() bool {
 	}
 }
 
+// Defines values for DatabasePasswordRequestEngine.
+const (
+	DatabasePasswordRequestEngineMysql    DatabasePasswordRequestEngine = "mysql"
+	DatabasePasswordRequestEnginePostgres DatabasePasswordRequestEngine = "postgres"
+)
+
+// Valid indicates whether the value is a known member of the DatabasePasswordRequestEngine enum.
+func (e DatabasePasswordRequestEngine) Valid() bool {
+	switch e {
+	case DatabasePasswordRequestEngineMysql:
+		return true
+	case DatabasePasswordRequestEnginePostgres:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DatabaseRequestEngine.
+const (
+	DatabaseRequestEngineMysql    DatabaseRequestEngine = "mysql"
+	DatabaseRequestEnginePostgres DatabaseRequestEngine = "postgres"
+)
+
+// Valid indicates whether the value is a known member of the DatabaseRequestEngine enum.
+func (e DatabaseRequestEngine) Valid() bool {
+	switch e {
+	case DatabaseRequestEngineMysql:
+		return true
+	case DatabaseRequestEnginePostgres:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DatabaseStateEngine.
+const (
+	DatabaseStateEngineMysql    DatabaseStateEngine = "mysql"
+	DatabaseStateEnginePostgres DatabaseStateEngine = "postgres"
+)
+
+// Valid indicates whether the value is a known member of the DatabaseStateEngine enum.
+func (e DatabaseStateEngine) Valid() bool {
+	switch e {
+	case DatabaseStateEngineMysql:
+		return true
+	case DatabaseStateEnginePostgres:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DatabaseStateStatus.
 const (
 	DatabaseStateStatusAbsent  DatabaseStateStatus = "absent"
@@ -304,10 +358,16 @@ type BuildRequest struct {
 	// CommitSha Exact commit to build. A redeploy sets this so the new Deployment
 	// builds the same code as the one it replaces instead of whatever the
 	// branch points at now. Omitted means "the branch tip".
-	CommitSha      *string `json:"commitSha,omitempty"`
-	DockerfilePath string  `json:"dockerfilePath"`
-	ImageTag       string  `json:"imageTag"`
-	RepoUrl        string  `json:"repoUrl"`
+	CommitSha *string `json:"commitSha,omitempty"`
+
+	// ContainerPort Port the generated container listens on. Only used when the
+	// repository has no Dockerfile and the Agent synthesizes one from the
+	// detected framework, so the generated server listens where the
+	// Deployer expects it.
+	ContainerPort  *int   `json:"containerPort,omitempty"`
+	DockerfilePath string `json:"dockerfilePath"`
+	ImageTag       string `json:"imageTag"`
+	RepoUrl        string `json:"repoUrl"`
 }
 
 // CancelDeploymentRequest defines model for CancelDeploymentRequest.
@@ -323,12 +383,17 @@ type CancelDeploymentRequest struct {
 
 // DatabasePasswordRequest defines model for DatabasePasswordRequest.
 type DatabasePasswordRequest struct {
-	DatabaseName string `json:"databaseName"`
+	// Engine Which shared server holds the Database. The engine is fixed at
+	// creation, so the Control Plane sends the stored value.
+	Engine *DatabasePasswordRequestEngine `json:"engine,omitempty"`
 
 	// Password The new password. It is sent in the body only and is never logged.
 	Password string `json:"password"`
-	Username string `json:"username"`
 }
+
+// DatabasePasswordRequestEngine Which shared server holds the Database. The engine is fixed at
+// creation, so the Control Plane sends the stored value.
+type DatabasePasswordRequestEngine string
 
 // DatabaseProxyRemoval defines model for DatabaseProxyRemoval.
 type DatabaseProxyRemoval struct {
@@ -370,45 +435,76 @@ type DatabaseRemoval struct {
 
 // DatabaseRequest defines model for DatabaseRequest.
 type DatabaseRequest struct {
-	DatabaseId     string `json:"databaseId"`
-	DatabaseName   string `json:"databaseName"`
-	OrganizationId string `json:"organizationId"`
+	DatabaseId   string `json:"databaseId"`
+	DatabaseName string `json:"databaseName"`
+
+	// Engine The engine is fixed at creation. PostgreSQL 16 gets its own TLS
+	// terminating public proxy; MySQL 8 always ships with a phpMyAdmin
+	// container on the Project network.
+	Engine         *DatabaseRequestEngine `json:"engine,omitempty"`
+	OrganizationId string                 `json:"organizationId"`
 
 	// Password Sent in the request body only. The Node Agent passes it to the
 	// container on first start and never writes it to a log or to disk.
-	Password       string `json:"password"`
-	ProjectId      string `json:"projectId"`
-	StorageLimitMb int    `json:"storageLimitMb"`
-	Username       string `json:"username"`
+	Password string `json:"password"`
+
+	// PhpMyAdminHostname The hostname phpMyAdmin answers on. Required for a MySQL Database,
+	// rejected for PostgreSQL, because PostgreSQL has no browser client.
+	PhpMyAdminHostname *string `json:"phpMyAdminHostname,omitempty"`
+	ProjectId          string  `json:"projectId"`
+	StorageLimitMb     int     `json:"storageLimitMb"`
+	Username           string  `json:"username"`
 }
+
+// DatabaseRequestEngine The engine is fixed at creation. PostgreSQL 16 gets its own TLS
+// terminating public proxy; MySQL 8 always ships with a phpMyAdmin
+// container on the Project network.
+type DatabaseRequestEngine string
 
 // DatabaseState defines model for DatabaseState.
 type DatabaseState struct {
 	ContainerId *string `json:"containerId,omitempty"`
 	DatabaseId  string  `json:"databaseId"`
 
-	// Healthy True when PostgreSQL answers `pg_isready`.
+	// Engine The engine the running container was created with.
+	Engine *DatabaseStateEngine `json:"engine,omitempty"`
+
+	// Healthy True when the engine answers its readiness probe: `pg_isready` for
+	// PostgreSQL, `mysqladmin ping` for MySQL.
 	Healthy bool `json:"healthy"`
 
 	// Hostname Network alias Services in the same Project connect to.
 	Hostname *string `json:"hostname,omitempty"`
 
 	// OverQuota True when the Database Volume is over its storage limit.
-	OverQuota      *bool               `json:"overQuota,omitempty"`
-	Status         DatabaseStateStatus `json:"status"`
-	StorageLimitMb int                 `json:"storageLimitMb"`
+	OverQuota *bool `json:"overQuota,omitempty"`
+
+	// PhpMyAdminReady True when the phpMyAdmin sidecar answers on the Project network.
+	// Always false for PostgreSQL.
+	PhpMyAdminReady *bool               `json:"phpMyAdminReady,omitempty"`
+	Status          DatabaseStateStatus `json:"status"`
+	StorageLimitMb  int                 `json:"storageLimitMb"`
 
 	// UsageMb Space the Database Volume currently uses, measured on the node.
 	UsageMb int64 `json:"usageMb"`
 }
+
+// DatabaseStateEngine The engine the running container was created with.
+type DatabaseStateEngine string
 
 // DatabaseStateStatus defines model for DatabaseState.Status.
 type DatabaseStateStatus string
 
 // DatabaseUsage defines model for DatabaseUsage.
 type DatabaseUsage struct {
-	DatabaseId string `json:"databaseId"`
-	UsageMb    int    `json:"usageMb"`
+	// DatabaseName The schema the Agent created for the Database inside the shared
+	// server. A Database has no container of its own, and the schema name is
+	// a truncated hash that cannot be reversed into the Database id, so the
+	// Control Plane joins it against the stored `databaseName`.
+	DatabaseName string `json:"databaseName"`
+
+	// UsageMb Size of the Database's schema, in megabytes.
+	UsageMb int `json:"usageMb"`
 }
 
 // DeployRequest defines model for DeployRequest.

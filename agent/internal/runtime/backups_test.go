@@ -13,17 +13,8 @@ func TestBackupDatabaseDumpsThroughItsContainer(t *testing.T) {
 	manager := testManager(t, docker, newFakeRouter())
 	manager.SetBackupDir(t.TempDir())
 
-	docker.containers["db-1"] = &fakeContainer{
-		ID:    "db-1",
-		Name:  "stealth-db-database-1",
-		State: "running",
-		Labels: map[string]string{
-			LabelType:             ResourceTypeDatabase,
-			LabelDatabaseID:       "database-1",
-			LabelDatabaseName:     "app",
-			LabelDatabaseUsername: "app",
-		},
-	}
+	seedSharedServer(t, docker, DatabaseEnginePostgres)
+	schema, role := databaseObjectNames("database-1")
 
 	artifact, err := manager.Backup(context.Background(), BackupRequest{
 		BackupID:   "backup-1",
@@ -36,7 +27,8 @@ func TestBackupDatabaseDumpsThroughItsContainer(t *testing.T) {
 	if artifact.BackupID != "backup-1" || artifact.SizeBytes == 0 {
 		t.Fatalf("unexpected artifact: %+v", artifact)
 	}
-	if len(docker.dumped) != 1 || docker.dumped[0] != "stealth-db-database-1 app app" {
+	if len(docker.dumped) != 1 ||
+		docker.dumped[0] != SharedPostgresContainerName+" "+schema+" "+role+" postgres" {
 		t.Fatalf("unexpected dump call: %+v", docker.dumped)
 	}
 
@@ -54,6 +46,37 @@ func TestBackupDatabaseDumpsThroughItsContainer(t *testing.T) {
 	}
 	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("expected the artifact to be gone, got %v", err)
+	}
+}
+
+func TestBackupMySQLDatabaseUsesTheSQLExtension(t *testing.T) {
+	docker := newFakeDocker()
+	manager := testManager(t, docker, newFakeRouter())
+	manager.SetBackupDir(t.TempDir())
+
+	seedSharedServer(t, docker, DatabaseEngineMySQL)
+	schema, role := databaseObjectNames("database-1")
+
+	if _, err := manager.Backup(context.Background(), BackupRequest{
+		BackupID:   "backup-1",
+		TargetType: BackupTargetDatabase,
+		TargetID:   "database-1",
+	}); err != nil {
+		t.Fatalf("backup: %v", err)
+	}
+	if len(docker.dumped) != 1 ||
+		docker.dumped[0] != SharedMySQLContainerName+" "+schema+" "+role+" mysql" {
+		t.Fatalf("unexpected dump call: %+v", docker.dumped)
+	}
+
+	// A plain SQL dump is what the MySQL restore path expects; a `.backup`
+	// extension would send it to pg_restore.
+	path, _, err := manager.BackupContent("backup-1")
+	if err != nil {
+		t.Fatalf("content: %v", err)
+	}
+	if filepath.Ext(path) != ".sql" {
+		t.Fatalf("expected a .sql artifact, got %s", path)
 	}
 }
 
@@ -101,7 +124,7 @@ func TestBackupPlatformDumpsTheNamedContainer(t *testing.T) {
 		t.Fatalf("backup: %v", err)
 	}
 
-	if len(docker.dumped) != 1 || docker.dumped[0] != "stealth-postgres stealth_hosting stealth" {
+	if len(docker.dumped) != 1 || docker.dumped[0] != "stealth-postgres stealth_hosting stealth postgres" {
 		t.Fatalf("unexpected dump call: %+v", docker.dumped)
 	}
 }

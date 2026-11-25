@@ -5,216 +5,547 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// A Project Database is one PostgreSQL container on the Project network. It has
-// its own Volume and no published host port, so only Services in the same
-// Project can reach it. The Control Plane owns the credentials; the agent only
-// sees them in the request body and passes them to the container.
+// A Project Database is a logical database inside a shared engine server.
+//
+// The node runs one MySQL 8 server (`stealth-mysql`) and one PostgreSQL 16
+// server (`stealth-pgdb`) for every tenant. A Project Database is a database plus
+// a role inside one of them, not a container of its own. That is the free-tier
+// trade-off: a shared server costs a few hundred megabytes once, while a
+// dedicated container per Database would need 512 MB each and cannot fit more
+// than a handful on the VPS.
+//
+// Isolation therefore lives in the engine, not in the container:
+//
+//   - Each Database owns a schema name and a role name derived from its id.
+//   - The role is granted privileges on its own schema only, so one tenant
+//     cannot read another's tables.
+//   - The shared server joins each Project network under the `db` alias, so the
+//     hostname in `DATABASE_URL` is the same for every Project and engine.
+//
+// `stealth-pgdb` is deliberately separate from `stealth-postgres`, the Control
+// Plane's own database. Attaching the platform's control database to every
+// tenant network would put it one `docker exec` away from any Service.
 const (
-	// DatabaseImage is the only engine the spec allows.
-	DatabaseImage = "postgres:16-alpine"
+	// DatabaseEnginePostgres and DatabaseEngineMySQL are the only engines.
+	DatabaseEnginePostgres = "postgres"
+	DatabaseEngineMySQL    = "mysql"
 
-	// DatabasePort and DatabaseAlias are what a Service connects to. The alias
-	// stays the same for every Project, because each Project has its own network.
-	DatabasePort  = 5432
+	DatabaseVersion      = "16"
+	DatabaseVersionMySQL = "8"
+
+	// DatabaseAlias is what a Service connects to. Every shared server joins a
+	// Project network under this alias, so the connection string never changes.
 	DatabaseAlias = "db"
+	DatabasePort  = 5432
+	MySQLPort     = 3306
 
-	// DatabaseMountPath is where PostgreSQL keeps its data. PGDATA is a
-	// subdirectory so the Volume root can hold the entrypoint's lock files too.
-	DatabaseMountPath = "/var/lib/postgresql/data"
-	DatabasePGDATA    = DatabaseMountPath + "/pgdata"
+	// SharedMySQLContainerName is the one MySQL server for the node.
+	SharedMySQLContainerName = "stealth-mysql"
+	// SharedPostgresContainerName is the tenant PostgreSQL server. It is not the
+	// Control Plane's `stealth-postgres`.
+	SharedPostgresContainerName = "stealth-pgdb"
+	// SharedPhpMyAdminContainerName is the one phpMyAdmin for the node.
+	SharedPhpMyAdminContainerName = "stealth-pma"
 
-	// MaxDatabaseStorageMB is the spec limit for one Project Database.
+	// SharedMySQLVolume and SharedPostgresVolume keep the tenant data across a
+	// restart of either server.
+	SharedMySQLVolume    = "stealth_mysql_data"
+	SharedPostgresVolume = "stealth_pgdb_data"
+
+	// MySQLDataMountPath and PostgresDataMountPath are where the servers keep
+	// their data inside the container.
+	MySQLDataMountPath    = "/var/lib/mysql"
+	PostgresDataMountPath = "/var/lib/postgresql/data"
+
+	// sharedPostgresAdmin is the superuser `stealth-pgdb` is created with. The
+	// agent uses it over the container's trusted local socket to provision and
+	// drop tenant roles and databases.
+	sharedPostgresAdmin = "stealth"
+
+	// sharedServerMemoryMB bounds one shared server; 512 MB each leaves room for
+	// the Control Plane, the Agent, Caddy and a handful of Services.
+	sharedServerMemoryMB = 512
+	sharedServerCPU      = 0.5
+
+	// MaxDatabaseStorageMB is the spec limit for one Project Database. A shared
+	// server has no per-database disk quota, so the agent measures each tenant
+	// schema against this and locks the role when it grows past it.
 	MaxDatabaseStorageMB = 1024
 
-	// DatabaseCPULimit and DatabaseMemoryMB keep one Database from consuming the
-	// whole node, matching the per-Service limits.
-	DatabaseCPULimit = 0.5
-	DatabaseMemoryMB = 512
+	// SharedMySQLImage and SharedPhpMyAdminImage are pinned. The servers are
+	// long-lived, so a floating tag would upgrade under the user's data.
+	SharedMySQLImage      = "mysql:8.4"
+	SharedPostgresImage   = "postgres:16-alpine"
+	SharedPhpMyAdminImage = "phpmyadmin:5-apache"
 
-	// DatabaseUser is the unprivileged owner of the data directory. Running as
-	// it means the image entrypoint never needs root or extra capabilities.
-	DatabaseUser = "postgres"
+	// phpMyAdminPort is the port phpMyAdmin listens on, and phpMyAdminAlias is
+	// the Caddy upstream alias.
+	phpMyAdminPort  = 80
+	phpMyAdminAlias = "pma"
 
-	// The Database terminates TLS itself. libpq starts with a plaintext
-	// SSLRequest, so a generic TLS proxy cannot sit in front of it; PostgreSQL
-	// holds the certificate and the public proxy only forwards the stream.
-	DatabaseTLSCertFile = DatabaseMountPath + "/pg-server.crt"
-	DatabaseTLSKeyFile  = DatabaseMountPath + "/pg-server.key"
-	// DatabaseHBAFile is a custom pg_hba.conf that accepts only TLS from the
-	// network. The agent's pg_isready and rotation use the local socket.
-	DatabaseHBAFile = DatabaseMountPath + "/pg_hba.ssl.conf"
-	// DatabaseFileOwner is the uid:gid of the postgres user in postgres:16-alpine.
-	DatabaseFileOwner = "70:70"
+	// phpMyAdminSsoPathPattern is the public path the dashboard's "Open
+	// phpMyAdmin" link uses for an automatic sign-in. It is served by the Control
+	// Plane on the phpMyAdmin hostname, then rewritten to the internal API route.
+	phpMyAdminSsoPathPattern = "/_sso*"
+	phpMyAdminSsoRewritePath = "/api/phpmyadmin/sso"
 
-	// databaseReadyTimeout is longer than a Service health check because the
-	// first start runs initdb, which has to create the cluster on disk.
+	// phpMyAdminMaxUploadMB bounds an import through the browser client.
+	phpMyAdminMaxUploadMB = 64
+
+	// databaseReadyTimeout bounds how long provisioning waits for a shared
+	// server to accept connections.
 	databaseReadyTimeout = 2 * time.Minute
 )
 
-// ErrUnknownDatabase is returned when a Database has no container on this node.
+// ErrUnknownDatabase is returned when a Database has no schema on this node.
 var ErrUnknownDatabase = errors.New("unknown database")
 
 // ErrInvalidDatabase is returned for a Database request that cannot be honoured.
 var ErrInvalidDatabase = errors.New("invalid database request")
 
-// DatabaseRequest describes the Database container the Control Plane wants.
+// ErrDatabaseProxyDisabled is returned for every public proxy request. A raw TCP
+// listener forwards to one server port and cannot isolate a tenant's database, so
+// with shared servers the proxy is not offered at all.
+var ErrDatabaseProxyDisabled = errors.New("the public database proxy is not available")
+
+// DatabaseRequest asks the agent to provision a Database's schema and role.
 type DatabaseRequest struct {
 	DatabaseID     string
 	ProjectID      string
 	OrganizationID string
+	// Engine selects PostgreSQL or MySQL. Empty means PostgreSQL.
+	Engine string
+	// PhpMyAdminHostname is the address the shared phpMyAdmin answers on. Every
+	// MySQL Database reports the same value.
+	PhpMyAdminHostname string
+	// DatabaseName and Username are the schema and role to create. The Control
+	// Plane derives them from the Database id and stores them, so the connection
+	// string it builds names the same objects the agent creates.
 	DatabaseName   string
 	Username       string
 	Password       string
 	StorageLimitMB int
 }
 
-// DatabasePasswordRequest replaces the password of a running Database.
+// DatabasePasswordRequest replaces a Database role's password.
 type DatabasePasswordRequest struct {
-	DatabaseID   string
-	DatabaseName string
-	Username     string
-	Password     string
+	DatabaseID string
+	Engine     string
+	Password   string
 }
 
 // DatabaseState is what the Control Plane reads back about a Database.
 type DatabaseState struct {
-	DatabaseID     string
-	Status         string
-	ContainerID    string
-	Hostname       string
-	StorageLimitMB int
-	UsageMB        int64
-	Healthy        bool
-	OverQuota      bool
+	DatabaseID      string
+	Engine          string
+	Status          string
+	ContainerID     string
+	Hostname        string
+	StorageLimitMB  int
+	UsageMB         int64
+	Healthy         bool
+	PhpMyAdminReady bool
+	OverQuota       bool
 }
 
-// EnsureDatabase creates the Database container and its Volume, or starts and
-// adopts them when they already exist. It is idempotent: a retried create never
-// replaces the data or rewrites the credentials of an existing cluster.
+// normaliseEngine maps an empty engine to PostgreSQL so a request written before
+// engines existed still provisions what it used to.
+func normaliseEngine(engine string) (string, error) {
+	switch engine {
+	case "", DatabaseEnginePostgres:
+		return DatabaseEnginePostgres, nil
+	case DatabaseEngineMySQL:
+		return DatabaseEngineMySQL, nil
+	default:
+		return "", fmt.Errorf("%w: unknown engine %q", ErrInvalidDatabase, engine)
+	}
+}
+
+// sharedServer describes one long-lived engine server.
+type sharedServer struct {
+	Name       string
+	Image      string
+	Port       int
+	Volume     string
+	MountPath  string
+	MemoryMB   int
+	CPU        float64
+	Env        map[string]string
+	Command    []string
+	ReadyProbe []string
+	// Capabilities are the few the engine's official image needs to start. The
+	// Agent drops every capability by default, and both servers run their
+	// entrypoint as root before switching to the service user, which fails
+	// without these.
+	Capabilities []string
+}
+
+func sharedServerFor(engine string) sharedServer {
+	if engine == DatabaseEngineMySQL {
+		return sharedServer{
+			Name:      SharedMySQLContainerName,
+			Image:     SharedMySQLImage,
+			Port:      MySQLPort,
+			Volume:    SharedMySQLVolume,
+			MountPath: MySQLDataMountPath,
+			MemoryMB:  sharedServerMemoryMB,
+			CPU:       sharedServerCPU,
+			// Defaults assume a dedicated host; on a shared VPS they would spend
+			// most of the budget on caches.
+			Command: []string{
+				"--innodb-buffer-pool-size=96M",
+				"--performance-schema=OFF",
+				"--max-connections=100",
+			},
+			// mysqld starts as root and calls setgid/setuid to drop to `mysql`;
+			// it also chowns its data directory on first start.
+			Capabilities: []string{"CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"},
+			ReadyProbe: []string{
+				"mysqladmin", "--protocol=tcp", "--host=127.0.0.1", "--silent", "ping",
+			},
+		}
+	}
+
+	return sharedServer{
+		Name:      SharedPostgresContainerName,
+		Image:     SharedPostgresImage,
+		Port:      DatabasePort,
+		Volume:    SharedPostgresVolume,
+		MountPath: PostgresDataMountPath,
+		MemoryMB:  sharedServerMemoryMB,
+		CPU:       sharedServerCPU,
+		ReadyProbe: []string{
+			"pg_isready", "--host=127.0.0.1", "--port", strconv.Itoa(DatabasePort),
+		},
+		// The postgres entrypoint runs as root to chown the data directory and
+		// then drops to `postgres`.
+		Capabilities: []string{"CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"},
+	}
+}
+
+// EnsureDatabase provisions the Database's schema and role inside its shared
+// server. It is idempotent: a retried create never replaces the schema and only
+// re-applies the requested password.
 func (m *Manager) EnsureDatabase(ctx context.Context, request DatabaseRequest) (DatabaseState, error) {
 	if err := request.validate(); err != nil {
+		return DatabaseState{}, err
+	}
+
+	engine, _ := normaliseEngine(request.Engine)
+	server := sharedServerFor(engine)
+
+	if err := m.ensureSharedServer(ctx, server); err != nil {
 		return DatabaseState{}, err
 	}
 
 	unlock := m.lockService(databaseLockKey(request.DatabaseID))
 	defer unlock()
 
+	// Attaching the shared server to the Project network under `db` is what
+	// makes the per-Project connection string resolve without a host port.
 	network := projectNetwork(request.ProjectID)
 	if err := m.docker.EnsureNetwork(ctx, network); err != nil {
 		return DatabaseState{}, fmt.Errorf("could not prepare the Project network: %w", err)
 	}
 
-	if err := m.ensureDatabaseVolume(ctx, request); err != nil {
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
+		return DatabaseState{}, fmt.Errorf(
+			"%w: the shared %s server is not running", ErrInvalidDatabase, engine,
+		)
+	}
+	if !info.OnNetwork(network) {
+		if err := m.docker.ConnectNetwork(ctx, network, info.ID, DatabaseAlias); err != nil {
+			return DatabaseState{}, fmt.Errorf(
+				"could not attach the shared server to the Project network: %w", err,
+			)
+		}
+	}
+
+	if err := m.provisionSchema(ctx, engine, request); err != nil {
 		return DatabaseState{}, err
 	}
 
-	containerName := databaseContainerName(request.DatabaseID)
-	info, err := m.docker.InspectContainer(ctx, containerName)
-	if err == nil {
-		if info.Labels[LabelDatabaseID] != request.DatabaseID {
-			return DatabaseState{}, fmt.Errorf(
-				"%w: container %s is owned by another Database",
-				ErrInvalidDatabase,
-				containerName,
+	if engine == DatabaseEngineMySQL {
+		if err := m.ensurePhpMyAdmin(ctx, request.PhpMyAdminHostname); err != nil {
+			return DatabaseState{}, err
+		}
+	}
+
+	return m.databaseState(ctx, request.DatabaseID, engine, request.StorageLimitMB)
+}
+
+// provisionSchema creates the Database and role and grants the role privileges on
+// its own schema only. Passwords travel on standard input, never in arguments.
+func (m *Manager) provisionSchema(ctx context.Context, engine string, request DatabaseRequest) error {
+	server := sharedServerFor(engine)
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
+		return fmt.Errorf("%w: the shared %s server is not running", ErrInvalidDatabase, engine)
+	}
+
+	schema := request.DatabaseName
+	role := request.Username
+
+	if engine == DatabaseEngineMySQL {
+		statement := strings.Join([]string{
+			fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", quoteMySQLIdentifier(schema)),
+			fmt.Sprintf(
+				"CREATE USER IF NOT EXISTS %s@'%%' IDENTIFIED BY %s;",
+				quoteMySQLLiteral(role), quoteMySQLLiteral(request.Password),
+			),
+			fmt.Sprintf(
+				"ALTER USER %s@'%%' IDENTIFIED BY %s;",
+				quoteMySQLLiteral(role), quoteMySQLLiteral(request.Password),
+			),
+			fmt.Sprintf(
+				"GRANT ALL PRIVILEGES ON %s.* TO %s@'%%';",
+				quoteMySQLIdentifier(schema), quoteMySQLLiteral(role),
+			),
+			"FLUSH PRIVILEGES;",
+		}, "\n") + "\n"
+
+		if _, err := m.docker.Exec(ctx, info.ID, mysqlRootCommand(), statement); err != nil {
+			return errors.New(redactSecret(err.Error(), request.Password))
+		}
+
+		return nil
+	}
+
+	// The role is created or reseated, then the database is created owned by it.
+	// CREATE DATABASE cannot run inside a DO block, so it is a guarded statement:
+	// `\gexec` only runs it when the database is missing.
+	roleStatement := fmt.Sprintf(
+		"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = %s) "+
+			"THEN CREATE ROLE %s LOGIN PASSWORD %s; "+
+			"ELSE ALTER ROLE %s WITH LOGIN PASSWORD %s; END IF; END $$;\n",
+		quoteSQLString(role), quoteSQLIdentifier(role), quoteSQLString(request.Password),
+		quoteSQLIdentifier(role), quoteSQLString(request.Password),
+	)
+	if _, err := m.docker.Exec(ctx, info.ID, postgresAdminCommand(), roleStatement); err != nil {
+		return errors.New(redactSecret(err.Error(), request.Password))
+	}
+
+	databaseStatement := fmt.Sprintf(
+		"SELECT 'CREATE DATABASE %s OWNER %s' WHERE NOT EXISTS "+
+			"(SELECT FROM pg_database WHERE datname = %s)\\gexec\n",
+		quoteSQLIdentifier(schema), quoteSQLIdentifier(role), quoteSQLString(schema),
+	)
+	if _, err := m.docker.Exec(ctx, info.ID, postgresAdminCommand(), databaseStatement); err != nil {
+		return errors.New(redactSecret(err.Error(), request.Password))
+	}
+
+	return nil
+}
+
+// ensureSharedServer creates the shared server and its Volume, or starts an
+// existing one. It never replaces the Volume, so tenant data survives.
+func (m *Manager) ensureSharedServer(ctx context.Context, server sharedServer) error {
+	if err := m.docker.EnsureNetwork(ctx, "stealth_default"); err != nil {
+		return fmt.Errorf("could not prepare the platform network: %w", err)
+	}
+
+	if err := m.docker.EnsureVolume(ctx, VolumeSpec{
+		Name:   server.Volume,
+		SizeMB: MaxDatabaseStorageMB * 20,
+		Labels: map[string]string{LabelType: ResourceTypeDatabase},
+	}); err != nil {
+		return fmt.Errorf("could not prepare the shared %s data Volume: %w", server.Name, err)
+	}
+
+	if info, err := m.docker.InspectContainer(ctx, server.Name); err == nil {
+		if info.Running() {
+			return nil
+		}
+		if err := m.docker.StartContainer(ctx, info.ID); err != nil {
+			return fmt.Errorf("could not start the shared %s server: %w", server.Name, err)
+		}
+
+		return m.waitSharedServerReady(ctx, server)
+	}
+
+	environment := server.Env
+	if environment == nil {
+		environment = map[string]string{}
+	}
+	if server.Port == MySQLPort {
+		environment["MYSQL_ROOT_PASSWORD"] = m.mysqlRootPassword
+	} else {
+		environment["POSTGRES_USER"] = sharedPostgresAdmin
+		environment["POSTGRES_PASSWORD"] = m.postgresAdminPassword
+		environment["POSTGRES_DB"] = "postgres"
+	}
+
+	if _, err := m.docker.CreateContainer(ctx, ContainerSpec{
+		Name:         server.Name,
+		Network:      "stealth_default",
+		NetworkAlias: server.Name,
+		Image:        server.Image,
+		Port:         server.Port,
+		CPU:          server.CPU,
+		MemoryMB:     server.MemoryMB,
+		Command:      server.Command,
+		Environment:  environment,
+		Volume: &VolumeMount{
+			Name:      server.Volume,
+			MountPath: server.MountPath,
+			SizeMB:    MaxDatabaseStorageMB * 20,
+		},
+		// Both servers write outside their Volume (socket and lock files).
+		ReadOnlyRoot: false,
+		Capabilities: server.Capabilities,
+		Labels:       map[string]string{LabelType: ResourceTypeDatabase},
+	}); err != nil {
+		return fmt.Errorf("could not start the shared %s server: %w", server.Name, err)
+	}
+
+	return m.waitSharedServerReady(ctx, server)
+}
+
+// waitSharedServerReady polls until the server accepts connections. A restarted
+// server must finish recovery before a schema can be created.
+func (m *Manager) waitSharedServerReady(ctx context.Context, server sharedServer) error {
+	deadline := m.clock().Add(databaseReadyTimeout)
+	var lastError string
+
+	for {
+		info, err := m.docker.InspectContainer(ctx, server.Name)
+		if err != nil {
+			return fmt.Errorf("%w: the shared %s server disappeared", ErrInvalidDatabase, server.Name)
+		}
+		if !info.Running() {
+			return fmt.Errorf(
+				"%w: the shared %s server exited before it became ready",
+				ErrInvalidDatabase, server.Name,
 			)
 		}
 
-		if !info.OnNetwork(network) {
-			if err := m.docker.ConnectNetwork(ctx, network, info.ID, DatabaseAlias); err != nil {
-				return DatabaseState{}, fmt.Errorf("could not attach the Database to the Project network: %w", err)
-			}
-		}
-		if !info.Running() {
-			if err := m.docker.StartContainer(ctx, info.ID); err != nil {
-				return DatabaseState{}, fmt.Errorf("could not start the Database: %w", err)
-			}
+		if _, err := m.docker.Exec(ctx, info.ID, server.ReadyProbe, ""); err == nil {
+			return nil
+		} else {
+			lastError = err.Error()
 		}
 
-		if err := m.waitDatabaseReady(ctx, info.ID, request.Username, request.DatabaseName); err != nil {
-			return DatabaseState{}, err
+		if !m.clock().Before(deadline) {
+			return fmt.Errorf(
+				"the shared %s server did not become ready within %s: %s",
+				server.Name, databaseReadyTimeout, strings.TrimSpace(lastError),
+			)
 		}
 
-		return m.databaseState(ctx, request.DatabaseID, request.StorageLimitMB)
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("the shared server readiness check was interrupted: %w", ctx.Err())
+		case <-time.After(m.pollInterval):
+		}
 	}
-
-	certificate, key, err := generateServerCertificate(DatabaseAlias, []string{DatabaseAlias, "localhost"})
-	if err != nil {
-		return DatabaseState{}, err
-	}
-	if err := m.docker.WriteVolumeFiles(ctx, databaseVolumeName(request.DatabaseID), []VolumeFile{
-		{Name: "pg-server.crt", Content: string(certificate), Mode: 0644, Owner: DatabaseFileOwner},
-		{Name: "pg-server.key", Content: string(key), Mode: 0600, Owner: DatabaseFileOwner},
-		{Name: "pg_hba.ssl.conf", Content: databaseHBAConfig, Mode: 0644, Owner: DatabaseFileOwner},
-	}); err != nil {
-		return DatabaseState{}, fmt.Errorf("could not write the Database TLS material: %w", err)
-	}
-
-	spec := ContainerSpec{
-		Name:         containerName,
-		Network:      network,
-		NetworkAlias: DatabaseAlias,
-		Image:        DatabaseImage,
-		Port:         DatabasePort,
-		CPU:          DatabaseCPULimit,
-		MemoryMB:     DatabaseMemoryMB,
-		User:         DatabaseUser,
-		// PostgreSQL is the TLS terminator, so the public proxy can forward the
-		// stream unchanged and `sslmode=require` still encrypts end to end.
-		Command: []string{
-			"-c", "ssl=on",
-			"-c", "ssl_cert_file=" + DatabaseTLSCertFile,
-			"-c", "ssl_key_file=" + DatabaseTLSKeyFile,
-			"-c", "hba_file=" + DatabaseHBAFile,
-		},
-		Environment: map[string]string{
-			"POSTGRES_DB":       request.DatabaseName,
-			"POSTGRES_USER":     request.Username,
-			"POSTGRES_PASSWORD": request.Password,
-			"PGDATA":            DatabasePGDATA,
-		},
-		Volume: &VolumeMount{
-			Name:      databaseVolumeName(request.DatabaseID),
-			MountPath: DatabaseMountPath,
-			SizeMB:    request.StorageLimitMB,
-		},
-		// PostgreSQL writes outside its Volume (socket and lock files), so the
-		// root filesystem is not read-only for this container.
-		ReadOnlyRoot: false,
-		Labels: map[string]string{
-			LabelType:              ResourceTypeDatabase,
-			LabelOrganizationID:    request.OrganizationID,
-			LabelProjectID:         request.ProjectID,
-			LabelDatabaseID:        request.DatabaseID,
-			LabelDatabaseName:      request.DatabaseName,
-			LabelDatabaseUsername:  request.Username,
-			LabelDatabaseStorageMb: strconv.Itoa(request.StorageLimitMB),
-			LabelPort:              strconv.Itoa(DatabasePort),
-			LabelAlias:             DatabaseAlias,
-		},
-	}
-
-	containerID, err := m.docker.CreateContainer(ctx, spec)
-	if err != nil {
-		return DatabaseState{}, fmt.Errorf("could not start the Database container: %w", err)
-	}
-
-	if err := m.waitDatabaseReady(ctx, containerID, request.Username, request.DatabaseName); err != nil {
-		_ = m.docker.RemoveContainer(ctx, containerID, true)
-		return DatabaseState{}, err
-	}
-
-	return m.databaseState(ctx, request.DatabaseID, request.StorageLimitMB)
 }
 
-// GetDatabase reports a Database's health and storage usage. A Database whose
-// container is gone answers `absent` instead of an error, because the Control
-// Plane still has a row for it and the dashboard has to show the real state.
+// ensurePhpMyAdmin starts or adopts the one phpMyAdmin for the node and programs
+// its route. Every MySQL Database signs in through it with its own credentials.
+func (m *Manager) ensurePhpMyAdmin(ctx context.Context, hostname string) error {
+	hostname = strings.TrimSpace(hostname)
+	if hostname == "" {
+		return nil
+	}
+
+	if err := m.docker.EnsureNetwork(ctx, "stealth_default"); err != nil {
+		return fmt.Errorf("could not prepare the platform network: %w", err)
+	}
+
+	labels := map[string]string{
+		LabelType:     ResourceTypeDatabasePhpMyAdmin,
+		LabelHostname: hostname,
+		LabelPort:     strconv.Itoa(phpMyAdminPort),
+		LabelAlias:    phpMyAdminAlias,
+	}
+	environment := map[string]string{
+		// phpMyAdmin reaches MySQL over the platform network alias and never
+		// receives credentials, so the user signs in with the password from its
+		// own DATABASE_URL.
+		"PMA_HOST":         SharedMySQLContainerName,
+		"PMA_PORT":         strconv.Itoa(MySQLPort),
+		"PMA_ABSOLUTE_URI": "https://" + hostname + "/",
+		"UPLOAD_LIMIT":     strconv.Itoa(phpMyAdminMaxUploadMB) + "M",
+	}
+
+	if info, err := m.docker.InspectContainer(ctx, SharedPhpMyAdminContainerName); err == nil {
+		// A hostname change makes the absolute URI stale, so the container is
+		// replaced rather than reused. It holds no state of its own.
+		if info.Labels[LabelHostname] != hostname {
+			_ = m.docker.RemoveContainer(ctx, info.ID, true)
+		} else {
+			if !info.Running() {
+				if err := m.docker.StartContainer(ctx, info.ID); err != nil {
+					return fmt.Errorf("could not start phpMyAdmin: %w", err)
+				}
+			}
+
+			return m.routePhpMyAdmin(ctx, hostname)
+		}
+	}
+
+	containerID, err := m.docker.CreateContainer(ctx, ContainerSpec{
+		Name:         SharedPhpMyAdminContainerName,
+		Network:      "stealth_default",
+		NetworkAlias: phpMyAdminAlias,
+		Image:        SharedPhpMyAdminImage,
+		Port:         phpMyAdminPort,
+		CPU:          0.25,
+		MemoryMB:     256,
+		// Apache binds port 80 as root and then drops to www-data, which needs
+		// exactly these. Everything else stays dropped.
+		Capabilities: []string{"CHOWN", "DAC_OVERRIDE", "NET_BIND_SERVICE", "SETGID", "SETUID"},
+		Environment:  environment,
+		ReadOnlyRoot: false,
+		Labels:       labels,
+	})
+	if err != nil {
+		return fmt.Errorf("could not start phpMyAdmin: %w", err)
+	}
+
+	if err := m.routePhpMyAdmin(ctx, hostname); err != nil {
+		// A browser client with no route is unreachable and would keep holding
+		// memory, so it is removed with the failed attempt.
+		_ = m.docker.RemoveContainer(ctx, containerID, true)
+		return fmt.Errorf("could not route phpMyAdmin: %w", err)
+	}
+
+	return nil
+}
+
+// routePhpMyAdmin programs both routes the phpMyAdmin host needs: the browser
+// client for every path, and a sign-in bridge that lets the dashboard open a
+// logged-in session without the user typing credentials.
+//
+// The bridge is a path-scoped route on the same hostname, proxying to the Control
+// Plane. It must stay on this hostname: phpMyAdmin's session cookie is
+// `__Secure-` and same-site, so a session started anywhere else would not be sent
+// back to it.
+func (m *Manager) routePhpMyAdmin(ctx context.Context, hostname string) error {
+	if m.phpMyAdminUpstream != "" {
+		if err := m.router.PutRoute(ctx, Route{
+			Hostname:  hostname,
+			Path:      phpMyAdminSsoPathPattern,
+			Upstream:  m.phpMyAdminUpstream,
+			RewriteTo: phpMyAdminSsoRewritePath,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return m.router.PutRoute(ctx, Route{
+		Hostname: hostname,
+		Upstream: upstream(phpMyAdminAlias, phpMyAdminPort),
+	})
+}
+
+// GetDatabase reports a Database's health and storage usage.
 func (m *Manager) GetDatabase(
 	ctx context.Context,
 	databaseID string,
@@ -224,18 +555,18 @@ func (m *Manager) GetDatabase(
 		return DatabaseState{}, fmt.Errorf("%w: databaseId is required", ErrInvalidDatabase)
 	}
 
-	return m.databaseState(ctx, databaseID, storageLimitMB)
+	return m.databaseState(ctx, databaseID, m.engineForDatabase(ctx, databaseID), storageLimitMB)
 }
 
-// RemoveDatabase deletes the Database container and its Volume. A Database that
-// is already gone counts as removed, so a retried cleanup never fails.
+// RemoveDatabase drops the Database's schema and role. A Database that is
+// already gone counts as removed, so a retried cleanup never fails.
 func (m *Manager) RemoveDatabase(ctx context.Context, databaseID string) (bool, error) {
 	if strings.TrimSpace(databaseID) == "" {
 		return false, fmt.Errorf("%w: databaseId is required", ErrInvalidDatabase)
 	}
 
-	// The public proxy must be revoked before the Database disappears, or a
-	// listener could stay open after the owner deleted the Database.
+	// A proxy left over from the previous per-Project model must still be
+	// revoked, or its listener would outlive the Database.
 	if _, err := m.RemoveDatabaseProxy(ctx, databaseID); err != nil {
 		return false, err
 	}
@@ -243,26 +574,66 @@ func (m *Manager) RemoveDatabase(ctx context.Context, databaseID string) (bool, 
 	unlock := m.lockService(databaseLockKey(databaseID))
 	defer unlock()
 
-	removed := false
-	if info, err := m.docker.InspectContainer(ctx, databaseContainerName(databaseID)); err == nil {
-		_ = m.docker.StopContainer(ctx, info.ID)
-		if err := m.docker.RemoveContainer(ctx, info.ID, true); err != nil {
-			return removed, err
-		}
-		removed = true
+	// The schema and role names are derived from the id, exactly as the Control
+	// Plane derives them, so removal never needs the row.
+	if err := m.removeDatabaseObjects(ctx, DatabaseEngineMySQL, databaseID); err != nil {
+		return false, err
+	}
+	if err := m.removeDatabaseObjects(ctx, DatabaseEnginePostgres, databaseID); err != nil {
+		return false, err
 	}
 
-	volumeRemoved, err := m.docker.RemoveVolume(ctx, databaseVolumeName(databaseID))
-	if err != nil {
-		return removed, err
-	}
-
-	return removed || volumeRemoved, nil
+	return true, nil
 }
 
-// RotateDatabasePassword changes the role password inside the running cluster.
-// The new password travels on standard input, never in the command arguments,
-// so it does not appear in the host process list or in an error message.
+// removeDatabaseObjects drops the derived schema and role from one server. A
+// server that is not running is skipped: the row is already gone from the
+// Control Plane, and a later cleanup pass removes what is left.
+func (m *Manager) removeDatabaseObjects(ctx context.Context, engine, databaseID string) error {
+	server := sharedServerFor(engine)
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
+		return nil
+	}
+
+	schema := schemaNameFor(databaseID)
+	// Removal must drop the role that actually owns the schema, which a readable
+	// role makes impossible to re-derive. Resolving it first keeps the old
+	// derived name as the fallback.
+	role := m.databaseRole(ctx, engine, databaseID)
+
+	if engine == DatabaseEngineMySQL {
+		statement := strings.Join([]string{
+			fmt.Sprintf("DROP DATABASE IF EXISTS %s;", quoteMySQLIdentifier(schema)),
+			fmt.Sprintf("DROP USER IF EXISTS %s@'%%';", quoteMySQLLiteral(role)),
+			"FLUSH PRIVILEGES;",
+		}, "\n") + "\n"
+		if _, err := m.docker.Exec(ctx, info.ID, mysqlRootCommand(), statement); err != nil {
+			return fmt.Errorf("could not drop the MySQL Database: %w", err)
+		}
+
+		return nil
+	}
+
+	// PostgreSQL refuses to drop a role that still owns objects, so the database
+	// goes first, then the role.
+	statement := fmt.Sprintf(
+		"SELECT 'DROP DATABASE IF EXISTS %s' WHERE EXISTS "+
+			"(SELECT FROM pg_database WHERE datname = %s)\\gexec\n"+
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_roles WHERE rolname = %s) "+
+			"THEN DROP ROLE %s; END IF; END $$;\n",
+		quoteSQLIdentifier(schema), quoteSQLString(schema),
+		quoteSQLString(role), quoteSQLIdentifier(role),
+	)
+	if _, err := m.docker.Exec(ctx, info.ID, postgresAdminCommand(), statement); err != nil {
+		return fmt.Errorf("could not drop the PostgreSQL Database: %w", err)
+	}
+
+	return nil
+}
+
+// RotateDatabasePassword changes the role's password inside the shared server.
+// The new password travels on standard input, never in the arguments.
 func (m *Manager) RotateDatabasePassword(
 	ctx context.Context,
 	request DatabasePasswordRequest,
@@ -271,262 +642,336 @@ func (m *Manager) RotateDatabasePassword(
 		return DatabaseState{}, err
 	}
 
+	engine, _ := normaliseEngine(request.Engine)
+	server := sharedServerFor(engine)
+
 	unlock := m.lockService(databaseLockKey(request.DatabaseID))
 	defer unlock()
 
-	info, err := m.docker.InspectContainer(ctx, databaseContainerName(request.DatabaseID))
-	if err != nil {
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
 		return DatabaseState{}, ErrUnknownDatabase
 	}
-	if !info.Running() {
-		return DatabaseState{}, fmt.Errorf("%w: the Database container is not running", ErrInvalidDatabase)
-	}
 
-	statement := fmt.Sprintf(
-		"ALTER ROLE %s WITH PASSWORD %s;\n",
-		quoteIdentifier(request.Username),
-		quoteLiteral(request.Password),
-	)
-	command := []string{
-		"psql",
-		"--username", request.Username,
-		"--dbname", request.DatabaseName,
-		"--no-psqlrc",
-		"--set", "ON_ERROR_STOP=1",
-	}
-	if _, err := m.docker.Exec(ctx, info.ID, command, statement); err != nil {
-		// psql can echo a failing statement. The password must never reach the
-		// Control Plane's Deployment error or the dashboard.
-		return DatabaseState{}, errors.New(redactSecret(err.Error(), request.Password))
-	}
+	role := m.databaseRole(ctx, engine, request.DatabaseID)
 
-	storageLimitMB, _ := strconv.Atoi(info.Labels[LabelDatabaseStorageMb])
-	return m.databaseState(ctx, request.DatabaseID, storageLimitMB)
-}
-
-// EnforceDatabases stops a Database whose Volume grew past its storage limit.
-// Docker's local driver cannot enforce a per-Volume quota, so the node measures
-// and reacts instead of letting one Database fill the VPS disk.
-func (m *Manager) EnforceDatabases(ctx context.Context) (int, error) {
-	containers, err := m.docker.ListContainers(ctx, map[string]string{LabelType: ResourceTypeDatabase})
-	if err != nil {
-		return 0, err
-	}
-
-	stopped := 0
-	for _, container := range containers {
-		if !container.Running() {
-			continue
-		}
-
-		databaseID := container.Labels[LabelDatabaseID]
-		if databaseID == "" {
-			continue
-		}
-		storageLimitMB, err := strconv.Atoi(container.Labels[LabelDatabaseStorageMb])
-		if err != nil || storageLimitMB <= 0 {
-			continue
-		}
-
-		usage, exists, err := m.docker.VolumeUsage(ctx, databaseVolumeName(databaseID))
-		if err != nil || !exists || usage <= int64(storageLimitMB) {
-			continue
-		}
-
-		log.Printf(
-			"database %s uses %d MB, over its %d MB limit; stopping the Database",
-			databaseID,
-			usage,
-			storageLimitMB,
+	if engine == DatabaseEngineMySQL {
+		statement := fmt.Sprintf(
+			"ALTER USER %s@'%%' IDENTIFIED BY %s;\n",
+			quoteMySQLLiteral(role), quoteMySQLLiteral(request.Password),
 		)
-		if err := m.docker.StopContainer(ctx, container.ID); err != nil {
-			log.Printf("database %s: could not stop the over-quota container: %v", databaseID, err)
+		if _, err := m.docker.Exec(ctx, info.ID, mysqlRootCommand(), statement); err != nil {
+			return DatabaseState{}, errors.New(redactSecret(err.Error(), request.Password))
+		}
+	} else {
+		statement := fmt.Sprintf(
+			"ALTER ROLE %s WITH PASSWORD %s;\n",
+			quoteSQLIdentifier(role), quoteSQLString(request.Password),
+		)
+		if _, err := m.docker.Exec(ctx, info.ID, postgresAdminCommand(), statement); err != nil {
+			return DatabaseState{}, errors.New(redactSecret(err.Error(), request.Password))
+		}
+	}
+
+	return m.databaseState(ctx, request.DatabaseID, engine, MaxDatabaseStorageMB)
+}
+
+// EnforceDatabases locks a Database role whose schema has grown past the storage
+// limit, and unlocks it again once it fits. A shared server has no per-database
+// quota, so this is the only enforcement point.
+func (m *Manager) EnforceDatabases(ctx context.Context) (int, error) {
+	locked := 0
+
+	for _, engine := range []string{DatabaseEngineMySQL, DatabaseEnginePostgres} {
+		server := sharedServerFor(engine)
+		info, err := m.docker.InspectContainer(ctx, server.Name)
+		if err != nil || !info.Running() {
 			continue
 		}
-		stopped++
+
+		for _, tenant := range m.tenants(ctx, engine) {
+			usage := m.tenantUsage(ctx, engine, tenant.schema)
+			over := usage > MaxDatabaseStorageMB
+			if err := m.setRoleLocked(ctx, engine, tenant.role, over); err != nil {
+				log.Printf("database %s: could not set the role lock: %v", tenant.schema, err)
+				continue
+			}
+			if over {
+				log.Printf(
+					"database %s uses %d MB, over its %d MB limit; the role is locked",
+					tenant.schema, usage, MaxDatabaseStorageMB,
+				)
+				locked++
+			}
+		}
 	}
 
-	return stopped, nil
+	return locked, nil
 }
 
-// databaseHBAConfig is the pg_hba.conf the Database starts with. Local socket
-// access is trusted so the agent can check readiness and rotate a password;
-// every network connection must use TLS.
-const databaseHBAConfig = `# Managed by the Stealth Node Agent. Local access is the agent's socket.
-local all all trust
-hostssl all all all scram-sha-256
-`
-
-// ensureDatabaseVolume creates the Database Volume and labels it with its
-// owners, so cleanup can find it after a restart without the Control Plane.
-func (m *Manager) ensureDatabaseVolume(ctx context.Context, request DatabaseRequest) error {
-	labels := map[string]string{
-		LabelType:           ResourceTypeDatabase,
-		LabelOrganizationID: request.OrganizationID,
-		LabelProjectID:      request.ProjectID,
-		LabelDatabaseID:     request.DatabaseID,
-	}
-
-	if err := m.docker.EnsureVolume(ctx, VolumeSpec{
-		Name:   databaseVolumeName(request.DatabaseID),
-		SizeMB: request.StorageLimitMB,
-		Labels: labels,
-	}); err != nil {
-		return fmt.Errorf("could not prepare the Database Volume: %w", err)
-	}
-
-	return nil
+// tenant is one Database found inside a shared server.
+type tenant struct {
+	schema string
+	role   string
 }
 
-// waitDatabaseReady polls `pg_isready` until PostgreSQL accepts connections or
-// the container exits. A running process that is still running initdb is not
-// healthy yet, which is why the port alone is not enough.
-func (m *Manager) waitDatabaseReady(
-	ctx context.Context,
-	containerID string,
-	username string,
-	databaseName string,
-) error {
-	deadline := m.clock().Add(databaseReadyTimeout)
-	var lastError string
+// tenants lists the Database schemas inside a shared server. Both names are
+// derived from the Database id with the same prefix, so the role is recoverable
+// from the schema.
+func (m *Manager) tenants(ctx context.Context, engine string) []tenant {
+	server := sharedServerFor(engine)
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
+		return nil
+	}
 
-	for {
-		_, err := m.docker.Exec(ctx, containerID, []string{
-			"pg_isready",
-			"--username", username,
-			"--dbname", databaseName,
-		}, "")
-		if err == nil {
+	prefix := schemaPrefix()
+	var statement string
+	if engine == DatabaseEngineMySQL {
+		// The schema's owner comes from `mysql.db`, because a readable role cannot
+		// be recovered from the schema name.
+		statement = fmt.Sprintf(
+			"SELECT s.SCHEMA_NAME, COALESCE(MIN(d.User), '') FROM information_schema.SCHEMATA s "+
+				"LEFT JOIN mysql.db d ON d.Db = s.SCHEMA_NAME "+
+				"WHERE s.SCHEMA_NAME LIKE %s GROUP BY s.SCHEMA_NAME;",
+			quoteMySQLLiteral(prefix+"%"),
+		)
+		output, err := m.docker.Exec(ctx, info.ID, mysqlRootQueryCommand(), statement)
+		if err != nil {
+			log.Printf("list MySQL Databases: %v", err)
 			return nil
 		}
-		lastError = err.Error()
 
-		info, inspectErr := m.docker.InspectContainer(ctx, containerID)
-		if inspectErr == nil && info.State == "exited" {
-			return errors.New("The Database container exited before it became ready.")
-		}
-
-		if !m.clock().Before(deadline) {
-			return fmt.Errorf(
-				"The Database did not become ready within %s: %s",
-				databaseReadyTimeout,
-				strings.TrimSpace(lastError),
-			)
-		}
-
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("The Database readiness check was interrupted: %w", ctx.Err())
-		case <-time.After(m.pollInterval):
-		}
+		return tenantsFromOutput(output, engine)
 	}
+
+	statement = fmt.Sprintf(
+		"SELECT datname, pg_get_userbyid(datdba) FROM pg_database WHERE datname LIKE %s;",
+		quoteSQLString(prefix+"%"),
+	)
+	output, err := m.docker.Exec(ctx, info.ID, postgresAdminQueryCommand(), statement)
+	if err != nil {
+		log.Printf("list PostgreSQL Databases: %v", err)
+		return nil
+	}
+
+	return tenantsFromOutput(output, engine)
 }
 
-// databaseState reads the container and Volume and derives the health the
-// dashboard shows.
+// setRoleLocked locks or unlocks a role so an over-quota tenant cannot keep
+// writing. It is idempotent, so a repeated pass converges.
+func (m *Manager) setRoleLocked(ctx context.Context, engine, role string, locked bool) error {
+	server := sharedServerFor(engine)
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
+		return nil
+	}
+
+	if engine == DatabaseEngineMySQL {
+		action := "ACCOUNT UNLOCK"
+		if locked {
+			action = "ACCOUNT LOCK"
+		}
+		statement := fmt.Sprintf(
+			"ALTER USER %s@'%%' %s;\n", quoteMySQLLiteral(role), action,
+		)
+
+		_, err := m.docker.Exec(ctx, info.ID, mysqlRootCommand(), statement)
+
+		return err
+	}
+
+	action := "NOLOGIN"
+	if !locked {
+		action = "LOGIN"
+	}
+	statement := fmt.Sprintf("ALTER ROLE %s WITH %s;\n", quoteSQLIdentifier(role), action)
+	_, err = m.docker.Exec(ctx, info.ID, postgresAdminCommand(), statement)
+
+	return err
+}
+
+// databaseState reads the shared server and derives the health the dashboard
+// shows.
 func (m *Manager) databaseState(
 	ctx context.Context,
 	databaseID string,
+	engine string,
 	storageLimitMB int,
 ) (DatabaseState, error) {
-	if storageLimitMB <= 0 {
+	if storageLimitMB <= 0 || storageLimitMB > MaxDatabaseStorageMB {
 		storageLimitMB = MaxDatabaseStorageMB
 	}
 
-	info, err := m.docker.InspectContainer(ctx, databaseContainerName(databaseID))
+	server := sharedServerFor(engine)
+	info, err := m.docker.InspectContainer(ctx, server.Name)
 	if err != nil {
 		return DatabaseState{
 			DatabaseID:     databaseID,
+			Engine:         engine,
 			Status:         "absent",
 			StorageLimitMB: storageLimitMB,
 		}, nil
 	}
 
-	if labelLimit, err := strconv.Atoi(info.Labels[LabelDatabaseStorageMb]); err == nil && labelLimit > 0 {
-		storageLimitMB = labelLimit
-	}
-
-	usage, exists, err := m.docker.VolumeUsage(ctx, databaseVolumeName(databaseID))
-	if err != nil {
-		return DatabaseState{}, err
-	}
-	if !exists {
-		usage = 0
-	}
+	usage := m.tenantUsage(ctx, engine, schemaNameFor(databaseID))
 
 	status := "stopped"
 	healthy := false
 	if info.Running() {
 		status = "running"
-		_, healthErr := m.docker.Exec(ctx, info.ID, []string{
-			"pg_isready",
-			"--username", info.Labels[LabelDatabaseUsername],
-			"--dbname", info.Labels[LabelDatabaseName],
-		}, "")
-		healthy = healthErr == nil
+		healthy = m.serverHealthy(ctx, info, engine)
 	} else if info.State == "dead" {
 		status = "failed"
 	}
 
+	phpMyAdminReady := false
+	if engine == DatabaseEngineMySQL {
+		if sidecar, err := m.docker.InspectContainer(ctx, SharedPhpMyAdminContainerName); err == nil {
+			phpMyAdminReady = sidecar.Running()
+		}
+	}
+
 	return DatabaseState{
-		DatabaseID:     databaseID,
-		Status:         status,
-		ContainerID:    info.ID,
-		Hostname:       DatabaseAlias,
-		StorageLimitMB: storageLimitMB,
-		UsageMB:        usage,
-		Healthy:        healthy,
-		OverQuota:      usage > int64(storageLimitMB),
+		DatabaseID:      databaseID,
+		Engine:          engine,
+		Status:          status,
+		ContainerID:     info.ID,
+		Hostname:        DatabaseAlias,
+		StorageLimitMB:  storageLimitMB,
+		UsageMB:         usage,
+		Healthy:         healthy,
+		PhpMyAdminReady: phpMyAdminReady,
+		OverQuota:       usage > int64(storageLimitMB),
 	}, nil
 }
 
-// reconcileDatabases re-attaches Database containers to their Project network
-// after an agent restart. Docker keeps the attachment in the normal case, so
-// this only repairs a node whose network was removed.
-func (m *Manager) reconcileDatabases(ctx context.Context) {
-	containers, err := m.docker.ListContainers(ctx, map[string]string{LabelType: ResourceTypeDatabase})
+// engineForDatabase reports which shared server holds the Database's schema.
+// PostgreSQL is the default when neither server answers.
+func (m *Manager) engineForDatabase(ctx context.Context, databaseID string) string {
+	schema := schemaNameFor(databaseID)
+
+	if info, err := m.docker.InspectContainer(ctx, SharedMySQLContainerName); err == nil && info.Running() {
+		statement := fmt.Sprintf(
+			"SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = %s;",
+			quoteMySQLLiteral(schema),
+		)
+		if output, err := m.docker.Exec(ctx, info.ID, mysqlRootQueryCommand(), statement); err == nil {
+			if strings.TrimSpace(output) == "1" {
+				return DatabaseEngineMySQL
+			}
+		}
+	}
+
+	return DatabaseEnginePostgres
+}
+
+// tenantUsage reports how much space a schema uses, in megabytes.
+func (m *Manager) tenantUsage(ctx context.Context, engine, schema string) int64 {
+	server := sharedServerFor(engine)
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
+		return 0
+	}
+
+	if engine == DatabaseEngineMySQL {
+		statement := fmt.Sprintf(
+			"SELECT COALESCE(ROUND(SUM(data_length + index_length) / 1024 / 1024), 0) "+
+				"FROM information_schema.tables WHERE table_schema = %s;",
+			quoteMySQLLiteral(schema),
+		)
+		output, err := m.docker.Exec(ctx, info.ID, mysqlRootQueryCommand(), statement)
+		if err != nil {
+			return 0
+		}
+		value, _ := strconv.ParseInt(strings.TrimSpace(output), 10, 64)
+
+		return value
+	}
+
+	statement := fmt.Sprintf(
+		"SELECT COALESCE(ROUND(pg_database_size(%s) / 1024 / 1024), 0);",
+		quoteSQLString(schema),
+	)
+	output, err := m.docker.Exec(ctx, info.ID, postgresAdminQueryCommand(), statement)
 	if err != nil {
-		log.Printf("reconcile databases: %v", err)
+		return 0
+	}
+	value, _ := strconv.ParseInt(strings.TrimSpace(output), 10, 64)
+
+	return value
+}
+
+// serverHealthy runs the shared server's readiness probe.
+func (m *Manager) serverHealthy(ctx context.Context, info ContainerInfo, engine string) bool {
+	server := sharedServerFor(engine)
+	_, err := m.docker.Exec(ctx, info.ID, server.ReadyProbe, "")
+
+	return err == nil
+}
+
+// reconcileDatabases restarts a shared server whose container outlived an agent
+// restart and re-programs the phpMyAdmin route. Docker keeps the per-Project
+// network attachments, so they are not re-created here.
+func (m *Manager) reconcileDatabases(ctx context.Context) {
+	// A shared server outlives the agent, so a restart only needs the browser
+	// client's route restored. The servers themselves are left running.
+	m.reconcilePhpMyAdmin(ctx)
+}
+
+// reconcilePhpMyAdmin re-programs the shared phpMyAdmin route. Caddy is
+// configured in memory, so the route is restored after a restart.
+func (m *Manager) reconcilePhpMyAdmin(ctx context.Context) {
+	container, err := m.docker.InspectContainer(ctx, SharedPhpMyAdminContainerName)
+	if err != nil || !container.Running() {
+		return
+	}
+	hostname := container.Labels[LabelHostname]
+	if hostname == "" {
 		return
 	}
 
-	for _, container := range containers {
-		databaseID := container.Labels[LabelDatabaseID]
-		projectID := container.Labels[LabelProjectID]
-		if databaseID == "" || projectID == "" {
-			continue
-		}
-
-		network := projectNetwork(projectID)
-		if err := m.docker.EnsureNetwork(ctx, network); err != nil {
-			log.Printf("reconcile database %s: could not ensure %s: %v", databaseID, network, err)
-			continue
-		}
-		if container.OnNetwork(network) {
-			continue
-		}
-		if err := m.docker.ConnectNetwork(ctx, network, container.ID, DatabaseAlias); err != nil {
-			log.Printf("reconcile database %s: could not attach it to %s: %v", databaseID, network, err)
-		}
+	if err := m.routePhpMyAdmin(ctx, hostname); err != nil {
+		log.Printf("reconcile phpMyAdmin: could not restore the route: %v", err)
 	}
 }
 
-// pruneOrphanDatabaseVolumes removes a Database Volume whose container is gone.
-// A stopped Database keeps its container, so its Volume is never mistaken for an
-// orphan.
-func (m *Manager) pruneOrphanDatabaseVolumes(ctx context.Context) (int, error) {
-	containers, err := m.docker.ListContainers(ctx, map[string]string{LabelType: ResourceTypeDatabase})
+// pruneOrphanPhpMyAdmin removes a phpMyAdmin that is not the shared one, which
+// is a leftover from the per-Project model.
+func (m *Manager) pruneOrphanPhpMyAdmin(ctx context.Context) (int, error) {
+	containers, err := m.docker.ListContainers(ctx, map[string]string{
+		LabelType: ResourceTypeDatabasePhpMyAdmin,
+	})
 	if err != nil {
 		return 0, err
 	}
 
-	live := make(map[string]bool, len(containers))
+	removed := 0
 	for _, container := range containers {
-		if databaseID := container.Labels[LabelDatabaseID]; databaseID != "" {
-			live[databaseID] = true
+		if container.Name == SharedPhpMyAdminContainerName {
+			continue
 		}
+		if hostname := container.Labels[LabelHostname]; hostname != "" {
+			// The route must go first, or Caddy would keep dialing a client that
+			// no longer exists and answer 502.
+			if err := m.router.DeleteRoute(ctx, hostname); err != nil {
+				log.Printf("cleanup: could not remove orphan phpMyAdmin route %s: %v", hostname, err)
+			}
+		}
+		if err := m.docker.RemoveContainer(ctx, container.ID, true); err != nil {
+			log.Printf("cleanup: could not remove orphan phpMyAdmin %s: %v", container.Name, err)
+			continue
+		}
+		removed++
 	}
 
+	return removed, nil
+}
+
+// pruneOrphanDatabaseVolumes removes a per-Database Volume left over from the
+// per-Project model. The shared data Volumes carry no databaseId, so they are
+// never mistaken for an orphan.
+func (m *Manager) pruneOrphanDatabaseVolumes(ctx context.Context) (int, error) {
 	volumes, err := m.docker.ListVolumes(ctx, map[string]string{LabelType: ResourceTypeDatabase})
 	if err != nil {
 		return 0, err
@@ -534,8 +979,7 @@ func (m *Manager) pruneOrphanDatabaseVolumes(ctx context.Context) (int, error) {
 
 	removed := 0
 	for _, volume := range volumes {
-		databaseID := volume.Labels[LabelDatabaseID]
-		if databaseID != "" && live[databaseID] {
+		if volume.Labels[LabelDatabaseID] == "" {
 			continue
 		}
 		if _, err := m.docker.RemoveVolume(ctx, volume.Name); err != nil {
@@ -548,24 +992,187 @@ func (m *Manager) pruneOrphanDatabaseVolumes(ctx context.Context) (int, error) {
 	return removed, nil
 }
 
-func databaseContainerName(databaseID string) string {
-	return "stealth-db-" + sanitizeID(databaseID)
-}
-
-func databaseVolumeName(databaseID string) string {
-	return "stealth-dbvol-" + sanitizeID(databaseID)
-}
-
+// databaseLockKey serialises the operations for one Database.
 func databaseLockKey(databaseID string) string {
 	return "database:" + databaseID
 }
 
-// databaseNamePattern matches a PostgreSQL identifier. The Control Plane always
-// uses `app`, but the agent still rejects anything that could break a SQL
-// statement or a container argument.
-var databaseNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,62}$`)
+// schemaPrefix is the prefix every Database schema name starts with. It is what
+// lets the agent find a Database without asking the Control Plane.
+func schemaPrefix() string {
+	return "db_"
+}
 
+// databaseObjectNames derives the schema and role for a Database id. The Control
+// Plane derives the same names with the same formula, so the connection string it
+// builds always names the objects the agent creates.
+//
+// MySQL caps a user name at 32 characters, so both names use a 24 character key
+// from the id (96 bits of a UUID), which is short enough for both engines and
+// still collision-free in practice.
+func databaseObjectNames(databaseID string) (schema string, role string) {
+	key := sanitizeID(databaseID)
+	key = strings.ReplaceAll(key, "-", "")
+	if len(key) > 24 {
+		key = key[:24]
+	}
+	if key == "" {
+		key = "tenant"
+	}
+
+	return schemaPrefix() + key, "u_" + key
+}
+
+// schemaNameFor is the schema half of databaseObjectNames.
+func schemaNameFor(databaseID string) string {
+	schema, _ := databaseObjectNames(databaseID)
+
+	return schema
+}
+
+// roleForSchema returns the role that owns a schema inside the shared server. New
+// Databases have a readable role that cannot be re-derived from the schema, so the
+// server is the only source of truth. The second result is false when the schema
+// is unknown or the lookup failed, which callers treat as "fall back".
+func (m *Manager) roleForSchema(ctx context.Context, engine, schema string) (string, bool) {
+	server := sharedServerFor(engine)
+	info, err := m.docker.InspectContainer(ctx, server.Name)
+	if err != nil || !info.Running() {
+		return "", false
+	}
+
+	if engine == DatabaseEngineMySQL {
+		statement := fmt.Sprintf(
+			"SELECT COALESCE(MIN(User), '') FROM mysql.db WHERE Db = %s;",
+			quoteMySQLLiteral(schema),
+		)
+		output, err := m.docker.Exec(ctx, info.ID, mysqlRootQueryCommand(), statement)
+		if err != nil {
+			return "", false
+		}
+		role := strings.TrimSpace(output)
+		// The value is about to be interpolated into a SQL statement, so anything
+		// that is not a legal role means the lookup did not answer and the caller
+		// must fall back rather than trust it.
+		if !validDatabaseRole(role) {
+			return "", false
+		}
+
+		return role, true
+	}
+
+	statement := fmt.Sprintf(
+		"SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = %s;",
+		quoteSQLString(schema),
+	)
+	output, err := m.docker.Exec(ctx, info.ID, postgresAdminQueryCommand(), statement)
+	if err != nil {
+		return "", false
+	}
+	role := strings.TrimSpace(output)
+	// The shared server's own superuser owns nothing a tenant should reuse.
+	if !validDatabaseRole(role) || role == sharedPostgresAdmin {
+		return "", false
+	}
+
+	return role, true
+}
+
+// databaseRole resolves a Database's role, preferring the server and falling back
+// to the legacy derived name so Databases created before readable usernames keep
+// working.
+func (m *Manager) databaseRole(ctx context.Context, engine, databaseID string) string {
+	if role, ok := m.roleForSchema(ctx, engine, schemaNameFor(databaseID)); ok {
+		return role
+	}
+
+	_, role := databaseObjectNames(databaseID)
+
+	return role
+}
+
+// mysqlRootCommand runs the mysql client as root inside the shared server. The
+// password comes from the container environment, so it never appears in an
+// argument.
+func mysqlRootCommand() []string {
+	return []string{
+		"sh", "-c",
+		`MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root`,
+	}
+}
+
+// mysqlRootQueryCommand is mysqlRootCommand with an output that is trivial to
+// parse: one value per line, no headers.
+func mysqlRootQueryCommand() []string {
+	return []string{
+		"sh", "-c",
+		`MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root --skip-column-names --batch`,
+	}
+}
+
+// postgresAdminCommand runs psql as the shared server's superuser through the
+// container's trusted local socket.
+func postgresAdminCommand() []string {
+	return []string{
+		"psql", "--username", sharedPostgresAdmin, "--dbname", "postgres",
+		"--no-psqlrc", "--set", "ON_ERROR_STOP=1",
+	}
+}
+
+// postgresAdminQueryCommand is postgresAdminCommand with machine-readable output.
+func postgresAdminQueryCommand() []string {
+	return []string{
+		"psql", "--username", sharedPostgresAdmin, "--dbname", "postgres",
+		"--no-psqlrc", "--tuples-only", "--no-align",
+	}
+}
+
+// tenantsFromOutput parses the one-schema-per-line output of a tenant listing and
+// resolves each schema's role from the server. A readable role cannot be derived
+// from the schema, so the listing query returns the owner alongside the name.
+func tenantsFromOutput(output, engine string) []tenant {
+	found := make([]tenant, 0)
+	seen := make(map[string]bool)
+
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// One `<schema>\t<role>` pair per line; a missing role is skipped rather
+		// than guessed, because locking the wrong role would cut off another
+		// tenant.
+		parts := strings.SplitN(line, "\t", 2)
+		schema := strings.TrimSpace(parts[0])
+		if schema == "" || seen[schema] || !strings.HasPrefix(schema, schemaPrefix()) {
+			continue
+		}
+		role := ""
+		if len(parts) == 2 {
+			role = strings.TrimSpace(parts[1])
+			// MySQL reports the grantee as `'user'@'%'`; only the user matters.
+			if at := strings.Index(role, "@"); at > 0 {
+				role = strings.Trim(role[:at], "'`\"")
+			}
+		}
+		if !validDatabaseRole(role) {
+			continue
+		}
+		seen[schema] = true
+
+		found = append(found, tenant{schema: schema, role: role})
+	}
+
+	return found
+}
+
+// validate rejects a request the agent cannot honour.
 func (r DatabaseRequest) validate() error {
+	if _, err := normaliseEngine(r.Engine); err != nil {
+		return err
+	}
+
 	switch {
 	case strings.TrimSpace(r.DatabaseID) == "":
 		return fmt.Errorf("%w: databaseId is required", ErrInvalidDatabase)
@@ -573,27 +1180,60 @@ func (r DatabaseRequest) validate() error {
 		return fmt.Errorf("%w: projectId is required", ErrInvalidDatabase)
 	case strings.TrimSpace(r.OrganizationID) == "":
 		return fmt.Errorf("%w: organizationId is required", ErrInvalidDatabase)
-	case !databaseNamePattern.MatchString(r.DatabaseName):
-		return fmt.Errorf("%w: databaseName is not a valid PostgreSQL identifier", ErrInvalidDatabase)
-	case !databaseNamePattern.MatchString(r.Username):
-		return fmt.Errorf("%w: username is not a valid PostgreSQL identifier", ErrInvalidDatabase)
 	case !validPassword(r.Password):
 		return fmt.Errorf("%w: password must be between 1 and 256 bytes and contain no NUL", ErrInvalidDatabase)
 	case r.StorageLimitMB <= 0 || r.StorageLimitMB > MaxDatabaseStorageMB:
 		return fmt.Errorf("%w: storageLimitMb must be between 1 and %d", ErrInvalidDatabase, MaxDatabaseStorageMB)
 	}
 
+	// The schema still has to match its derived form: the id decides where the
+	// data lives. The role is chosen by the Control Plane, because a readable user
+	// name cannot be derived from the id, so it is validated as an identifier
+	// instead of compared to a formula.
+	if r.DatabaseName != "" && r.DatabaseName != schemaNameFor(r.DatabaseID) {
+		return fmt.Errorf("%w: databaseName does not match the derived schema", ErrInvalidDatabase)
+	}
+	if !validDatabaseRole(r.Username) {
+		return fmt.Errorf("%w: username must be 1-32 letters, digits or underscores", ErrInvalidDatabase)
+	}
+
+	return r.validatePhpMyAdmin()
+}
+
+// validatePhpMyAdmin enforces the pairing between engine and browser client: a
+// MySQL Database reports the shared phpMyAdmin hostname, and PostgreSQL, which
+// has no browser client, must not.
+func (r DatabaseRequest) validatePhpMyAdmin() error {
+	hostname := strings.TrimSpace(r.PhpMyAdminHostname)
+	engine, _ := normaliseEngine(r.Engine)
+
+	if engine == DatabaseEngineMySQL {
+		if hostname == "" {
+			return fmt.Errorf("%w: phpMyAdminHostname is required for MySQL", ErrInvalidDatabase)
+		}
+		if _, err := normalizeHostname(hostname); err != nil {
+			return fmt.Errorf("%w: phpMyAdminHostname is not a valid hostname", ErrInvalidDatabase)
+		}
+
+		return nil
+	}
+
+	if hostname != "" {
+		return fmt.Errorf("%w: phpMyAdminHostname is only valid for MySQL", ErrInvalidDatabase)
+	}
+
 	return nil
 }
 
+// validate rejects a rotation request the agent cannot honour.
 func (r DatabasePasswordRequest) validate() error {
+	if _, err := normaliseEngine(r.Engine); err != nil {
+		return err
+	}
+
 	switch {
 	case strings.TrimSpace(r.DatabaseID) == "":
 		return fmt.Errorf("%w: databaseId is required", ErrInvalidDatabase)
-	case !databaseNamePattern.MatchString(r.DatabaseName):
-		return fmt.Errorf("%w: databaseName is not a valid PostgreSQL identifier", ErrInvalidDatabase)
-	case !databaseNamePattern.MatchString(r.Username):
-		return fmt.Errorf("%w: username is not a valid PostgreSQL identifier", ErrInvalidDatabase)
 	case !validPassword(r.Password):
 		return fmt.Errorf("%w: password must be between 1 and 256 bytes and contain no NUL", ErrInvalidDatabase)
 	}
@@ -605,16 +1245,38 @@ func validPassword(value string) bool {
 	return value != "" && len(value) <= 256 && !strings.ContainsRune(value, '\x00')
 }
 
-// quoteIdentifier quotes a PostgreSQL identifier, so a name can never break out
-// of the ALTER ROLE statement.
-func quoteIdentifier(value string) string {
-	return `"` + strings.ReplaceAll(value, `"`, `""`) + `"`
+// validDatabaseRole accepts a role the shared server can hold. Both engines allow
+// letters, digits and underscores; MySQL additionally caps the name at 32
+// characters, which is the tighter bound and therefore the one enforced.
+//
+// The names each server's own administrator uses are refused: a tenant role that
+// collided with `root` or `stealth` would be grantable to a Project, which is a
+// privilege escalation rather than a naming problem.
+func validDatabaseRole(value string) bool {
+	if value == "" || len(value) > 32 {
+		return false
+	}
+	switch strings.ToLower(value) {
+	case "root", "mysql", "postgres", sharedPostgresAdmin, "admin", "public":
+		return false
+	}
+	for _, char := range value {
+		switch {
+		case char >= 'a' && char <= 'z', char >= 'A' && char <= 'Z', char >= '0' && char <= '9', char == '_':
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
-// quoteLiteral quotes a PostgreSQL string literal. Passwords generated by the
-// Control Plane are hex, but doubling a quote keeps this safe for any value.
-func quoteLiteral(value string) string {
-	return `'` + strings.ReplaceAll(value, `'`, `''`) + `'`
+// quoteMySQLLiteral quotes a MySQL string literal. MySQL treats a backslash as
+// an escape character, so it is doubled as well as the quote.
+func quoteMySQLLiteral(value string) string {
+	escaped := strings.ReplaceAll(value, `\`, `\\`)
+
+	return `'` + strings.ReplaceAll(escaped, `'`, `''`) + `'`
 }
 
 // redactSecret replaces a secret in an error message so a tool that echoes its

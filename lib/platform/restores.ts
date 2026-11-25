@@ -3,7 +3,7 @@ import { ApiError } from "./api-error.ts";
 import { recordAudit } from "./audit.ts";
 import { readStoredObject, type BackupStorageProvider } from "./backup-storage.ts";
 import { backupTargetName } from "./backups.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 import { startService, stopService } from "./runtime.ts";
 
 /**
@@ -60,18 +60,21 @@ type RestorableBackup = {
   storageProvider: BackupStorageProvider | null;
   projectName: string | null;
   serviceName: string | null;
+  engine: string | null;
 };
 
 const RESTORE_SUMMARY_COLUMNS = `
   r."id", r."backupId", r."targetType", r."targetId", r."status",
   r."errorMessage", r."createdAt", r."startedAt", r."finishedAt",
-  p."name" AS "projectName", s."name" AS "serviceName"`;
+  p."name" AS "projectName", s."name" AS "serviceName", d."engine"`;
 
 const RESTORE_SUMMARY_JOINS = `
   LEFT JOIN "project" p ON p."id" = r."projectId"
   LEFT JOIN "volume" v
     ON r."targetType" = 'volume' AND v."dockerVolumeName" = r."targetId"
-  LEFT JOIN "service" s ON s."id" = v."serviceId"`;
+  LEFT JOIN "service" s ON s."id" = v."serviceId"
+  LEFT JOIN "database" d
+    ON r."targetType" = 'database' AND d."id" = r."targetId"`;
 
 type RestoreListRow = Pick<
   RestoreRow,
@@ -84,7 +87,7 @@ type RestoreListRow = Pick<
   | "createdAt"
   | "startedAt"
   | "finishedAt"
-> & { projectName: string | null; serviceName: string | null };
+> & { projectName: string | null; serviceName: string | null; engine: string | null };
 
 function toSummary(row: RestoreListRow): RestoreSummary {
   return {
@@ -108,12 +111,14 @@ async function loadRestorableBackup(
   const result = await pool.query<RestorableBackup>(
     `SELECT b."id", b."organizationId", b."projectId", b."targetType",
             b."targetId", b."status", b."storageKey", b."storageProvider",
-            p."name" AS "projectName", s."name" AS "serviceName"
+            p."name" AS "projectName", s."name" AS "serviceName", d."engine"
      FROM "backup" b
      LEFT JOIN "project" p ON p."id" = b."projectId"
      LEFT JOIN "volume" v
        ON b."targetType" = 'volume' AND v."dockerVolumeName" = b."targetId"
      LEFT JOIN "service" s ON s."id" = v."serviceId"
+     LEFT JOIN "database" d
+       ON b."targetType" = 'database' AND d."id" = b."targetId"
      WHERE b."id" = $1 AND b."organizationId" = $2`,
     [backupId, organizationId],
   );
@@ -319,29 +324,12 @@ async function startAfterRestore(
 }
 
 async function sendRestoreToAgent(row: RestoreRow, bytes: Buffer): Promise<void> {
-  const { baseUrl, token } = nodeConfig();
-  const query = new URLSearchParams({
+  await nodeAgent.sendRestore({
+    restoreId: row.id,
     targetType: row.targetType,
     targetId: row.targetId,
+    bytes,
   });
-  const url = `${baseUrl.replace(/\/+$/, "")}/v1/restores/${encodeURIComponent(row.id)}?${query}`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${token}`,
-      "content-type": "application/octet-stream",
-    },
-    // Copy into a plain Uint8Array so fetch accepts the bytes as a body.
-    body: new Uint8Array(bytes),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `the Node Agent answered ${response.status} for the Restore${detail ? `: ${detail}` : ""}`,
-    );
-  }
 }
 
 async function loadRestore(restoreId: string): Promise<RestoreRow | null> {

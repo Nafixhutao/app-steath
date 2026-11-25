@@ -24,10 +24,12 @@ type ServiceUsage struct {
 	VolumeUsageMB int64
 }
 
-// DatabaseUsage is the storage a Database Volume currently uses.
+// DatabaseUsage is the storage one Database's schema currently uses. A Database
+// has no container and no Volume of its own, so it is identified by the schema
+// name the Agent created for it.
 type DatabaseUsage struct {
-	DatabaseID string
-	UsageMB    int64
+	DatabaseName string
+	UsageMB      int64
 }
 
 // Usage measures every Service and Database on the node. A resource whose
@@ -69,23 +71,16 @@ func (m *Manager) Usage(ctx context.Context) (UsageReport, error) {
 		report.Services = append(report.Services, usage)
 	}
 
-	databases, err := m.docker.ListContainers(ctx, map[string]string{LabelType: ResourceTypeDatabase})
-	if err != nil {
-		return UsageReport{}, err
-	}
-
-	for _, container := range databases {
-		databaseID := container.Labels[LabelDatabaseID]
-		if databaseID == "" {
-			continue
+	// A Database has no container of its own, so usage is reported per schema.
+	// The schema name is a truncated hash and cannot be reversed into the
+	// Database id, so the Control Plane, which knows both, joins them.
+	for _, engine := range []string{DatabaseEngineMySQL, DatabaseEnginePostgres} {
+		for _, tenant := range m.tenants(ctx, engine) {
+			report.Databases = append(report.Databases, DatabaseUsage{
+				DatabaseName: tenant.schema,
+				UsageMB:      m.tenantUsage(ctx, engine, tenant.schema),
+			})
 		}
-
-		usage := DatabaseUsage{DatabaseID: databaseID}
-		if megabytes, exists, err := m.docker.VolumeUsage(ctx, databaseVolumeName(databaseID)); err == nil && exists {
-			usage.UsageMB = megabytes
-		}
-
-		report.Databases = append(report.Databases, usage)
 	}
 
 	return report, nil

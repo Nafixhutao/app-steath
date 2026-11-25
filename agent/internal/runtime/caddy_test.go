@@ -124,3 +124,92 @@ func TestConfigureOnDemandTLSKeepsExistingPolicies(t *testing.T) {
 		t.Fatalf("expected the existing issuer policy to survive, got %#v", policies[0])
 	}
 }
+
+// The phpMyAdmin host carries two routes: its UI for every path and the sign-in
+// bridge for one prefix. Both are written through PutRoute, so the second must
+// not replace the first, and the narrower one must be evaluated first because a
+// whole-host route is terminal.
+func TestPathScopedRouteCoexistsWithTheWholeHostRoute(t *testing.T) {
+	stored := []map[string]any{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/config/apps/http/servers/stealth/routes":
+			_ = json.NewEncoder(w).Encode(stored)
+		case r.Method == http.MethodPut && r.URL.Path == "/config/apps/http/servers/stealth":
+			w.WriteHeader(http.StatusOK)
+		case (r.Method == http.MethodPut || r.Method == http.MethodPatch) &&
+			r.URL.Path == "/config/apps/http/servers/stealth/routes":
+			raw, _ := io.ReadAll(r.Body)
+			stored = nil
+			_ = json.Unmarshal(raw, &stored)
+			w.WriteHeader(http.StatusOK)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	router := NewCaddyRouter(server.URL)
+	host := "pma.example.test"
+	if err := router.PutRoute(context.Background(), Route{
+		Hostname: host,
+		Upstream: "pma:80",
+	}); err != nil {
+		t.Fatalf("put UI route: %v", err)
+	}
+	if err := router.PutRoute(context.Background(), Route{
+		Hostname:  host,
+		Path:      "/_sso*",
+		Upstream:  "control-plane:3000",
+		RewriteTo: "/api/phpmyadmin/sso",
+	}); err != nil {
+		t.Fatalf("put bridge route: %v", err)
+	}
+
+	if len(stored) != 2 {
+		t.Fatalf("expected the two routes to coexist, got %#v", stored)
+	}
+	// The path route is written first because Caddy stops at the first terminal
+	// match: a whole-host route ahead of it would swallow the bridge.
+	if pathOf(stored[0]) != "/_sso*" {
+		t.Fatalf("expected the path route first, got %#v", stored[0])
+	}
+	if pathOf(stored[1]) != "" {
+		t.Fatalf("expected the whole-host route last, got %#v", stored[1])
+	}
+
+	handlers, _ := stored[0]["handle"].([]any)
+	first, _ := handlers[0].(map[string]any)
+	if first["handler"] != "rewrite" || first["uri"] != "/api/phpmyadmin/sso" {
+		t.Fatalf("expected the bridge to rewrite to the API path, got %#v", handlers[0])
+	}
+}
+
+// Re-programming the bridge must replace only itself, so a reconcile after a
+// restart does not accumulate a second copy of the same route.
+func TestPutRouteIsIdempotentPerHostAndPath(t *testing.T) {
+	stored := []map[string]any{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			_ = json.NewEncoder(w).Encode(stored)
+			return
+		}
+		raw, _ := io.ReadAll(r.Body)
+		stored = nil
+		_ = json.Unmarshal(raw, &stored)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	router := NewCaddyRouter(server.URL)
+	route := Route{Hostname: "pma.example.test", Path: "/_sso*", Upstream: "control-plane:3000"}
+	for i := 0; i < 3; i += 1 {
+		if err := router.PutRoute(context.Background(), route); err != nil {
+			t.Fatalf("put %d: %v", i, err)
+		}
+	}
+
+	if len(stored) != 1 {
+		t.Fatalf("expected one route after repeated writes, got %d", len(stored))
+	}
+}

@@ -310,7 +310,7 @@ export async function listOperations(window: OperationsWindow): Promise<{
   ORDER BY "created_at" DESC
   LIMIT ${limit}
 `,
-    to ? [from, to] : [from ?? String(windowMinutes)],
+    [from ?? String(windowMinutes), ...(to ? [to] : [])],
   );
 
   return {
@@ -384,8 +384,12 @@ export async function listErrorGroups(window: ErrorGroupWindow): Promise<{
       'deployment' AS kind,
       'deployment' AS id,
       COALESCE(d."errorMessage", 'Deployment failed') AS message,
-      min(d."startedAt") AS "first_seen",
-      max(d."finishedAt") AS "last_seen",
+      -- A Deployment can fail before it ever starts (a cancel, a Job that ran
+      -- out of attempts, a Service suspended mid-flight), so startedAt is null
+      -- for it. Falling back to createdAt keeps every group dateable; without
+      -- that fallback one such row made the whole Errors page throw.
+      min(COALESCE(d."startedAt", d."createdAt")) AS "first_seen",
+      max(COALESCE(d."finishedAt", d."startedAt", d."createdAt")) AS "last_seen",
       count(*)::int AS "occurrence_count"
     FROM "deployment" d
     WHERE d."status" = 'failed'
@@ -411,7 +415,7 @@ export async function listErrorGroups(window: ErrorGroupWindow): Promise<{
   ORDER BY "last_seen" DESC
   LIMIT 250
 `,
-    to ? [from, to] : [from ?? String(windowHours)],
+    [from ?? String(windowHours), ...(to ? [to] : [])],
   );
 
   const groups = new Map<

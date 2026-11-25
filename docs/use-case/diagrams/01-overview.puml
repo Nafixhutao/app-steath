@@ -1,0 +1,59 @@
+@startuml
+title Gambar 1 — Peta Aktor dan Modul Sistem
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #F4F7FB
+  BorderColor #4A6785
+  FontSize 12
+}
+
+actor "Customer\n(Member Organisasi)" as C
+actor "Pengunjung Publik" as V
+actor "Platform Admin" as PA
+actor "Instance Server\n(Node Agent)" as IS
+
+rectangle "Stealth Hosting Platform — Batas Sistem Control Plane" {
+
+  package "Autentikasi & Onboarding" {
+    usecase "UC-01 … UC-07\nAutentikasi, Password,\nOrganisasi & Undangan" as M1
+  }
+  package "Organisasi, Tim & Kuota" {
+    usecase "UC-08 … UC-15\nIdentitas, Undangan, Peran,\nKeanggotaan & Kuota" as M2
+  }
+  package "Project & Service" {
+    usecase "UC-16 … UC-22\nProject dan Service" as M3
+  }
+  package "Deployment & Runtime" {
+    usecase "UC-23 … UC-32\nDeploy, Runtime, Env,\nVolume" as M4
+  }
+  package "Data, Domain & Backup" {
+    usecase "UC-33 … UC-44\nDatabase, phpMyAdmin,\nDomain, Backup, Restore" as M5
+  }
+  package "Layanan Publik" {
+    usecase "UC-45\nPelaporan Abuse" as M6
+  }
+  package "Admin Console" {
+    usecase "UC-46 … UC-55\nObservability, Operasi,\nAbuse, Suspensi" as M7
+  }
+  package "Runtime Node" {
+    usecase "UC-56 … UC-57\nHeartbeat & Sertifikat" as M8
+  }
+}
+
+C --> M1
+C --> M2
+C --> M3
+C --> M4
+C --> M5
+V --> M6
+PA --> M7
+IS --> M3
+IS --> M4
+IS --> M5
+IS --> M7
+IS --> M8
+
+@enduml

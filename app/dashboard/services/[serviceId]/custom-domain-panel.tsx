@@ -10,6 +10,7 @@ import {
 } from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
+import { SupabaseModal } from "@/components/supabase-modal";
 
 function statusLabel(status: CustomDomainSummary["status"]): string {
   switch (status) {
@@ -97,7 +98,7 @@ export function CustomDomainPanel({
         <h2 id="custom-domain-heading">Custom Domain</h2>
         {canManage && !domainData ? (
           <button
-            className="create-project-button"
+            className="supabase-btn-green"
             type="button"
             onClick={() => setAdding(true)}
             disabled={adding}
@@ -114,32 +115,42 @@ export function CustomDomainPanel({
       ) : null}
 
       {adding ? (
-        <form className="organization-settings-form environment-form" onSubmit={add}>
-          <label>
-            Hostname
-            <input
-              value={hostname}
-              onChange={(event) => setHostname(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="app.example.com"
-              required
-            />
-          </label>
-          <div className="environment-form-actions">
-            <button className="dashboard-secondary-button" type="submit" disabled={busy}>
-              {busy ? "Saving..." : "Add"}
-            </button>
-            <button
-              className="dashboard-link-button"
-              type="button"
-              onClick={() => setAdding(false)}
-              disabled={busy}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <SupabaseModal title="Add a custom domain" onClose={() => setAdding(false)}>
+          <form onSubmit={add}>
+            <div className="supabase-modal-body">
+              <p className="text-sm text-zinc-400 mb-4">
+                Point the hostname at the platform IP, then verify ownership with the TXT record
+                shown after you add it.
+              </p>
+              <label htmlFor="domain-hostname-input" className="supabase-modal-label">
+                Hostname
+              </label>
+              <input
+                id="domain-hostname-input"
+                className="supabase-modal-input"
+                value={hostname}
+                onChange={(event) => setHostname(event.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="app.example.com"
+                required
+              />
+            </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setAdding(false)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="supabase-btn-green" disabled={busy}>
+                {busy ? "Saving..." : "Add domain"}
+              </button>
+            </div>
+          </form>
+        </SupabaseModal>
       ) : null}
 
       {domain.loading ? (
@@ -194,30 +205,30 @@ export function CustomDomainPanel({
             <p>
               Add these records at your DNS provider, then verify. DNS changes can take a while.
             </p>
-            <table className="organization-table">
+            <table className="organization-table svc-table-records">
               <thead>
                 <tr>
-                  <th>Type</th>
-                  <th>Name</th>
-                  <th>Value</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Value</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>TXT</td>
-                  <td>
+                  <td data-label="Type">TXT</td>
+                  <td data-label="Name">
                     <code className="environment-key">{domainData.instructions.txt.name}</code>
                   </td>
-                  <td>
+                  <td data-label="Value" className="svc-cell-wide">
                     <code className="environment-key">{domainData.instructions.txt.value}</code>
                   </td>
                 </tr>
                 <tr>
-                  <td>A</td>
-                  <td>
+                  <td data-label="Type">A</td>
+                  <td data-label="Name">
                     <code className="environment-key">{domainData.instructions.a.name}</code>
                   </td>
-                  <td>
+                  <td data-label="Value" className="svc-cell-wide">
                     {domainData.instructions.a.value ? (
                       <code className="environment-key">{domainData.instructions.a.value}</code>
                     ) : (
@@ -226,11 +237,11 @@ export function CustomDomainPanel({
                   </td>
                 </tr>
                 <tr>
-                  <td>CNAME</td>
-                  <td>
+                  <td data-label="Type">CNAME</td>
+                  <td data-label="Name">
                     <code className="environment-key">{domainData.instructions.cname.name}</code>
                   </td>
-                  <td>
+                  <td data-label="Value" className="svc-cell-wide">
                     <code className="environment-key">{domainData.instructions.cname.value}</code>
                   </td>
                 </tr>
@@ -241,7 +252,7 @@ export function CustomDomainPanel({
           {canManage ? (
             <div className="deployment-actions">
               <button
-                className="dashboard-secondary-button"
+                className="supabase-btn-secondary"
                 type="button"
                 onClick={() => void verify()}
                 disabled={busy}

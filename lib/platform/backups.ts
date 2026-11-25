@@ -1,5 +1,4 @@
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
 import { recordAudit } from "./audit.ts";
 import {
   backupStorageConfigFromEnv,
@@ -9,7 +8,7 @@ import {
   safeLocalPath,
   type BackupStorageProvider,
 } from "./backup-storage.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 
 /**
  * Daily Backup orchestration. The worker schedules one Backup per Database, per
@@ -223,20 +222,6 @@ export function backupStorageKey(
   return `backups/${row.organizationId ?? "platform"}/${row.id}${extension}`;
 }
 
-async function downloadBackup(backupId: string): Promise<Buffer> {
-  const { baseUrl, token } = nodeConfig();
-  const response = await fetch(
-    `${baseUrl.replace(/\/+$/, "")}/v1/backups/${encodeURIComponent(backupId)}/content`,
-    { headers: { authorization: `Bearer ${token}` } },
-  );
-
-  if (!response.ok) {
-    throw new Error(`the Node Agent answered ${response.status} for Backup ${backupId}`);
-  }
-
-  return Buffer.from(await response.arrayBuffer());
-}
-
 /**
  * Runs one queued Backup Job end to end and records the outcome on the Backup
  * row. A failed Backup is visible in the dashboard and audited, because losing
@@ -266,23 +251,18 @@ export async function runBackupJob(job: {
   );
 
   const storage = createBackupStorage();
-  const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
+
+  /** Removes the staged artifact; the durable copy is already in storage. */
+  const discardStagedArtifact = () => nodeAgent.discardBackup(backupId).catch(() => undefined);
 
   try {
-    const created = await client.POST("/v1/backups", { body: agentRequestFor(row) });
-    if (!created.response.ok || !created.data) {
-      throw new Error(`the Node Agent rejected the Backup (${created.response.status})`);
-    }
+    await nodeAgent.createBackup(agentRequestFor(row));
 
-    const bytes = await downloadBackup(backupId);
+    const bytes = await nodeAgent.downloadBackup(backupId);
     const storageKey = backupStorageKey(row);
     await storage.put(storageKey, bytes);
 
-    // The agent copy is only a staging file; a failure here must not fail the
-    // Backup, because the durable copy already exists.
-    await client
-      .DELETE("/v1/backups/{backupId}", { params: { path: { backupId } } })
-      .catch(() => undefined);
+    await discardStagedArtifact();
 
     await pool.query(
       `UPDATE "backup"
@@ -295,6 +275,9 @@ export async function runBackupJob(job: {
     return { status: "completed" };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    // A failed Backup still leaves a staged artifact on the Agent. Clean it up
+    // here too, otherwise failed runs leak dump files on the node forever.
+    await discardStagedArtifact();
     await pool.query(
       `UPDATE "backup" SET "status" = 'failed', "errorMessage" = $2 WHERE "id" = $1`,
       [backupId, message],
@@ -381,19 +364,22 @@ export function currentBackupStorageProvider(): BackupStorageProvider {
 type BackupListRow = BackupRow & {
   projectName: string | null;
   serviceName: string | null;
+  engine: string | null;
 };
 
 /**
  * The name the dashboard shows for a Backup target and the string a Restore
  * asks the user to type. It lives here so the Backup list, the Restore list, and
- * the confirmation check can never disagree.
+ * the confirmation check can never disagree. The engine is part of the name so a
+ * Database Backup can never be mistaken for the other engine's.
  */
 export function backupTargetName(row: {
   targetType: BackupTargetType;
   serviceName: string | null;
+  engine?: string | null;
 }): string {
   if (row.targetType === "database") {
-    return "PostgreSQL Database";
+    return row.engine === "mysql" ? "MySQL Database" : "PostgreSQL Database";
   }
   if (row.targetType === "volume") {
     return `${row.serviceName ?? "Service"} Volume`;
@@ -412,12 +398,14 @@ export async function listBackups(organizationId: string): Promise<BackupList> {
     `SELECT b."id", b."organizationId", b."projectId", b."targetType",
             b."targetId", b."status", b."storageKey", b."storageProvider",
             b."sizeBytes", b."errorMessage", b."createdAt", b."expiresAt",
-            p."name" AS "projectName", s."name" AS "serviceName"
+            p."name" AS "projectName", s."name" AS "serviceName", d."engine"
      FROM "backup" b
      LEFT JOIN "project" p ON p."id" = b."projectId"
      LEFT JOIN "volume" v
        ON b."targetType" = 'volume' AND v."dockerVolumeName" = b."targetId"
      LEFT JOIN "service" s ON s."id" = v."serviceId"
+     LEFT JOIN "database" d
+       ON b."targetType" = 'database' AND d."id" = b."targetId"
      WHERE b."organizationId" = $1 OR b."organizationId" IS NULL
      ORDER BY b."createdAt" DESC`,
     [organizationId],

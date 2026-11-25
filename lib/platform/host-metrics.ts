@@ -1,6 +1,7 @@
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
-import { nodeConfig } from "./nodes.ts";
+import { ApiError } from "./api-error.ts";
+import { nodeAgent } from "./node-agent.ts";
+import { NODE_HEARTBEAT_TIMEOUT_MS } from "./nodes.ts";
 
 /**
  * Node host metrics. The Platform Admin host dashboard shows how loaded each
@@ -30,14 +31,24 @@ type NodeEndpointRow = {
 };
 
 /**
- * Asks every node with a known endpoint for its host snapshot and stores the
+ * Asks every live node with a known endpoint for its host snapshot and stores the
  * current sample of each. A node that cannot be reached is skipped with a log,
  * not an error: a dead node shows up on the dashboard as missing, and the next
  * pass retries.
+ *
+ * A node whose heartbeat is stale is skipped entirely. Its status column stays
+ * `healthy` forever once it has beaten once (health is derived from `lastSeenAt`
+ * at read time), so polling on the column alone would ask a removed node for
+ * metrics every minute and log a failure each time.
  */
 export async function recordNodeHostMetrics(): Promise<number> {
   const nodes = await pool.query<NodeEndpointRow>(
-    'SELECT "id", "name", "baseUrl" FROM "node" WHERE "baseUrl" IS NOT NULL ORDER BY "createdAt"',
+    `SELECT "id", "name", "baseUrl" FROM "node"
+     WHERE "baseUrl" IS NOT NULL
+       AND "lastSeenAt" IS NOT NULL
+       AND "lastSeenAt" > now() - make_interval(secs => $1)
+     ORDER BY "createdAt"`,
+    [NODE_HEARTBEAT_TIMEOUT_MS / 1000],
   );
 
   let stored = 0;
@@ -70,7 +81,7 @@ export async function recordNodeHostMetrics(): Promise<number> {
 /** Deletes host metric rows older than the retention window. */
 export async function pruneNodeHostMetrics(): Promise<number> {
   const result = await pool.query(
-    `DELETE FROM "node_host_metric" WHERE "capturedAt" < now() - interval '1' * $1`,
+    `DELETE FROM "node_host_metric" WHERE "capturedAt" < now() - make_interval(hours => $1)`,
     [HOST_METRIC_RETENTION_HOURS],
   );
 
@@ -102,8 +113,22 @@ type GroupedMetricRow = {
   nodeStatus: string;
   lastSeenAt: Date | null;
 } & (
-  | { capturedAt: Date; cpuPercent: string; memoryUsedMb: number; memoryTotalMb: number; storageUsedMb: number; storageTotalMb: number }
-  | { capturedAt: null; cpuPercent: null; memoryUsedMb: null; memoryTotalMb: null; storageUsedMb: null; storageTotalMb: null }
+  | {
+      capturedAt: Date;
+      cpuPercent: string;
+      memoryUsedMb: number;
+      memoryTotalMb: number;
+      storageUsedMb: number;
+      storageTotalMb: number;
+    }
+  | {
+      capturedAt: null;
+      cpuPercent: null;
+      memoryUsedMb: null;
+      memoryTotalMb: null;
+      storageUsedMb: null;
+      storageTotalMb: null;
+    }
 );
 
 /**
@@ -157,30 +182,26 @@ export function groupByNode(rows: GroupedMetricRow[]): HostMetricNodeReport[] {
   return [...nodes.values()];
 }
 
-async function fetchNodeHostSample(
-  node: NodeEndpointRow,
-): Promise<NodeHostSample | null> {
+async function fetchNodeHostSample(node: NodeEndpointRow): Promise<NodeHostSample | null> {
   try {
-    const client = createAgentClient(node.baseUrl, nodeConfig().token);
-    const response = await client.GET("/v1/host-metrics");
-
-    if (!response.response.ok || !response.data) {
-      console.error(
-        `[worker] could not read host metrics from ${node.name} (${response.response.status})`,
-      );
-      return null;
-    }
+    // Host metrics are read from the node row, not from `AGENT_BASE_URL`, so the
+    // pass keeps working when a second node reports in.
+    const sample = await nodeAgent.readHostMetrics({ baseUrl: node.baseUrl, name: node.name });
 
     return {
-      capturedAt: response.data.current.capturedAt,
-      cpuPercent: response.data.current.cpuPercent,
-      memoryUsedMb: response.data.current.memoryUsedMb,
-      memoryTotalMb: response.data.current.memoryTotalMb,
-      storageUsedMb: response.data.current.storageUsedMb,
-      storageTotalMb: response.data.current.storageTotalMb,
+      capturedAt: sample.current.capturedAt,
+      cpuPercent: sample.current.cpuPercent,
+      memoryUsedMb: sample.current.memoryUsedMb,
+      memoryTotalMb: sample.current.memoryTotalMb,
+      storageUsedMb: sample.current.storageUsedMb,
+      storageTotalMb: sample.current.storageTotalMb,
     };
   } catch (error) {
-    console.error(`[worker] could not reach ${node.name} for host metrics`, error);
+    // One node being down must not stop the pass for the others. `nodeAgent`
+    // already logged the ApiError once; only an unexpected throw needs a line.
+    if (!(error instanceof ApiError)) {
+      console.error(`[worker] could not read host metrics from ${node.name}`, error);
+    }
     return null;
   }
 }

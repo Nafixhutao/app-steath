@@ -13,17 +13,8 @@ func TestRestoreDatabaseLoadsTheDumpIntoTheOriginalDatabase(t *testing.T) {
 	manager := testManager(t, docker, newFakeRouter())
 	manager.SetRestoreDir(t.TempDir())
 
-	docker.containers["db-1"] = &fakeContainer{
-		ID:    "db-1",
-		Name:  "stealth-db-database-1",
-		State: "running",
-		Labels: map[string]string{
-			LabelType:             ResourceTypeDatabase,
-			LabelDatabaseID:       "database-1",
-			LabelDatabaseName:     "app",
-			LabelDatabaseUsername: "app",
-		},
-	}
+	seedSharedServer(t, docker, DatabaseEnginePostgres)
+	schema, role := databaseObjectNames("database-1")
 
 	result, err := manager.Restore(context.Background(), RestoreRequest{
 		RestoreID:  "restore-1",
@@ -37,7 +28,7 @@ func TestRestoreDatabaseLoadsTheDumpIntoTheOriginalDatabase(t *testing.T) {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 	if len(docker.restoredDatabases) != 1 ||
-		docker.restoredDatabases[0] != "stealth-db-database-1 app app" {
+		docker.restoredDatabases[0] != SharedPostgresContainerName+" "+schema+" "+role+" postgres" {
 		t.Fatalf("unexpected restore call: %+v", docker.restoredDatabases)
 	}
 }
@@ -67,17 +58,7 @@ func TestRestoreFailureLeavesTheTargetAlone(t *testing.T) {
 	manager := testManager(t, docker, newFakeRouter())
 	manager.SetRestoreDir(t.TempDir())
 
-	docker.containers["db-1"] = &fakeContainer{
-		ID:    "db-1",
-		Name:  "stealth-db-database-1",
-		State: "running",
-		Labels: map[string]string{
-			LabelType:             ResourceTypeDatabase,
-			LabelDatabaseID:       "database-1",
-			LabelDatabaseName:     "app",
-			LabelDatabaseUsername: "app",
-		},
-	}
+	seedSharedServer(t, docker, DatabaseEnginePostgres)
 	docker.restoreDatabaseErr = errors.New("pg_restore: input file does not appear to be a valid archive")
 
 	if _, err := manager.Restore(context.Background(), RestoreRequest{
@@ -88,10 +69,9 @@ func TestRestoreFailureLeavesTheTargetAlone(t *testing.T) {
 		t.Fatal("expected the Restore to fail")
 	}
 
-	// The failed load never reaches the swap, so the Database container and its
-	// labels are untouched.
-	if _, ok := docker.containers["db-1"]; !ok {
-		t.Fatal("the Database container was removed")
+	// The failed load never reaches the swap, so the shared server is untouched.
+	if _, ok := docker.find(SharedPostgresContainerName); !ok {
+		t.Fatal("the shared server was removed")
 	}
 	if len(docker.restoredDatabases) != 0 {
 		t.Fatalf("a failed Restore was recorded as successful: %+v", docker.restoredDatabases)

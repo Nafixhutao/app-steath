@@ -34,13 +34,19 @@ import {
 import { listOrganizationServices } from "@/lib/services-client";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
+import { copyToClipboard } from "@/lib/clipboard";
 
 export default function DomainsPage() {
   const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
   const { data: activeMember } = useActiveMember();
   const organizationId = organization?.id;
-  const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Better Auth stores multiple roles as a comma-separated string, so check the
+  // parsed set rather than the raw value.
+  const canManage =
+    activeMember?.role
+      .split(",")
+      .some((role) => role.trim() === "owner" || role.trim() === "admin") ?? false;
 
   const [activeTab, setActiveTab] = useState<"custom" | "platform" | "guide">("custom");
   const [search, setSearch] = useState("");
@@ -55,8 +61,9 @@ export default function DomainsPage() {
 
   const [instructionsDomain, setInstructionsDomain] =
     useState<OrganizationCustomDomainSummary | null>(null);
-  const [deletingDomain, setDeletingDomain] =
-    useState<OrganizationCustomDomainSummary | null>(null);
+  const [deletingDomain, setDeletingDomain] = useState<OrganizationCustomDomainSummary | null>(
+    null,
+  );
   const [busyDelete, setBusyDelete] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
@@ -75,11 +82,9 @@ export default function DomainsPage() {
   );
 
   // Load services for platform subdomains and add modal
-  const servicesResource = useResource(
-    () => listOrganizationServices(),
-    [organizationId],
-    { enabled: Boolean(organizationId) },
-  );
+  const servicesResource = useResource(() => listOrganizationServices(), [organizationId], {
+    enabled: Boolean(organizationId),
+  });
   const services = useMemo(() => servicesResource.data ?? [], [servicesResource.data]);
 
   const loading = customDomainsResource.loading || servicesResource.loading;
@@ -114,8 +119,11 @@ export default function DomainsPage() {
     [customDomains],
   );
 
-  function copyText(text: string, key: string, label: string) {
-    void navigator.clipboard.writeText(text);
+  async function copyText(text: string, key: string, label: string) {
+    if (!(await copyToClipboard(text))) {
+      toast.error("Copy failed", "Clipboard access is unavailable.");
+      return;
+    }
     setCopiedKey(key);
     toast.success("Copied to clipboard", `${label}: ${text}`);
     setTimeout(() => {
@@ -159,12 +167,18 @@ export default function DomainsPage() {
       const result = await verifyServiceCustomDomain(domain.serviceId);
       await customDomainsResource.refresh();
       if (result.status === "active") {
-        toast.success("Domain verified!", `${domain.hostname} is active with SSL certificate issued.`);
+        toast.success(
+          "Domain verified!",
+          `${domain.hostname} is active with SSL certificate issued.`,
+        );
         if (instructionsDomain?.id === domain.id) {
           setInstructionsDomain({ ...domain, ...result });
         }
       } else {
-        toast.error("Verification pending", result.lastError || "DNS records have not propagated yet.");
+        toast.error(
+          "Verification pending",
+          result.lastError || "DNS records have not propagated yet.",
+        );
       }
     } catch (err) {
       toast.error("Verification failed", getError(err));
@@ -203,7 +217,8 @@ export default function DomainsPage() {
               <span className="supabase-plan-badge">EDGE PROXY</span>
             </div>
             <p className="domains-page-subtitle">
-              Manage custom brand domains, SSL/TLS certificates, and platform subdomains for {organization?.name ?? "your organization"}.
+              Manage custom brand domains, SSL/TLS certificates, and platform subdomains for{" "}
+              {organization?.name ?? "your organization"}.
             </p>
           </div>
         </div>
@@ -247,7 +262,10 @@ export default function DomainsPage() {
       ) : null}
 
       {/* Overview Metric Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" aria-label="Domain metrics">
+      <section
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+        aria-label="Domain metrics"
+      >
         <div className="domains-metric-card">
           <div className="flex items-center justify-between">
             <span className="domains-metric-label">Custom Domains</span>
@@ -269,7 +287,9 @@ export default function DomainsPage() {
         <div className="domains-metric-card">
           <div className="flex items-center justify-between">
             <span className="domains-metric-label">Pending Verification</span>
-            <RotateCw className={`w-4 h-4 ${pendingCount > 0 ? "text-amber-400 animate-spin" : "text-zinc-500"}`} />
+            <RotateCw
+              className={`w-4 h-4 ${pendingCount > 0 ? "text-amber-400 animate-spin" : "text-zinc-500"}`}
+            />
           </div>
           <span className="domains-metric-val text-amber-400">{pendingCount}</span>
           <span className="text-[11px] text-zinc-500">Awaiting DNS propagation</span>
@@ -415,7 +435,9 @@ export default function DomainsPage() {
                     <th scope="col">DNS Status</th>
                     <th scope="col">SSL Certificate</th>
                     <th scope="col">Verified At</th>
-                    <th scope="col" className="text-right">Actions</th>
+                    <th scope="col" className="text-right">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -430,7 +452,9 @@ export default function DomainsPage() {
                         <td>
                           <div className="flex items-center gap-2.5">
                             <div className="domains-row-icon" aria-hidden="true">
-                              <Globe className={`w-3.5 h-3.5 ${isActive ? "text-emerald-400" : "text-zinc-500"}`} />
+                              <Globe
+                                className={`w-3.5 h-3.5 ${isActive ? "text-emerald-400" : "text-zinc-500"}`}
+                              />
                             </div>
                             <div>
                               <div className="flex items-center gap-1.5">
@@ -486,7 +510,10 @@ export default function DomainsPage() {
                             <span className="capitalize">{dom.status}</span>
                           </span>
                           {dom.lastError ? (
-                            <p className="text-[11px] text-rose-400 mt-1 max-w-xs truncate" title={dom.lastError}>
+                            <p
+                              className="text-[11px] text-rose-400 mt-1 max-w-xs truncate"
+                              title={dom.lastError}
+                            >
                               {dom.lastError}
                             </p>
                           ) : null}
@@ -495,11 +522,21 @@ export default function DomainsPage() {
                         <td>
                           <span
                             className={`domains-cert-pill ${
-                              isCertIssued ? "is-issued" : dom.certificateStatus === "failed" ? "is-failed" : "is-pending"
+                              isCertIssued
+                                ? "is-issued"
+                                : dom.certificateStatus === "failed"
+                                  ? "is-failed"
+                                  : "is-pending"
                             }`}
                           >
                             <Lock className="w-3 h-3 mr-1" />
-                            <span>{isCertIssued ? "TLS Issued" : dom.certificateStatus === "failed" ? "TLS Failed" : "Pending TLS"}</span>
+                            <span>
+                              {isCertIssued
+                                ? "TLS Issued"
+                                : dom.certificateStatus === "failed"
+                                  ? "TLS Failed"
+                                  : "Pending TLS"}
+                            </span>
                           </span>
                         </td>
 
@@ -517,7 +554,9 @@ export default function DomainsPage() {
                                 disabled={isVerifying}
                                 title="Check DNS propagation and route domain"
                               >
-                                <RotateCw className={`w-3 h-3 mr-1 ${isVerifying ? "animate-spin" : ""}`} />
+                                <RotateCw
+                                  className={`w-3 h-3 mr-1 ${isVerifying ? "animate-spin" : ""}`}
+                                />
                                 <span>{isVerifying ? "Checking..." : "Verify DNS"}</span>
                               </button>
                             )}
@@ -561,7 +600,9 @@ export default function DomainsPage() {
           <div className="domains-info-banner mb-4">
             <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-cyan-200">
-              <strong>Automatic Platform Routing:</strong> Every service deployed on this node is immediately reachable on its private HTTPS platform subdomain through the edge proxy, with automatic SSL and zero configuration.
+              <strong>Automatic Platform Routing:</strong> Every service deployed on this node is
+              immediately reachable on its private HTTPS platform subdomain through the edge proxy,
+              with automatic SSL and zero configuration.
             </div>
           </div>
 
@@ -584,7 +625,9 @@ export default function DomainsPage() {
                     <th scope="col">Edge TLS</th>
                     <th scope="col">Container Port</th>
                     <th scope="col">Service Status</th>
-                    <th scope="col" className="text-right">Action</th>
+                    <th scope="col" className="text-right">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -611,9 +654,7 @@ export default function DomainsPage() {
 
                       <td>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-emerald-400">
-                            {srv.url}
-                          </span>
+                          <span className="font-mono text-xs text-emerald-400">{srv.url}</span>
                           <button
                             type="button"
                             onClick={() => copyText(srv.url, srv.id, "Platform URL")}
@@ -637,9 +678,7 @@ export default function DomainsPage() {
                         </span>
                       </td>
 
-                      <td className="text-xs font-mono text-zinc-400">
-                        :{srv.containerPort}
-                      </td>
+                      <td className="text-xs font-mono text-zinc-400">:{srv.containerPort}</td>
 
                       <td>
                         <span
@@ -647,8 +686,8 @@ export default function DomainsPage() {
                             srv.status === "running"
                               ? "is-active"
                               : srv.status === "failed"
-                              ? "is-failed"
-                              : "is-pending"
+                                ? "is-failed"
+                                : "is-pending"
                           }`}
                         >
                           <span className="project-status-dot" aria-hidden="true" />
@@ -684,7 +723,9 @@ export default function DomainsPage() {
               How Custom Domain Routing Works
             </h2>
             <p className="text-xs text-zinc-400 leading-relaxed mb-6">
-              Stealth Hosting uses an edge reverse proxy (powered by Caddy) with on-demand automated Let&apos;s Encrypt and ZeroSSL certificates. Pointing your custom domain takes less than 2 minutes.
+              Stealth Hosting uses an edge reverse proxy (powered by Caddy) with on-demand automated
+              Let&apos;s Encrypt and ZeroSSL certificates. Pointing your custom domain takes less
+              than 2 minutes.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -693,16 +734,21 @@ export default function DomainsPage() {
                 <div className="domains-step-number">1</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Add Domain to Service</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  Click <strong>&ldquo;Add Custom Domain&rdquo;</strong>, select your target service, and enter your bare hostname (e.g. <code>api.example.com</code>).
+                  Click <strong>&ldquo;Add Custom Domain&rdquo;</strong>, select your target
+                  service, and enter your bare hostname (e.g. <code>api.example.com</code>).
                 </p>
               </div>
 
               {/* Step 2 */}
               <div className="domains-step-box">
                 <div className="domains-step-number">2</div>
-                <h3 className="text-sm font-semibold text-white mb-1">Publish Ownership TXT Record</h3>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  Publish Ownership TXT Record
+                </h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  In your DNS provider (Cloudflare, GoDaddy, Namecheap), create a <strong>TXT record</strong> at <code>_stealth-verify.&lt;hostname&gt;</code> with the generated token value.
+                  In your DNS provider (Cloudflare, GoDaddy, Namecheap), create a{" "}
+                  <strong>TXT record</strong> at <code>_stealth-verify.&lt;hostname&gt;</code> with
+                  the generated token value.
                 </p>
               </div>
 
@@ -711,7 +757,9 @@ export default function DomainsPage() {
                 <div className="domains-step-number">3</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Point CNAME or A Record</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  For subdomains (e.g. <code>api.example.com</code>), add a <strong>CNAME</strong> pointing to your platform domain. For apex/root domains, add an <strong>A record</strong> pointing to the platform edge IP.
+                  For subdomains (e.g. <code>api.example.com</code>), add a <strong>CNAME</strong>{" "}
+                  pointing to your platform domain. For apex/root domains, add an{" "}
+                  <strong>A record</strong> pointing to the platform edge IP.
                 </p>
               </div>
 
@@ -720,7 +768,9 @@ export default function DomainsPage() {
                 <div className="domains-step-number">4</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Verify &amp; Auto-SSL</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  Click <strong>&ldquo;Verify DNS&rdquo;</strong>. Once DNS resolves, the edge proxy provisions the route and issues an SSL certificate automatically with zero downtime.
+                  Click <strong>&ldquo;Verify DNS&rdquo;</strong>. Once DNS resolves, the edge proxy
+                  provisions the route and issues an SSL certificate automatically with zero
+                  downtime.
                 </p>
               </div>
             </div>
@@ -731,7 +781,12 @@ export default function DomainsPage() {
       {/* MODAL 1: Add Custom Domain */}
       {addModalOpen && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="add-domain-title">
+          <div
+            className="supabase-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-domain-title"
+          >
             <div className="supabase-modal-header">
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-emerald-400" />
@@ -757,7 +812,8 @@ export default function DomainsPage() {
 
                 {availableServices.length === 0 ? (
                   <div className="p-4 rounded-lg bg-amber-950/20 border border-amber-900/40 text-amber-200 text-xs">
-                    All deployed services in this organization already have a custom domain assigned. Each service supports 1 custom domain.
+                    All deployed services in this organization already have a custom domain
+                    assigned. Each service supports 1 custom domain.
                   </div>
                 ) : (
                   <>
@@ -837,7 +893,12 @@ export default function DomainsPage() {
       {/* MODAL 2: DNS Instructions */}
       {instructionsDomain && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog max-w-xl" role="dialog" aria-modal="true" aria-labelledby="instructions-title">
+          <div
+            className="supabase-modal-dialog max-w-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="instructions-title"
+          >
             <div className="supabase-modal-header">
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-emerald-400" />
@@ -857,7 +918,8 @@ export default function DomainsPage() {
 
             <div className="supabase-modal-body space-y-4">
               <p className="text-xs text-zinc-400">
-                Add these DNS records at your DNS host (Cloudflare, AWS Route 53, Namecheap, etc.) to verify ownership and route traffic:
+                Add these DNS records at your DNS host (Cloudflare, AWS Route 53, Namecheap, etc.)
+                to verify ownership and route traffic:
               </p>
 
               {/* Record 1: TXT Record */}
@@ -903,7 +965,11 @@ export default function DomainsPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          copyText(instructionsDomain.instructions.txt.value, "txt-val", "TXT Value")
+                          copyText(
+                            instructionsDomain.instructions.txt.value,
+                            "txt-val",
+                            "TXT Value",
+                          )
                         }
                         className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
                         title="Copy TXT Value"
@@ -1031,7 +1097,12 @@ export default function DomainsPage() {
       {/* MODAL 3: Delete Domain Confirmation */}
       {deletingDomain && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-domain-title">
+          <div
+            className="supabase-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-domain-title"
+          >
             <div className="supabase-modal-header border-rose-900/40">
               <div className="flex items-center gap-2 text-rose-400">
                 <Trash2 className="w-4 h-4" />
@@ -1054,10 +1125,13 @@ export default function DomainsPage() {
                 </div>
               )}
               <p className="text-xs text-zinc-300 leading-relaxed">
-                Are you sure you want to delete <strong>{deletingDomain.hostname}</strong>? Its routing rules and TLS certificate status on the edge proxy will be removed immediately.
+                Are you sure you want to delete <strong>{deletingDomain.hostname}</strong>? Its
+                routing rules and TLS certificate status on the edge proxy will be removed
+                immediately.
               </p>
               <p className="text-xs text-zinc-500">
-                The target service <strong>{deletingDomain.serviceName}</strong> will continue serving normally on its platform subdomain.
+                The target service <strong>{deletingDomain.serviceName}</strong> will continue
+                serving normally on its platform subdomain.
               </p>
             </div>
 

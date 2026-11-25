@@ -160,7 +160,8 @@ export function ServicesPanel({
           </div>
           <h3 className="text-base font-semibold text-white mt-3">No services deployed yet</h3>
           <p className="text-xs text-zinc-400 max-w-md mt-1 mb-4 text-center">
-            Deploy fullstack Next.js apps, Node.js APIs, or custom Docker containers from any public Git repository.
+            Deploy fullstack Next.js apps, Node.js APIs, or custom Docker containers from any public
+            Git repository.
           </p>
           {canManage && (
             <button
@@ -242,7 +243,9 @@ export function ServicesPanel({
                   </span>
                   <span className="project-service-spec">
                     <Cpu className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>{service.cpuLimit} vCPU · {service.memoryLimitMb} MB</span>
+                    <span>
+                      {service.cpuLimit} vCPU · {service.memoryLimitMb} MB
+                    </span>
                   </span>
 
                   <Link
@@ -261,9 +264,14 @@ export function ServicesPanel({
       {/* Modal: Create Service */}
       {modalOpen && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog max-w-lg" role="dialog" aria-modal="true" aria-labelledby="create-service-title">
+          <div
+            className="supabase-modal-dialog max-w-lg"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-service-title"
+          >
             <div className="supabase-modal-header">
-              <h2 id="create-service-title">Deploy a New Service</h2>
+              <h2 id="create-service-title">Create a new service</h2>
               <button
                 type="button"
                 className="supabase-modal-close"
@@ -276,6 +284,10 @@ export function ServicesPanel({
 
             <form onSubmit={submit}>
               <div className="supabase-modal-body space-y-3.5">
+                <p className="text-sm text-zinc-400 mb-4">
+                  Each service builds from a public Git repository and runs as an isolated Docker
+                  container with its own subdomain.
+                </p>
                 <div>
                   <label htmlFor="service-name-input" className="supabase-modal-label">
                     Service Name
@@ -305,6 +317,10 @@ export function ServicesPanel({
                     onChange={(e) => update("repoUrl", e.target.value)}
                     className="supabase-modal-input"
                   />
+                  <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                    No Dockerfile needed: static sites and Node.js/Next.js projects are detected
+                    automatically. Pasting a folder URL (…/tree/main/app) builds just that folder.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -338,7 +354,7 @@ export function ServicesPanel({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="dockerfile-input" className="supabase-modal-label">
-                      Dockerfile Path
+                      Dockerfile Path (Optional)
                     </label>
                     <input
                       id="dockerfile-input"
@@ -383,7 +399,7 @@ export function ServicesPanel({
                       Creating...
                     </>
                   ) : (
-                    "Deploy Service"
+                    "Create service"
                   )}
                 </button>
               </div>
@@ -395,7 +411,12 @@ export function ServicesPanel({
       {/* Modal: Delete Service Confirmation */}
       {deleteTarget && (
         <div className="supabase-modal-backdrop" role="presentation">
-          <div className="supabase-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-service-dialog-title">
+          <div
+            className="supabase-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-service-dialog-title"
+          >
             <div className="supabase-modal-header border-rose-900/40">
               <div className="flex items-center gap-2 text-rose-400">
                 <AlertTriangle className="w-4 h-4" />
@@ -414,8 +435,8 @@ export function ServicesPanel({
             <form onSubmit={handleDelete}>
               <div className="supabase-modal-body space-y-3">
                 <p className="text-xs text-zinc-300">
-                  This action will permanently stop container execution and delete all deployments for{" "}
-                  <strong className="text-white">{deleteTarget.name}</strong>.
+                  This action will permanently stop container execution and delete all deployments
+                  for <strong className="text-white">{deleteTarget.name}</strong>.
                 </p>
                 <div>
                   <label htmlFor="delete-service-confirm-input" className="supabase-modal-label">

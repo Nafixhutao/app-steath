@@ -892,7 +892,8 @@ paths:
         Creates the Database container on the Project network with its own Volume,
         or starts it when it already exists. The container publishes no host port,
         so it is reachable only from the Project network. Calling this again with
-        the same `databaseId` is idempotent.
+        the same `databaseId` is idempotent. A MySQL Database also starts a
+        phpMyAdmin sidecar, which the agent routes on `phpMyAdminHostname`.
       security:
         - bearerAuth: []
       parameters:
@@ -1245,13 +1246,19 @@ components:
     DatabaseUsage:
       type: object
       required:
-        - databaseId
+        - databaseName
         - usageMb
       properties:
-        databaseId:
+        databaseName:
           type: string
+          description: |
+            The schema the Agent created for the Database inside the shared
+            server. A Database has no container of its own, and the schema name is
+            a truncated hash that cannot be reversed into the Database id, so the
+            Control Plane joins it against the stored `databaseName`.
         usageMb:
           type: integer
+          description: Size of the Database's schema, in megabytes.
     HostMetricsSample:
       type: object
       required:
@@ -1421,6 +1428,15 @@ components:
           type: string
         imageTag:
           type: string
+        containerPort:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: |
+            Port the generated container listens on. Only used when the
+            repository has no Dockerfile and the Agent synthesizes one from the
+            detected framework, so the generated server listens where the
+            Deployer expects it.
         commitSha:
           type: string
           description: |
@@ -1563,6 +1579,21 @@ components:
           type: string
         organizationId:
           type: string
+        engine:
+          type: string
+          enum:
+            - postgres
+            - mysql
+          default: postgres
+          description: |
+            The engine is fixed at creation. PostgreSQL 16 gets its own TLS
+            terminating public proxy; MySQL 8 always ships with a phpMyAdmin
+            container on the Project network.
+        phpMyAdminHostname:
+          type: string
+          description: |
+            The hostname phpMyAdmin answers on. Required for a MySQL Database,
+            rejected for PostgreSQL, because PostgreSQL has no browser client.
         databaseName:
           type: string
         username:
@@ -1579,14 +1610,17 @@ components:
     DatabasePasswordRequest:
       type: object
       required:
-        - databaseName
-        - username
         - password
       properties:
-        databaseName:
+        engine:
           type: string
-        username:
-          type: string
+          enum:
+            - postgres
+            - mysql
+          default: postgres
+          description: |
+            Which shared server holds the Database. The engine is fixed at
+            creation, so the Control Plane sends the stored value.
         password:
           type: string
           description: |
@@ -1602,6 +1636,12 @@ components:
       properties:
         databaseId:
           type: string
+        engine:
+          type: string
+          enum:
+            - postgres
+            - mysql
+          description: The engine the running container was created with.
         status:
           type: string
           enum:
@@ -1622,7 +1662,14 @@ components:
           description: Space the Database Volume currently uses, measured on the node.
         healthy:
           type: boolean
-          description: True when PostgreSQL answers `pg_isready`.
+          description: |
+            True when the engine answers its readiness probe: `pg_isready` for
+            PostgreSQL, `mysqladmin ping` for MySQL.
+        phpMyAdminReady:
+          type: boolean
+          description: |
+            True when the phpMyAdmin sidecar answers on the Project network.
+            Always false for PostgreSQL.
         overQuota:
           type: boolean
           description: True when the Database Volume is over its storage limit.

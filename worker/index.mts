@@ -5,11 +5,12 @@ import {
   completeJob,
   failJob,
   pruneLogs,
+  recoverStaleJobs,
   runBuildJob,
   runDeployment,
   type JobRow,
 } from "../lib/platform/deployments.ts";
-import { createAgentClient } from "../lib/agent-client.ts";
+import { nodeConfig } from "../lib/platform/nodes.ts";
 import { refreshAllOrganizationsUsage } from "../lib/platform/usage.ts";
 import {
   BACKUP_JOB_TYPE,
@@ -89,7 +90,8 @@ const JOB_HANDLERS: Record<string, JobHandler> = {
 const BUILD_HANDLER: JobHandler = async (job) => {
   const deploymentId = job.payload.deploymentId;
   if (!deploymentId) {
-    await failJob(job.id, "Build Job is missing its deploymentId.");
+    // Missing deploymentId is a static payload problem that won't fix itself on
+    // retry, so fail the Job immediately rather than burning the retry budget.
     return { status: "failed", subject: "unknown-deployment" };
   }
 
@@ -98,7 +100,6 @@ const BUILD_HANDLER: JobHandler = async (job) => {
     [deploymentId],
   );
   if (!current.rowCount || current.rows[0].status === "cancelled") {
-    await completeJob(job.id);
     return { status: "cancelled", subject: deploymentId };
   }
 
@@ -106,7 +107,6 @@ const BUILD_HANDLER: JobHandler = async (job) => {
     const result = await runBuildJob(job);
 
     if (result.status === "failed") {
-      await completeJob(job.id, "failed");
       workerLogger.log(`deployment ${deploymentId} build failed - ${result.message}`);
       return { status: "failed", subject: deploymentId };
     }
@@ -119,7 +119,6 @@ const BUILD_HANDLER: JobHandler = async (job) => {
     // Deployment only becomes `running` once the container answers its health
     // check, so a broken deployment never replaces a working one.
     const deployed = await runDeployment(deploymentId);
-    await completeJob(job.id, deployed.status === "failed" ? "failed" : "succeeded");
     log(
       `deployment ${deploymentId} ${deployed.status}`,
       deployed.message ? `- ${deployed.message}` : "",
@@ -127,9 +126,8 @@ const BUILD_HANDLER: JobHandler = async (job) => {
     return { status: deployed.status, subject: deploymentId };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await failJob(job.id, message);
     workerLogger.error(`deployment ${deploymentId} job failed: ${message}`, error);
-    return { status: "failed", subject: deploymentId };
+    throw error;
   }
 };
 
@@ -256,9 +254,9 @@ if (!process.env.AGENT_BASE_URL || !process.env.AGENT_TOKEN) {
   process.exit(1);
 }
 
-// The agent client is created once so connection settings are validated at
+// The node configuration is read once so missing connection settings fail at
 // startup rather than in the middle of a Build.
-createAgentClient(process.env.AGENT_BASE_URL.replace(/\/+$/, ""), process.env.AGENT_TOKEN);
+nodeConfig();
 
 console.log("[worker] deployment worker started");
 
@@ -272,6 +270,20 @@ try {
   }
 } catch (error) {
   console.error("[worker] could not recover interrupted Restores", error);
+}
+
+// Same reasoning for Jobs: a Job still marked `running` was being held by the
+// previous process. Without this a hard kill during a Build (the deploy's stop
+// timeout) would leave that Deployment `building` for good.
+try {
+  const recovered = await recoverStaleJobs();
+  if (recovered.requeued > 0 || recovered.failed > 0) {
+    console.log(
+      `[worker] recovered ${recovered.requeued} interrupted Job(s), failed ${recovered.failed}`,
+    );
+  }
+} catch (error) {
+  console.error("[worker] could not recover interrupted Jobs", error);
 }
 
 await loop();

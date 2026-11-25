@@ -84,8 +84,9 @@ func (m *Manager) EnsureDatabaseProxy(
 	ctx context.Context,
 	request DatabaseProxyRequest,
 ) (DatabaseProxyState, error) {
-	allowlist, err := normalizeProxyAllowlist(request.Allowlist)
-	if err != nil {
+	// The allowlist is validated first so a malformed request is reported as
+	// such, even though no listener is ever created.
+	if _, err := normalizeProxyAllowlist(request.Allowlist); err != nil {
 		return DatabaseProxyState{}, err
 	}
 	if strings.TrimSpace(request.DatabaseID) == "" {
@@ -98,75 +99,15 @@ func (m *Manager) EnsureDatabaseProxy(
 	unlock := m.lockService(databaseProxyLockKey(request.DatabaseID))
 	defer unlock()
 
-	database, err := m.docker.InspectContainer(ctx, databaseContainerName(request.DatabaseID))
-	if err != nil {
-		return DatabaseProxyState{}, ErrUnknownDatabase
-	}
-	if !database.Running() {
-		return DatabaseProxyState{}, fmt.Errorf(
-			"%w: the Database container is not running",
-			ErrUnknownDatabase,
-		)
-	}
-	if projectID := database.Labels[LabelProjectID]; projectID != "" && projectID != request.ProjectID {
-		return DatabaseProxyState{}, fmt.Errorf(
-			"%w: the Database belongs to another Project",
-			ErrInvalidDatabaseProxy,
-		)
-	}
-
-	network := projectNetwork(request.ProjectID)
-	if err := m.docker.EnsureNetwork(ctx, network); err != nil {
-		return DatabaseProxyState{}, fmt.Errorf("could not prepare the Project network: %w", err)
-	}
-
-	containerName := databaseProxyContainerName(request.DatabaseID)
-	preferredPort := request.Port
-	if existing, err := m.docker.InspectContainer(ctx, containerName); err == nil {
-		if existing.Labels[LabelDatabaseID] != request.DatabaseID {
-			return DatabaseProxyState{}, fmt.Errorf(
-				"%w: container %s is owned by another Database",
-				ErrInvalidDatabaseProxy,
-				containerName,
-			)
-		}
-		if labelPort, err := strconv.Atoi(existing.Labels[LabelDatabaseProxyPort]); err == nil && labelPort > 0 {
-			preferredPort = labelPort
-		}
-		// Recreate the listener so a changed allowlist takes effect immediately.
-		if err := m.docker.RemoveContainer(ctx, existing.ID, true); err != nil {
-			return DatabaseProxyState{}, fmt.Errorf("could not replace the public proxy: %w", err)
-		}
-	}
-
-	volumeName := databaseProxyVolumeName(request.DatabaseID)
-	if err := m.docker.EnsureVolume(ctx, VolumeSpec{
-		Name: volumeName,
-		Labels: map[string]string{
-			LabelType:       ResourceTypeDatabaseProxy,
-			LabelProjectID:  request.ProjectID,
-			LabelDatabaseID: request.DatabaseID,
-		},
-	}); err != nil {
-		return DatabaseProxyState{}, fmt.Errorf("could not prepare the public proxy Volume: %w", err)
-	}
-	if err := m.docker.WriteVolumeFiles(ctx, volumeName, []VolumeFile{
-		{Name: "nginx.conf", Content: proxyConfig(allowlist), Mode: 0644},
-	}); err != nil {
-		return DatabaseProxyState{}, fmt.Errorf("could not write the public proxy configuration: %w", err)
-	}
-
-	port, err := m.createProxyContainer(ctx, request, allowlist, preferredPort, network, volumeName)
-	if err != nil {
+	// A shared engine server is reached through one port that serves every
+	// tenant, so a raw TCP listener cannot isolate one Database. Refusing here is
+	// what keeps one tenant's schema from being published alongside another's.
+	// A listener left over from the per-Project model is still torn down.
+	if _, err := m.removeDatabaseProxyLocked(ctx, request.DatabaseID); err != nil {
 		return DatabaseProxyState{}, err
 	}
 
-	return DatabaseProxyState{
-		DatabaseID: request.DatabaseID,
-		Enabled:    true,
-		Port:       port,
-		Allowlist:  allowlist,
-	}, nil
+	return DatabaseProxyState{}, ErrDatabaseProxyDisabled
 }
 
 // GetDatabaseProxy reports the listener state. A missing container means the
@@ -209,6 +150,12 @@ func (m *Manager) RemoveDatabaseProxy(ctx context.Context, databaseID string) (b
 	unlock := m.lockService(databaseProxyLockKey(databaseID))
 	defer unlock()
 
+	return m.removeDatabaseProxyLocked(ctx, databaseID)
+}
+
+// removeDatabaseProxyLocked tears down the listener without taking the lock, so a
+// caller that already holds it does not deadlock against itself.
+func (m *Manager) removeDatabaseProxyLocked(ctx context.Context, databaseID string) (bool, error) {
 	removed := false
 	if info, err := m.docker.InspectContainer(ctx, databaseProxyContainerName(databaseID)); err == nil {
 		_ = m.docker.StopContainer(ctx, info.ID)

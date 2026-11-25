@@ -16,17 +16,22 @@ import {
 } from "lucide-react";
 import {
   createProjectDatabase,
+  databaseEngineLabel,
   databaseStatusLabel,
   deleteProjectDatabase,
   disableProjectDatabaseProxy,
   enableProjectDatabaseProxy,
   getProjectDatabase,
+  revealProjectDatabasePassword,
   rotateProjectDatabaseCredentials,
+  startPhpMyAdminSession,
+  type DatabaseEngine,
   type DatabaseSummary,
 } from "@/lib/databases-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
+import { CredentialRow, PasswordRow } from "./database-credentials";
 
 function usageLabel(database: DatabaseSummary): string {
   if (database.usageMb === null) {
@@ -36,17 +41,52 @@ function usageLabel(database: DatabaseSummary): string {
   return `${database.usageMb} MB of ${database.storageLimitMb} MB`;
 }
 
+/**
+ * The two engines the platform offers. MySQL cannot be reached through the TCP
+ * proxy PostgreSQL uses, so it always comes with phpMyAdmin; the card below
+ * says so before the user commits, because the engine cannot be changed later.
+ */
+const ENGINE_CHOICES: Array<{
+  id: DatabaseEngine;
+  name: string;
+  version: string;
+  note: string;
+  client: string;
+}> = [
+  {
+    id: "postgres",
+    name: "PostgreSQL",
+    version: "16",
+    note: "The default. Full SQL feature set and a public TLS proxy for external clients.",
+    client: "Public proxy",
+  },
+  {
+    id: "mysql",
+    name: "MySQL",
+    version: "8",
+    note: "The engine most PHP apps expect.",
+    client: "phpMyAdmin included",
+  },
+];
+
 export function DatabasePanel({
   projectId,
   projectName,
   canManage,
+  onChanged,
 }: {
   projectId: string;
   projectName: string;
   canManage: boolean;
+  /**
+   * Tells the Project header to re-read the summary. The header names the
+   * Database engine, and only this panel knows when that changes.
+   */
+  onChanged?: () => void;
 }) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
+  const [engine, setEngine] = useState<DatabaseEngine>("postgres");
   const [confirmation, setConfirmation] = useState("");
   const [allowlistDraft, setAllowlistDraft] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
@@ -54,6 +94,10 @@ export function DatabasePanel({
   const [revealPublicUri, setRevealPublicUri] = useState(false);
   const [copiedPrivate, setCopiedPrivate] = useState(false);
   const [copiedPublic, setCopiedPublic] = useState(false);
+  /** Which credential row last copied, so its icon can show a tick. */
+  const [copiedCredential, setCopiedCredential] = useState<string | null>(null);
+  const [pmaSigningIn, setPmaSigningIn] = useState(false);
+  const [credentialError, setCredentialError] = useState("");
 
   const panel = useResource(
     useCallback(async () => {
@@ -67,6 +111,8 @@ export function DatabasePanel({
   const loading = panel.loading;
   const allowlist =
     allowlistDraft ?? (database?.proxy.enabled ? database.proxy.allowlist.join("\n") : "");
+  /** The internal address a Service in this Project dials, with its port. */
+  const databaseHost = `db:${database?.engine === "mysql" ? "3306" : "5432"}`;
 
   function copyText(text: string, type: "private" | "public") {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -83,13 +129,72 @@ export function DatabasePanel({
     }
   }
 
+  /**
+   * Copies one credential and ticks its row for 1.5 seconds. The value is the
+   * full one, even when the row shows a shortened form.
+   */
+  function copyCredential(label: string, value: string) {
+    if (typeof navigator === "undefined" || !navigator.clipboard) {
+      return;
+    }
+    void navigator.clipboard.writeText(value).then(() => {
+      setCopiedCredential(label);
+      setTimeout(() => {
+        setCopiedCredential((current) => (current === label ? null : current));
+      }, 1500);
+    });
+  }
+
+  /**
+   * Opens phpMyAdmin already signed in. The API mints a one-time link on the
+   * phpMyAdmin host, which logs in server-side and returns the session cookie.
+   *
+   * The tab is opened synchronously, because a `window.open` that follows an
+   * `await` is no longer tied to the click and mobile browsers block it. It is
+   * opened with `about:blank`, then navigated by the opener once the link arrives:
+   * with `noopener` the opener keeps no handle on the new window, so the URL is
+   * set from a script in this page instead of by `tab.location`.
+   */
+  async function openPhpMyAdmin() {
+    setPmaSigningIn(true);
+    setCredentialError("");
+
+    const tab = window.open("about:blank", "_blank");
+    try {
+      const session = await startPhpMyAdminSession(projectId);
+      if (tab && !tab.closed) {
+        // `noopener` is not used above for exactly this reason: a handle is
+        // needed to send the new tab to the signed-in URL. The URL is
+        // same-origin-safe (the platform's own phpMyAdmin host) and carries a
+        // one-time token, and the opener relationship is then severed.
+        tab.opener = null;
+        tab.location.replace(session.url);
+      } else {
+        // The popup was blocked; navigating the current tab still signs in, and
+        // the browser's Back button returns to the dashboard.
+        window.location.assign(session.url);
+      }
+    } catch (cause) {
+      tab?.close();
+      setCredentialError(getError(cause));
+    } finally {
+      setPmaSigningIn(false);
+    }
+  }
+
   async function create() {
     setBusy(true);
     setActionError("");
     try {
-      await createProjectDatabase(projectId);
+      const created = await createProjectDatabase(projectId, { engine });
       await panel.refresh();
-      toast.success("PostgreSQL Database created", "Private networking and storage attached.");
+      onChanged?.();
+      toast.success(
+        `${created.engine === "mysql" ? "MySQL" : "PostgreSQL"} Database created`,
+        created.phpMyAdmin.enabled
+          ? "Private networking, storage, and phpMyAdmin attached."
+          : "Private networking and storage attached.",
+      );
     } catch (cause) {
       setActionError(getError(cause));
     } finally {
@@ -127,6 +232,7 @@ export function DatabasePanel({
       await deleteProjectDatabase(projectId, confirmation);
       setConfirmation("");
       await panel.refresh();
+      onChanged?.();
       toast.success("Database deleted", "Database instance and disk volume removed.");
     } catch (cause) {
       setActionError(getError(cause));
@@ -195,7 +301,8 @@ export function DatabasePanel({
     <div className="space-y-6">
       {redeployNeeded && (
         <div className="dashboard-alert is-warning" role="status">
-          Database changes are saved but not live yet. Redeploy this project&apos;s Services to apply them.
+          Database changes are saved but not live yet. Redeploy this project&apos;s Services to
+          apply them.
         </div>
       )}
 
@@ -212,28 +319,60 @@ export function DatabasePanel({
             <Database className="w-8 h-8 text-emerald-400" />
           </div>
           <h3 className="text-base font-semibold text-white mt-3">No Database in this Project</h3>
-          <p className="text-xs text-zinc-400 max-w-md mt-1 mb-4 text-center">
-            Each project is entitled to one private PostgreSQL 16 database. Services inside the project automatically receive a secure <code>DATABASE_URL</code>.
+          <p className="text-xs text-zinc-400 max-w-md mt-1">
+            Each project is entitled to one private database. Services inside the project
+            automatically receive a secure <code>DATABASE_URL</code>.
           </p>
+
           {canManage && (
-            <button
-              type="button"
-              className="supabase-btn-green"
-              onClick={() => void create()}
-              disabled={busy}
-            >
-              {busy ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
-                  Provisioning...
-                </>
-              ) : (
-                <>
-                  <Database className="w-4 h-4 mr-1.5" />
-                  Provision PostgreSQL Database
-                </>
-              )}
-            </button>
+            <>
+              <p className="text-[11px] uppercase tracking-wide text-zinc-500 mt-4 mb-2">
+                Choose an engine
+              </p>
+              <div className="db-engine-choice" role="radiogroup" aria-label="Database engine">
+                {ENGINE_CHOICES.map((choice) => {
+                  const selected = engine === choice.id;
+                  return (
+                    <button
+                      key={choice.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      className={`db-engine-option${selected ? " is-selected" : ""}`}
+                      onClick={() => setEngine(choice.id)}
+                      disabled={busy}
+                    >
+                      <span className="db-engine-option-name">
+                        {choice.name} {choice.version}
+                      </span>
+                      <span className="db-engine-option-note">{choice.note}</span>
+                      <span className="db-engine-option-tag">{choice.client}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                className="supabase-btn-green mt-4"
+                onClick={() => void create()}
+                disabled={busy}
+              >
+                {busy ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                    Provisioning...
+                  </>
+                ) : (
+                  <>
+                    <Database className="w-4 h-4 mr-1.5" />
+                    {engine === "mysql"
+                      ? "Provision MySQL Database"
+                      : "Provision PostgreSQL Database"}
+                  </>
+                )}
+              </button>
+            </>
           )}
         </div>
       ) : (
@@ -247,7 +386,9 @@ export function DatabasePanel({
                   <Database className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">PostgreSQL {database.version}</h3>
+                  <h3 className="text-sm font-semibold text-white">
+                    {databaseEngineLabel(database.engine, database.version)}
+                  </h3>
                   <p className="text-xs text-zinc-500 font-mono">
                     {database.username}@{database.databaseName}
                   </p>
@@ -296,7 +437,9 @@ export function DatabasePanel({
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Private Network</span>
                 </span>
-                <span className="text-[11px] text-zinc-500 mt-1">Host: db:5432</span>
+                <span className="text-[11px] text-zinc-500 mt-1">
+                  Host: db:{database.engine === "mysql" ? "3306" : "5432"}
+                </span>
               </div>
 
               <div className="project-db-metric-box">
@@ -315,7 +458,9 @@ export function DatabasePanel({
               <div>
                 <h3 className="project-settings-title">Private Connection String</h3>
                 <p className="project-settings-desc">
-                  Reachable directly from services in this project via <code>db:5432</code>. Injected automatically as <code>DATABASE_URL</code>.
+                  Reachable directly from services in this project via{" "}
+                  <code>db:{database.engine === "mysql" ? "3306" : "5432"}</code>. Injected
+                  automatically as <code>DATABASE_URL</code>.
                 </p>
               </div>
 
@@ -348,7 +493,11 @@ export function DatabasePanel({
                       title={revealPrivateUri ? "Hide password" : "Show password"}
                       aria-label="Toggle password visibility"
                     >
-                      {revealPrivateUri ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {revealPrivateUri ? (
+                        <EyeOff className="w-3.5 h-3.5" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5" />
+                      )}
                     </button>
                     <button
                       type="button"
@@ -357,7 +506,11 @@ export function DatabasePanel({
                       title="Copy connection string"
                       aria-label="Copy connection string"
                     >
-                      {copiedPrivate ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedPrivate ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -367,133 +520,294 @@ export function DatabasePanel({
                 </p>
               )}
 
-              {/* Host and Credential breakdown */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                <div className="project-spec-pill">
-                  <span className="project-spec-label">Host</span>
-                  <span className="project-spec-val">db</span>
-                </div>
-                <div className="project-spec-pill">
-                  <span className="project-spec-label">Port</span>
-                  <span className="project-spec-val">5432</span>
-                </div>
-                <div className="project-spec-pill">
-                  <span className="project-spec-label">Database</span>
-                  <span className="project-spec-val">{database.databaseName}</span>
-                </div>
-                <div className="project-spec-pill">
-                  <span className="project-spec-label">User</span>
-                  <span className="project-spec-val">{database.username}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Public Proxy Card */}
-          <div className="project-settings-card">
-            <div className="project-settings-card-head">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-cyan-400" />
-                  <h3 className="project-settings-title">Public Proxy (External Access)</h3>
-                </div>
-                <p className="project-settings-desc">
-                  {database.proxy.enabled
-                    ? `Proxy active on public port ${database.proxy.port}. Encrypted via TLS with strict CIDR allowlist enforcement.`
-                    : "Disabled. This database cannot be reached from outside the private network."}
-                </p>
-              </div>
-
-              <span
-                className={`project-proxy-badge ${
-                  database.proxy.enabled ? "is-enabled" : "is-disabled"
-                }`}
-              >
-                <Radio className="w-3 h-3 mr-1" />
-                {database.proxy.enabled ? "Active" : "Disabled"}
-              </span>
-            </div>
-
-            <div className="p-5 space-y-4">
-              {canManage ? (
-                <>
-                  <div>
-                    <label htmlFor="proxy-cidrs-input" className="project-form-label">
-                      Allowlisted CIDRs (one per line, e.g. <code>0.0.0.0/0</code> or <code>198.51.100.1/32</code>)
-                    </label>
-                    <textarea
-                      id="proxy-cidrs-input"
-                      value={allowlist}
-                      onChange={(e) => setAllowlistDraft(e.target.value)}
-                      placeholder="0.0.0.0/0"
-                      rows={3}
-                      spellCheck={false}
-                      className="project-form-input font-mono text-xs"
+              {database.engine === "postgres" ? (
+                <div className="db-cred-card">
+                  <CredentialRow
+                    label="Host"
+                    value={databaseHost}
+                    onCopy={copyCredential}
+                    copied={copiedCredential === "Host"}
+                  />
+                  <CredentialRow
+                    label="Database"
+                    value={database.databaseName}
+                    onCopy={copyCredential}
+                    copied={copiedCredential === "Database"}
+                  />
+                  <CredentialRow
+                    label="User"
+                    value={database.username}
+                    onCopy={copyCredential}
+                    copied={copiedCredential === "User"}
+                  />
+                  {canManage ? (
+                    <PasswordRow
+                      fetchPassword={() =>
+                        revealProjectDatabasePassword(projectId).then((r) => r.password)
+                      }
+                      onCopied={(value) => copyCredential("Password", value)}
+                      onError={setCredentialError}
+                      copied={copiedCredential === "Password"}
                     />
-                  </div>
-
-                  <div className="flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      className="supabase-btn-green"
-                      onClick={() => void enableProxy()}
-                      disabled={busy}
-                    >
-                      {database.proxy.enabled ? "Update Allowlist" : "Enable Public Proxy"}
-                    </button>
-
-                    {database.proxy.enabled && (
-                      <button
-                        type="button"
-                        className="supabase-btn-secondary text-rose-400 hover:text-rose-300"
-                        onClick={() => void disableProxy()}
-                        disabled={busy}
-                      >
-                        Disable Proxy
-                      </button>
-                    )}
-                  </div>
-
-                  {database.proxy.enabled && database.proxy.connectionString && (
-                    <div className="pt-2">
-                      <span className="project-form-label block mb-1.5">Public Connection URI</span>
-                      <div className="project-code-box">
-                        <div className="flex-1 font-mono text-xs text-zinc-300 overflow-x-auto select-all">
-                          {revealPublicUri
-                            ? database.proxy.connectionString
-                            : database.proxy.connectionString.replace(/:([^:@]+)@/, ":••••••••@")}
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <button
-                            type="button"
-                            className="project-code-btn"
-                            onClick={() => setRevealPublicUri((prev) => !prev)}
-                            title={revealPublicUri ? "Hide password" : "Show password"}
-                            aria-label="Toggle public password visibility"
-                          >
-                            {revealPublicUri ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            className="project-code-btn"
-                            onClick={() => copyText(database.proxy.connectionString ?? "", "public")}
-                            title="Copy public connection string"
-                            aria-label="Copy public connection string"
-                          >
-                            {copiedPublic ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
+                  ) : (
+                    <div className="db-cred-row">
+                      <span className="db-cred-label">Password</span>
+                      <div className="db-cred-value-wrap">
+                        <span className="db-cred-value db-cred-muted">Owner or admin only</span>
                       </div>
                     </div>
                   )}
-                </>
-              ) : (
-                <p className="text-zinc-500 text-xs">
-                  Only an owner or admin can manage the public proxy or view its connection credentials.
+                </div>
+              ) : null}
+
+              {credentialError && database.engine === "postgres" ? (
+                <p className="db-cred-error" role="alert">
+                  <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
+                  {credentialError}
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
+
+          {/* phpMyAdmin Card (MySQL only) */}
+          {database.phpMyAdmin.enabled ? (
+            <div className="project-settings-card">
+              <div className="project-settings-card-head">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-emerald-400" />
+                    <h3 className="project-settings-title">phpMyAdmin</h3>
+                  </div>
+                  <p className="project-settings-desc">
+                    A browser client for this Database, served on the Platform Domain over HTTPS.
+                    It reaches MySQL through the private Project network.
+                  </p>
+                </div>
+                <span
+                  className={`project-proxy-badge ${
+                    database.phpMyAdmin.ready ? "is-enabled" : "is-disabled"
+                  }`}
+                >
+                  <Radio className="w-3 h-3 mr-1" />
+                  {database.phpMyAdmin.ready ? "Ready" : "Starting"}
+                </span>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {database.phpMyAdmin.url ? (
+                  <>
+                    <button
+                      type="button"
+                      className="supabase-btn-green"
+                      onClick={() => void openPhpMyAdmin()}
+                      disabled={pmaSigningIn}
+                    >
+                      {pmaSigningIn ? (
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      ) : (
+                        <Globe className="w-4 h-4 mr-1.5" />
+                      )}
+                      {pmaSigningIn ? "Signing in…" : "Open phpMyAdmin"}
+                    </button>
+
+                    {credentialError ? (
+                      <p className="db-cred-error" role="alert">
+                        <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
+                        {credentialError}
+                      </p>
+                    ) : null}
+
+                    <div className="db-cred-card">
+                      <CredentialRow
+                        label="Host"
+                        value={databaseHost}
+                        onCopy={copyCredential}
+                        copied={copiedCredential === "Host"}
+                      />
+                      <CredentialRow
+                        label="Database"
+                        value={database.databaseName}
+                        onCopy={copyCredential}
+                        copied={copiedCredential === "Database"}
+                      />
+                      <CredentialRow
+                        label="User"
+                        value={database.username}
+                        onCopy={copyCredential}
+                        copied={copiedCredential === "User"}
+                      />
+                      {canManage ? (
+                        <PasswordRow
+                          fetchPassword={() =>
+                            revealProjectDatabasePassword(projectId).then((r) => r.password)
+                          }
+                          onCopied={(value) => copyCredential("Password", value)}
+                          onError={setCredentialError}
+                          copied={copiedCredential === "Password"}
+                        />
+                      ) : (
+                        <div className="db-cred-row">
+                          <span className="db-cred-label">Password</span>
+                          <div className="db-cred-value-wrap">
+                            <span className="db-cred-value db-cred-muted">
+                              Owner or admin only
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-zinc-500">
+                      Sign in here only with the credentials above; this page is shared by every MySQL
+                      Database on the platform.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-zinc-500 text-xs">
+                    The phpMyAdmin address is not allocated yet. Redeploy the Database to finish
+                    provisioning.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Public Proxy Card (PostgreSQL only) */}
+          {database.engine === "postgres" ? (
+            <div className="project-settings-card">
+              <div className="project-settings-card-head">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-cyan-400" />
+                    <h3 className="project-settings-title">Public Proxy (External Access)</h3>
+                  </div>
+                  <p className="project-settings-desc">
+                    {database.proxy.enabled
+                      ? `Proxy active on public port ${database.proxy.port}. Encrypted via TLS with strict CIDR allowlist enforcement.`
+                      : "Disabled. This database cannot be reached from outside the private network."}
+                  </p>
+                </div>
+
+                <span
+                  className={`project-proxy-badge ${
+                    database.proxy.enabled ? "is-enabled" : "is-disabled"
+                  }`}
+                >
+                  <Radio className="w-3 h-3 mr-1" />
+                  {database.proxy.enabled ? "Active" : "Disabled"}
+                </span>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {canManage ? (
+                  <>
+                    <div>
+                      <label htmlFor="proxy-cidrs-input" className="project-form-label">
+                        Allowlisted CIDRs (one per line, e.g. <code>0.0.0.0/0</code> or{" "}
+                        <code>198.51.100.1/32</code>)
+                      </label>
+                      <textarea
+                        id="proxy-cidrs-input"
+                        value={allowlist}
+                        onChange={(e) => setAllowlistDraft(e.target.value)}
+                        placeholder="0.0.0.0/0"
+                        rows={3}
+                        spellCheck={false}
+                        className="project-form-input font-mono text-xs"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        className="supabase-btn-green"
+                        onClick={() => void enableProxy()}
+                        disabled={busy}
+                      >
+                        {database.proxy.enabled ? "Update Allowlist" : "Enable Public Proxy"}
+                      </button>
+
+                      {database.proxy.enabled && (
+                        <button
+                          type="button"
+                          className="supabase-btn-secondary text-rose-400 hover:text-rose-300"
+                          onClick={() => void disableProxy()}
+                          disabled={busy}
+                        >
+                          Disable Proxy
+                        </button>
+                      )}
+                    </div>
+
+                    {database.proxy.enabled && database.proxy.connectionString && (
+                      <div className="pt-2">
+                        <span className="project-form-label block mb-1.5">
+                          Public Connection URI
+                        </span>
+                        <div className="project-code-box">
+                          <div className="flex-1 font-mono text-xs text-zinc-300 overflow-x-auto select-all">
+                            {revealPublicUri
+                              ? database.proxy.connectionString
+                              : database.proxy.connectionString.replace(/:([^:@]+)@/, ":••••••••@")}
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              type="button"
+                              className="project-code-btn"
+                              onClick={() => setRevealPublicUri((prev) => !prev)}
+                              title={revealPublicUri ? "Hide password" : "Show password"}
+                              aria-label="Toggle public password visibility"
+                            >
+                              {revealPublicUri ? (
+                                <EyeOff className="w-3.5 h-3.5" />
+                              ) : (
+                                <Eye className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className="project-code-btn"
+                              onClick={() =>
+                                copyText(database.proxy.connectionString ?? "", "public")
+                              }
+                              title="Copy public connection string"
+                              aria-label="Copy public connection string"
+                            >
+                              {copiedPublic ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-zinc-500 text-xs">
+                    Only an owner or admin can manage the public proxy or view its connection
+                    credentials.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="project-settings-card">
+              <div className="project-settings-card-head">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-cyan-400" />
+                    <h3 className="project-settings-title">External Access</h3>
+                  </div>
+                  <p className="project-settings-desc">
+                    A MySQL Database is reached through phpMyAdmin above. The TCP public proxy is
+                    PostgreSQL-only because it forwards a TLS stream MySQL does not speak.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Delete Database Danger Zone */}
           {canManage && (
@@ -504,7 +818,9 @@ export function DatabasePanel({
                   <h3 className="project-danger-title">Delete Database</h3>
                 </div>
                 <p className="project-danger-desc">
-                  Permanently deletes the PostgreSQL container, volume storage, and all relational data. This action is irreversible.
+                  Permanently deletes the {database.engine === "mysql" ? "MySQL" : "PostgreSQL"}{" "}
+                  container, its phpMyAdmin sidecar if any, volume storage, and all relational data.
+                  This action is irreversible.
                 </p>
               </div>
 

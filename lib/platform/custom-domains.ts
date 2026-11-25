@@ -2,9 +2,8 @@ import { randomBytes } from "node:crypto";
 import { lookup, resolveTxt } from "node:dns/promises";
 import { isIP } from "node:net";
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 import { getPlatformDomain } from "./platform-domain.ts";
 import { requireService } from "./ownership.ts";
 
@@ -300,7 +299,7 @@ export async function verifyServiceCustomDomain(input: {
     });
   }
 
-  const routed = await routeCustomDomain(service.id, row.hostname);
+  const routed = await nodeAgent.routeHostname({ serviceId: service.id, hostname: row.hostname });
   if (routed === "missing" || routed === "not_running") {
     // DNS is correct but there is nothing to route to yet. Leave the row pending
     // so the owner can deploy and retry without publishing a different token.
@@ -394,7 +393,7 @@ export async function deleteServiceCustomDomain(input: {
   // a cached certificate for a domain the user deleted. A node that cannot be
   // reached fails the delete, so the user can retry instead of leaving an orphan
   // route behind.
-  await removeCustomDomainRoute(service.id, row.hostname);
+  await nodeAgent.removeHostnameRoute({ serviceId: service.id, hostname: row.hostname });
 
   await pool.query('DELETE FROM "custom_domain" WHERE "id" = $1', [row.id]);
 
@@ -405,6 +404,13 @@ export async function deleteServiceCustomDomain(input: {
  * Called by Caddy's `ask` endpoint. Only a Platform Subdomain or an active
  * Custom Domain may receive a certificate, so the platform cannot be used to
  * issue certificates for arbitrary names.
+ *
+ * One name is special: the Cloudflare Tunnel dials Caddy as `https://caddy:443`
+ * and sends that origin hostname as the TLS SNI, not the public hostname in the
+ * Host header. Caddy still routes on the Host header, but it can only complete
+ * the handshake if it may issue a certificate for the name the tunnel asked
+ * for. Allowing exactly that fixed, internal name keeps on-demand issuance
+ * closed to everything else.
  */
 export async function isCertificateHostnameAllowed(hostname: string): Promise<boolean> {
   const normalized = hostname.trim().toLowerCase().replace(/\.$/, "");
@@ -412,57 +418,23 @@ export async function isCertificateHostnameAllowed(hostname: string): Promise<bo
     return false;
   }
 
+  const tunnelOrigin = process.env.TUNNEL_ORIGIN_HOSTNAME?.trim().toLowerCase() || "caddy";
+  if (normalized === tunnelOrigin) {
+    return true;
+  }
+
   const result = await pool.query(
     `SELECT 1 FROM "service" WHERE lower("platformHostname") = $1
      UNION ALL
      SELECT 1 FROM "custom_domain" WHERE lower("hostname") = $1 AND "status" = 'active'
+     UNION ALL
+     SELECT 1 FROM "database"
+     WHERE lower("phpMyAdminHostname") = $1 AND "engine" = 'mysql'
      LIMIT 1`,
     [normalized],
   );
 
   return (result.rowCount ?? 0) > 0;
-}
-
-type RouteResult = "ok" | "missing" | "not_running" | "failed";
-
-async function routeCustomDomain(serviceId: string, hostname: string): Promise<RouteResult> {
-  try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.PUT("/v1/services/{serviceId}/hostnames/{hostname}", {
-      params: { path: { serviceId, hostname } },
-    });
-
-    if (response.response.status === 404) {
-      return "missing";
-    }
-    if (response.response.status === 409) {
-      return "not_running";
-    }
-
-    return response.response.ok ? "ok" : "failed";
-  } catch (error) {
-    console.error(`could not route Custom Domain ${hostname}`, error);
-    return "failed";
-  }
-}
-
-async function removeCustomDomainRoute(serviceId: string, hostname: string): Promise<void> {
-  const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-  const response = await client.DELETE("/v1/services/{serviceId}/hostnames/{hostname}", {
-    params: { path: { serviceId, hostname } },
-  });
-
-  if (!response.response.ok && response.response.status !== 404) {
-    throw new Error(`The Node Agent answered ${response.response.status}.`);
-  }
-}
-
-/** Re-exported so the Service delete path can clean up its route. */
-export async function removeServiceCustomDomainOnNode(
-  serviceId: string,
-  hostname: string,
-): Promise<void> {
-  await removeCustomDomainRoute(serviceId, hostname);
 }
 
 export type OrganizationCustomDomainSummary = CustomDomainSummary & {

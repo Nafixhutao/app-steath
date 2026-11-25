@@ -1,0 +1,37 @@
+@startuml
+title Gambar 8b — Operasi Runtime atas Permintaan Control Plane
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EEF6F8
+  BorderColor #3B6B7A
+  FontSize 12
+}
+
+actor "Instance Server\n(Node Agent)" as IS
+
+rectangle "Stealth Hosting — Control Plane" {
+  usecase "UC-22\nMenghapus Service" as UC22
+  usecase "UC-23\nMen-deploy Service" as UC23
+  usecase "UC-24\nMen-deploy Ulang" as UC24
+  usecase "UC-25\nMembatalkan Deployment" as UC25
+  usecase "UC-27\nMenghentikan Service" as UC27
+  usecase "UC-28\nMenjalankan Service" as UC28
+  usecase "UC-29\nMe-restart Service" as UC29
+  usecase "UC-30\nMelihat Log Runtime" as UC30
+  usecase "UC-32\nMengelola Volume" as UC32
+}
+
+IS --> UC22
+IS --> UC23
+IS --> UC24
+IS --> UC25
+IS --> UC27
+IS --> UC28
+IS --> UC29
+IS --> UC30
+IS --> UC32
+
+@enduml

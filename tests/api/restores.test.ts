@@ -210,7 +210,8 @@ async function addMember(
   organizationId: string,
   role: "admin" | "member",
 ): Promise<SignUpResult> {
-  const email = uniqueName(`restore${role}`) + Math.random().toString(36).slice(2, 6) + "@example.test";
+  const email =
+    uniqueName(`restore${role}`) + Math.random().toString(36).slice(2, 6) + "@example.test";
   const inviteResponse = await auth.handler(
     new Request(`${BASE_URL}/api/auth/organization/invite-member`, {
       method: "POST",
@@ -255,7 +256,10 @@ type Fixture = {
 let fixture: Fixture;
 
 async function createFixture(): Promise<Fixture> {
-  const owner = await signUp(uniqueName("restoreowner") + "@example.test", uniqueName("restoreowner"));
+  const owner = await signUp(
+    uniqueName("restoreowner") + "@example.test",
+    uniqueName("restoreowner"),
+  );
 
   const { POST: createProject } = await import("@/app/api/projects/route");
   const projectResponse = await createProject(
@@ -294,8 +298,11 @@ async function createFixture(): Promise<Fixture> {
   ]);
 
   const database = await queryRows<{ id: string }>(
-    `INSERT INTO "database" ("id", "projectId", "encryptedPassword", "status")
-     VALUES (gen_random_uuid()::text, $1, 'sealed-password', 'running')
+    `INSERT INTO "database" ("id", "projectId", "engine", "version", "databaseName",
+       "username", "encryptedPassword", "status")
+     VALUES (gen_random_uuid()::text, $1, 'postgres', '16', 'app',
+       'u_' || left(regexp_replace(gen_random_uuid()::text, '[^a-z0-9]', '', 'g'), 24),
+       'sealed-password', 'running')
      RETURNING "id"`,
     [project.id],
   );
@@ -371,11 +378,7 @@ async function createCompletedBackup(
   };
 }
 
-async function restoreRequest(
-  cookie: string,
-  backupId: string,
-  body: unknown,
-): Promise<Response> {
+async function restoreRequest(cookie: string, backupId: string, body: unknown): Promise<Response> {
   const { POST } = await import("@/app/api/backups/[backupId]/restore/route");
 
   return POST(
@@ -399,10 +402,9 @@ async function latestRestoreRow(restoreId: string): Promise<{
     errorMessage: string | null;
     startedAt: Date | null;
     finishedAt: Date | null;
-  }>(
-    'SELECT "status", "errorMessage", "startedAt", "finishedAt" FROM "restore" WHERE "id" = $1',
-    [restoreId],
-  );
+  }>('SELECT "status", "errorMessage", "startedAt", "finishedAt" FROM "restore" WHERE "id" = $1', [
+    restoreId,
+  ]);
   expect(rows).toHaveLength(1);
 
   return rows[0];
@@ -443,7 +445,10 @@ describe("Restore Backup", () => {
     );
     expect(jobs.map((job) => job.payload.restoreId)).toContain(created.id);
 
-    const result = await restores.runRestoreJob({ id: "test-job", payload: { restoreId: created.id } });
+    const result = await restores.runRestoreJob({
+      id: "test-job",
+      payload: { restoreId: created.id },
+    });
     expect(result.status).toBe("completed");
 
     const row = await latestRestoreRow(created.id);
@@ -457,9 +462,7 @@ describe("Restore Backup", () => {
     const stopped = agent.requests.filter((entry) => entry.path.endsWith("/stop"));
     expect(stopped).toHaveLength(2);
     expect(stopped.map((entry) => entry.path)).toEqual(
-      expect.arrayContaining(
-        fixture.services.map((service) => `/v1/services/${service.id}/stop`),
-      ),
+      expect.arrayContaining(fixture.services.map((service) => `/v1/services/${service.id}/stop`)),
     );
 
     const sent = agent.requests.filter((entry) => entry.path.startsWith("/v1/restores/"));
@@ -513,20 +516,19 @@ describe("Restore Backup", () => {
       status: "pending",
     });
 
-    const result = await restores.runRestoreJob({ id: "test-job", payload: { restoreId: created.id } });
+    const result = await restores.runRestoreJob({
+      id: "test-job",
+      payload: { restoreId: created.id },
+    });
     expect(result.status).toBe("completed");
 
     const owner = fixture.services[0];
     const other = fixture.services[1];
     expect(
-      agent.requests
-        .filter((entry) => entry.path.endsWith("/stop"))
-        .map((entry) => entry.path),
+      agent.requests.filter((entry) => entry.path.endsWith("/stop")).map((entry) => entry.path),
     ).toEqual([`/v1/services/${owner.id}/stop`]);
     expect(
-      agent.requests
-        .filter((entry) => entry.path.endsWith("/start"))
-        .map((entry) => entry.path),
+      agent.requests.filter((entry) => entry.path.endsWith("/start")).map((entry) => entry.path),
     ).toEqual([`/v1/services/${owner.id}/start`]);
 
     const sent = agent.requests.filter((entry) => entry.path.startsWith("/v1/restores/"));
@@ -551,7 +553,10 @@ describe("Restore Backup", () => {
     expect(response.status).toBe(202);
     const created = ((await response.json()) as { data: RestoreSummary }).data;
 
-    const result = await restores.runRestoreJob({ id: "test-job", payload: { restoreId: created.id } });
+    const result = await restores.runRestoreJob({
+      id: "test-job",
+      payload: { restoreId: created.id },
+    });
     expect(result.status).toBe("failed");
 
     const row = await latestRestoreRow(created.id);
@@ -583,8 +588,7 @@ describe("Restore Backup", () => {
     );
     expect(
       audits.some(
-        (audit) =>
-          audit.action === "backup.restored" && audit.details.restoreId === created.id,
+        (audit) => audit.action === "backup.restored" && audit.details.restoreId === created.id,
       ),
     ).toBe(false);
 
@@ -651,7 +655,10 @@ describe("Restore Backup", () => {
     const list = ((await listResponse.json()) as { data: RestoreList }).data;
     expect(Array.isArray(list.restores)).toBe(true);
 
-    const other = await signUp(uniqueName("restoreother") + "@example.test", uniqueName("restoreother"));
+    const other = await signUp(
+      uniqueName("restoreother") + "@example.test",
+      uniqueName("restoreother"),
+    );
     const otherResponse = await restoreRequest(other.cookie, backup.id, {
       confirmation: backup.targetName,
     });

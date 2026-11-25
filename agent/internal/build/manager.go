@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,6 +40,9 @@ type Request struct {
 	Branch         string
 	DockerfilePath string
 	ImageTag       string
+	// ContainerPort is where the Deployer expects the container to listen. It is
+	// only used when the repository has no Dockerfile and the Agent generates one.
+	ContainerPort int
 	// CommitSHA pins the Build to an exact commit. A redeploy sets it so the new
 	// Deployment rebuilds the same code as the one it replaces; an empty value
 	// means the tip of the branch.
@@ -218,14 +222,25 @@ func (m *Manager) run(ctx context.Context, state *buildState, workspace string) 
 
 	// Clone into a directory that does not exist yet, so git owns it.
 	checkout := filepath.Join(workspace, "src")
-	m.append(state, fmt.Sprintf("Cloning %s at branch %s", state.request.RepoURL, state.request.Branch))
+	// A user often pastes the browser URL of the repository page, including a
+	// GitHub "tree" URL that points at a subfolder and names the branch in the
+	// path. Git only understands the bare clone URL, so the request is
+	// normalized before it reaches the clone command.
+	repoURL, branch, subdirectory := normalizeRepoRequest(state.request.RepoURL, state.request.Branch)
+	if repoURL != state.request.RepoURL || branch != state.request.Branch {
+		m.append(state, fmt.Sprintf("Normalized repository URL to %s at branch %s", repoURL, branch))
+	}
+	if subdirectory != "" {
+		m.append(state, fmt.Sprintf("Using repository subfolder %s as the project root", subdirectory))
+	}
+	m.append(state, fmt.Sprintf("Cloning %s at branch %s", repoURL, branch))
 	cloneErr := m.executor.Stream(ctx, exec.Options{
 		Dir:  workspace,
 		Name: "git",
 		Args: []string{
 			"clone", "--depth", "1", "--single-branch",
-			"--branch", state.request.Branch,
-			state.request.RepoURL, checkout,
+			"--branch", branch,
+			repoURL, checkout,
 		},
 	}, func(line string) { m.append(state, line) })
 	if cloneErr != nil {
@@ -307,22 +322,20 @@ func (m *Manager) run(ctx context.Context, state *buildState, workspace string) 
 	m.setCommit(state, commitSHA)
 	m.append(state, fmt.Sprintf("Checked out commit %s", commitSHA))
 
-	if _, statErr := os.Stat(filepath.Join(checkout, state.request.DockerfilePath)); statErr != nil {
-		return StatusFailed, "", fmt.Sprintf(
-			"Dockerfile not found at %s",
-			state.request.DockerfilePath,
-		)
+	dockerfilePath, contextDir, resolveErr := m.resolveBuildSource(state, workspace, checkout, subdirectory)
+	if resolveErr != "" {
+		return StatusFailed, "", resolveErr
 	}
 
 	m.append(state, fmt.Sprintf("Building image %s with BuildKit", state.request.ImageTag))
 	buildErr := m.executor.Stream(ctx, exec.Options{
-		Dir:  checkout,
+		Dir:  contextDir,
 		Env:  []string{"DOCKER_BUILDKIT=1"},
 		Name: "docker",
 		Args: []string{
 			"build",
 			"--progress=plain",
-			"--file", state.request.DockerfilePath,
+			"--file", dockerfilePath,
 			"--tag", state.request.ImageTag,
 			".",
 		},
@@ -434,4 +447,100 @@ func (r Request) validate() error {
 	}
 
 	return nil
+}
+
+// normalizeRepoRequest turns a pasted repository page URL into the bare clone
+// URL git needs, extracting the branch and the subfolder when the URL carries
+// them. It returns the input unchanged when it is already a clone URL.
+func normalizeRepoRequest(rawURL, branch string) (string, string, string) {
+	trimmed := strings.TrimSpace(rawURL)
+	trimmed = strings.TrimSuffix(trimmed, "/")
+	trimmed = strings.TrimSuffix(trimmed, ".git")
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil || parsed.Host == "" {
+		return rawURL, branch, ""
+	}
+	segments := strings.Split(strings.Trim(parsed.Path, "/"), "/")
+
+	host := strings.ToLower(parsed.Host)
+	// GitHub blob/tree URLs name the branch after /blob/ or /tree/; a "tree"
+	// URL may also point at a subfolder, which becomes the project root.
+	if isGitHub := host == "github.com" || host == "www.github.com"; isGitHub && len(segments) >= 4 && (segments[2] == "blob" || segments[2] == "tree") {
+		if parsed.Scheme != "https" && parsed.Scheme != "http" {
+			parsed.Scheme = "https"
+		}
+		clone := url.URL{Scheme: parsed.Scheme, Host: parsed.Host, Path: "/" + segments[0] + "/" + segments[1] + ".git"}
+		subdirectory := ""
+		pathSegments := segments[4:]
+		// A blob URL points at a file, so only its parent folders are project
+		// root; a tree URL already points at a folder.
+		if segments[2] == "blob" && len(pathSegments) > 0 {
+			pathSegments = pathSegments[:len(pathSegments)-1]
+		}
+		if len(pathSegments) > 0 {
+			encoded := strings.Join(pathSegments, "/")
+			if decoded, decodeErr := url.PathUnescape(encoded); decodeErr == nil {
+				encoded = decoded
+			}
+			subdirectory = encoded
+		}
+		return clone.String(), segments[3], subdirectory
+	}
+	return rawURL, branch, ""
+}
+
+// resolveBuildSource decides which Dockerfile and build context a Build uses.
+// A repository that ships a Dockerfile keeps the documented behaviour; one that
+// does not gets a Dockerfile generated from its detected framework, the way a
+// zero-config host builds a project. A non-empty error is user-facing.
+func (m *Manager) resolveBuildSource(
+	state *buildState,
+	workspace, checkout, subdirectory string,
+) (dockerfilePath, contextDir, failure string) {
+	projectRoot := checkout
+	if subdirectory != "" {
+		candidate := filepath.Join(checkout, filepath.FromSlash(subdirectory))
+		relative, relErr := filepath.Rel(checkout, candidate)
+		if relErr != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+			return "", "", "The repository subfolder is outside the repository."
+		}
+		if info, statErr := os.Stat(candidate); statErr != nil || !info.IsDir() {
+			return "", "", fmt.Sprintf("The repository subfolder %s does not exist.", subdirectory)
+		}
+		projectRoot = candidate
+	}
+
+	name := state.request.DockerfilePath
+	if projectRoot != checkout && isFile(filepath.Join(projectRoot, name)) {
+		return filepath.Join(projectRoot, name), projectRoot, ""
+	}
+	if isFile(filepath.Join(checkout, name)) {
+		return filepath.Join(checkout, name), checkout, ""
+	}
+
+	generated, ok, detectErr := detectZeroConfig(projectRoot, state.request.ContainerPort)
+	if detectErr != nil {
+		return "", "", detectErr.Error()
+	}
+	if !ok {
+		return "", "", fmt.Sprintf(
+			"No Dockerfile found at %s and Stealth could not detect a framework it can build. "+
+				"Add a Dockerfile to the repository, or point the repository URL at a subfolder with /tree/<branch>/<folder>.",
+			name,
+		)
+	}
+
+	// The generated file sits outside the build context so it never ends up in
+	// the image it describes.
+	generatedPath := filepath.Join(workspace, "Dockerfile.stealth")
+	if writeErr := os.WriteFile(generatedPath, []byte(generated.Contents), 0o600); writeErr != nil {
+		return "", "", fmt.Sprintf("Could not write the generated Dockerfile: %v", writeErr)
+	}
+
+	m.append(state, fmt.Sprintf(
+		"No Dockerfile found; detected a %s and generated one at %s",
+		generated.Framework, name,
+	))
+	return generatedPath, generated.ContextDir, ""
 }

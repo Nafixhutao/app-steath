@@ -17,6 +17,11 @@ import (
 // Route is one hostname the agent wants Caddy to serve.
 type Route struct {
 	Hostname string
+	// Path, when set, restricts the route to requests under that path (Caddy
+	// glob syntax, e.g. `/_sso*`). Empty means the whole hostname. It exists so
+	// the phpMyAdmin host can serve its own sign-in bridge from the Control
+	// Plane while every other path still reaches phpMyAdmin.
+	Path string
 	// Upstream is the `host:port` Caddy dials inside the Project network.
 	Upstream string
 	// ServiceID and DeploymentID are carried so reconcile can tell which
@@ -24,6 +29,10 @@ type Route struct {
 	ServiceID    string
 	DeploymentID string
 	Suspended    bool
+	// RewriteTo, when set, rewrites the request URI to that path before proxying.
+	// The sign-in bridge uses it to map `/_sso` onto the Control Plane's own API
+	// path without the browser ever seeing the internal route.
+	RewriteTo string
 }
 
 // Router programs Caddy's reverse proxy. The admin API is used instead of
@@ -79,45 +88,60 @@ func caddyRoute(route Route) map[string]any {
 			"terminal": true,
 		}
 	}
+
+	match := map[string]any{"host": []string{route.Hostname}}
+	if route.Path != "" {
+		match["path"] = []string{route.Path}
+	}
+
+	handlers := make([]any, 0, 2)
+	if route.RewriteTo != "" {
+		// A rewrite runs before the proxy, so the upstream sees the internal path
+		// while the browser keeps the public one.
+		handlers = append(handlers, map[string]any{
+			"handler": "rewrite",
+			"uri":     route.RewriteTo,
+		})
+	}
+	handlers = append(handlers, map[string]any{
+		"handler": "reverse_proxy",
+		"upstreams": []any{
+			map[string]any{"dial": route.Upstream},
+		},
+		"headers": map[string]any{
+			"request": map[string]any{
+				"set": map[string]any{
+					// The Service sees the original host, so frameworks
+					// that build absolute URLs keep working.
+					"X-Forwarded-Host": []string{"{http.request.host}"},
+					// Overwrite the client IP headers with the real peer
+					// address instead of forwarding whatever the client
+					// sent. Trusting an inbound X-Forwarded-For would let
+					// a client spoof its address and defeat the per-IP
+					// rate limit. `{http.request.remote.host}` is the
+					// source IP without the port.
+					"X-Real-IP":       []string{"{http.request.remote.host}"},
+					"X-Forwarded-For": []string{"{http.request.remote.host}"},
+				},
+			},
+		},
+	})
+
 	return map[string]any{
-		"@id": routeID,
-		"match": []any{
-			map[string]any{
-				"host": []string{route.Hostname},
-			},
-		},
-		"handle": []any{
-			map[string]any{
-				"handler": "reverse_proxy",
-				"upstreams": []any{
-					map[string]any{"dial": route.Upstream},
-				},
-				"headers": map[string]any{
-					"request": map[string]any{
-						"set": map[string]any{
-							// The Service sees the original host, so frameworks
-							// that build absolute URLs keep working.
-							"X-Forwarded-Host": []string{"{http.request.host}"},
-							// Overwrite the client IP headers with the real peer
-							// address instead of forwarding whatever the client
-							// sent. Trusting an inbound X-Forwarded-For would let
-							// a client spoof its address and defeat the per-IP
-							// rate limit. `{http.request.remote.host}` is the
-							// source IP without the port.
-							"X-Real-IP":       []string{"{http.request.remote.host}"},
-							"X-Forwarded-For": []string{"{http.request.remote.host}"},
-						},
-					},
-				},
-			},
-		},
+		"@id":      routeID,
+		"match":    []any{match},
+		"handle":   handlers,
 		"terminal": true,
 	}
 }
 
-// PutRoute adds or replaces the route for a hostname. The whole route list is
-// written in one request, so Caddy never serves a hostname that has both the old
-// and the new upstream.
+// PutRoute adds or replaces the route for a hostname and path. The whole route
+// list is written in one request, so Caddy never serves a hostname that has both
+// the old and the new upstream.
+//
+// A path-scoped route is placed before any whole-hostname route for the same
+// host: Caddy evaluates routes in order and a whole-host route is terminal, so
+// the narrower one has to win first.
 func (r *CaddyRouter) PutRoute(ctx context.Context, route Route) error {
 	if route.Hostname == "" || route.Upstream == "" {
 		return errors.New("route needs a hostname and an upstream")
@@ -134,16 +158,42 @@ func (r *CaddyRouter) PutRoute(ctx context.Context, route Route) error {
 	updated := make([]map[string]any, 0, len(routes)+1)
 	updated = append(updated, caddyRoute(route))
 	for _, existing := range routes {
-		if hostnameOf(existing) == route.Hostname {
+		if sameRouteTarget(existing, route) {
 			continue
 		}
 		updated = append(updated, existing)
 	}
 
-	return r.writeRoutes(ctx, updated, exists)
+	return r.writeRoutes(ctx, orderRoutes(updated), exists)
 }
 
-// DeleteRoute removes the route for a hostname.
+// sameRouteTarget reports whether an existing Caddy route serves the same
+// hostname and path. Two routes for one hostname differ only by path, so the
+// path has to be part of the identity.
+func sameRouteTarget(existing map[string]any, route Route) bool {
+	return hostnameOf(existing) == route.Hostname && pathOf(existing) == route.Path
+}
+
+// orderRoutes makes path-scoped routes precede whole-hostname routes, otherwise a
+// terminal whole-host route would shadow the narrower one behind it.
+func orderRoutes(routes []map[string]any) []map[string]any {
+	ordered := make([]map[string]any, 0, len(routes))
+	// Whole-host routes are appended last, after every path route.
+	var wide []map[string]any
+	for _, route := range routes {
+		if pathOf(route) == "" {
+			wide = append(wide, route)
+			continue
+		}
+		ordered = append(ordered, route)
+	}
+
+	return append(ordered, wide...)
+}
+
+// DeleteRoute removes the route for a hostname. Deleting an unknown hostname
+// succeeds, so the call is idempotent. Every path-scoped route for that hostname
+// goes with it: a caller removing a hostname means the whole host is gone.
 func (r *CaddyRouter) DeleteRoute(ctx context.Context, hostname string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -192,6 +242,7 @@ func (r *CaddyRouter) ListRoutes(ctx context.Context) ([]Route, error) {
 
 		routes = append(routes, Route{
 			Hostname:     hostname,
+			Path:         pathOf(entry),
 			Upstream:     upstreamOf(entry),
 			Suspended:    isSuspensionRoute(entry),
 			ServiceID:    serviceIDOf(entry),
@@ -207,10 +258,13 @@ type routeIdentity struct {
 	DeploymentID string `json:"d"`
 	Hostname     string `json:"h"`
 	Upstream     string `json:"u"`
+	// Path is part of the identity so a hostname can carry more than one route
+	// (the phpMyAdmin host serves both its UI and the sign-in bridge).
+	Path string `json:"p,omitempty"`
 }
 
 func encodeRouteID(route Route) string {
-	encoded, _ := json.Marshal(routeIdentity{ServiceID: route.ServiceID, DeploymentID: route.DeploymentID, Hostname: route.Hostname, Upstream: route.Upstream})
+	encoded, _ := json.Marshal(routeIdentity{ServiceID: route.ServiceID, DeploymentID: route.DeploymentID, Hostname: route.Hostname, Upstream: route.Upstream, Path: route.Path})
 	return "stealth-" + base64.RawURLEncoding.EncodeToString(encoded)
 }
 
@@ -270,7 +324,7 @@ func (r *CaddyRouter) SetSuspendedRoute(ctx context.Context, route Route) error 
 			continue
 		}
 		matched = true
-		identityRoute := Route{Hostname: hostnameOf(existing), Upstream: upstreamOf(existing), ServiceID: identity.ServiceID, DeploymentID: identity.DeploymentID}
+		identityRoute := Route{Hostname: hostnameOf(existing), Path: pathOf(existing), Upstream: upstreamOf(existing), ServiceID: identity.ServiceID, DeploymentID: identity.DeploymentID}
 		if identityRoute.ServiceID == "" {
 			identityRoute.ServiceID = route.ServiceID
 		}
@@ -375,6 +429,28 @@ func hostnameOf(route map[string]any) string {
 	hostname, _ := hosts[0].(string)
 
 	return hostname
+}
+
+// pathOf returns the route's path matcher, or "" for a whole-hostname route.
+func pathOf(route map[string]any) string {
+	match, ok := route["match"].([]any)
+	if !ok || len(match) == 0 {
+		return ""
+	}
+
+	first, ok := match[0].(map[string]any)
+	if !ok {
+		return ""
+	}
+
+	paths, ok := first["path"].([]any)
+	if !ok || len(paths) == 0 {
+		return ""
+	}
+
+	value, _ := paths[0].(string)
+
+	return value
 }
 
 func upstreamOf(route map[string]any) string {

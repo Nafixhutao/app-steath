@@ -1,4 +1,5 @@
 import { request } from "@/lib/platform/http";
+import type { DatabaseEngine } from "@/lib/databases-client";
 
 export type QuotaCount = { used: number; limit: number };
 
@@ -27,6 +28,8 @@ export type DatabaseUsageSummary = {
   id: string;
   projectId: string;
   projectName: string;
+  engine: DatabaseEngine;
+  version: string;
   status: string;
   usageMb: number;
   storageLimitMb: number;

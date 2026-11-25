@@ -117,6 +117,7 @@
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
+      "commit": "d65391149dbb5fe76478e76fa8d5122b2aa5a70e",
       "sourceType": "github",
       "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
       "computedHash": "f0820b18426a7d9a6c823a890988ba0ac70bf0fd596d30d7ef07c88558728c23"

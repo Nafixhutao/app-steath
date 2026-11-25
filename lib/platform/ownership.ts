@@ -19,6 +19,7 @@ export type ServiceAccessRow = {
 export type ProjectAccessRow = {
   id: string;
   name: string;
+  slug: string;
 };
 
 /**
@@ -56,7 +57,7 @@ export async function requireProject(
   projectId: string,
 ): Promise<ProjectAccessRow> {
   const result = await pool.query<ProjectAccessRow>(
-    'SELECT "id", "name" FROM "project" WHERE "organizationId" = $1 AND "id" = $2',
+    'SELECT "id", "name", "slug" FROM "project" WHERE "organizationId" = $1 AND "id" = $2',
     [organizationId, projectId],
   );
 

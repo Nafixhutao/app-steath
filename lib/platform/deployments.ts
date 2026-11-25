@@ -1,15 +1,10 @@
 import { pool } from "./db.ts";
-import {
-  createAgentClient,
-  streamBuildLogs,
-  type AgentBuild,
-  type AgentClient,
-  type AgentDeploymentAbort,
-} from "../../lib/agent-client.ts";
+import { type AgentDeploymentAbort } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { loadDeploymentDatabaseUrl } from "./databases.ts";
 import { loadDeploymentEnvironment } from "./environment-variables.ts";
-import { nodeConfig, requireHealthyNode } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
+import { requireHealthyNode } from "./nodes.ts";
 import { QUOTAS } from "./quota-limits.ts";
 import { enqueueScanJob } from "./scans.ts";
 import { loadDeploymentVolume } from "./volumes.ts";
@@ -275,7 +270,7 @@ export async function claimBuildJob(types: string[] = [BUILD_JOB_TYPE]): Promise
  */
 export async function completeJob(
   jobId: string,
-  outcome: "succeeded" | "failed" = "succeeded",
+  outcome: "succeeded" | "failed" | "cancelled" = "succeeded",
 ): Promise<void> {
   await pool.query('UPDATE "job" SET "status" = $2, "lockedAt" = NULL WHERE "id" = $1', [
     jobId,
@@ -284,19 +279,82 @@ export async function completeJob(
 }
 
 /**
+ * Puts back the Jobs a worker was holding when it died. This runs at worker
+ * start, and there is only ever one worker, so every `running` Job belongs to a
+ * process that no longer exists: nothing would ever release it, and its
+ * Deployment would stay `building` or `deploying` forever.
+ *
+ * A Job that already spent its retry budget is failed instead of re-queued, so a
+ * Job that keeps killing its worker cannot loop. Its Deployment is closed out the
+ * same way an exhausted Job is in `failJob`.
+ */
+export async function recoverStaleJobs(): Promise<{ requeued: number; failed: number }> {
+  const stale = await pool.query<{
+    id: string;
+    type: string;
+    attempts: number;
+    deploymentId: string | null;
+  }>(
+    `SELECT "id", "type", "attempts", "payload"->>'deploymentId' AS "deploymentId"
+     FROM "job" WHERE "status" = 'running'`,
+  );
+
+  let requeued = 0;
+  let failed = 0;
+
+  for (const job of stale.rows) {
+    if (job.attempts >= MAX_BUILD_ATTEMPTS) {
+      await completeJob(job.id, "failed");
+      if (job.type === BUILD_JOB_TYPE && job.deploymentId) {
+        await markDeploymentFailed(
+          job.deploymentId,
+          "The worker stopped before this attempt finished, and it was the last retry.",
+        );
+      }
+      failed += 1;
+      continue;
+    }
+
+    // `runAt` stays in the past, so the Job is claimable on the next poll.
+    await pool.query('UPDATE "job" SET "status" = \'queued\', "lockedAt" = NULL WHERE "id" = $1', [
+      job.id,
+    ]);
+    requeued += 1;
+  }
+
+  return { requeued, failed };
+}
+
+/**
  * Re-queues a Job that failed for a transient reason, or marks it failed once it
  * ran out of attempts. A `runAt` in the future backs the retry off.
+ *
+ * A Build Job that exhausts its attempts is the only thing that can end the
+ * Deployment's life, so the Deployment is marked `failed` here. Without that the
+ * row would stay `building` or `deploying` forever, because no other pass moves a
+ * Deployment: the dashboard would show an attempt that never finishes and the
+ * Service would stay stuck at `deploying`.
  */
 export async function failJob(jobId: string, error: string): Promise<void> {
-  await pool.query(
+  const result = await pool.query<{
+    status: string;
+    type: string;
+    deploymentId: string | null;
+  }>(
     `UPDATE "job"
      SET "status" = CASE WHEN "attempts" >= $2 THEN 'failed' ELSE 'queued' END,
          "lastError" = $3,
          "runAt" = now() + make_interval(secs => "attempts" * 5),
          "lockedAt" = NULL
-     WHERE "id" = $1`,
+     WHERE "id" = $1
+     RETURNING "status", "type", "payload"->>'deploymentId' AS "deploymentId"`,
     [jobId, MAX_BUILD_ATTEMPTS, error],
   );
+
+  const job = result.rows[0];
+  if (job?.status === "failed" && job.type === BUILD_JOB_TYPE && job.deploymentId) {
+    await markDeploymentFailed(job.deploymentId, error);
+  }
 }
 
 /** Marks the Deployment `building` and records when the attempt started. */
@@ -339,19 +397,6 @@ export async function markDeploymentFailed(deploymentId: string, message: string
 }
 
 /**
- * Marks a Deployment failed after its Build did not succeed, so the Job outcome
- * and the Deployment state never disagree.
- */
-export async function failDeployment(
-  jobId: string,
-  deploymentId: string,
-  message: string,
-): Promise<void> {
-  await markDeploymentFailed(deploymentId, message);
-  await completeJob(jobId, "failed");
-}
-
-/**
  * Records a successful Build: the image reference and commit are stored and the
  * Deployment moves to `deploying`, where ticket 07 picks it up to run the
  * container. The previous running Deployment is left untouched on purpose.
@@ -377,7 +422,6 @@ export async function markDeploymentBuilt(input: {
  */
 export async function runDeployment(
   deploymentId: string,
-  options: { client?: AgentClient } = {},
 ): Promise<{ status: "running" | "failed" | "cancelled"; message: string }> {
   const details = await pool.query<{
     deploymentId: string;
@@ -462,10 +506,8 @@ export async function runDeployment(
     envRevision,
   ]);
 
-  const client = options.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-
-  const started = await client.POST("/v1/deployments", {
-    body: {
+  const started = await nodeAgent
+    .startDeployment({
       deploymentId: deployment.deploymentId,
       serviceId: deployment.serviceId,
       projectId: deployment.projectId,
@@ -478,11 +520,20 @@ export async function runDeployment(
       ...(environment.length > 0 ? { environmentVariables: environment } : {}),
       ...(volume ? { volume } : {}),
       ...(deployment.healthPath ? { healthPath: deployment.healthPath } : {}),
-    },
-  });
+    })
+    // An unreachable node is a failed Deployment, not a thrown error: the row is
+    // already `deploying`, and leaving it there would show a Service as deploying
+    // forever with no way for the user to cancel out of it. `nodeAgent` logged the
+    // cause already, so this line only adds which Deployment it was.
+    .catch(() => {
+      console.error(`deploy ${deploymentId}: the Node Agent could not be reached`);
+      return null;
+    });
 
-  if (!started.response.ok || !started.data) {
-    const message = `The Node Agent rejected the Deployment (${started.response.status}).`;
+  if (!started || !started.response.ok || !started.data) {
+    const message = started
+      ? `The Node Agent rejected the Deployment (${started.response.status}).`
+      : "The Node Agent could not be reached, so the Deployment was not started.";
     await markDeploymentFailed(deploymentId, message);
     return { status: "failed", message };
   }
@@ -552,7 +603,7 @@ export async function listBuildLog(deploymentId: string): Promise<string[]> {
  * the log into the database, and moves the Deployment to `deploying` or
  * `failed`. It returns the final Deployment status for the caller to log.
  */
-export async function runBuildJob(job: JobRow, options: { client?: AgentClient } = {}) {
+export async function runBuildJob(job: JobRow) {
   const deploymentId = job.payload.deploymentId;
   if (!deploymentId) {
     throw new Error("Build Job is missing its deploymentId.");
@@ -563,10 +614,12 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
     repoUrl: string;
     branch: string;
     dockerfilePath: string;
+    containerPort: number;
     serviceId: string;
     commitSha: string | null;
   }>(
-    `SELECT d."id", d."serviceId", d."commitSha", s."repoUrl", s."branch", s."dockerfilePath"
+    `SELECT d."id", d."serviceId", d."commitSha", s."repoUrl", s."branch", s."dockerfilePath",
+            s."containerPort"
      FROM "deployment" d JOIN "service" s ON s."id" = d."serviceId"
      WHERE d."id" = $1`,
     [deploymentId],
@@ -579,20 +632,18 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
 
   await markDeploymentBuilding(deploymentId);
 
-  const client = options.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
   const imageTag = buildImageTag(deployment.serviceId, deploymentId);
 
-  const started = await client.POST("/v1/builds", {
-    body: {
-      buildId: deploymentId,
-      repoUrl: deployment.repoUrl,
-      branch: deployment.branch,
-      dockerfilePath: deployment.dockerfilePath,
-      imageTag,
-      // A redeploy pins the commit so the rebuild uses the same code even when
-      // the branch has moved on.
-      ...(deployment.commitSha ? { commitSha: deployment.commitSha } : {}),
-    },
+  const started = await nodeAgent.startBuild({
+    buildId: deploymentId,
+    repoUrl: deployment.repoUrl,
+    branch: deployment.branch,
+    dockerfilePath: deployment.dockerfilePath,
+    containerPort: deployment.containerPort,
+    imageTag,
+    // A redeploy pins the commit so the rebuild uses the same code even when
+    // the branch has moved on.
+    ...(deployment.commitSha ? { commitSha: deployment.commitSha } : {}),
   });
 
   if (!started.response.ok || !started.data) {
@@ -604,7 +655,7 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
   // The log stream ends when the Build finishes, so streaming is also the
   // completion signal. Lines are flushed in batches to avoid one write per line.
   const pending: string[] = [];
-  await streamBuildLogs(client, deploymentId, 0, async (event) => {
+  await nodeAgent.streamBuildLogs({ buildId: deploymentId, after: 0 }, async (event) => {
     pending.push(event.message);
     if (pending.length >= 25) {
       await appendBuildLog(deploymentId, pending.splice(0, pending.length));
@@ -612,9 +663,7 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
   });
   await appendBuildLog(deploymentId, pending.splice(0, pending.length));
 
-  const finished = await client.GET("/v1/builds/{buildId}", {
-    params: { path: { buildId: deploymentId } },
-  });
+  const finished = await nodeAgent.readBuild(deploymentId);
 
   if (!finished.response.ok || !finished.data) {
     const message = `The Node Agent did not report a Build result (${finished.response.status}).`;
@@ -622,7 +671,7 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
     return { status: "failed" as const, message };
   }
 
-  const build: AgentBuild = finished.data;
+  const build = finished.data;
 
   // A Build that the user cancelled is not a failure: the Deployment row is
   // already `cancelled`, so it must not be rewritten with an error message.
@@ -680,7 +729,6 @@ export const CANCELLABLE_DEPLOYMENT_STATUSES: DeploymentStatus[] = ["queued", "b
 export async function cancelDeployment(input: {
   organizationId: string;
   deploymentId: string;
-  options?: { client?: AgentClient };
 }): Promise<{ deployment: DeploymentSummary; aborted: AgentDeploymentAbort | null }> {
   const found = await pool.query<{
     id: string;
@@ -708,27 +756,33 @@ export async function cancelDeployment(input: {
     );
   }
 
-  const client =
-    input.options?.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-
   // The image tag is deterministic, so the Control Plane can name the image even
   // when the Build was cancelled before it reported one. Without this the image a
   // cancelled Build already tagged would survive until the retention prune.
   const imageRef = current.imageRef ?? buildImageTag(current.serviceId, input.deploymentId);
 
-  const abort = await client.POST("/v1/deployments/{deploymentId}/cancel", {
-    params: { path: { deploymentId: input.deploymentId } },
-    body: { serviceId: current.serviceId, imageRef },
-  });
+  // The agent answered with a real outcome, or it could not be reached at all.
+  // Either way the Control Plane stops the Deployment: a cancelled row is what
+  // keeps the worker from starting the Build, so an unreachable node must not
+  // turn a cancel the user asked for into an error. Cleanup on the node's next
+  // start removes whatever the aborted attempt left behind.
+  let aborted: AgentDeploymentAbort | null = null;
+  try {
+    const abort = await nodeAgent.cancelBuild({
+      deploymentId: input.deploymentId,
+      serviceId: current.serviceId,
+      imageRef,
+    });
 
-  // The agent answered with a real outcome, or it could not be reached. Either
-  // way the Control Plane stops the Deployment: a cancelled row is what keeps the
-  // worker from starting the Build.
-  const aborted = abort.response.ok ? (abort.data ?? null) : null;
-  if (!abort.response.ok) {
-    console.error(
-      `cancel ${input.deploymentId}: the Node Agent did not confirm (${abort.response.status})`,
-    );
+    if (abort.response.ok) {
+      aborted = abort.data ?? null;
+    } else {
+      console.error(
+        `cancel ${input.deploymentId}: the Node Agent did not confirm (${abort.response.status})`,
+      );
+    }
+  } catch (error) {
+    console.error(`cancel ${input.deploymentId}: the Node Agent could not be reached`, error);
   }
 
   await markDeploymentCancelled(input.deploymentId);

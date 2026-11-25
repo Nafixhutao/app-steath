@@ -23,7 +23,7 @@ const HEX_KEY_PATTERN = /^[0-9a-fA-F]{64}$/;
  * decodes to exactly 32 bytes; anything else is a configuration error answered
  * at the API boundary rather than a silent fallback to a weaker key.
  */
-function encryptionKey(): Buffer {
+export function platformEncryptionKey(): Buffer {
   const configured = process.env.ENV_ENCRYPTION_KEY?.trim();
   if (!configured) {
     throw new ApiError(
@@ -55,7 +55,7 @@ function encryptionKey(): Buffer {
  */
 export function encryptSecret(plaintext: string): string {
   const iv = randomBytes(IV_BYTES);
-  const cipher = createCipheriv(ALGORITHM, encryptionKey(), iv);
+  const cipher = createCipheriv(ALGORITHM, platformEncryptionKey(), iv);
   const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
 
@@ -84,7 +84,11 @@ export function decryptSecret(payload: string): string {
   }
 
   try {
-    const decipher = createDecipheriv(ALGORITHM, encryptionKey(), Buffer.from(ivPart, "base64"));
+    const decipher = createDecipheriv(
+      ALGORITHM,
+      platformEncryptionKey(),
+      Buffer.from(ivPart, "base64"),
+    );
     decipher.setAuthTag(Buffer.from(tagPart, "base64"));
     return Buffer.concat([
       decipher.update(Buffer.from(dataPart, "base64")),

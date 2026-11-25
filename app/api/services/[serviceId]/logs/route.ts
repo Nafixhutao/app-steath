@@ -1,6 +1,5 @@
-import { createAgentClient, streamServiceLogs } from "@/lib/agent-client";
 import { apiError } from "@/lib/platform/api";
-import { nodeConfig } from "@/lib/platform/nodes";
+import { nodeAgent } from "@/lib/platform/node-agent";
 import { getServiceRuntime } from "@/lib/platform/runtime";
 import { requireOrganizationRole } from "@/lib/platform/organization-management";
 
@@ -42,21 +41,14 @@ export async function GET(
   }
 
   const tail = clampTail(new URL(request.url).searchParams.get("tail"));
-  const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        await streamServiceLogs(
-          client,
-          serviceId,
-          tail,
-          (event) => {
-            controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
-          },
-          request.signal,
-        );
+        await nodeAgent.streamServiceLogs({ serviceId, tail, signal: request.signal }, (event) => {
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        });
       } catch (error) {
         // The reader is usually gone by now (the user navigated away), so the
         // error is only logged rather than thrown into a closed stream.

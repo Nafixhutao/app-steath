@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@fontsource-variable/geist";
@@ -26,6 +27,18 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      {process.env.NODE_ENV === "development" ? (
+        <head>
+          {/* react-grab is a dev-time browser extension helper, not a production
+              dependency: loading it for every visitor in production would add a
+              third-party script to every page for no benefit. */}
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="beforeInteractive"
+          />
+        </head>
+      ) : null}
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

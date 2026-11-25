@@ -11,6 +11,7 @@ import {
 } from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
+import { SupabaseModal } from "@/components/supabase-modal";
 
 type DraftState = {
   mode: "create" | "edit";
@@ -110,7 +111,7 @@ export function EnvironmentPanel({
       <div className="dashboard-section-heading">
         <h2 id="environment-heading">Environment Variables</h2>
         <button
-          className="create-project-button"
+          className="supabase-btn-green"
           type="button"
           onClick={() => setDraft(EMPTY_DRAFT)}
           disabled={draft?.mode === "create"}
@@ -132,44 +133,63 @@ export function EnvironmentPanel({
       ) : null}
 
       {draft ? (
-        <form className="organization-settings-form environment-form" onSubmit={save}>
-          <label>
-            Key
-            <input
-              value={draft.key}
-              onChange={(event) => setDraft({ ...draft, key: event.target.value })}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="API_TOKEN"
-              required
-            />
-          </label>
-          <label>
-            {draft.mode === "edit" ? "New value (leave empty to keep)" : "Value"}
-            <input
-              value={draft.value}
-              onChange={(event) =>
-                setDraft({ ...draft, value: event.target.value, valueTouched: true })
-              }
-              autoComplete="off"
-              spellCheck={false}
-              type="password"
-            />
-          </label>
-          <div className="environment-form-actions">
-            <button className="dashboard-secondary-button" type="submit" disabled={busy}>
-              {busy ? "Saving..." : draft.mode === "create" ? "Add" : "Save"}
-            </button>
-            <button
-              className="dashboard-link-button"
-              type="button"
-              onClick={() => setDraft(null)}
-              disabled={busy}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <SupabaseModal
+          title={draft.mode === "create" ? "Add environment variable" : "Edit environment variable"}
+          onClose={() => setDraft(null)}
+        >
+          <form onSubmit={save}>
+            <div className="supabase-modal-body">
+              <p className="text-sm text-zinc-400 mb-4">
+                Values are encrypted at rest and stay masked in the table. Redeploy the Service to
+                apply changes.
+              </p>
+              <div className="mb-4">
+                <label htmlFor="env-key-input" className="supabase-modal-label">
+                  Key
+                </label>
+                <input
+                  id="env-key-input"
+                  className="supabase-modal-input"
+                  value={draft.key}
+                  onChange={(event) => setDraft({ ...draft, key: event.target.value })}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="API_TOKEN"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="env-value-input" className="supabase-modal-label">
+                  {draft.mode === "edit" ? "New value (leave empty to keep)" : "Value"}
+                </label>
+                <input
+                  id="env-value-input"
+                  className="supabase-modal-input"
+                  value={draft.value}
+                  onChange={(event) =>
+                    setDraft({ ...draft, value: event.target.value, valueTouched: true })
+                  }
+                  autoComplete="off"
+                  spellCheck={false}
+                  type="password"
+                />
+              </div>
+            </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setDraft(null)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="supabase-btn-green" disabled={busy}>
+                {busy ? "Saving..." : draft.mode === "create" ? "Add variable" : "Save changes"}
+              </button>
+            </div>
+          </form>
+        </SupabaseModal>
       ) : null}
 
       {loading ? (
@@ -186,10 +206,10 @@ export function EnvironmentPanel({
           <table className="organization-table">
             <thead>
               <tr>
-                <th>Key</th>
-                <th>Value</th>
-                <th>Updated</th>
-                <th>Actions</th>
+                <th scope="col">Key</th>
+                <th scope="col">Value</th>
+                <th scope="col">Updated</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -198,16 +218,18 @@ export function EnvironmentPanel({
 
                 return (
                   <tr key={variable.id}>
-                    <td>
+                    <td data-label="Key">
                       <code className="environment-key">{variable.key}</code>
                     </td>
-                    <td>
+                    <td data-label="Value">
                       <code className="environment-value">
                         {isRevealed ? (revealed?.value ?? "") : variable.maskedValue}
                       </code>
                     </td>
-                    <td>{formatDateTime(variable.updatedAt)}</td>
-                    <td>
+                    <td data-label="Updated" className="svc-cell-wide">
+                      {formatDateTime(variable.updatedAt)}
+                    </td>
+                    <td data-label="Actions" className="svc-cell-actions">
                       <div className="deployment-actions">
                         <button
                           className="dashboard-link-button"

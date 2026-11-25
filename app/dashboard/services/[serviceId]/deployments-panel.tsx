@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   cancelDeployment,
   deploymentDuration,
@@ -39,6 +39,11 @@ export function DeploymentsPanel({
   canManage: boolean;
 }) {
   const [selected, setSelected] = useState<BuildLog | null>(null);
+  const selectedRef = useRef<BuildLog | null>(null);
+  const updateSelected = useCallback((log: BuildLog | null) => {
+    selectedRef.current = log;
+    setSelected(log);
+  }, []);
   const [busy, setBusy] = useState(false);
   const [actingOn, setActingOn] = useState<string | null>(null);
   // Deploy, redeploy, and cancel failures share one slot next to the load error.
@@ -60,17 +65,19 @@ export function DeploymentsPanel({
 
     const timer = setInterval(() => {
       void refreshHistory();
-      setSelected((current) => {
-        if (!current || !isDeploymentActive(current.deployment.status)) return current;
-        void getBuildLog(current.deployment.id)
-          .then(setSelected)
-          .catch(() => undefined);
-        return current;
-      });
+      const current = selectedRef.current;
+      if (!current || !isDeploymentActive(current.deployment.status)) return;
+      const deploymentId = current.deployment.id;
+      void getBuildLog(deploymentId)
+        .then((log) => {
+          // A newer selection (or Close) must not be overwritten by this poll.
+          if (selectedRef.current?.deployment.id === deploymentId) updateSelected(log);
+        })
+        .catch(() => undefined);
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [active, refreshHistory]);
+  }, [active, refreshHistory, updateSelected]);
 
   async function deploy() {
     setBusy(true);
@@ -87,7 +94,7 @@ export function DeploymentsPanel({
 
   async function openLog(deployment: DeploymentSummary) {
     try {
-      setSelected(await getBuildLog(deployment.id));
+      updateSelected(await getBuildLog(deployment.id));
       setActionError("");
     } catch (cause) {
       setActionError(getError(cause));
@@ -129,7 +136,7 @@ export function DeploymentsPanel({
         <h2 id="deployments-heading">Deployments</h2>
         {canDeploy ? (
           <button
-            className="create-project-button"
+            className="supabase-btn-green"
             type="button"
             onClick={deploy}
             disabled={busy || !nodeHealthy || (latest ? isDeploymentActive(latest.status) : false)}
@@ -141,9 +148,17 @@ export function DeploymentsPanel({
 
       {node ? (
         <p className={`deployment-node is-${node.status}`}>
-          Node <strong>{node.name}</strong>:{" "}
-          {nodeHealthy ? "healthy" : "unavailable: Deployments are blocked"}
-          {node.lastSeenAt ? ` (last heartbeat ${formatDateTime(node.lastSeenAt)})` : null}
+          <span className="deployment-node-name">
+            Node <strong>{node.name}</strong>
+          </span>
+          <span className="deployment-node-state">
+            {nodeHealthy ? "healthy" : "unavailable, Deployments are blocked"}
+          </span>
+          {node.lastSeenAt ? (
+            <span className="deployment-node-time">
+              Last heartbeat {formatDateTime(node.lastSeenAt)}
+            </span>
+          ) : null}
         </p>
       ) : (
         <p className="deployment-node is-unknown">
@@ -171,13 +186,13 @@ export function DeploymentsPanel({
           <table className="organization-table">
             <thead>
               <tr>
-                <th>Status</th>
-                <th>Commit</th>
-                <th>Started</th>
-                <th>Finished</th>
-                <th>Duration</th>
-                <th>Build log</th>
-                {canManage ? <th>Actions</th> : null}
+                <th scope="col">Status</th>
+                <th scope="col">Commit</th>
+                <th scope="col">Started</th>
+                <th scope="col">Finished</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Build log</th>
+                {canManage ? <th scope="col">Actions</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -186,7 +201,7 @@ export function DeploymentsPanel({
 
                 return (
                   <tr key={deployment.id}>
-                    <td>
+                    <td data-label="Status">
                       <span className={`role-label is-${deployment.status}`}>
                         {deploymentStatusLabel(deployment.status)}
                       </span>
@@ -194,13 +209,17 @@ export function DeploymentsPanel({
                         <small className="deployment-error">{deployment.errorMessage}</small>
                       ) : null}
                     </td>
-                    <td>
+                    <td data-label="Commit">
                       <code>{shortCommit(deployment.commitSha)}</code>
                     </td>
-                    <td>{formatDateTime(deployment.startedAt)}</td>
-                    <td>{formatDateTime(deployment.finishedAt)}</td>
-                    <td>{deploymentDuration(deployment) ?? "N/A"}</td>
-                    <td>
+                    <td data-label="Started" className="svc-cell-wide">
+                      {formatDateTime(deployment.startedAt)}
+                    </td>
+                    <td data-label="Finished" className="svc-cell-wide">
+                      {formatDateTime(deployment.finishedAt)}
+                    </td>
+                    <td data-label="Duration">{deploymentDuration(deployment) ?? "N/A"}</td>
+                    <td data-label="Build log">
                       <button
                         className="dashboard-link-button"
                         type="button"
@@ -210,7 +229,7 @@ export function DeploymentsPanel({
                       </button>
                     </td>
                     {canManage ? (
-                      <td>
+                      <td data-label="Actions" className="svc-cell-actions">
                         <div className="deployment-actions">
                           <button
                             className="dashboard-link-button"
@@ -248,7 +267,7 @@ export function DeploymentsPanel({
             <button
               className="dashboard-link-button"
               type="button"
-              onClick={() => setSelected(null)}
+              onClick={() => updateSelected(null)}
             >
               Close
             </button>

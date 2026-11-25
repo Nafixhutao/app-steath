@@ -1,0 +1,63 @@
+@startuml
+title Gambar 6 — Use Case Modul Database, Domain, dan Backup
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EDF0FA
+  BorderColor #4A5480
+  FontSize 12
+}
+
+actor "Customer" as C
+actor "Instance Server\n(Node Agent)" as IS
+
+rectangle "Stealth Hosting — Console (Control Plane)" {
+
+  package "Database" {
+    usecase "UC-33\nMenyediakan Database" as UC33
+    usecase "UC-34\nMelihat Detail Database" as UC34
+    usecase "UC-35\nMenampilkan Password\nDatabase" as UC35
+    usecase "UC-36\nMerotasi Kredensial\nDatabase" as UC36
+    usecase "UC-37\nMenghapus Database" as UC37
+    usecase "UC-38\nMembuka phpMyAdmin" as UC38
+  }
+
+  package "Custom Domain" {
+    usecase "UC-39\nMenambahkan Custom\nDomain" as UC39
+    usecase "UC-40\nMemverifikasi Custom\nDomain" as UC40
+    usecase "UC-41\nMenghapus Custom\nDomain" as UC41
+  }
+
+  package "Backup & Restore" {
+    usecase "UC-42\nMelihat Daftar Backup" as UC42
+    usecase "UC-43\nMemulihkan Backup" as UC43
+    usecase "UC-44\nMelihat Status Restore" as UC44
+  }
+}
+
+C --> UC33
+C --> UC34
+C --> UC35
+C --> UC36
+C --> UC37
+C --> UC38
+C --> UC39
+C --> UC40
+C --> UC41
+C --> UC42
+C --> UC43
+C --> UC44
+
+UC35 ..> UC34 : <<extend>>
+UC40 ..> UC39 : <<extend>>
+
+IS --> UC33
+IS --> UC36
+IS --> UC37
+IS --> UC40
+IS --> UC41
+IS --> UC43
+
+@enduml

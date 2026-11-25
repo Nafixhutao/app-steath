@@ -1,0 +1,60 @@
+@startuml
+title Gambar 5 — Use Case Modul Deployment dan Runtime Service
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #FDF1E7
+  BorderColor #8A5A3B
+  FontSize 12
+}
+
+actor "Customer" as C
+actor "Instance Server\n(Node Agent)" as IS
+
+rectangle "Stealth Hosting — Console & Worker (Control Plane)" {
+
+  package "Deployment" {
+    usecase "UC-23\nMen-deploy Service" as UC23
+    usecase "UC-24\nMen-deploy Ulang\n(Redeploy)" as UC24
+    usecase "UC-25\nMembatalkan Deployment" as UC25
+    usecase "UC-26\nMelihat Riwayat &\nLog Build" as UC26
+  }
+
+  package "Runtime" {
+    usecase "UC-27\nMenghentikan Service" as UC27
+    usecase "UC-28\nMenjalankan Service" as UC28
+    usecase "UC-29\nMe-restart Service" as UC29
+    usecase "UC-30\nMelihat Log Runtime" as UC30
+  }
+
+  package "Konfigurasi" {
+    usecase "UC-31\nMengelola Environment\nVariable" as UC31
+    usecase "UC-32\nMengelola Volume" as UC32
+  }
+}
+
+C --> UC23
+C --> UC24
+C --> UC25
+C --> UC26
+C --> UC27
+C --> UC28
+C --> UC29
+C --> UC30
+C --> UC31
+C --> UC32
+
+UC25 ..> UC23 : <<extend>>
+
+IS --> UC23
+IS --> UC24
+IS --> UC25
+IS --> UC27
+IS --> UC28
+IS --> UC29
+IS --> UC30
+IS --> UC32
+
+@enduml

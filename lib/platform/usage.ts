@@ -1,6 +1,6 @@
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
-import { nodeConfig } from "./nodes.ts";
+import { ApiError } from "./api-error.ts";
+import { nodeAgent } from "./node-agent.ts";
 import { QUOTAS } from "./quota-limits.ts";
 
 /**
@@ -41,6 +41,8 @@ export type DatabaseUsageSummary = {
   id: string;
   projectId: string;
   projectName: string;
+  engine: string;
+  version: string;
   status: string;
   usageMb: number;
   storageLimitMb: number;
@@ -92,8 +94,11 @@ type ServiceRow = {
 
 type DatabaseRow = {
   id: string;
+  databaseName: string;
   projectId: string;
   projectName: string;
+  engine: string;
+  version: string;
   status: string;
   storageLimitMb: number;
 };
@@ -122,7 +127,7 @@ type AgentUsage = {
     memoryUsageMb: number;
     volumeUsageMb: number;
   }>;
-  databases: Array<{ databaseId: string; usageMb: number }>;
+  databases: Array<{ databaseName: string; usageMb: number }>;
 };
 
 async function loadServiceRows(organizationId: string): Promise<ServiceRow[]> {
@@ -142,8 +147,8 @@ async function loadServiceRows(organizationId: string): Promise<ServiceRow[]> {
 
 async function loadDatabaseRows(organizationId: string): Promise<DatabaseRow[]> {
   const result = await pool.query<DatabaseRow>(
-    `SELECT d."id", d."projectId", p."name" AS "projectName", d."status",
-            d."storageLimitMb"
+    `SELECT d."id", d."databaseName", d."projectId", p."name" AS "projectName",
+            d."status", d."storageLimitMb", d."engine", d."version"
      FROM "database" d
      JOIN "project" p ON p."id" = d."projectId"
      WHERE p."organizationId" = $1
@@ -160,19 +165,15 @@ async function loadDatabaseRows(organizationId: string): Promise<DatabaseRow[]> 
  */
 async function loadAgentUsage(): Promise<AgentUsage | null> {
   try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.GET("/v1/usage");
+    const usage = await nodeAgent.readUsage();
 
-    if (response.response.ok && response.data) {
-      return {
-        services: response.data.services,
-        databases: response.data.databases,
-      };
-    }
-
-    console.error(`could not read usage from the Node Agent (${response.response.status})`);
+    return { services: usage.services, databases: usage.databases };
   } catch (error) {
-    console.error("could not read usage from the Node Agent", error);
+    // A node that cannot be reached is not an error for the dashboard: the
+    // previous snapshot stays visible. `nodeAgent` already logged the ApiError.
+    if (!(error instanceof ApiError)) {
+      console.error("could not read usage from the Node Agent", error);
+    }
   }
 
   return null;
@@ -186,7 +187,9 @@ async function insertSnapshots(
   capturedAt: Date,
 ): Promise<number> {
   const serviceUsage = new Map(usage.services.map((item) => [item.serviceId, item]));
-  const databaseUsage = new Map(usage.databases.map((item) => [item.databaseId, item]));
+  // A Database is a schema inside a shared server, so the Agent reports the
+  // schema name it created and this map joins it to the stored row.
+  const databaseUsage = new Map(usage.databases.map((item) => [item.databaseName, item]));
 
   const values: unknown[] = [];
   const rows: string[] = [];
@@ -230,7 +233,7 @@ async function insertSnapshots(
   }
 
   for (const database of databases) {
-    const measured = databaseUsage.get(database.id);
+    const measured = databaseUsage.get(database.databaseName);
     push(database.projectId, null, database.id, 0, 0, 0, measured?.usageMb ?? 0);
   }
 
@@ -251,9 +254,14 @@ async function insertSnapshots(
 /**
  * Measures the Organization's resources and stores one snapshot batch. Called
  * every five minutes by the worker and whenever the Quota page is opened.
+ *
+ * `measured` lets the worker reuse one Agent reading for every Organization:
+ * the reading covers the whole node, and asking once per Organization would
+ * make the pass take seconds each time it runs.
  */
 export async function refreshOrganizationUsage(
   organizationId: string,
+  measured?: AgentUsage | null,
 ): Promise<{ capturedAt: string | null; snapshots: number }> {
   const [services, databases] = await Promise.all([
     loadServiceRows(organizationId),
@@ -264,7 +272,7 @@ export async function refreshOrganizationUsage(
     return { capturedAt: null, snapshots: 0 };
   }
 
-  const usage = await loadAgentUsage();
+  const usage = measured === undefined ? await loadAgentUsage() : measured;
   if (!usage) {
     return { capturedAt: null, snapshots: 0 };
   }
@@ -294,9 +302,14 @@ export async function refreshAllOrganizationsUsage(): Promise<{
     'SELECT DISTINCT "organizationId" AS "id" FROM "project" ORDER BY "organizationId"',
   );
 
+  // One Agent reading serves every Organization, because the snapshot covers
+  // the node rather than a single tenant. Fetching per Organization would make
+  // the pass block the worker's Job loop for minutes.
+  const usage = result.rows.length > 0 ? await loadAgentUsage() : null;
+
   let snapshots = 0;
   for (const row of result.rows) {
-    const refreshed = await refreshOrganizationUsage(row.id);
+    const refreshed = await refreshOrganizationUsage(row.id, usage);
     snapshots += refreshed.snapshots;
   }
 
@@ -410,6 +423,8 @@ export async function getOrganizationUsage(organizationId: string): Promise<Orga
       id: database.id,
       projectId: database.projectId,
       projectName: database.projectName,
+      engine: database.engine,
+      version: database.version,
       status: database.status,
       usageMb: used,
       storageLimitMb: database.storageLimitMb,

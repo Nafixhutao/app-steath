@@ -106,12 +106,18 @@ export async function recordAdminDBMetrics(): Promise<void> {
 
 /** Deletes admin metric rows older than the retention window. */
 export async function pruneAdminMetrics(): Promise<number> {
-  const result = await pool.query(
+  const cutoff = [ADMIN_METRIC_RETENTION_HOURS];
+  const db = await pool.query(
     `DELETE FROM "admin_db_metric"
-     WHERE "capturedAt" < now() - interval '1' * $1`,
-    [ADMIN_METRIC_RETENTION_HOURS],
+     WHERE "capturedAt" < now() - make_interval(hours => $1)`,
+    cutoff,
   );
-  return result.rowCount ?? 0;
+  const redis = await pool.query(
+    `DELETE FROM "admin_redis_metric"
+     WHERE "capturedAt" < now() - make_interval(hours => $1)`,
+    cutoff,
+  );
+  return (db.rowCount ?? 0) + (redis.rowCount ?? 0);
 }
 
 /**

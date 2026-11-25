@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
 
 export type ToastType = "success" | "error" | "info";
@@ -24,28 +32,41 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const timers = useRef<number[]>([]);
+
+  useEffect(
+    () => () => {
+      timers.current.forEach((timer) => window.clearTimeout(timer));
+    },
+    [],
+  );
 
   const addToast = useCallback((type: ToastType, title: string, message?: string) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, type, title, message }]);
 
-    setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3500);
+    timers.current.push(timer);
   }, []);
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const toast = {
-    success: (title: string, message?: string) => addToast("success", title, message),
-    error: (title: string, message?: string) => addToast("error", title, message),
-    info: (title: string, message?: string) => addToast("info", title, message),
-  };
+  const toast = useMemo(
+    () => ({
+      success: (title: string, message?: string) => addToast("success", title, message),
+      error: (title: string, message?: string) => addToast("error", title, message),
+      info: (title: string, message?: string) => addToast("info", title, message),
+    }),
+    [addToast],
+  );
+  const value = useMemo(() => ({ toast }), [toast]);
 
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <div className="toast-viewport" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (

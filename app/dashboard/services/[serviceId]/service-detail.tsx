@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActiveMember } from "@/lib/auth-client";
@@ -18,16 +18,57 @@ import { CustomDomainPanel } from "./custom-domain-panel";
 import { RuntimePanel } from "./runtime-panel";
 import { VolumePanel } from "./volume-panel";
 
+const TABS = [
+  { id: "deployments", label: "Deployments" },
+  { id: "environment", label: "Environment" },
+  { id: "domains", label: "Domains" },
+  { id: "runtime", label: "Runtime" },
+  { id: "settings", label: "Settings" },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
+/**
+ * The header shows `owner/repo`, not the raw URL: a template URL may point at a
+ * deep, percent-encoded folder, which is too long for a single line and is
+ * already listed in Settings. Anything that is not an absolute URL falls back
+ * to the raw value.
+ */
+function repoLabel(repoUrl: string): string {
+  try {
+    const segments = new URL(repoUrl).pathname.split("/").filter(Boolean);
+    if (segments.length >= 2) return `${segments[0]}/${segments[1]}`;
+  } catch {
+    // Not an absolute URL; fall through to the raw value.
+  }
+  return repoUrl;
+}
+
 export function ServiceDetail({ serviceId }: { serviceId: string }) {
   const router = useRouter();
   const { data: activeMember } = useActiveMember();
+  const [tab, setTab] = useState<TabId>("deployments");
+  const tabbarRef = useRef<HTMLElement | null>(null);
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   // Delete failures share one slot next to the load error.
   const [actionError, setActionError] = useState("");
-  const canManage = activeMember?.role === "owner" || activeMember?.role === "admin";
+  // Better Auth stores multiple roles as a comma-separated string, so check the
+  // parsed set rather than the raw value.
+  const canManage =
+    activeMember?.role
+      .split(",")
+      .some((role) => role.trim() === "owner" || role.trim() === "admin") ?? false;
   // Members are read-only for resources but may still trigger a Deployment.
   const canDeploy = Boolean(activeMember?.role);
+
+  // On narrow screens the tab strip scrolls sideways; keep the selected tab in
+  // view without moving the page vertically.
+  useEffect(() => {
+    tabbarRef.current
+      ?.querySelector<HTMLElement>(".svc-tab.is-active")
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [tab]);
 
   const panel = useResource(async () => {
     const service = await getService(serviceId);
@@ -42,6 +83,25 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
   const projectName = panel.data?.projectName ?? "";
   const loading = panel.loading;
   const error = panel.error;
+
+  // Flag the strip only while tabs remain off-screen, which drives the fade
+  // hint at its trailing edge.
+  useEffect(() => {
+    const tabbar = tabbarRef.current;
+    if (!tabbar) return;
+    const update = () => {
+      const more = tabbar.scrollWidth - tabbar.clientWidth - tabbar.scrollLeft > 2;
+      tabbar.dataset.overflow = more ? "true" : "false";
+    };
+    update();
+    tabbar.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(tabbar);
+    return () => {
+      tabbar.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
+  }, [service?.id, canManage]);
 
   async function remove(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,55 +119,93 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
 
   if (loading) {
     return (
-      <div className="dashboard-content">
-        <p className="dashboard-table-empty" role="status">
+      <div className="dashboard-content supabase-service-page">
+        <div className="svc-page-loader" role="status">
+          <span className="svc-spinner" aria-hidden="true" />
           Loading Service...
-        </p>
+        </div>
       </div>
     );
   }
 
   if (!service) {
     return (
-      <div className="dashboard-content">
-        <div className="dashboard-page-heading">
-          <div>
-            <h1>Service not found</h1>
-            <p>This Service does not exist in the active Organization.</p>
-          </div>
-        </div>
-        {error || actionError ? (
-          <p className="dashboard-alert is-error" role="alert">
-            {error || actionError}
-          </p>
-        ) : null}
-        <p className="dashboard-back-link">
-          <Link href="/dashboard/projects">Back to Projects</Link>
+      <div className="dashboard-content supabase-service-page">
+        <p className="supabase-service-breadcrumb">
+          <Link href="/dashboard/projects">Projects</Link>
+          <span aria-hidden="true">/</span>
+          <span className="supabase-service-breadcrumb-current">Not found</span>
         </p>
+        <div className="svc-not-found">
+          <h1 className="supabase-service-title">Service not found</h1>
+          <p className="supabase-service-subtitle">
+            This Service does not exist in the active Organization.
+          </p>
+          {error || actionError ? (
+            <p className="dashboard-alert is-error" role="alert">
+              {error || actionError}
+            </p>
+          ) : null}
+          <Link className="svc-back-link" href="/dashboard/projects">
+            ← Back to Projects
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-content">
-      <div className="dashboard-page-heading">
-        <div>
-          <p className="dashboard-breadcrumb">
-            <Link href="/dashboard/projects">Projects</Link> /{" "}
-            <Link href={`/dashboard/projects/${service.projectId}`}>
-              {projectName || "Project"}
-            </Link>{" "}
-            / {service.name}
-          </p>
-          <h1>{service.name}</h1>
-          <p>
-            <a className="service-url" href={service.url} target="_blank" rel="noreferrer">
-              {service.platformHostname}
-            </a>
-          </p>
+    <div className="dashboard-content supabase-service-page">
+      <p className="supabase-service-breadcrumb">
+        <Link href="/dashboard/projects">Projects</Link>
+        <span aria-hidden="true">/</span>
+        <Link href={`/dashboard/projects/${service.projectId}`}>{projectName || "Project"}</Link>
+        <span aria-hidden="true">/</span>
+        <span className="supabase-service-breadcrumb-current">{service.name}</span>
+      </p>
+
+      <header className="svc-header">
+        <div className="svc-header-title-row">
+          <h1 className="supabase-service-title">{service.name}</h1>
+          <span className={`supabase-service-status is-${service.status}`}>
+            {serviceStatusLabel(service.status)}
+          </span>
         </div>
-        <span className="role-label">{serviceStatusLabel(service.status)}</span>
-      </div>
+        <div className="svc-header-meta">
+          <a
+            className="svc-url-link"
+            href={service.url}
+            target="_blank"
+            rel="noreferrer"
+            title={`Open ${service.platformHostname}`}
+          >
+            <span className="svc-url-text">{service.platformHostname}</span>
+            <svg
+              viewBox="0 0 16 16"
+              width="12"
+              height="12"
+              aria-hidden="true"
+              className="svc-url-icon"
+            >
+              <path
+                d="M6 3h7v7M13 3L7.5 8.5M9 13H3V7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
+          <span className="svc-meta-item" title={service.repoUrl}>
+            <code className="svc-repo-chip">{repoLabel(service.repoUrl)}</code>
+            <span className="svc-meta-branch">@{service.branch}</span>
+          </span>
+          <span className="svc-meta-item svc-meta-resources">
+            {service.cpuLimit} vCPU · {service.memoryLimitMb} MB RAM
+          </span>
+        </div>
+      </header>
 
       {error || actionError ? (
         <p className="dashboard-alert is-error" role="alert">
@@ -115,94 +213,126 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         </p>
       ) : null}
 
-      <section className="dashboard-section" aria-labelledby="configuration-heading">
-        <div className="dashboard-section-heading">
-          <h2 id="configuration-heading">Configuration</h2>
-        </div>
-        <dl className="service-meta">
-          <div>
-            <dt>Repository</dt>
-            <dd>
-              {service.repoUrl} @ {service.branch}
-            </dd>
-          </div>
-          <div>
-            <dt>Dockerfile</dt>
-            <dd>{service.dockerfilePath}</dd>
-          </div>
-          <div>
-            <dt>Container port</dt>
-            <dd>{service.containerPort}</dd>
-          </div>
-          <div>
-            <dt>Health path</dt>
-            <dd>{service.healthPath ?? "None"}</dd>
-          </div>
-          <div>
-            <dt>Platform Subdomain</dt>
-            <dd>{service.platformHostname}</dd>
-          </div>
-          <div>
-            <dt>Resource limits</dt>
-            <dd>
-              {service.cpuLimit} vCPU · {service.memoryLimitMb} MB RAM
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} canManage={canManage} />
-
-      {canManage ? (
-        <EnvironmentPanel serviceId={service.id} needsRedeploy={service.needsRedeploy} />
-      ) : null}
-
-      <VolumePanel
-        serviceId={service.id}
-        needsRedeploy={service.needsRedeploy}
-        canManage={canManage}
-      />
-
-      <CustomDomainPanel serviceId={service.id} canManage={canManage} />
-
-      <RuntimePanel
-        serviceId={service.id}
-        canManage={canManage}
-        hostname={service.platformHostname}
-      />
-
-      {canManage ? (
-        <section
-          className="dashboard-section organization-danger-zone"
-          aria-labelledby="danger-heading"
-        >
-          <div className="dashboard-section-heading">
-            <h2 id="danger-heading">Danger zone</h2>
-          </div>
-          <p>
-            Deleting this Service stops its container and removes its Volume, Environment Variables,
-            and Domains.
-          </p>
-          <form className="organization-settings-form" onSubmit={remove}>
-            <label>
-              Type <strong>{service.name}</strong> to confirm
-              <input
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-                autoComplete="off"
-                required
-              />
-            </label>
+      <nav className="svc-tabbar" aria-label="Service sections" ref={tabbarRef}>
+        {TABS.map((entry) => {
+          // Read-only Members do not get the management tabs.
+          const hidden = (entry.id === "environment" || entry.id === "settings") && !canManage;
+          if (hidden) return null;
+          return (
             <button
-              className="dashboard-danger-button"
-              type="submit"
-              disabled={busy || confirmation !== service.name}
+              key={entry.id}
+              type="button"
+              className={`svc-tab${tab === entry.id ? " is-active" : ""}`}
+              aria-current={tab === entry.id ? "page" : undefined}
+              onClick={() => setTab(entry.id)}
             >
-              {busy ? "Deleting..." : "Delete Service"}
+              {entry.label}
             </button>
-          </form>
-        </section>
-      ) : null}
+          );
+        })}
+      </nav>
+
+      <div className="svc-tab-panel">
+        {tab === "deployments" ? (
+          <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} canManage={canManage} />
+        ) : null}
+
+        {tab === "environment" && canManage ? (
+          <EnvironmentPanel serviceId={service.id} needsRedeploy={service.needsRedeploy} />
+        ) : null}
+
+        {tab === "domains" ? (
+          <CustomDomainPanel serviceId={service.id} canManage={canManage} />
+        ) : null}
+
+        {tab === "runtime" ? (
+          <>
+            <RuntimePanel
+              serviceId={service.id}
+              canManage={canManage}
+              hostname={service.platformHostname}
+            />
+            {canManage ? (
+              <VolumePanel
+                serviceId={service.id}
+                needsRedeploy={service.needsRedeploy}
+                canManage={canManage}
+              />
+            ) : null}
+          </>
+        ) : null}
+
+        {tab === "settings" && canManage ? (
+          <>
+            <section className="dashboard-section" aria-labelledby="configuration-heading">
+              <div className="dashboard-section-heading">
+                <h2 id="configuration-heading">Configuration</h2>
+              </div>
+              <dl className="service-meta">
+                <div>
+                  <dt>Repository</dt>
+                  <dd>
+                    {service.repoUrl} @ {service.branch}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Dockerfile</dt>
+                  <dd>{service.dockerfilePath}</dd>
+                </div>
+                <div>
+                  <dt>Container port</dt>
+                  <dd>{service.containerPort}</dd>
+                </div>
+                <div>
+                  <dt>Health path</dt>
+                  <dd>{service.healthPath ?? "None"}</dd>
+                </div>
+                <div>
+                  <dt>Platform Subdomain</dt>
+                  <dd>{service.platformHostname}</dd>
+                </div>
+                <div>
+                  <dt>Resource limits</dt>
+                  <dd>
+                    {service.cpuLimit} vCPU · {service.memoryLimitMb} MB RAM
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <section
+              className="dashboard-section organization-danger-zone"
+              aria-labelledby="danger-heading"
+            >
+              <div className="dashboard-section-heading">
+                <h2 id="danger-heading">Danger zone</h2>
+              </div>
+              <p>
+                Deleting this Service stops its container and removes its Volume, Environment
+                Variables, and Domains.
+              </p>
+              <form className="organization-settings-form" onSubmit={remove}>
+                <label>
+                  Type <strong>{service.name}</strong> to confirm
+                  <input
+                    value={confirmation}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                    autoComplete="off"
+                    required
+                  />
+                </label>
+                <button
+                  className="supabase-btn-danger"
+                  type="submit"
+                  disabled={busy || confirmation !== service.name}
+                >
+                  {busy ? "Deleting..." : "Delete Service"}
+                </button>
+              </form>
+            </section>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -1,24 +1,16 @@
 import { pool } from "./db.ts";
 import { ApiError } from "./api-error.ts";
-import { createAgentClient } from "@/lib/agent-client";
-import { nodeConfig } from "@/lib/platform/nodes";
+import { nodeAgent } from "./node-agent.ts";
 
 async function setNodeSuspension(serviceId: string, suspended: boolean, restore = false) {
-  const config = nodeConfig();
-  const client = createAgentClient(config.baseUrl, config.token);
-  const response = suspended
-    ? await client.POST("/v1/services/{serviceId}/suspend", { params: { path: { serviceId } } })
-    : await client.POST("/v1/services/{serviceId}/unsuspend", {
-        params: { path: { serviceId } },
-        body: { restore },
-      });
-  if (!response.response.ok && response.response.status !== 404) {
-    throw new ApiError(
-      502,
-      "agent_unavailable",
-      `The Node Agent could not ${suspended ? "suspend" : "restore"} the Service.`,
-    );
+  // A Service with no container has no route to suspend; there is nothing to do
+  // and the row update is still correct, so the module treats a 404 as success.
+  if (suspended) {
+    await nodeAgent.suspendService(serviceId);
+    return;
   }
+
+  await nodeAgent.unsuspendService({ serviceId, restore });
 }
 
 export async function listAdminResources(query: string) {

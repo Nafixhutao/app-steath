@@ -118,6 +118,17 @@ type Manager struct {
 	backupArtifacts backupArtifacts
 	// restoreDir is where an incoming artifact is staged for a Restore.
 	restoreDir string
+	// mysqlRootPassword is the root password of the shared MySQL server. The
+	// agent provisions every tenant schema through it, so it is read from the
+	// environment rather than baked into the image.
+	mysqlRootPassword string
+	// postgresAdminPassword is the superuser password of the shared PostgreSQL
+	// server, which is separate from the Control Plane's own database.
+	postgresAdminPassword string
+	// phpMyAdminUpstream is the Control Plane address the phpMyAdmin host's
+	// sign-in bridge proxies to. Empty keeps the bridge off, so a node without a
+	// Control Plane URL never programs a route to nowhere.
+	phpMyAdminUpstream string
 }
 
 // NewManager returns a Manager that runs containers with docker and routes them
@@ -141,6 +152,13 @@ func NewManager(docker Docker, router Router) *Manager {
 // separate call so the Manager stays usable with only Docker and a Router.
 func (m *Manager) SetNetworkAttacher(networks NetworkAttacher) {
 	m.networks = networks
+}
+
+// SetPhpMyAdminUpstream points the phpMyAdmin sign-in bridge at the Control Plane.
+// Without it the bridge is not programmed, so a Dashboard link cannot be created
+// for a host that would answer 502.
+func (m *Manager) SetPhpMyAdminUpstream(address string) {
+	m.phpMyAdminUpstream = address
 }
 
 // SetCleanupStatePath records where the last Build-cache prune is remembered.
@@ -867,6 +885,14 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 		return err
 	}
 
+	// The phpMyAdmin sidecars are routed too. Their hostnames and upstreams are
+	// part of the live set, or the stale-route sweep below would delete a route
+	// that belongs to a running Database.
+	phpMyAdmin, err := m.docker.ListContainers(ctx, map[string]string{LabelType: ResourceTypeDatabasePhpMyAdmin})
+	if err != nil {
+		return err
+	}
+
 	// A route whose container is gone must be removed, otherwise Caddy answers
 	// 502 for a Service that no longer exists. Candidates are skipped: they do
 	// not hold the hostname yet. A Custom Domain route has no label of its own,
@@ -891,6 +917,15 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 				liveUpstreams[upstream(alias, port)] = true
 			}
 		}
+	}
+	for _, container := range phpMyAdmin {
+		if !container.Running() {
+			continue
+		}
+		if hostname := container.Labels[LabelHostname]; hostname != "" {
+			live[hostname] = true
+		}
+		liveUpstreams[upstream(phpMyAdminAlias, phpMyAdminPort)] = true
 	}
 	for _, route := range existing {
 		if route.Suspended {

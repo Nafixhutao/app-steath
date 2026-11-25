@@ -70,7 +70,7 @@ chmod 600 /home/ubuntu/paas/.env
 | `ENV_ENCRYPTION_KEY`          | 32 byte base64 atau 64 hex                                      |
 | `AGENT_TOKEN`                 | token acak                                                      |
 | `AGENT_BASE_URL`              | `http://agent:8081`                                             |
-| `PLATFORM_DOMAIN`             | `apps.<domain>`                                                 |
+| `PLATFORM_DOMAIN`             | `<domain>` (satu level, mis. `cherome.my.id`)                   |
 | `CLOUDFLARE_TUNNEL_TOKEN`     | dari dashboard Cloudflare                                       |
 
 `scripts/wizard-vps.sh` membuat nilai acak dan menulis `.env.production`.
@@ -87,16 +87,32 @@ chmod 600 /home/ubuntu/paas/.env
    `CLOUDFLARE_TUNNEL_TOKEN`.
 3. Di tab **Public Hostname**, tambahkan dua entri:
 
-| Subdomain | Domain          | Path | Service                     |
-| --------- | --------------- | ---- | --------------------------- |
-| `console` | `<domain>`      | -    | `http://control-plane:3000` |
-| `*`       | `apps.<domain>` | -    | `https://caddy:443`         |
+| Subdomain | Domain              | Path | Service                     |
+| --------- | ------------------- | ---- | --------------------------- |
+| `console` | `<domain>`          | -    | `http://control-plane:3000` |
+| `*`       | `<platform-domain>` | -    | `https://caddy:443`         |
 
 Untuk entri wildcard, buka **Additional application settings -> TLS** dan aktifkan
 **No TLS Verify** (Caddy memakai CA internal, bukan sertifikat publik).
 
-Cloudflare membuat CNAME `console` dan `*.apps` otomatis. Tidak ada A record ke
-IP VPS, jadi port 80/443 di VPS tetap tertutup.
+Cloudflare membuat CNAME `console` dan `*.<platform-domain>` otomatis. Tidak ada
+A record ke IP VPS, jadi port 80/443 di VPS tetap tertutup.
+
+> **`PLATFORM_DOMAIN` harus satu level di bawah zona.** Universal SSL gratis
+> hanya mencakup `<domain>` dan `*.<domain>`; nama dua level seperti
+> `apps.<domain>` butuh **Total TLS** (Advanced Certificate Manager, berbayar).
+> Tanpa sertifikat edge, Cloudflare menolak handshake untuk setiap Service
+> (`sslv3 alert handshake failure`, error 552) walaupun container dan Caddy
+> sehat. Jadi pakai `PLATFORM_DOMAIN="<domain>"`, bukan `"apps.<domain>"`.
+> Kalau wildcard `<domain>` sudah dipakai tunnel lain, entri eksplisit di DNS
+> tetap menang, sehingga hostname yang sudah ada tidak terganggu.
+
+> **SNI tunnel bukan hostname Service.** Cloudflared membuka koneksi ke
+> `https://caddy:443` dan mengirim nama host di URL origin (`caddy`) sebagai TLS
+> SNI; hostname publik tetap dikirim di header `Host` dan dipakai Caddy untuk
+> memilih route. Karena itu endpoint izin on-demand Caddy juga mengizinkan nama
+> `TUNNEL_ORIGIN_HOSTNAME` (default `caddy`). Tanpa izin ini, tunnel menjawab
+> `502` dengan `tls: internal error` di log cloudflared.
 
 ## 4. Jalankan
 
@@ -185,6 +201,13 @@ disimpan di volume `agent_work` dan diunduh Control Plane. Untuk produksi, isi
   cloud) atau lewati uji ini.
 - ClamAV tidak dibundel di image agent (database virus butuh ~1 GB RAM/disk).
   Scanner melaporkan ketiadaannya sebagai temuan informasional, bukan kegagalan.
+- Container bantu untuk tes lokal (`stealth-test-postgres`, `stealth-test-redis`)
+  **wajib** dipublish ke `127.0.0.1`, bukan `0.0.0.0`. Password-nya konstanta yang
+  tertulis di repo dan Redis tanpa auth, jadi binding ke semua interface sama
+  dengan menyerahkan database dan Redis ke jaringan. Kalau dibuat dengan
+  `docker run`, tulis `-p 127.0.0.1:5432:5432` / `-p 127.0.0.1:6379:6379`, dan
+  jangan pakai `--rm` supaya datanya tidak hilang saat container berhenti.
+  Verifikasi dengan `ss -ltn | grep -E '5432|6379'`: alamatnya harus `127.0.0.1`.
 
 ## 10. Perawatan disk
 

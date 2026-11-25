@@ -60,6 +60,7 @@
     "jsdom": "^31.0.1",
     "openapi-typescript": "^7.13.0",
     "prettier": "3.9.10",
+    "react-grab": "^0.2.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "ui-skills": "0.2.4",

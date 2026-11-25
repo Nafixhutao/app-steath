@@ -1,0 +1,23 @@
+@startuml
+title Gambar 8a — Use Case yang Dipicu Sendiri oleh Node Agent
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EEF6F8
+  BorderColor #3B6B7A
+  FontSize 12
+}
+
+actor "Instance Server\n(Node Agent)" as IS
+
+rectangle "Stealth Hosting — Control Plane" {
+  usecase "UC-56\nMengirim Heartbeat Node" as UC56
+  usecase "UC-57\nMeminta Otorisasi\nSertifikat TLS" as UC57
+}
+
+IS --> UC56
+IS --> UC57
+
+@enduml

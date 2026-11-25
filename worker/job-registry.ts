@@ -1,6 +1,6 @@
 import type { JobRow } from "../lib/platform/deployments.ts";
 
-export type JobOutcome = "succeeded" | "failed";
+export type JobOutcome = "succeeded" | "failed" | "cancelled";
 
 export interface JobResult {
   status: string;
@@ -42,7 +42,13 @@ export async function runJobWithHandler(
 
   try {
     const result = await handler(job);
-    await io.completeJob(job.id, result.status === "failed" ? "failed" : "succeeded");
+    const outcome =
+      result.status === "failed"
+        ? "failed"
+        : result.status === "cancelled"
+          ? "cancelled"
+          : "succeeded";
+    await io.completeJob(job.id, outcome);
     io.log(`${job.type} ${result.subject} ${result.status}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
