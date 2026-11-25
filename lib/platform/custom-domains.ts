@@ -393,7 +393,7 @@ export async function deleteServiceCustomDomain(input: {
   // a cached certificate for a domain the user deleted. A node that cannot be
   // reached fails the delete, so the user can retry instead of leaving an orphan
   // route behind.
-  await removeCustomDomainRoute(service.id, row.hostname);
+  await nodeAgent.removeHostnameRoute({ serviceId: service.id, hostname: row.hostname });
 
   await pool.query('DELETE FROM "custom_domain" WHERE "id" = $1', [row.id]);
 
@@ -435,19 +435,6 @@ export async function isCertificateHostnameAllowed(hostname: string): Promise<bo
   );
 
   return (result.rowCount ?? 0) > 0;
-}
-
-async function removeCustomDomainRoute(serviceId: string, hostname: string): Promise<void> {
-  // The route is already gone when the container never existed.
-  await nodeAgent.removeHostnameRoute({ serviceId, hostname });
-}
-
-/** Re-exported so the Service delete path can clean up its route. */
-export async function removeServiceCustomDomainOnNode(
-  serviceId: string,
-  hostname: string,
-): Promise<void> {
-  await removeCustomDomainRoute(serviceId, hostname);
 }
 
 export type OrganizationCustomDomainSummary = CustomDomainSummary & {

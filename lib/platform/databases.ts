@@ -716,7 +716,7 @@ export async function createProjectDatabase(input: {
     // The row must not survive a provisioning failure, or the Project would be
     // stuck at its Quota with a Database the user cannot use.
     await pool.query('DELETE FROM "database" WHERE "id" = $1', [row.id]).catch(() => undefined);
-    await removeDatabaseOnNode(row.id).catch(() => undefined);
+    await nodeAgent.removeDatabase(row.id).catch(() => undefined);
     throw error;
   }
 
@@ -752,10 +752,6 @@ async function provisionDatabase(
   });
 
   return mapAgentStatus(status);
-}
-
-async function removeDatabaseOnNode(databaseId: string): Promise<void> {
-  await nodeAgent.removeDatabase(databaseId);
 }
 
 /**
