@@ -423,6 +423,12 @@ export async function isCertificateHostnameAllowed(hostname: string): Promise<bo
     return true;
   }
 
+  // The shared S3 endpoint is platform infrastructure, not a tenant hostname.
+  // Caddy still asks before issuing its certificate, so name it explicitly.
+  if (normalized === `s3.${getPlatformDomain().toLowerCase()}`) {
+    return true;
+  }
+
   const result = await pool.query(
     `SELECT 1 FROM "service" WHERE lower("platformHostname") = $1
      UNION ALL

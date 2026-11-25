@@ -23,8 +23,25 @@ FROM aquasec/trivy:latest AS trivy
 FROM debian:bookworm-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates git tini \
+ && apt-get install -y --no-install-recommends ca-certificates curl git tini \
  && rm -rf /var/lib/apt/lists/*
+
+# The MinIO client drives every Storage operation. The community binaries were
+# removed from dl.min.io (410 Gone), so this pins the last published community
+# release from its GitHub asset and verifies the upstream SHA-256. MC_BIN can
+# point the agent at a different binary when a node already has one installed.
+ARG TARGETARCH
+RUN set -eux; \
+  case "${TARGETARCH:-amd64}" in \
+    amd64) MC_SHA=01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891 ;; \
+    arm64) MC_SHA=14c8c9616cfce4636add161304353244e8de383b2e2752c0e9dad01d4c27c12c ;; \
+    *) echo "unsupported mc architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+  esac; \
+  curl -fsSL -o /usr/local/bin/mc \
+    "https://github.com/minio/mc/releases/download/RELEASE.2025-08-13T08-35-41Z/mc.linux-${TARGETARCH:-amd64}.RELEASE.2025-08-13T08-35-41Z"; \
+  echo "${MC_SHA}  mc" | (cd /usr/local/bin && sha256sum -c -); \
+  chmod +x /usr/local/bin/mc; \
+  mc --version
 
 COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=dockercli /usr/local/libexec/docker/cli-plugins/docker-buildx \

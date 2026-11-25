@@ -13,6 +13,10 @@ export const QUOTAS = {
   memoryMbPerService: 512,
   volumeMbPerService: 1024,
   databaseStorageMb: 1024,
+  // Object storage follows the same free-tier shape as Databases: a small
+  // number of Buckets per Project, each capped by MinIO's own bucket quota.
+  bucketsPerProject: 3,
+  bucketStorageMb: 1024,
   // The experiment runs one Build at a time per node, because the worker claims
   // one Build Job at a time.
   buildConcurrencyPerNode: 1,
@@ -46,7 +50,8 @@ type Queryable = {
 export type QuotaCheckScope =
   | { type: "project"; organizationId: string }
   | { type: "service"; organizationId: string; projectId: string }
-  | { type: "database"; organizationId?: string; projectId: string };
+  | { type: "database"; organizationId?: string; projectId: string }
+  | { type: "bucket"; projectId: string };
 
 /**
  * Asserts that creating a resource will not exceed Organization or Project Quotas.
@@ -103,6 +108,19 @@ export async function assertQuota(client: Queryable, scope: QuotaCheckScope): Pr
     const limit = QUOTAS.databasesPerProject;
     if (used >= limit) {
       throw new QuotaExceededError("Database", limit, used, "Project");
+    }
+    return;
+  }
+
+  if (scope.type === "bucket") {
+    const res = await client.query<{ count: string }>(
+      'SELECT count(*) FROM "storage_bucket" WHERE "projectId" = $1',
+      [scope.projectId],
+    );
+    const used = Number(res.rows[0]?.count ?? 0);
+    const limit = QUOTAS.bucketsPerProject;
+    if (used >= limit) {
+      throw new QuotaExceededError("Bucket", limit, used, "Project");
     }
     return;
   }

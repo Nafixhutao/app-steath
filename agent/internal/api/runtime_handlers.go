@@ -43,6 +43,12 @@ type RuntimeDeployer interface {
 	) (runtime.DatabaseProxyState, error)
 	GetDatabaseProxy(ctx context.Context, databaseID string) (runtime.DatabaseProxyState, error)
 	RemoveDatabaseProxy(ctx context.Context, databaseID string) (bool, error)
+	ProvisionStorageBucket(
+		ctx context.Context,
+		request runtime.StorageBucketRequest,
+	) (runtime.StorageBucketState, error)
+	GetStorageBucket(ctx context.Context, bucketID string, quotaMB int) (runtime.StorageBucketState, error)
+	RemoveStorageBucket(ctx context.Context, bucketID string) (runtime.StorageBucketRemoval, error)
 	Backup(ctx context.Context, request runtime.BackupRequest) (runtime.BackupArtifact, error)
 	BackupContent(backupID string) (string, int64, error)
 	RemoveBackup(backupID string) (bool, error)

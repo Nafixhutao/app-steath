@@ -129,6 +129,22 @@ type Manager struct {
 	// sign-in bridge proxies to. Empty keeps the bridge off, so a node without a
 	// Control Plane URL never programs a route to nowhere.
 	phpMyAdminUpstream string
+
+	// storageMu guards the shared MinIO admin credentials, the mc config dir,
+	// and the bucket-to-IAM-user map. One mc config is used by every bucket, so
+	// alias updates must not interleave with CLI calls.
+	storageMu sync.Mutex
+	// storageRootUser and storageRootPassword are the shared MinIO admin keys.
+	// They come from the agent environment and are never written to a log.
+	storageRootUser     string
+	storageRootPassword string
+	// storageHostname is the public S3 hostname Caddy serves.
+	storageHostname string
+	// storageDir holds mc config and temporary bucket policy documents.
+	storageDir string
+	// storageUsersByBucket remembers the IAM user created for each bucket, so a
+	// Remove can revoke it without a new request carrying the access key.
+	storageUsersByBucket map[string]string
 }
 
 // NewManager returns a Manager that runs containers with docker and routes them

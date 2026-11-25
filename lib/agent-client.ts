@@ -21,6 +21,7 @@ export type AgentUsage = paths["/v1/usage"]["get"]["responses"][200]["content"][
 export type AgentHostMetrics = components["schemas"]["HostMetricsSnapshot"];
 export type AgentScanReport =
   paths["/v1/scans"]["post"]["responses"][200]["content"]["application/json"];
+export type AgentStorageBucketState = components["schemas"]["StorageBucketState"];
 
 export type AgentClient = ReturnType<typeof createAgentClient>;
 

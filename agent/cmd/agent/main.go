@@ -95,6 +95,18 @@ func main() {
 		os.Getenv("MYSQL_ROOT_PASSWORD"),
 		os.Getenv("PGDB_POSTGRES_PASSWORD"),
 	)
+	// The shared MinIO server's admin credentials are used only by the agent to
+	// provision tenant buckets and IAM users. mc config and temporary bucket
+	// policies stay under the work root; neither the credentials nor the tenant
+	// secret keys are ever logged.
+	services.SetStorageDir(filepath.Join(workRoot, "storage"))
+	services.SetStorageCredentials(
+		os.Getenv("MINIO_ROOT_USER"),
+		os.Getenv("MINIO_ROOT_PASSWORD"),
+	)
+	if domain := strings.TrimSpace(os.Getenv("PLATFORM_DOMAIN")); domain != "" {
+		services.SetStorageHostname("s3." + domain)
+	}
 	// Caddy runs as a container on this node, so it must join each Project
 	// network to resolve the alias a route dials.
 	services.SetNetworkAttacher(runtime.NewCaddyAttacher(
@@ -124,6 +136,14 @@ func main() {
 
 		if err := services.Reconcile(ctx); err != nil {
 			log.Printf("reconcile services: %v", err)
+		}
+
+		// The public S3 host has no container of its own, so Reconcile's stale
+		// route sweep cannot re-install it. Programming it after the sweep keeps
+		// it in Caddy across restarts; a MinIO that is still starting is fine
+		// because Caddy can hold a route to an upstream that comes up later.
+		if err := services.EnsureStorageRoute(ctx); err != nil {
+			log.Printf("reconcile storage route: %v", err)
 		}
 
 		// Housekeeping runs after Reconcile so it sees the containers the agent

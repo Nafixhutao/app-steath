@@ -52,6 +52,10 @@ _Avoid_: Compile, pipeline
 Penyimpanan persisten yang dipasang ke satu Service.
 _Avoid_: Disk, storage
 
+**Bucket**:
+Wadah objek S3 untuk sebuah Project, dibuat dengan satu Access Key dan Secret Key serta kuota hard. Bukan container: ia adalah bucket, user IAM, dan policy di dalam server MinIO bersama di node. Bisa Public (baca anonim) atau Private.
+_Avoid_: Storage, folder, object
+
 **Environment Variable**:
 Nilai konfigurasi yang disuntikkan ke Service saat runtime.
 _Avoid_: Env, config
