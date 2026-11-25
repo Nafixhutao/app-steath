@@ -95,6 +95,10 @@ _Avoid_: Panel, backend
 Proses di hosting node yang menjalankan container, Build, routing, log, dan operasi Docker atas perintah Control Plane.
 _Avoid_: Runner, daemon
 
+**Node Agent seam**:
+Satu module (`lib/platform/node-agent.ts`) yang menjadi satu-satunya jalan Control Plane mencapai Node Agent: ia memiliki konstruksi client, kebijakan status 404/409/502, dan kosakata kegagalannya, sehingga module lain memanggil operasi bernama, bukan verb dan path. Sengaja tanpa port yang bisa diinjeksi — adapter HTTP adalah satu-satunya adapter, dan tes API memakai fake server HTTP sungguhan, jadi seam ini nyata karena locality, bukan karena dua adapter.
+_Avoid_: Agent client, agent service, transport layer
+
 **Quota**:
 Batas resource yang berlaku untuk sebuah Organization.
 _Avoid_: Limit, plan

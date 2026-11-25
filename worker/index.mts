@@ -9,7 +9,7 @@ import {
   runDeployment,
   type JobRow,
 } from "../lib/platform/deployments.ts";
-import { createAgentClient } from "../lib/agent-client.ts";
+import { nodeConfig } from "../lib/platform/nodes.ts";
 import { refreshAllOrganizationsUsage } from "../lib/platform/usage.ts";
 import {
   BACKUP_JOB_TYPE,
@@ -253,9 +253,9 @@ if (!process.env.AGENT_BASE_URL || !process.env.AGENT_TOKEN) {
   process.exit(1);
 }
 
-// The agent client is created once so connection settings are validated at
+// The node configuration is read once so missing connection settings fail at
 // startup rather than in the middle of a Build.
-createAgentClient(process.env.AGENT_BASE_URL.replace(/\/+$/, ""), process.env.AGENT_TOKEN);
+nodeConfig();
 
 console.log("[worker] deployment worker started");
 

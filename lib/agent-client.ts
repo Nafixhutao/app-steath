@@ -15,6 +15,12 @@ export type AgentDeployment = components["schemas"]["Deployment"];
 export type AgentServiceState = components["schemas"]["ServiceState"];
 export type AgentRuntimeLogEvent = components["schemas"]["RuntimeLogEvent"];
 export type AgentDeploymentAbort = components["schemas"]["DeploymentAbort"];
+export type AgentBackupRequest =
+  paths["/v1/backups"]["post"]["requestBody"]["content"]["application/json"];
+export type AgentUsage = paths["/v1/usage"]["get"]["responses"][200]["content"]["application/json"];
+export type AgentHostMetrics = components["schemas"]["HostMetricsSnapshot"];
+export type AgentScanReport =
+  paths["/v1/scans"]["post"]["responses"][200]["content"]["application/json"];
 
 export type AgentClient = ReturnType<typeof createAgentClient>;
 

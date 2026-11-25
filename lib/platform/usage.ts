@@ -1,6 +1,5 @@
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 import { QUOTAS } from "./quota-limits.ts";
 
 /**
@@ -165,18 +164,12 @@ async function loadDatabaseRows(organizationId: string): Promise<DatabaseRow[]> 
  */
 async function loadAgentUsage(): Promise<AgentUsage | null> {
   try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.GET("/v1/usage");
+    const usage = await nodeAgent.readUsage();
 
-    if (response.response.ok && response.data) {
-      return {
-        services: response.data.services,
-        databases: response.data.databases,
-      };
-    }
-
-    console.error(`could not read usage from the Node Agent (${response.response.status})`);
+    return { services: usage.services, databases: usage.databases };
   } catch (error) {
+    // A node that cannot be reached is not an error for the dashboard: the
+    // previous snapshot stays visible.
     console.error("could not read usage from the Node Agent", error);
   }
 

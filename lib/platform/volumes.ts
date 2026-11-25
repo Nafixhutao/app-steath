@@ -1,7 +1,6 @@
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 import { QUOTAS } from "./quota-limits.ts";
 import { requireService } from "./ownership.ts";
 import { bumpRevision, serviceNeedsRedeploy } from "./revisions.ts";
@@ -123,20 +122,17 @@ async function loadVolumeRow(serviceId: string): Promise<VolumeRow | null> {
  */
 async function measureVolume(row: VolumeRow): Promise<{ usageMb: number | null; exists: boolean }> {
   try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.GET("/v1/volumes/{name}", {
-      params: {
-        path: { name: row.dockerVolumeName },
-        query: { sizeMb: row.sizeMb },
-      },
+    const volume = await nodeAgent.readVolume({
+      name: row.dockerVolumeName,
+      sizeMb: row.sizeMb,
     });
 
-    if (response.response.ok && response.data) {
-      return { usageMb: response.data.usageMb, exists: response.data.exists };
-    }
-    if (response.response.status === 404) {
+    // A Volume the node does not have is gone, not unknown: report zero used.
+    if (!volume) {
       return { usageMb: 0, exists: false };
     }
+
+    return { usageMb: volume.usageMb, exists: volume.exists };
   } catch (error) {
     console.error(`could not read the usage of Volume ${row.dockerVolumeName}`, error);
   }
@@ -232,29 +228,9 @@ export async function deleteServiceVolume(input: {
     throw new ApiError(404, "volume_not_found", "This Service has no Volume.");
   }
 
-  try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.DELETE("/v1/volumes/{name}", {
-      params: { path: { name: row.dockerVolumeName } },
-    });
-
-    if (response.response.status === 409) {
-      throw new ApiError(409, "volume_in_use", "Stop the Service before deleting its Volume.");
-    }
-    if (!response.response.ok) {
-      throw new Error(`The Node Agent answered ${response.response.status}.`);
-    }
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    console.error(`could not remove Volume ${row.dockerVolumeName}`, error);
-    throw new ApiError(
-      502,
-      "volume_removal_failed",
-      "The Node Agent could not remove the Volume. Try again when the node is healthy.",
-    );
-  }
+  // The node refuses while the Service still mounts the Volume; the module turns
+  // that into the 409 the user can act on.
+  await nodeAgent.removeVolume(row.dockerVolumeName);
 
   await pool.query('DELETE FROM "volume" WHERE "id" = $1 AND "serviceId" = $2', [
     row.id,

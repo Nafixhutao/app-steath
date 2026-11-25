@@ -1,5 +1,4 @@
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
 import { recordAudit } from "./audit.ts";
 import {
   backupStorageConfigFromEnv,
@@ -9,7 +8,7 @@ import {
   safeLocalPath,
   type BackupStorageProvider,
 } from "./backup-storage.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 
 /**
  * Daily Backup orchestration. The worker schedules one Backup per Database, per
@@ -223,20 +222,6 @@ export function backupStorageKey(
   return `backups/${row.organizationId ?? "platform"}/${row.id}${extension}`;
 }
 
-async function downloadBackup(backupId: string): Promise<Buffer> {
-  const { baseUrl, token } = nodeConfig();
-  const response = await fetch(
-    `${baseUrl.replace(/\/+$/, "")}/v1/backups/${encodeURIComponent(backupId)}/content`,
-    { headers: { authorization: `Bearer ${token}` } },
-  );
-
-  if (!response.ok) {
-    throw new Error(`the Node Agent answered ${response.status} for Backup ${backupId}`);
-  }
-
-  return Buffer.from(await response.arrayBuffer());
-}
-
 /**
  * Runs one queued Backup Job end to end and records the outcome on the Backup
  * row. A failed Backup is visible in the dashboard and audited, because losing
@@ -266,23 +251,18 @@ export async function runBackupJob(job: {
   );
 
   const storage = createBackupStorage();
-  const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
+
+  /** Removes the staged artifact; the durable copy is already in storage. */
+  const discardStagedArtifact = () => nodeAgent.discardBackup(backupId).catch(() => undefined);
 
   try {
-    const created = await client.POST("/v1/backups", { body: agentRequestFor(row) });
-    if (!created.response.ok || !created.data) {
-      throw new Error(`the Node Agent rejected the Backup (${created.response.status})`);
-    }
+    await nodeAgent.createBackup(agentRequestFor(row));
 
-    const bytes = await downloadBackup(backupId);
+    const bytes = await nodeAgent.downloadBackup(backupId);
     const storageKey = backupStorageKey(row);
     await storage.put(storageKey, bytes);
 
-    // The agent copy is only a staging file; a failure here must not fail the
-    // Backup, because the durable copy already exists.
-    await client
-      .DELETE("/v1/backups/{backupId}", { params: { path: { backupId } } })
-      .catch(() => undefined);
+    await discardStagedArtifact();
 
     await pool.query(
       `UPDATE "backup"
@@ -297,9 +277,7 @@ export async function runBackupJob(job: {
     const message = error instanceof Error ? error.message : String(error);
     // A failed Backup still leaves a staged artifact on the Agent. Clean it up
     // here too, otherwise failed runs leak dump files on the node forever.
-    await client
-      .DELETE("/v1/backups/{backupId}", { params: { path: { backupId } } })
-      .catch(() => undefined);
+    await discardStagedArtifact();
     await pool.query(
       `UPDATE "backup" SET "status" = 'failed', "errorMessage" = $2 WHERE "id" = $1`,
       [backupId, message],

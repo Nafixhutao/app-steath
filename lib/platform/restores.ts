@@ -3,7 +3,7 @@ import { ApiError } from "./api-error.ts";
 import { recordAudit } from "./audit.ts";
 import { readStoredObject, type BackupStorageProvider } from "./backup-storage.ts";
 import { backupTargetName } from "./backups.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 import { startService, stopService } from "./runtime.ts";
 
 /**
@@ -324,29 +324,12 @@ async function startAfterRestore(
 }
 
 async function sendRestoreToAgent(row: RestoreRow, bytes: Buffer): Promise<void> {
-  const { baseUrl, token } = nodeConfig();
-  const query = new URLSearchParams({
+  await nodeAgent.sendRestore({
+    restoreId: row.id,
     targetType: row.targetType,
     targetId: row.targetId,
+    bytes,
   });
-  const url = `${baseUrl.replace(/\/+$/, "")}/v1/restores/${encodeURIComponent(row.id)}?${query}`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${token}`,
-      "content-type": "application/octet-stream",
-    },
-    // Copy into a plain Uint8Array so fetch accepts the bytes as a body.
-    body: new Uint8Array(bytes),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `the Node Agent answered ${response.status} for the Restore${detail ? `: ${detail}` : ""}`,
-    );
-  }
 }
 
 async function loadRestore(restoreId: string): Promise<RestoreRow | null> {

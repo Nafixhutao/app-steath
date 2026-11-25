@@ -2,9 +2,8 @@ import { randomBytes } from "node:crypto";
 import { lookup, resolveTxt } from "node:dns/promises";
 import { isIP } from "node:net";
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 import { getPlatformDomain } from "./platform-domain.ts";
 import { requireService } from "./ownership.ts";
 
@@ -300,7 +299,7 @@ export async function verifyServiceCustomDomain(input: {
     });
   }
 
-  const routed = await routeCustomDomain(service.id, row.hostname);
+  const routed = await nodeAgent.routeHostname({ serviceId: service.id, hostname: row.hostname });
   if (routed === "missing" || routed === "not_running") {
     // DNS is correct but there is nothing to route to yet. Leave the row pending
     // so the owner can deploy and retry without publishing a different token.
@@ -438,38 +437,9 @@ export async function isCertificateHostnameAllowed(hostname: string): Promise<bo
   return (result.rowCount ?? 0) > 0;
 }
 
-type RouteResult = "ok" | "missing" | "not_running" | "failed";
-
-async function routeCustomDomain(serviceId: string, hostname: string): Promise<RouteResult> {
-  try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.PUT("/v1/services/{serviceId}/hostnames/{hostname}", {
-      params: { path: { serviceId, hostname } },
-    });
-
-    if (response.response.status === 404) {
-      return "missing";
-    }
-    if (response.response.status === 409) {
-      return "not_running";
-    }
-
-    return response.response.ok ? "ok" : "failed";
-  } catch (error) {
-    console.error(`could not route Custom Domain ${hostname}`, error);
-    return "failed";
-  }
-}
-
 async function removeCustomDomainRoute(serviceId: string, hostname: string): Promise<void> {
-  const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-  const response = await client.DELETE("/v1/services/{serviceId}/hostnames/{hostname}", {
-    params: { path: { serviceId, hostname } },
-  });
-
-  if (!response.response.ok && response.response.status !== 404) {
-    throw new Error(`The Node Agent answered ${response.response.status}.`);
-  }
+  // The route is already gone when the container never existed.
+  await nodeAgent.removeHostnameRoute({ serviceId, hostname });
 }
 
 /** Re-exported so the Service delete path can clean up its route. */

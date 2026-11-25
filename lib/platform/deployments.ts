@@ -1,15 +1,10 @@
 import { pool } from "./db.ts";
-import {
-  createAgentClient,
-  streamBuildLogs,
-  type AgentBuild,
-  type AgentClient,
-  type AgentDeploymentAbort,
-} from "../../lib/agent-client.ts";
+import { type AgentDeploymentAbort } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
 import { loadDeploymentDatabaseUrl } from "./databases.ts";
 import { loadDeploymentEnvironment } from "./environment-variables.ts";
-import { nodeConfig, requireHealthyNode } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
+import { requireHealthyNode } from "./nodes.ts";
 import { QUOTAS } from "./quota-limits.ts";
 import { enqueueScanJob } from "./scans.ts";
 import { loadDeploymentVolume } from "./volumes.ts";
@@ -364,7 +359,6 @@ export async function markDeploymentBuilt(input: {
  */
 export async function runDeployment(
   deploymentId: string,
-  options: { client?: AgentClient } = {},
 ): Promise<{ status: "running" | "failed" | "cancelled"; message: string }> {
   const details = await pool.query<{
     deploymentId: string;
@@ -449,23 +443,19 @@ export async function runDeployment(
     envRevision,
   ]);
 
-  const client = options.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-
-  const started = await client.POST("/v1/deployments", {
-    body: {
-      deploymentId: deployment.deploymentId,
-      serviceId: deployment.serviceId,
-      projectId: deployment.projectId,
-      organizationId: deployment.organizationId,
-      hostname: deployment.platformHostname,
-      imageRef: deployment.imageRef,
-      containerPort: deployment.containerPort,
-      cpuLimit: Number(deployment.cpuLimit),
-      memoryLimitMb: deployment.memoryLimitMb,
-      ...(environment.length > 0 ? { environmentVariables: environment } : {}),
-      ...(volume ? { volume } : {}),
-      ...(deployment.healthPath ? { healthPath: deployment.healthPath } : {}),
-    },
+  const started = await nodeAgent.startDeployment({
+    deploymentId: deployment.deploymentId,
+    serviceId: deployment.serviceId,
+    projectId: deployment.projectId,
+    organizationId: deployment.organizationId,
+    hostname: deployment.platformHostname,
+    imageRef: deployment.imageRef,
+    containerPort: deployment.containerPort,
+    cpuLimit: Number(deployment.cpuLimit),
+    memoryLimitMb: deployment.memoryLimitMb,
+    ...(environment.length > 0 ? { environmentVariables: environment } : {}),
+    ...(volume ? { volume } : {}),
+    ...(deployment.healthPath ? { healthPath: deployment.healthPath } : {}),
   });
 
   if (!started.response.ok || !started.data) {
@@ -539,7 +529,7 @@ export async function listBuildLog(deploymentId: string): Promise<string[]> {
  * the log into the database, and moves the Deployment to `deploying` or
  * `failed`. It returns the final Deployment status for the caller to log.
  */
-export async function runBuildJob(job: JobRow, options: { client?: AgentClient } = {}) {
+export async function runBuildJob(job: JobRow) {
   const deploymentId = job.payload.deploymentId;
   if (!deploymentId) {
     throw new Error("Build Job is missing its deploymentId.");
@@ -568,21 +558,18 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
 
   await markDeploymentBuilding(deploymentId);
 
-  const client = options.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
   const imageTag = buildImageTag(deployment.serviceId, deploymentId);
 
-  const started = await client.POST("/v1/builds", {
-    body: {
-      buildId: deploymentId,
-      repoUrl: deployment.repoUrl,
-      branch: deployment.branch,
-      dockerfilePath: deployment.dockerfilePath,
-      containerPort: deployment.containerPort,
-      imageTag,
-      // A redeploy pins the commit so the rebuild uses the same code even when
-      // the branch has moved on.
-      ...(deployment.commitSha ? { commitSha: deployment.commitSha } : {}),
-    },
+  const started = await nodeAgent.startBuild({
+    buildId: deploymentId,
+    repoUrl: deployment.repoUrl,
+    branch: deployment.branch,
+    dockerfilePath: deployment.dockerfilePath,
+    containerPort: deployment.containerPort,
+    imageTag,
+    // A redeploy pins the commit so the rebuild uses the same code even when
+    // the branch has moved on.
+    ...(deployment.commitSha ? { commitSha: deployment.commitSha } : {}),
   });
 
   if (!started.response.ok || !started.data) {
@@ -594,7 +581,7 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
   // The log stream ends when the Build finishes, so streaming is also the
   // completion signal. Lines are flushed in batches to avoid one write per line.
   const pending: string[] = [];
-  await streamBuildLogs(client, deploymentId, 0, async (event) => {
+  await nodeAgent.streamBuildLogs({ buildId: deploymentId, after: 0 }, async (event) => {
     pending.push(event.message);
     if (pending.length >= 25) {
       await appendBuildLog(deploymentId, pending.splice(0, pending.length));
@@ -602,9 +589,7 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
   });
   await appendBuildLog(deploymentId, pending.splice(0, pending.length));
 
-  const finished = await client.GET("/v1/builds/{buildId}", {
-    params: { path: { buildId: deploymentId } },
-  });
+  const finished = await nodeAgent.readBuild(deploymentId);
 
   if (!finished.response.ok || !finished.data) {
     const message = `The Node Agent did not report a Build result (${finished.response.status}).`;
@@ -612,7 +597,7 @@ export async function runBuildJob(job: JobRow, options: { client?: AgentClient }
     return { status: "failed" as const, message };
   }
 
-  const build: AgentBuild = finished.data;
+  const build = finished.data;
 
   // A Build that the user cancelled is not a failure: the Deployment row is
   // already `cancelled`, so it must not be rewritten with an error message.
@@ -670,7 +655,6 @@ export const CANCELLABLE_DEPLOYMENT_STATUSES: DeploymentStatus[] = ["queued", "b
 export async function cancelDeployment(input: {
   organizationId: string;
   deploymentId: string;
-  options?: { client?: AgentClient };
 }): Promise<{ deployment: DeploymentSummary; aborted: AgentDeploymentAbort | null }> {
   const found = await pool.query<{
     id: string;
@@ -698,17 +682,15 @@ export async function cancelDeployment(input: {
     );
   }
 
-  const client =
-    input.options?.client ?? createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-
   // The image tag is deterministic, so the Control Plane can name the image even
   // when the Build was cancelled before it reported one. Without this the image a
   // cancelled Build already tagged would survive until the retention prune.
   const imageRef = current.imageRef ?? buildImageTag(current.serviceId, input.deploymentId);
 
-  const abort = await client.POST("/v1/deployments/{deploymentId}/cancel", {
-    params: { path: { deploymentId: input.deploymentId } },
-    body: { serviceId: current.serviceId, imageRef },
+  const abort = await nodeAgent.cancelBuild({
+    deploymentId: input.deploymentId,
+    serviceId: current.serviceId,
+    imageRef,
   });
 
   // The agent answered with a real outcome, or it could not be reached. Either

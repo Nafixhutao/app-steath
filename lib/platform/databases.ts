@@ -1,9 +1,8 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { isIP } from "node:net";
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
 import { ApiError } from "./api-error.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 import { getPlatformDomain } from "./platform-domain.ts";
 import { assertQuota, QUOTAS, QuotaExceededError } from "./quota.ts";
 import { decryptSecret, encryptSecret } from "./secrets.ts";
@@ -455,24 +454,14 @@ function decryptPassword(row: DatabaseRow): string {
  */
 async function measureDatabase(row: DatabaseRow): Promise<Measurement> {
   try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.GET("/v1/databases/{databaseId}", {
-      params: {
-        path: { databaseId: row.id },
-        query: { storageLimitMb: row.storageLimitMb },
-      },
+    const state = await nodeAgent.readDatabase({
+      databaseId: row.id,
+      storageLimitMb: row.storageLimitMb,
     });
 
-    if (response.response.ok && response.data) {
-      return {
-        status: mapAgentStatus(response.data.status),
-        healthy: response.data.healthy,
-        usageMb: response.data.usageMb,
-        overQuota: response.data.overQuota ?? false,
-        phpMyAdminReady: response.data.phpMyAdminReady ?? false,
-      };
-    }
-    if (response.response.status === 404) {
+    // A Database the node does not have is not a node failure: it may not be
+    // provisioned yet, or the node may have been rebuilt.
+    if (!state) {
       return {
         status: "failed",
         healthy: false,
@@ -481,6 +470,14 @@ async function measureDatabase(row: DatabaseRow): Promise<Measurement> {
         phpMyAdminReady: false,
       };
     }
+
+    return {
+      status: mapAgentStatus(state.status),
+      healthy: state.healthy,
+      usageMb: state.usageMb,
+      overQuota: state.overQuota ?? false,
+      phpMyAdminReady: state.phpMyAdminReady ?? false,
+    };
   } catch (error) {
     console.error(`could not read the state of Database ${row.id}`, error);
   }
@@ -742,50 +739,23 @@ async function provisionDatabase(
   organizationId: string,
   password: string,
 ): Promise<DatabaseStatus> {
-  try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.PUT("/v1/databases/{databaseId}", {
-      params: { path: { databaseId: row.id } },
-      body: {
-        databaseId: row.id,
-        projectId,
-        organizationId,
-        engine: row.engine,
-        ...(row.phpMyAdminHostname ? { phpMyAdminHostname: row.phpMyAdminHostname } : {}),
-        databaseName: row.databaseName,
-        username: row.username,
-        password,
-        storageLimitMb: row.storageLimitMb,
-      },
-    });
+  const status = await nodeAgent.provisionDatabase({
+    databaseId: row.id,
+    projectId,
+    organizationId,
+    engine: row.engine,
+    ...(row.phpMyAdminHostname ? { phpMyAdminHostname: row.phpMyAdminHostname } : {}),
+    databaseName: row.databaseName,
+    username: row.username,
+    password,
+    storageLimitMb: row.storageLimitMb,
+  });
 
-    if (!response.response.ok || !response.data) {
-      throw new ApiError(
-        502,
-        "database_provisioning_failed",
-        `The Node Agent rejected the Database (${response.response.status}).`,
-      );
-    }
-
-    return mapAgentStatus(response.data.status);
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    console.error(`could not provision Database ${row.id}`, error);
-    throw new ApiError(
-      502,
-      "database_provisioning_failed",
-      "The Node Agent could not start the Database. Try again when the node is healthy.",
-    );
-  }
+  return mapAgentStatus(status);
 }
 
 async function removeDatabaseOnNode(databaseId: string): Promise<void> {
-  const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-  await client.DELETE("/v1/databases/{databaseId}", {
-    params: { path: { databaseId } },
-  });
+  await nodeAgent.removeDatabase(databaseId);
 }
 
 /**
@@ -816,23 +786,9 @@ export async function deleteProjectDatabase(input: {
     throw new ApiError(404, "database_not_found", "This Project has no Database.");
   }
 
-  try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.DELETE("/v1/databases/{databaseId}", {
-      params: { path: { databaseId: row.id } },
-    });
-
-    if (!response.response.ok && response.response.status !== 404) {
-      throw new Error(`The Node Agent answered ${response.response.status}.`);
-    }
-  } catch (error) {
-    console.error(`could not remove Database ${row.id}`, error);
-    throw new ApiError(
-      502,
-      "database_removal_failed",
-      "The Node Agent could not remove the Database. Try again when the node is healthy.",
-    );
-  }
+  // The schema may already be gone on a node that was rebuilt; the row is the
+  // only thing left to remove, so a missing Database is not a failure.
+  await nodeAgent.removeDatabase(row.id);
 
   await pool.query('DELETE FROM "database" WHERE "id" = $1 AND "projectId" = $2', [
     row.id,
@@ -865,41 +821,13 @@ export async function rotateProjectDatabaseCredentials(input: {
   }
 
   const password = randomBytes(32).toString("hex");
-  try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.POST("/v1/databases/{databaseId}/rotate", {
-      params: { path: { databaseId: row.id } },
-      body: {
-        engine: row.engine,
-        password,
-      },
-    });
-
-    if (response.response.status === 404) {
-      throw new ApiError(
-        409,
-        "database_not_running",
-        "Start the Database before rotating its credentials.",
-      );
-    }
-    if (!response.response.ok) {
-      throw new ApiError(
-        502,
-        "database_rotation_failed",
-        `The Node Agent rejected the rotation (${response.response.status}).`,
-      );
-    }
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    console.error(`could not rotate the credentials of Database ${row.id}`, error);
-    throw new ApiError(
-      502,
-      "database_rotation_failed",
-      "The Node Agent could not rotate the credentials. Try again when the node is healthy.",
-    );
-  }
+  // A Database that is not running has no role to change yet, which is the
+  // user's next step rather than a node failure; the module answers 409.
+  await nodeAgent.rotateDatabasePassword({
+    databaseId: row.id,
+    engine: row.engine,
+    password,
+  });
 
   const encryptedPassword = encryptSecret(password);
   await pool.query('UPDATE "database" SET "encryptedPassword" = $2 WHERE "id" = $1', [
@@ -987,23 +915,8 @@ export async function disableProjectDatabaseProxy(input: {
 
   const existing = await loadProxyRow(row.id);
 
-  try {
-    const client = createAgentClient(nodeConfig().baseUrl, nodeConfig().token);
-    const response = await client.DELETE("/v1/databases/{databaseId}/proxy", {
-      params: { path: { databaseId: row.id } },
-    });
-
-    if (!response.response.ok && response.response.status !== 404) {
-      throw new Error(`The Node Agent answered ${response.response.status}.`);
-    }
-  } catch (error) {
-    console.error(`could not disable the public proxy of Database ${row.id}`, error);
-    throw new ApiError(
-      502,
-      "database_proxy_disable_failed",
-      "The Node Agent could not disable the public proxy. Try again when the node is healthy.",
-    );
-  }
+  // A Database that never had a proxy listener has nothing to tear down.
+  await nodeAgent.disableDatabaseProxy(row.id);
 
   await pool.query('DELETE FROM "database_proxy" WHERE "databaseId" = $1', [row.id]);
 

@@ -1,6 +1,5 @@
 import { pool } from "./db.ts";
-import { createAgentClient } from "../../lib/agent-client.ts";
-import { nodeConfig } from "./nodes.ts";
+import { nodeAgent } from "./node-agent.ts";
 
 /**
  * Node host metrics. The Platform Admin host dashboard shows how loaded each
@@ -173,26 +172,21 @@ export function groupByNode(rows: GroupedMetricRow[]): HostMetricNodeReport[] {
 
 async function fetchNodeHostSample(node: NodeEndpointRow): Promise<NodeHostSample | null> {
   try {
-    const client = createAgentClient(node.baseUrl, nodeConfig().token);
-    const response = await client.GET("/v1/host-metrics");
-
-    if (!response.response.ok || !response.data) {
-      console.error(
-        `[worker] could not read host metrics from ${node.name} (${response.response.status})`,
-      );
-      return null;
-    }
+    // Host metrics are read from the node row, not from `AGENT_BASE_URL`, so the
+    // pass keeps working when a second node reports in.
+    const sample = await nodeAgent.readHostMetrics({ baseUrl: node.baseUrl, name: node.name });
 
     return {
-      capturedAt: response.data.current.capturedAt,
-      cpuPercent: response.data.current.cpuPercent,
-      memoryUsedMb: response.data.current.memoryUsedMb,
-      memoryTotalMb: response.data.current.memoryTotalMb,
-      storageUsedMb: response.data.current.storageUsedMb,
-      storageTotalMb: response.data.current.storageTotalMb,
+      capturedAt: sample.current.capturedAt,
+      cpuPercent: sample.current.cpuPercent,
+      memoryUsedMb: sample.current.memoryUsedMb,
+      memoryTotalMb: sample.current.memoryTotalMb,
+      storageUsedMb: sample.current.storageUsedMb,
+      storageTotalMb: sample.current.storageTotalMb,
     };
   } catch (error) {
-    console.error(`[worker] could not reach ${node.name} for host metrics`, error);
+    // One node being down must not stop the pass for the others.
+    console.error(`[worker] could not read host metrics from ${node.name}`, error);
     return null;
   }
 }
