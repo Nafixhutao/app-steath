@@ -7,6 +7,7 @@ import {
   Boxes,
   Container,
   Database,
+  HardDrive,
   Settings,
   Copy,
   Check,
@@ -25,8 +26,15 @@ import { getError, useResource } from "@/lib/resource";
 import { useToast } from "@/components/toast-context";
 import { ServicesPanel } from "./services-panel";
 import { DatabasePanel } from "./database-panel";
+import { StoragePanel } from "./storage-panel";
 
-type ProjectTab = "services" | "database" | "settings";
+type ProjectTab = "services" | "database" | "storage" | "settings";
+
+/**
+ * The Project summary may gain a Storage bucket count before this panel does;
+ * reading it optionally keeps the tab honest without changing the client type.
+ */
+type ProjectWithStorageCount = ProjectSummary & { storageBucketCount?: number };
 
 /** The engine named in the Project header, or `No Database` when there is none. */
 function databaseLabel(engine: string | null, count: number): string {
@@ -64,6 +72,8 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   const error = panel.error;
   const name = draft?.name ?? project?.name ?? "";
   const slug = draft?.slug ?? project?.slug ?? "";
+  const storageBucketCount =
+    (project as ProjectWithStorageCount | null)?.storageBucketCount ?? 0;
 
   const refreshSummary = panel.refresh;
 
@@ -242,6 +252,25 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           <button
             type="button"
             role="tab"
+            aria-selected={activeTab === "storage"}
+            aria-controls="panel-storage"
+            id="tab-storage"
+            className={`project-tab-button ${activeTab === "storage" ? "is-active" : ""}`}
+            onClick={() => setActiveTab("storage")}
+          >
+            <HardDrive className="w-4 h-4" />
+            <span>Storage</span>
+            <span
+              className={`project-tab-status-dot ${
+                storageBucketCount > 0 ? "is-live" : "is-none"
+              }`}
+              title={storageBucketCount > 0 ? "Provisioned" : "None"}
+            />
+          </button>
+
+          <button
+            type="button"
+            role="tab"
             aria-selected={activeTab === "settings"}
             aria-controls="panel-settings"
             id="tab-settings"
@@ -281,6 +310,12 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
               canManage={canManage}
               onChanged={() => void refreshSummary()}
             />
+          </div>
+        )}
+
+        {activeTab === "storage" && (
+          <div id="panel-storage" role="tabpanel" aria-labelledby="tab-storage">
+            <StoragePanel projectId={project.id} canManage={canManage} />
           </div>
         )}
 

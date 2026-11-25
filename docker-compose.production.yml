@@ -102,6 +102,25 @@ services:
       agent:
         condition: service_started
 
+  # One shared object-storage server for every Project bucket. The Agent owns
+  # its admin credentials and provisions tenant buckets/IAM users through `mc`;
+  # neither the API nor the dashboard publishes a port. Caddy serves the public
+  # S3 hostname on the internal network, and the Agent reaches the same server
+  # as `minio:9000`. The image is a pinned MinIO-compatible fork: the official
+  # Docker Hub and Quay images were withdrawn in 2026.
+  minio:
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    container_name: stealth-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    # No published port. The Agent talks to minio:9000 over the Compose network;
+    # public traffic arrives through the Cloudflare tunnel and Caddy.
+
   agent:
     image: stealth-agent:${STEALTH_TAG:-local}
     build:
@@ -124,6 +143,11 @@ services:
       # containers the Agent owns; neither is reachable from the host.
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       PGDB_POSTGRES_PASSWORD: ${PGDB_POSTGRES_PASSWORD}
+      # The Agent provisions every tenant bucket through the shared MinIO admin
+      # account and publishes S3 on s3.<PLATFORM_DOMAIN>.
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - agent_work:/var/lib/stealth-agent
@@ -172,6 +196,7 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:
   backups_data:
   caddy_data:
   caddy_config:

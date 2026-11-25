@@ -11,6 +11,7 @@ import {
   type AgentHostMetrics,
   type AgentRuntimeLogEvent,
   type AgentScanReport,
+  type AgentStorageBucketState,
   type AgentServiceState,
   type AgentUsage,
 } from "../agent-client.ts";
@@ -201,6 +202,69 @@ export const nodeAgent = {
         client.DELETE("/v1/databases/{databaseId}/proxy", {
           params: { path: { databaseId } },
         }),
+      { allowMissing: true },
+    );
+  },
+
+  // -------------------------------------------------------------- Object storage
+
+  /**
+   * Creates the physical Bucket, its quota, and the IAM user scoped to it. The
+   * secret travels in the request body only and is never logged here.
+   */
+  provisionStorageBucket(input: {
+    bucketId: string;
+    bucketName: string;
+    accessKey: string;
+    secretKey: string;
+    public: boolean;
+    quotaMb: number;
+  }): Promise<AgentStorageBucketState> {
+    return call(
+      {
+        code: "storage_provisioning_failed",
+        message: "The Node Agent could not create the Bucket. Try again when the node is healthy",
+      },
+      (client) =>
+        client.PUT("/v1/storage/buckets/{bucketId}", {
+          params: { path: { bucketId: input.bucketId } },
+          body: {
+            bucketName: input.bucketName,
+            accessKey: input.accessKey,
+            secretKey: input.secretKey,
+            public: input.public,
+            quotaMb: input.quotaMb,
+          },
+        }),
+    );
+  },
+
+  /** Reads Bucket health and usage. `null` means the node no longer has it. */
+  readStorageBucket(input: {
+    bucketId: string;
+    quotaMb: number;
+  }): Promise<AgentStorageBucketState | null> {
+    return missingAsNull(
+      {
+        code: "storage_unreadable",
+        message: `The Node Agent did not report the state of Bucket ${input.bucketId}`,
+      },
+      (client) =>
+        client.GET("/v1/storage/buckets/{bucketId}", {
+          params: { path: { bucketId: input.bucketId }, query: { quotaMb: input.quotaMb } },
+        }),
+    );
+  },
+
+  /** Removes the Bucket, its IAM user, and its policy. Idempotent. */
+  removeStorageBucket(bucketId: string): Promise<void> {
+    return run(
+      {
+        code: "storage_removal_failed",
+        message: "The Node Agent could not remove the Bucket. Try again when the node is healthy",
+      },
+      (client) =>
+        client.DELETE("/v1/storage/buckets/{bucketId}", { params: { path: { bucketId } } }),
       { allowMissing: true },
     );
   },
