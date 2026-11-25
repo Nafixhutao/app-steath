@@ -1,5 +1,7 @@
 import { pool } from "./db.ts";
+import { ApiError } from "./api-error.ts";
 import { nodeAgent } from "./node-agent.ts";
+import { NODE_HEARTBEAT_TIMEOUT_MS } from "./nodes.ts";
 
 /**
  * Node host metrics. The Platform Admin host dashboard shows how loaded each
@@ -29,14 +31,24 @@ type NodeEndpointRow = {
 };
 
 /**
- * Asks every node with a known endpoint for its host snapshot and stores the
+ * Asks every live node with a known endpoint for its host snapshot and stores the
  * current sample of each. A node that cannot be reached is skipped with a log,
  * not an error: a dead node shows up on the dashboard as missing, and the next
  * pass retries.
+ *
+ * A node whose heartbeat is stale is skipped entirely. Its status column stays
+ * `healthy` forever once it has beaten once (health is derived from `lastSeenAt`
+ * at read time), so polling on the column alone would ask a removed node for
+ * metrics every minute and log a failure each time.
  */
 export async function recordNodeHostMetrics(): Promise<number> {
   const nodes = await pool.query<NodeEndpointRow>(
-    'SELECT "id", "name", "baseUrl" FROM "node" WHERE "baseUrl" IS NOT NULL ORDER BY "createdAt"',
+    `SELECT "id", "name", "baseUrl" FROM "node"
+     WHERE "baseUrl" IS NOT NULL
+       AND "lastSeenAt" IS NOT NULL
+       AND "lastSeenAt" > now() - make_interval(secs => $1)
+     ORDER BY "createdAt"`,
+    [NODE_HEARTBEAT_TIMEOUT_MS / 1000],
   );
 
   let stored = 0;
@@ -185,8 +197,11 @@ async function fetchNodeHostSample(node: NodeEndpointRow): Promise<NodeHostSampl
       storageTotalMb: sample.current.storageTotalMb,
     };
   } catch (error) {
-    // One node being down must not stop the pass for the others.
-    console.error(`[worker] could not read host metrics from ${node.name}`, error);
+    // One node being down must not stop the pass for the others. `nodeAgent`
+    // already logged the ApiError once; only an unexpected throw needs a line.
+    if (!(error instanceof ApiError)) {
+      console.error(`[worker] could not read host metrics from ${node.name}`, error);
+    }
     return null;
   }
 }

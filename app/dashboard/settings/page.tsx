@@ -19,6 +19,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { authClient, useActiveMember, useActiveOrganization } from "@/lib/auth-client";
+import { QUOTAS } from "@/lib/platform/quota-limits";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
 import { copyToClipboard } from "@/lib/clipboard";
@@ -416,11 +417,14 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Up to 5 Projects</span>
+                <span>Up to {QUOTAS.projectsPerOrganization} Projects</span>
               </div>
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Up to 20 Docker Services</span>
+                <span>
+                  Up to {QUOTAS.servicesPerOrganization} Docker Services (
+                  {QUOTAS.servicesPerProject} per Project)
+                </span>
               </div>
               <div className="settings-feature-pill">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />

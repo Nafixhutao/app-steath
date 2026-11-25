@@ -99,14 +99,21 @@ async function readNdjson<T>(
   let buffer = "";
 
   const emit = async (line: string) => {
+    let event: T;
     try {
-      await onEvent(JSON.parse(line) as T);
+      event = JSON.parse(line) as T;
     } catch (error) {
-      // One broken event must not leave the log connection hanging. These
-      // streams are human-readable logs, so dropping a malformed line with a
-      // warning beats failing the whole stream.
+      // One broken line must not leave the log connection hanging. These streams
+      // are human-readable logs, so dropping a malformed line with a warning
+      // beats failing the whole stream.
       console.warn("ignoring malformed agent NDJSON event", line.slice(0, 200), error);
+      return;
     }
+
+    // The consumer's own failure is not a parse problem, so it must not be
+    // swallowed here: a log write that keeps failing has to stop the stream
+    // rather than drop every remaining line silently.
+    await onEvent(event);
   };
 
   try {

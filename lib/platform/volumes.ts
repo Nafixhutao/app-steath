@@ -134,7 +134,11 @@ async function measureVolume(row: VolumeRow): Promise<{ usageMb: number | null; 
 
     return { usageMb: volume.usageMb, exists: volume.exists };
   } catch (error) {
-    console.error(`could not read the usage of Volume ${row.dockerVolumeName}`, error);
+    // `nodeAgent` already logged an ApiError once; only an unexpected throw needs
+    // its own line here.
+    if (!(error instanceof ApiError)) {
+      console.error(`could not read the usage of Volume ${row.dockerVolumeName}`, error);
+    }
   }
 
   return { usageMb: null, exists: false };

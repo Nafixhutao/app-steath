@@ -479,7 +479,11 @@ async function measureDatabase(row: DatabaseRow): Promise<Measurement> {
       phpMyAdminReady: state.phpMyAdminReady ?? false,
     };
   } catch (error) {
-    console.error(`could not read the state of Database ${row.id}`, error);
+    // `nodeAgent` already logged an ApiError once; only an unexpected throw needs
+    // its own line here.
+    if (!(error instanceof ApiError)) {
+      console.error(`could not read the state of Database ${row.id}`, error);
+    }
   }
 
   return {

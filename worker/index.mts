@@ -5,6 +5,7 @@ import {
   completeJob,
   failJob,
   pruneLogs,
+  recoverStaleJobs,
   runBuildJob,
   runDeployment,
   type JobRow,
@@ -269,6 +270,20 @@ try {
   }
 } catch (error) {
   console.error("[worker] could not recover interrupted Restores", error);
+}
+
+// Same reasoning for Jobs: a Job still marked `running` was being held by the
+// previous process. Without this a hard kill during a Build (the deploy's stop
+// timeout) would leave that Deployment `building` for good.
+try {
+  const recovered = await recoverStaleJobs();
+  if (recovered.requeued > 0 || recovered.failed > 0) {
+    console.log(
+      `[worker] recovered ${recovered.requeued} interrupted Job(s), failed ${recovered.failed}`,
+    );
+  }
+} catch (error) {
+  console.error("[worker] could not recover interrupted Jobs", error);
 }
 
 await loop();

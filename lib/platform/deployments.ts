@@ -279,19 +279,82 @@ export async function completeJob(
 }
 
 /**
+ * Puts back the Jobs a worker was holding when it died. This runs at worker
+ * start, and there is only ever one worker, so every `running` Job belongs to a
+ * process that no longer exists: nothing would ever release it, and its
+ * Deployment would stay `building` or `deploying` forever.
+ *
+ * A Job that already spent its retry budget is failed instead of re-queued, so a
+ * Job that keeps killing its worker cannot loop. Its Deployment is closed out the
+ * same way an exhausted Job is in `failJob`.
+ */
+export async function recoverStaleJobs(): Promise<{ requeued: number; failed: number }> {
+  const stale = await pool.query<{
+    id: string;
+    type: string;
+    attempts: number;
+    deploymentId: string | null;
+  }>(
+    `SELECT "id", "type", "attempts", "payload"->>'deploymentId' AS "deploymentId"
+     FROM "job" WHERE "status" = 'running'`,
+  );
+
+  let requeued = 0;
+  let failed = 0;
+
+  for (const job of stale.rows) {
+    if (job.attempts >= MAX_BUILD_ATTEMPTS) {
+      await completeJob(job.id, "failed");
+      if (job.type === BUILD_JOB_TYPE && job.deploymentId) {
+        await markDeploymentFailed(
+          job.deploymentId,
+          "The worker stopped before this attempt finished, and it was the last retry.",
+        );
+      }
+      failed += 1;
+      continue;
+    }
+
+    // `runAt` stays in the past, so the Job is claimable on the next poll.
+    await pool.query('UPDATE "job" SET "status" = \'queued\', "lockedAt" = NULL WHERE "id" = $1', [
+      job.id,
+    ]);
+    requeued += 1;
+  }
+
+  return { requeued, failed };
+}
+
+/**
  * Re-queues a Job that failed for a transient reason, or marks it failed once it
  * ran out of attempts. A `runAt` in the future backs the retry off.
+ *
+ * A Build Job that exhausts its attempts is the only thing that can end the
+ * Deployment's life, so the Deployment is marked `failed` here. Without that the
+ * row would stay `building` or `deploying` forever, because no other pass moves a
+ * Deployment: the dashboard would show an attempt that never finishes and the
+ * Service would stay stuck at `deploying`.
  */
 export async function failJob(jobId: string, error: string): Promise<void> {
-  await pool.query(
+  const result = await pool.query<{
+    status: string;
+    type: string;
+    deploymentId: string | null;
+  }>(
     `UPDATE "job"
      SET "status" = CASE WHEN "attempts" >= $2 THEN 'failed' ELSE 'queued' END,
          "lastError" = $3,
          "runAt" = now() + make_interval(secs => "attempts" * 5),
          "lockedAt" = NULL
-     WHERE "id" = $1`,
+     WHERE "id" = $1
+     RETURNING "status", "type", "payload"->>'deploymentId' AS "deploymentId"`,
     [jobId, MAX_BUILD_ATTEMPTS, error],
   );
+
+  const job = result.rows[0];
+  if (job?.status === "failed" && job.type === BUILD_JOB_TYPE && job.deploymentId) {
+    await markDeploymentFailed(job.deploymentId, error);
+  }
 }
 
 /** Marks the Deployment `building` and records when the attempt started. */
@@ -443,23 +506,34 @@ export async function runDeployment(
     envRevision,
   ]);
 
-  const started = await nodeAgent.startDeployment({
-    deploymentId: deployment.deploymentId,
-    serviceId: deployment.serviceId,
-    projectId: deployment.projectId,
-    organizationId: deployment.organizationId,
-    hostname: deployment.platformHostname,
-    imageRef: deployment.imageRef,
-    containerPort: deployment.containerPort,
-    cpuLimit: Number(deployment.cpuLimit),
-    memoryLimitMb: deployment.memoryLimitMb,
-    ...(environment.length > 0 ? { environmentVariables: environment } : {}),
-    ...(volume ? { volume } : {}),
-    ...(deployment.healthPath ? { healthPath: deployment.healthPath } : {}),
-  });
+  const started = await nodeAgent
+    .startDeployment({
+      deploymentId: deployment.deploymentId,
+      serviceId: deployment.serviceId,
+      projectId: deployment.projectId,
+      organizationId: deployment.organizationId,
+      hostname: deployment.platformHostname,
+      imageRef: deployment.imageRef,
+      containerPort: deployment.containerPort,
+      cpuLimit: Number(deployment.cpuLimit),
+      memoryLimitMb: deployment.memoryLimitMb,
+      ...(environment.length > 0 ? { environmentVariables: environment } : {}),
+      ...(volume ? { volume } : {}),
+      ...(deployment.healthPath ? { healthPath: deployment.healthPath } : {}),
+    })
+    // An unreachable node is a failed Deployment, not a thrown error: the row is
+    // already `deploying`, and leaving it there would show a Service as deploying
+    // forever with no way for the user to cancel out of it. `nodeAgent` logged the
+    // cause already, so this line only adds which Deployment it was.
+    .catch(() => {
+      console.error(`deploy ${deploymentId}: the Node Agent could not be reached`);
+      return null;
+    });
 
-  if (!started.response.ok || !started.data) {
-    const message = `The Node Agent rejected the Deployment (${started.response.status}).`;
+  if (!started || !started.response.ok || !started.data) {
+    const message = started
+      ? `The Node Agent rejected the Deployment (${started.response.status}).`
+      : "The Node Agent could not be reached, so the Deployment was not started.";
     await markDeploymentFailed(deploymentId, message);
     return { status: "failed", message };
   }
@@ -687,20 +761,28 @@ export async function cancelDeployment(input: {
   // cancelled Build already tagged would survive until the retention prune.
   const imageRef = current.imageRef ?? buildImageTag(current.serviceId, input.deploymentId);
 
-  const abort = await nodeAgent.cancelBuild({
-    deploymentId: input.deploymentId,
-    serviceId: current.serviceId,
-    imageRef,
-  });
+  // The agent answered with a real outcome, or it could not be reached at all.
+  // Either way the Control Plane stops the Deployment: a cancelled row is what
+  // keeps the worker from starting the Build, so an unreachable node must not
+  // turn a cancel the user asked for into an error. Cleanup on the node's next
+  // start removes whatever the aborted attempt left behind.
+  let aborted: AgentDeploymentAbort | null = null;
+  try {
+    const abort = await nodeAgent.cancelBuild({
+      deploymentId: input.deploymentId,
+      serviceId: current.serviceId,
+      imageRef,
+    });
 
-  // The agent answered with a real outcome, or it could not be reached. Either
-  // way the Control Plane stops the Deployment: a cancelled row is what keeps the
-  // worker from starting the Build.
-  const aborted = abort.response.ok ? (abort.data ?? null) : null;
-  if (!abort.response.ok) {
-    console.error(
-      `cancel ${input.deploymentId}: the Node Agent did not confirm (${abort.response.status})`,
-    );
+    if (abort.response.ok) {
+      aborted = abort.data ?? null;
+    } else {
+      console.error(
+        `cancel ${input.deploymentId}: the Node Agent did not confirm (${abort.response.status})`,
+      );
+    }
+  } catch (error) {
+    console.error(`cancel ${input.deploymentId}: the Node Agent could not be reached`, error);
   }
 
   await markDeploymentCancelled(input.deploymentId);

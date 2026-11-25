@@ -2,6 +2,7 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { request as httpsRequest } from "node:https";
 import { ApiError } from "./api-error.ts";
 import { getPlatformDomain } from "./platform-domain.ts";
+import { platformEncryptionKey } from "./secrets.ts";
 
 /**
  * The phpMyAdmin sign-in bridge, in two halves.
@@ -44,11 +45,14 @@ const PHPMYADMIN_DIAL = (() => {
 /**
  * The signing key is derived from the platform encryption key, so no new secret
  * has to be configured and rotating that key also invalidates outstanding links.
+ *
+ * It reuses `platformEncryptionKey` rather than reading the environment here, so
+ * a missing or malformed key fails closed with the same 503 the rest of the
+ * platform answers. Reading it locally used to fall back to an empty string,
+ * which would sign links with a key anyone can compute.
  */
 function signingKey(): Buffer {
-  const base = process.env.ENV_ENCRYPTION_KEY?.trim() ?? "";
-
-  return createHmac("sha256", "stealth-phpmyadmin-sso").update(base).digest();
+  return createHmac("sha256", "stealth-phpmyadmin-sso").update(platformEncryptionKey()).digest();
 }
 
 function sign(payload: string): string {

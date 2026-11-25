@@ -1,4 +1,5 @@
 import { pool } from "./db.ts";
+import { ApiError } from "./api-error.ts";
 import { nodeAgent } from "./node-agent.ts";
 import { QUOTAS } from "./quota-limits.ts";
 
@@ -169,8 +170,10 @@ async function loadAgentUsage(): Promise<AgentUsage | null> {
     return { services: usage.services, databases: usage.databases };
   } catch (error) {
     // A node that cannot be reached is not an error for the dashboard: the
-    // previous snapshot stays visible.
-    console.error("could not read usage from the Node Agent", error);
+    // previous snapshot stays visible. `nodeAgent` already logged the ApiError.
+    if (!(error instanceof ApiError)) {
+      console.error("could not read usage from the Node Agent", error);
+    }
   }
 
   return null;

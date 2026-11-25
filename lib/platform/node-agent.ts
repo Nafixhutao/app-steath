@@ -372,27 +372,36 @@ export const nodeAgent = {
 
   /**
    * The four Deployment operations answer with the node's envelope instead of
-   * throwing, because their caller is the Deployment state machine: a refusal
-   * becomes a recorded failure on the Deployment row, not a 502 for a user who is
-   * no longer watching. It needs the status number for that message, so the
-   * envelope is the honest return shape here rather than a throw to unwrap.
+   * throwing a refusal, because their caller is the Deployment state machine: a
+   * refusal becomes a recorded failure on the Deployment row, not a 502 for a user
+   * who is no longer watching. It needs the status number for that message, so the
+   * envelope is the honest return shape here rather than a throw to unwrap. A node
+   * that does not answer at all still throws, because there is no status to record.
    */
   startDeployment(
     body: AgentDeployRequest,
   ): Promise<
     AgentResult<{ deploymentId: string; serviceId: string; status: string; error?: string }>
   > {
-    return attempt((client) => client.POST("/v1/deployments", { body }));
+    return guard(
+      { code: "deployment_start_failed", message: "The Node Agent did not accept the Deployment" },
+      () => attempt((client) => client.POST("/v1/deployments", { body })),
+    );
   },
 
   startBuild(body: AgentBuildRequest): Promise<AgentResult<AgentBuild>> {
-    return attempt((client) => client.POST("/v1/builds", { body }));
+    return guard(
+      { code: "build_start_failed", message: "The Node Agent did not accept the Build" },
+      () => attempt((client) => client.POST("/v1/builds", { body })),
+    );
   },
 
   /** Reads a finished Build. A missing answer is a failure the caller records. */
   readBuild(buildId: string): Promise<AgentResult<AgentBuild>> {
-    return attempt((client) =>
-      client.GET("/v1/builds/{buildId}", { params: { path: { buildId } } }),
+    return guard(
+      { code: "build_read_failed", message: "The Node Agent did not report the Build" },
+      () =>
+        attempt((client) => client.GET("/v1/builds/{buildId}", { params: { path: { buildId } } })),
     );
   },
 
@@ -402,11 +411,15 @@ export const nodeAgent = {
     serviceId: string;
     imageRef: string;
   }): Promise<AgentResult<AgentDeploymentAbort>> {
-    return attempt((client) =>
-      client.POST("/v1/deployments/{deploymentId}/cancel", {
-        params: { path: { deploymentId: input.deploymentId } },
-        body: { serviceId: input.serviceId, imageRef: input.imageRef },
-      }),
+    return guard(
+      { code: "build_cancel_failed", message: "The Node Agent did not confirm the cancellation" },
+      () =>
+        attempt((client) =>
+          client.POST("/v1/deployments/{deploymentId}/cancel", {
+            params: { path: { deploymentId: input.deploymentId } },
+            body: { serviceId: input.serviceId, imageRef: input.imageRef },
+          }),
+        ),
     );
   },
 
@@ -444,22 +457,24 @@ export const nodeAgent = {
    * here means no other module builds an Agent URL or an auth header.
    */
   async downloadBackup(backupId: string): Promise<Buffer> {
-    const { baseUrl, token } = nodeConfig();
-    const response = await fetch(`${baseUrl}/v1/backups/${encodeURIComponent(backupId)}/content`, {
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const failure: AgentFailure = {
+      code: "backup_download_failed",
+      message: `The Node Agent could not hand over Backup ${backupId}`,
+    };
 
-    if (!response.ok) {
-      throw refused(
+    return guard(failure, async () => {
+      const { baseUrl, token } = nodeConfig();
+      const response = await fetch(
+        `${baseUrl}/v1/backups/${encodeURIComponent(backupId)}/content`,
         {
-          code: "backup_download_failed",
-          message: `The Node Agent could not hand over Backup ${backupId}`,
+          headers: { authorization: `Bearer ${token}` },
         },
-        response.status,
       );
-    }
 
-    return Buffer.from(await response.arrayBuffer());
+      if (!response.ok) throw refused(failure, response.status);
+
+      return Buffer.from(await response.arrayBuffer());
+    });
   },
 
   /** Removes the staged artifact. The durable copy is already in storage. */
@@ -485,33 +500,38 @@ export const nodeAgent = {
     targetId: string;
     bytes: Buffer;
   }): Promise<void> {
-    const { baseUrl, token } = nodeConfig();
-    const query = new URLSearchParams({
-      targetType: input.targetType,
-      targetId: input.targetId,
-    });
+    return guard(
+      { code: "restore_failed", message: "The Node Agent did not answer the Restore" },
+      async () => {
+        const { baseUrl, token } = nodeConfig();
+        const query = new URLSearchParams({
+          targetType: input.targetType,
+          targetId: input.targetId,
+        });
 
-    const response = await fetch(
-      `${baseUrl}/v1/restores/${encodeURIComponent(input.restoreId)}?${query}`,
-      {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${token}`,
-          "content-type": "application/octet-stream",
-        },
-        // Copy into a plain Uint8Array so fetch accepts the bytes as a body.
-        body: new Uint8Array(input.bytes),
+        const response = await fetch(
+          `${baseUrl}/v1/restores/${encodeURIComponent(input.restoreId)}?${query}`,
+          {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${token}`,
+              "content-type": "application/octet-stream",
+            },
+            // Copy into a plain Uint8Array so fetch accepts the bytes as a body.
+            body: new Uint8Array(input.bytes),
+          },
+        );
+
+        if (!response.ok) {
+          const detail = await response.text().catch(() => "");
+          throw new ApiError(
+            502,
+            "restore_failed",
+            `The Node Agent could not restore the Backup (${response.status})${detail ? `: ${detail}` : ""}.`,
+          );
+        }
       },
     );
-
-    if (!response.ok) {
-      const detail = await response.text().catch(() => "");
-      throw new ApiError(
-        502,
-        "restore_failed",
-        `The Node Agent could not restore the Backup (${response.status})${detail ? `: ${detail}` : ""}.`,
-      );
-    }
   },
 
   // ------------------------------------------------------- Node-wide readings
@@ -549,22 +569,25 @@ export const nodeAgent = {
 };
 
 /**
- * The typed Agent client for the configured node, built once per base URL and
- * token. It stays private: callers name an operation above instead of issuing a
- * request, so a path change never reaches twelve modules.
+ * The typed Agent clients, one per base URL and token. They stay private: callers
+ * name an operation above instead of issuing a request, so a path change never
+ * reaches twelve modules. Keyed rather than single-slot because the host-metrics
+ * pass asks each node in turn, and one slot would rebuild a client per node.
  */
-let cached: { key: string; client: Client } | null = null;
+const clients = new Map<string, Client>();
 
 function agentClient(baseUrl?: string): Client {
   const config = nodeConfig();
   const resolved = baseUrl ?? config.baseUrl;
   const key = `${resolved}\u0000${config.token}`;
 
-  if (cached?.key !== key) {
-    cached = { key, client: createAgentClient(resolved, config.token) };
+  let client = clients.get(key);
+  if (!client) {
+    client = createAgentClient(resolved, config.token);
+    clients.set(key, client);
   }
 
-  return cached.client;
+  return client;
 }
 
 /** One request, before any status interpretation. */
@@ -588,7 +611,9 @@ async function call<T>(
   if (!result.response.ok) {
     const explained = options.explain?.(result.response.status);
     if (explained) {
-      console.error(explained.message);
+      // A refusal the caller understands is a normal outcome (a Database that is
+      // not running yet, a Volume still mounted), so it is not logged as an
+      // incident; the sentence is already fit to show the user.
       throw explained;
     }
   }
@@ -634,7 +659,7 @@ async function run(
 
   const explained = options.explain?.(status);
   if (explained) {
-    console.error(explained.message);
+    // User-actionable refusal, not an incident; see `call`.
     throw explained;
   }
 
