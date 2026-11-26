@@ -32,6 +32,11 @@ const (
 // stuck command cannot block the HTTP handler forever.
 const cancelWait = 10 * time.Second
 
+// defaultDockerfilePath is the path a Service uses unless the user names one.
+// Only this path may fall back to zero-config: a custom path is an explicit
+// instruction, and building something else would hide the mistake.
+const defaultDockerfilePath = "Dockerfile"
+
 // Request describes one Build. BuildID is the Deployment id, so starting the
 // same Build twice returns the existing Build instead of a second one.
 type Request struct {
@@ -517,6 +522,16 @@ func (m *Manager) resolveBuildSource(
 	}
 	if isFile(filepath.Join(checkout, name)) {
 		return filepath.Join(checkout, name), checkout, ""
+	}
+
+	// A custom Dockerfile path is an explicit instruction. Falling back to a
+	// generated Dockerfile would silently build something the user did not ask
+	// for, so only the default path may use zero-config.
+	if name != defaultDockerfilePath {
+		return "", "", fmt.Sprintf(
+			"Dockerfile not found at %s. Fix the Dockerfile path or add the file to the repository.",
+			name,
+		)
 	}
 
 	generated, ok, detectErr := detectZeroConfig(projectRoot, state.request.ContainerPort)
