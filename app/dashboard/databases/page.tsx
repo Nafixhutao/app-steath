@@ -172,7 +172,7 @@ export default function DatabasesPage() {
               <Database className="w-[22px] h-[22px]" />
             </div>
             <div>
-              <div className="db-tagline">Managed Storage</div>
+              <div className="[font-family:var(--font-mono)] text-[11px] font-semibold uppercase tracking-[0.08em] text-accent mb-[2px]">Managed Storage</div>
               <h1>Databases</h1>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function DatabasesPage() {
       {/* Warning banner for disk usage threshold */}
       {fullDatabase ? (
         <div className="db-banner" role="region" aria-label="Storage warning">
-          <div className="db-banner-content">
+          <div className="flex items-start gap-[12px] min-w-[240px] flex-1">
             <div className="db-banner-icon-box" aria-hidden="true">
               <AlertTriangle className="w-[18px] h-[18px]" />
             </div>
@@ -231,7 +231,7 @@ export default function DatabasesPage() {
       ) : null}
 
       {/* Overview Metric Cards */}
-      <section className="db-metrics-grid" aria-label="Database overview metrics">
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-[14px] mt-[24px]" aria-label="Database overview metrics">
         <div className="db-metric-card">
           <div className="db-metric-header">
             <span className="db-metric-label">Total Databases</span>
@@ -278,7 +278,7 @@ export default function DatabasesPage() {
 
       {/* Search and Filters toolbar (only when databases exist) */}
       {databasesList.length > 0 && (
-        <div className="db-controls">
+        <div className="flex items-center justify-between gap-[14px] flex-wrap mt-[24px]">
           <div className="db-chip-group" role="group" aria-label="Filter databases by status">
             {STATUS_FILTERS.map((filter) => {
               const count =
@@ -309,7 +309,7 @@ export default function DatabasesPage() {
             <label htmlFor="db-search-input" className="sr-only">
               Search databases by name, project, or user
             </label>
-            <Search className="db-search-icon" aria-hidden="true" />
+            <Search className="absolute left-[12px] top-1/2 w-[16px] h-[16px] -translate-y-1/2 text-[#757180] pointer-events-none" aria-hidden="true" />
             <input
               type="search"
               id="db-search-input"
@@ -335,15 +335,15 @@ export default function DatabasesPage() {
       {/* Main Content Area */}
       {databases.loading ? (
         <div className="db-table-container">
-          <div className="db-loading-state" role="status">
-            <RefreshCw className="db-spinner-icon" aria-hidden="true" />
+          <div className="flex flex-col items-center justify-center gap-[12px] py-[64px] px-[20px] text-[#9e9aa7] text-[13.5px]" role="status">
+            <RefreshCw className="w-[24px] h-[24px] text-accent animate-[db-spin_1s_linear_infinite]" aria-hidden="true" />
             <p>Fetching databases in this organization...</p>
           </div>
         </div>
       ) : databasesList.length === 0 ? (
         /* Empty State: No databases created in organization */
         <div className="db-empty-hero">
-          <div className="db-empty-art" aria-hidden="true">
+          <div className="relative flex justify-center mb-[20px]" aria-hidden="true">
             <div className="db-empty-glow" />
             <div className="db-empty-icon-card">
               <Database className="w-[30px] h-[30px]" />
@@ -361,7 +361,7 @@ export default function DatabasesPage() {
             <span>Go to Projects to Create Database</span>
           </Link>
 
-          <div className="db-empty-features">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[16px] max-w-[820px] mt-[48px] mb-0 mx-auto text-left">
             <div className="db-feature-item">
               <div className="db-feature-icon-box">
                 <ShieldCheck className="db-feature-icon text-emerald" />
@@ -404,7 +404,7 @@ export default function DatabasesPage() {
           </p>
           <button
             type="button"
-            className="db-btn db-btn-surface db-btn-sm"
+            className="db-btn db-btn-sm border border-[#2a2834] bg-[#181720] text-[#f3f2f5] hover:border-[#3b3749] hover:bg-[#201e2a]"
             onClick={() => {
               setSearch("");
               setStatusFilter("all");
@@ -443,9 +443,9 @@ export default function DatabasesPage() {
                           <Database className="w-[16px] h-[16px]" />
                         </div>
                         <div className="flex flex-col">
-                          <span className="db-name-title">{database.databaseName}</span>
+                          <span className="[font-family:var(--font-mono)] font-semibold text-[14px] text-ink">{database.databaseName}</span>
                           <div className="db-connection-pill">
-                            <span className="db-connection-text">{copyText}</span>
+                            <span className="truncate max-w-[200px]">{copyText}</span>
                             <button
                               type="button"
                               className="db-copy-btn"
@@ -499,7 +499,7 @@ export default function DatabasesPage() {
                         </div>
                         {percent === null ? null : (
                           <div
-                            className="db-disk-track"
+                            className="w-full h-[7px] border border-[#272531] rounded-control bg-[#100f14] overflow-hidden"
                             role="progressbar"
                             aria-label={`Disk usage for ${database.databaseName}`}
                             aria-valuenow={percent}
@@ -513,7 +513,7 @@ export default function DatabasesPage() {
                           </div>
                         )}
                         {percent !== null && (
-                          <div className="db-disk-footer">
+                          <div className="mt-[4px] text-[11px] text-[#757180] text-right">
                             <span className="[font-family:var(--font-mono)]">{percent}% utilized</span>
                           </div>
                         )}

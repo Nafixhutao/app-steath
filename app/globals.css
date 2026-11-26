@@ -2055,16 +2055,6 @@ form input[type="text"]:focus {
   flex-shrink: 0;
 }
 
-.db-tagline {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-accent);
-  margin-bottom: 2px;
-}
-
 .db-heading h1 {
   margin: 0;
   color: var(--color-ink);
@@ -2118,14 +2108,6 @@ form input[type="text"]:focus {
   box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
 }
 
-.db-banner-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  min-width: 240px;
-  flex: 1;
-}
-
 .db-banner-icon-box {
   display: flex;
   align-items: center;
@@ -2151,14 +2133,6 @@ form input[type="text"]:focus {
   color: #9e9aa7;
   font-size: 12.5px;
   line-height: 1.4;
-}
-
-/* Metric Cards */
-.db-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 14px;
-  margin-top: 24px;
 }
 
 .db-metric-card {
@@ -2217,16 +2191,6 @@ form input[type="text"]:focus {
   margin-top: 4px;
   font-size: 12px;
   color: #9e9aa7;
-}
-
-/* Controls */
-.db-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-top: 24px;
 }
 
 .db-chip-group {
@@ -2295,17 +2259,6 @@ form input[type="text"]:focus {
   flex: 1;
   min-width: 240px;
   max-width: 320px;
-}
-
-.db-search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  width: 16px;
-  height: 16px;
-  transform: translateY(-50%);
-  color: #757180;
-  pointer-events: none;
 }
 
 .db-search input {
@@ -2425,13 +2378,6 @@ form input[type="text"]:focus {
   flex-shrink: 0;
 }
 
-.db-name-title {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--color-ink);
-}
-
 .db-connection-pill {
   display: inline-flex;
   align-items: center;
@@ -2444,13 +2390,6 @@ form input[type="text"]:focus {
   font-family: var(--font-mono);
   font-size: 11px;
   color: #9e9aa7;
-}
-
-.db-connection-text {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .db-copy-btn {
@@ -2582,15 +2521,6 @@ form input[type="text"]:focus {
   color: #8a8694;
 }
 
-.db-disk-track {
-  width: 100%;
-  height: 7px;
-  border: 1px solid #272531;
-  border-radius: var(--radius-control);
-  background: #100f14;
-  overflow: hidden;
-}
-
 .db-disk-fill {
   height: 100%;
   border-radius: var(--radius-control);
@@ -2607,13 +2537,6 @@ form input[type="text"]:focus {
 
 .db-disk-fill.is-red {
   background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
-}
-
-.db-disk-footer {
-  margin-top: 4px;
-  font-size: 11px;
-  color: #757180;
-  text-align: right;
 }
 
 .db-btn-manage {
@@ -2655,13 +2578,6 @@ form input[type="text"]:focus {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
 
-.db-empty-art {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
 .db-empty-icon-card {
   display: flex;
   align-items: center;
@@ -2689,15 +2605,6 @@ form input[type="text"]:focus {
   color: #9e9aa7;
   font-size: 14px;
   line-height: 1.6;
-}
-
-.db-empty-features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  max-width: 820px;
-  margin: 48px auto 0;
-  text-align: left;
 }
 
 .db-feature-item {
@@ -2794,25 +2701,6 @@ form input[type="text"]:focus {
   font-size: 13px;
 }
 
-/* Loading State */
-.db-loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 64px 20px;
-  color: #9e9aa7;
-  font-size: 13.5px;
-}
-
-.db-spinner-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--color-accent);
-  animation: db-spin 1s linear infinite;
-}
-
 @keyframes db-spin {
   from {
     transform: rotate(0deg);
@@ -2866,17 +2754,6 @@ form input[type="text"]:focus {
 .db-btn-primary:hover {
   background-image: linear-gradient(180deg, #4d92ff 0%, #0d73ff 100%);
   color: var(--color-ink);
-}
-
-.db-btn-surface {
-  border: 1px solid #2a2834;
-  background: #181720;
-  color: #f3f2f5;
-}
-
-.db-btn-surface:hover {
-  border-color: #3b3749;
-  background: #201e2a;
 }
 
 .db-btn-warning {
