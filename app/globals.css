@@ -99,8 +99,6 @@ select:disabled {
   flex-direction: column;
   align-items: center;
   padding: 56px 16px;
-  background: #0f0f0f;
-  color: #ffffff;
 }
 
 .login-content {
@@ -242,9 +240,6 @@ form label {
   font-weight: 500;
   line-height: 16px;
 }
-.password-label {
-  margin-top: 16px;
-}
 
 form input[type="email"],
 form input[type="password"],
@@ -368,20 +363,6 @@ a {
 a:hover {
   color: #7fabff;
 }
-.legal-copy {
-  margin: 40px 0 0;
-  color: #8b8b92;
-  font-size: 12.5px;
-  line-height: 18px;
-  text-align: center;
-}
-.legal-copy a {
-  color: inherit;
-  font-weight: 400;
-}
-.legal-copy a:hover {
-  color: #ffffff;
-}
 
 .skip-link {
   position: fixed;
@@ -407,6 +388,7 @@ a:hover {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+  clip-path: inset(50%);
 }
 
 @media (max-width: 480px) {
@@ -719,13 +701,6 @@ a:hover {
   font-size: 10px;
   font-weight: 600;
 }
-.identity-avatar-image {
-  width: 26px;
-  height: 26px;
-  flex: 0 0 auto;
-  border-radius: 7px;
-  object-fit: cover;
-}
 .identity-name {
   min-width: 0;
   max-width: min(18ch, 100%);
@@ -736,18 +711,6 @@ a:hover {
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.01em;
-}
-.plan-chip {
-  display: inline-flex;
-  height: 20px;
-  flex: 0 0 auto;
-  align-items: center;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: #1f1d21;
-  color: #b5b2b9;
-  font-size: 12px;
-  line-height: 15px;
 }
 .org-switcher > svg {
   flex: 0 0 auto;
@@ -1090,7 +1053,6 @@ a:hover {
 .sidebar-close:focus-visible,
 .profile-button:focus-visible,
 .profile-menu-row:focus-visible,
-.user-org-switcher:focus-visible,
 .mobile-topbar-actions button:focus-visible,
 .mobile-brand:focus-visible,
 .search-backdrop:focus-visible,
@@ -1098,7 +1060,6 @@ a:hover {
   outline: 2px solid #aaa6ec;
   outline-offset: 2px;
 }
-.project-search input:focus-visible,
 .search-dialog-input input:focus-visible {
   outline: 2px solid #aaa6ec;
   outline-offset: 1px;
@@ -1109,181 +1070,6 @@ a:hover {
 .mobile-sidebar-overlay,
 .mobile-sidebar-sheet {
   display: none;
-}
-.user-org-header {
-  display: flex;
-  min-height: 48px;
-  align-items: center;
-  gap: 12px;
-}
-.user-org-switcher {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: center;
-  gap: 12px;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-.user-org-avatar {
-  display: inline-flex;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  border: 1px solid #303033;
-  background: #25242b;
-  color: #edecf1;
-  font-size: 13px;
-  font-weight: 700;
-}
-.user-org-copy {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-}
-.user-org-title {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 6px;
-}
-.user-org-name {
-  min-width: 0;
-  max-width: min(24ch, 100%);
-  flex: 0 1 auto;
-  overflow: hidden;
-  margin: 0;
-  color: #f4f4f5;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 24px;
-  text-align: left;
-  text-overflow: ellipsis;
-  text-wrap: balance;
-  white-space: nowrap;
-}
-.user-org-chevron {
-  flex: 0 0 auto;
-  color: #8a8791;
-}
-.user-org-switcher:hover .user-org-chevron {
-  color: #f4f4f5;
-}
-.user-org-description {
-  color: #8a8791;
-  font-size: 12px;
-  text-wrap: pretty;
-}
-.user-plan-chip {
-  display: inline-flex;
-  height: 20px;
-  flex: 0 0 auto;
-  align-items: center;
-  padding: 0 7px;
-  border: 1px solid #303033;
-  border-radius: 5px;
-  background: #201e22;
-  color: #c9c5cd;
-  font-size: 12px;
-}
-.user-tabs {
-  display: flex;
-  height: 48px;
-  align-items: stretch;
-  gap: 4px;
-  margin-top: 12px;
-  border-bottom: 1px solid #303033;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-}
-.user-tabs::-webkit-scrollbar {
-  display: none;
-}
-.user-tabs span {
-  display: inline-flex;
-  height: 48px;
-  flex: 0 0 auto;
-  align-items: center;
-  padding: 0 12px;
-  border-bottom: 2px solid transparent;
-  color: #8a8791;
-  font-size: 13px;
-  font-weight: 500;
-}
-.user-tabs span[aria-current="page"] {
-  border-bottom-color: #f4f4f5;
-  color: #f4f4f5;
-}
-.user-toolbar {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 12px;
-  margin-top: 20px;
-}
-.project-search {
-  display: flex;
-  min-width: 0;
-  width: 380px;
-  height: 36px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  border: 1px solid #303033;
-  border-radius: 6px;
-  background: #1b1b1e;
-  color: #a1a1aa;
-}
-.project-search span {
-  font-size: 20px;
-  line-height: 1;
-}
-.project-search input {
-  min-width: 0;
-  flex: 1;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #f4f4f5;
-  font-size: 13px;
-}
-.project-search input::placeholder {
-  color: #8a8791;
-}
-.view-toggle {
-  display: inline-flex;
-  width: 30px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #303033;
-  background: #1b1b1e;
-  color: #8a8791;
-  cursor: pointer;
-  font-size: 17px;
-}
-.view-toggle:first-of-type {
-  border-radius: 6px 0 0 6px;
-  margin-left: auto;
-}
-.view-toggle:nth-of-type(2) {
-  border-left: 0;
-  border-radius: 0 6px 6px 0;
-}
-.view-toggle.active,
-.view-toggle:hover {
-  color: #f4f4f5;
 }
 .create-project-button {
   height: 36px;
@@ -1299,115 +1085,11 @@ a:hover {
 .create-project-button:hover {
   background: #087f55;
 }
-.project-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 20px;
-}
-.project-card {
-  position: relative;
-  display: flex;
-  min-height: 164px;
-  flex-direction: column;
-  padding: 18px;
-  border: 1px solid #2b2b30;
-  border-radius: 8px;
-  background: #17171a;
-}
-.project-card:hover {
-  border-color: #45454b;
-}
-.project-card-link {
-  color: inherit;
-  text-decoration: none;
-}
 .project-quota {
   flex-shrink: 0;
   color: #a9a5ae;
   font-size: 12px;
   white-space: nowrap;
-}
-.project-quota-note {
-  margin: 0;
-  padding-bottom: 14px;
-  color: #c2b18a;
-  font-size: 12px;
-}
-.project-breadcrumb {
-  margin: 0 0 6px;
-  color: #918c97;
-  font-size: 12px;
-}
-.project-breadcrumb a {
-  color: #a9a5ae;
-  text-decoration: none;
-}
-.project-breadcrumb a:hover {
-  color: #edecf1;
-}
-.project-slug {
-  padding: 3px 7px;
-  border: 1px solid #3a363f;
-  border-radius: 5px;
-  background: #1b191f;
-  color: #c9c5ce;
-  font-size: 12px;
-}
-.project-resource-counts {
-  display: flex;
-  gap: 28px;
-  padding: 16px 0;
-  border-bottom: 1px solid #322f37;
-}
-.project-resource-counts strong {
-  display: block;
-  color: #edecf1;
-  font-size: 20px;
-  font-weight: 600;
-}
-.project-resource-counts span {
-  color: #918c97;
-  font-size: 12px;
-}
-.dashboard-back-link {
-  margin-top: 20px;
-  font-size: 13px;
-}
-.dashboard-back-link a {
-  color: #b5a8ff;
-}
-.service-list {
-  display: grid;
-  gap: 12px;
-  margin: 20px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.service-card {
-  padding: 18px;
-  border: 1px solid #2b2b30;
-  border-radius: 8px;
-  background: #17171a;
-}
-.service-card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-.service-card-head h3 {
-  margin: 0 0 6px;
-  color: #f4f4f5;
-  font-size: 15px;
-  font-weight: 600;
-}
-.service-card-head h3 a {
-  color: inherit;
-  text-decoration: none;
-}
-.service-card-head h3 a:hover {
-  color: #b5a8ff;
 }
 .service-url {
   color: #b5a8ff;
@@ -1439,33 +1121,6 @@ a:hover {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
-.service-danger-row {
-  display: flex;
-  align-items: end;
-  gap: 12px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #29262e;
-}
-.service-danger-row label {
-  display: grid;
-  flex: 1;
-  gap: 7px;
-  color: #c8c4cd;
-  font-size: 12px;
-}
-.service-danger-row input,
-.service-form input {
-  min-width: 0;
-  min-height: 38px;
-  padding: 0 11px;
-  border: 1px solid #403c45;
-  border-radius: 7px;
-  outline: none;
-  background: #19171c;
-  color: #edecf1;
-  font: inherit;
-}
 .deployment-node {
   margin: 0 0 12px;
   color: #9e99a4;
@@ -1486,19 +1141,6 @@ a:hover {
   background: rgb(58 46 22 / 40%);
   color: #e8d49a;
   font-size: 13px;
-}
-.environment-form {
-  align-items: end;
-}
-.environment-form input {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-}
-.environment-form-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding-bottom: 18px;
 }
 .environment-key,
 .environment-value {
@@ -1765,116 +1407,11 @@ a:hover {
     padding: 0 12px 12px;
   }
 }
-.service-danger-row input:focus,
-.service-form input:focus {
-  border-color: #8a78e8;
-  box-shadow: 0 0 0 3px rgb(138 120 232 / 16%);
-}
-.service-form {
-  margin-top: 22px;
-}
-.service-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 18px 0;
-}
-.service-form-grid label {
-  display: grid;
-  gap: 7px;
-  color: #c8c4cd;
-  font-size: 12px;
-}
 @media (max-width: 760px) {
-  .service-form-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .service-meta > div {
     grid-template-columns: minmax(0, 1fr);
     gap: 2px;
   }
-  .service-danger-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-.project-card-mark {
-  display: inline-flex;
-  width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-}
-.project-card-mark.green {
-  background: #29292e;
-  color: #e4e4e7;
-}
-.project-card-mark.purple {
-  background: #29292e;
-  color: #e4e4e7;
-}
-.project-card-mark.blue {
-  background: #29292e;
-  color: #e4e4e7;
-}
-.project-card-copy {
-  min-width: 0;
-}
-.project-card-copy h2 {
-  overflow: hidden;
-  margin: 14px 0 4px;
-  color: #f4f4f5;
-  font-size: 15px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.project-card-copy p {
-  overflow: hidden;
-  margin: 0;
-  color: #8a8791;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.project-menu {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: #8a8791;
-  cursor: pointer;
-  font-size: 18px;
-}
-.project-menu:hover {
-  background: #25242b;
-  color: #f4f4f5;
-}
-.project-card-footer {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid #2b2b30;
-  color: #8a8791;
-  font-size: 11px;
-}
-.project-card-footer strong {
-  color: #c9c5cd;
-  font-weight: 500;
-}
-.project-card-footer time {
-  margin-left: auto;
-  color: #6d6a74;
-  white-space: nowrap;
 }
 .search-overlay {
   position: fixed;
@@ -2111,66 +1648,6 @@ a:hover {
   .console-main {
     min-height: calc(100dvh - 75px);
   }
-  .user-org-header {
-    gap: 8px;
-  }
-  .user-org-avatar {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    font-size: 10px;
-  }
-  .user-org-name {
-    font-size: 13px;
-    line-height: 24px;
-  }
-  .user-org-description {
-    display: none;
-  }
-  .user-plan-chip {
-    height: 15px;
-    padding: 0 6px;
-    font-size: 10px;
-  }
-  .user-tabs {
-    height: 44px;
-    margin-top: 8px;
-    margin-left: -16px;
-    margin-right: -16px;
-    padding: 0 16px;
-  }
-  .user-tabs span {
-    height: 44px;
-    padding: 0 12px;
-    font-size: 13px;
-  }
-  .user-toolbar {
-    gap: 8px;
-    margin-top: 16px;
-  }
-  .project-search {
-    height: 36px;
-    width: auto;
-    flex: 1;
-  }
-  .view-toggle {
-    width: 28px;
-  }
-  .project-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-top: 16px;
-  }
-  .project-card {
-    min-height: 142px;
-    padding: 16px;
-  }
-  .project-card-copy h2 {
-    margin-top: 12px;
-  }
-  .project-card-footer {
-    margin-top: 20px;
-  }
   .mobile-sidebar-overlay {
     position: fixed;
     inset: 0;
@@ -2227,15 +1704,6 @@ a:hover {
   }
   .mobile-sidebar-panel .profile-area {
     padding-bottom: calc(13px + env(safe-area-inset-bottom));
-  }
-}
-
-@media (max-width: 560px) {
-  .user-toolbar .view-toggle {
-    display: none;
-  }
-  .project-card-footer time {
-    font-size: 10px;
   }
 }
 
@@ -2313,13 +1781,6 @@ a:hover {
   color: #ffb9c2;
 }
 
-.dashboard-alert.is-success {
-  border-color: #386d58;
-  background: #142b22;
-  color: #9ce0bd;
-}
-
-.organization-invite-form,
 .organization-settings-form {
   display: flex;
   align-items: end;
@@ -2327,7 +1788,6 @@ a:hover {
   padding: 18px 0;
 }
 
-.organization-invite-form label,
 .organization-settings-form label {
   display: grid;
   flex: 1;
@@ -2336,10 +1796,7 @@ a:hover {
   font-size: 12px;
 }
 
-.organization-invite-form input,
-.organization-invite-form select,
 .organization-settings-form input,
-.invitation-link-row input,
 .organization-table select {
   min-width: 0;
   min-height: 40px;
@@ -2352,17 +1809,13 @@ a:hover {
   font: inherit;
 }
 
-.organization-invite-form input:focus,
-.organization-invite-form select:focus,
 .organization-settings-form input:focus,
-.invitation-link-row input:focus,
 .organization-table select:focus {
   border-color: #8a78e8;
   box-shadow: 0 0 0 3px rgb(138 120 232 / 16%);
 }
 
-.dashboard-secondary-button,
-.dashboard-danger-button {
+.dashboard-secondary-button {
   min-height: 36px;
   padding: 0 12px;
   border: 1px solid #403c45;
@@ -2379,38 +1832,9 @@ a:hover {
   background: #242129;
 }
 
-.dashboard-danger-button {
-  border-color: #713a44;
-  background: #311a20;
-  color: #ffb9c2;
-}
-
-.dashboard-danger-button:hover {
-  border-color: #a24a58;
-  background: #401f27;
-}
-
-.dashboard-secondary-button:disabled,
-.dashboard-danger-button:disabled {
+.dashboard-secondary-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
-}
-
-.invitation-link-row {
-  display: flex;
-  gap: 10px;
-  padding-bottom: 14px;
-}
-
-.invitation-link-row input {
-  flex: 1;
-}
-
-.dashboard-count {
-  margin-left: 6px;
-  color: #918b98;
-  font-size: 12px;
-  font-weight: 400;
 }
 
 .organization-table-wrap {
@@ -2461,7 +1885,6 @@ a:hover {
 }
 
 .dashboard-table-empty,
-.settings-readonly,
 .organization-danger-zone > p {
   padding: 14px 0;
   color: #9e99a4;
@@ -2521,17 +1944,6 @@ a:hover {
   display: flex;
   gap: 10px;
   margin-top: 20px;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  clip-path: inset(50%);
 }
 
 .dashboard-section-heading {
@@ -3624,13 +3036,8 @@ a:hover {
     font-size: 13px;
   }
 
-  .organization-invite-form,
   .organization-settings-form {
     align-items: stretch;
-    flex-direction: column;
-  }
-
-  .invitation-link-row {
     flex-direction: column;
   }
 
@@ -3661,20 +3068,12 @@ body {
   color: #ffffff;
 }
 
-/* Soft ambient glow behind the auth card instead of a flat black. */
-.auth-page {
-  background:
-    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%), #0f0f0f;
-}
-
 /* Interactive elements respond to the pointer and the keyboard alike. */
 .submit-button,
 .secondary-button,
 .create-project-button,
 .dashboard-secondary-button,
-.dashboard-danger-button,
-.dashboard-link-button,
-.project-menu {
+.dashboard-link-button {
   transition:
     background 160ms ease,
     border-color 160ms ease,
@@ -3687,22 +3086,17 @@ body {
 .submit-button:active,
 .secondary-button:active,
 .create-project-button:active,
-.dashboard-secondary-button:active,
-.dashboard-danger-button:active {
+.dashboard-secondary-button:active {
   transform: translateY(1px) scale(0.99);
 }
 
-.dashboard-link-button:active,
-.project-menu:active {
+.dashboard-link-button:active {
   transform: scale(0.96);
 }
 
 .dashboard-secondary-button:focus-visible,
-.dashboard-danger-button:focus-visible,
 .create-project-button:focus-visible,
-.dashboard-link-button:focus-visible,
-.project-card-link:focus-visible,
-.service-card-head h3 a:focus-visible {
+.dashboard-link-button:focus-visible {
   outline: 2px solid #b5a8ff;
   outline-offset: 2px;
 }
@@ -3710,9 +3104,6 @@ body {
 /* Data reads cleaner with aligned, non-proportional figures. */
 .organization-table,
 .project-quota,
-.project-resource-counts strong,
-.project-breadcrumb,
-.dashboard-count,
 .environment-key,
 .environment-value,
 .service-url {
@@ -3722,8 +3113,6 @@ body {
 /* Headings wrap without leaving orphaned words. */
 .dashboard-page-heading h1,
 .dashboard-section-heading h2,
-.project-card-copy h2,
-.service-card-head h3,
 .dashboard-empty-state h2,
 .dashboard-empty-state h3 {
   text-wrap: balance;
@@ -3731,22 +3120,6 @@ body {
 
 .dashboard-page-heading h1 {
   letter-spacing: -0.015em;
-}
-
-/* Cards lift a hair under the cursor so the console feels layered. */
-.project-card,
-.service-card {
-  transition:
-    border-color 160ms ease,
-    transform 160ms ease,
-    box-shadow 200ms ease;
-}
-
-.project-card:hover,
-.service-card:hover {
-  border-color: #45454b;
-  box-shadow: 0 8px 28px rgb(0 0 0 / 36%);
-  transform: translateY(-1px);
 }
 
 /* Live tables: a quiet row hover keeps dense data scannable. */
@@ -3766,103 +3139,6 @@ body {
 /* ============================================================
    Dashboard overview: stat cards, status dots, skeleton loader.
    ============================================================ */
-
-.dashboard-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 26px;
-}
-
-.dashboard-stat {
-  padding: 16px 18px 18px;
-  border: 1px solid #28262d;
-  border-radius: 12px;
-  background: #16151a;
-}
-
-.dashboard-stat-label {
-  display: block;
-  color: #918c97;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.dashboard-stat-value {
-  display: block;
-  margin-top: 12px;
-  color: #edecf1;
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.dashboard-stat-meta {
-  display: block;
-  margin-top: 8px;
-  color: #a9a5ae;
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dashboard-stat-value.dashboard-node {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 20px;
-}
-
-.dashboard-node.is-ok {
-  color: #9ce0bd;
-}
-
-.dashboard-node.is-down {
-  color: #ffb9c2;
-}
-
-.dashboard-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #c9c5ce;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.dashboard-status-dot {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: #6d6974;
-}
-
-.dashboard-status.is-active .dashboard-status-dot,
-.dashboard-node.is-ok .dashboard-status-dot {
-  background: #7bd8a4;
-  box-shadow: 0 0 0 3px rgb(123 216 164 / 14%);
-}
-
-.dashboard-status.is-idle .dashboard-status-dot {
-  background: #6d6974;
-}
-
-.dashboard-node.is-down .dashboard-status-dot {
-  background: #ff8f9d;
-  box-shadow: 0 0 0 3px rgb(255 143 157 / 14%);
-}
-
-.dashboard-empty-cta {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 16px;
-}
 
 .dashboard-skeleton {
   padding: 8px 0;
@@ -3890,37 +3166,14 @@ body {
   }
 }
 
-@media (max-width: 760px) {
-  .dashboard-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 /* ============================================================
    Projects list: skeleton cards + on-brand project mark.
    ============================================================ */
 
-.project-card-skeleton {
-  pointer-events: none;
-  background: linear-gradient(90deg, #1b1a1f 0%, #27242b 50%, #1b1a1f 100%);
-  background-size: 200% 100%;
-  animation: dashboard-shimmer 1.4s ease infinite;
-}
-
 /* One accent: the project marks share a single purple tint instead of three
    identical neutral squares. */
-.project-card-mark.green,
-.project-card-mark.purple,
-.project-card-mark.blue {
-  background: rgb(181 168 255 / 14%);
-  color: #c6bcff;
-}
 
 /* Counts align like the rest of the data surfaces. */
-.project-card-footer strong,
-.project-card-footer time {
-  font-variant-numeric: tabular-nums;
-}
 
 /* Detail-page skeletons + error status dot. */
 .dashboard-heading-skeleton {
@@ -3936,73 +3189,9 @@ body {
   margin-top: 10px;
 }
 
-.dashboard-status.is-error .dashboard-status-dot {
-  background: #ff8f9d;
-  box-shadow: 0 0 0 3px rgb(255 143 157 / 14%);
-}
-
 /* Host metrics: Platform Admin node dashboard. The cards reuse the semantic
  * palette; usage bars carry the state hue (ok green, warning gold, danger red)
  * so a ratio is readable at a glance without a second number. */
-.metric-window-picker {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 9px;
-  background: #17171a;
-}
-
-.metric-window-option {
-  border: 0;
-  border-radius: 6px;
-  padding: 6px 12px;
-  background: transparent;
-  color: #edecf1;
-  font-size: 13px;
-  cursor: pointer;
-  transition:
-    background 200ms ease,
-    color 200ms ease;
-}
-
-.metric-window-option:hover {
-  background: #232127;
-}
-
-.metric-window-option.is-active {
-  background: #b5a8ff;
-  color: #0f0f0f;
-}
-
-.metric-node-section {
-  margin-top: 24px;
-}
-
-.metric-node-heading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.metric-node-heading h2 {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.metric-captured {
-  color: #a5a1ad;
-  font-size: 12.5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-}
 
 .metric-card {
   display: flex;
@@ -4017,96 +3206,6 @@ body {
 
 .metric-card:hover {
   border-color: #322d38;
-}
-
-.metric-card-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.metric-card-heading h3 {
-  margin: 0;
-  font-size: 12.5px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #a5a1ad;
-}
-
-.metric-card-value {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-
-.metric-card-detail {
-  margin: 0;
-  font-size: 12.5px;
-  color: #a5a1ad;
-  font-variant-numeric: tabular-nums;
-}
-
-.metric-card-skeleton {
-  height: 128px;
-}
-
-.metric-bar {
-  height: 6px;
-  border-radius: 3px;
-  background: #232127;
-  overflow: hidden;
-}
-
-.metric-bar span {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-  background: #b5a8ff;
-  transition: width 300ms ease;
-}
-
-.metric-bar.is-warning span {
-  background: #d8c783;
-}
-
-.metric-bar.is-danger span {
-  background: #ff8f9d;
-}
-
-.metric-level {
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.metric-level.is-ok {
-  color: #4ecf9d;
-}
-
-.metric-level.is-warning {
-  color: #d8c783;
-}
-
-.metric-level.is-danger {
-  color: #ff8f9d;
-}
-
-.metric-sparkline {
-  width: 100%;
-  height: 40px;
-  margin-top: 4px;
-}
-
-.metric-sparkline polyline {
-  fill: none;
-  stroke: #b5a8ff;
-  stroke-width: 2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
 }
 
 /* Admin console — ported from stealth-forge's styles/admin.css. The [data-admin]
@@ -4382,91 +3481,6 @@ body {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.admin-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 9px;
-  border-radius: 9999px;
-  font-size: 11.5px;
-  font-weight: 500;
-  border: 1px solid var(--projects-border);
-  color: var(--projects-muted);
-  white-space: nowrap;
-}
-
-.admin-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 9999px;
-  background: currentColor;
-  flex-shrink: 0;
-}
-
-.admin-badge.is-info {
-  border-color: color-mix(in srgb, var(--admin-info) 35%, transparent);
-  color: var(--admin-info);
-  background: color-mix(in srgb, var(--admin-info) 8%, transparent);
-}
-
-.admin-badge.is-success {
-  border-color: color-mix(in srgb, var(--projects-accent) 35%, transparent);
-  color: var(--projects-accent);
-  background: color-mix(in srgb, var(--projects-accent) 8%, transparent);
-}
-
-.admin-badge.is-warning {
-  border-color: color-mix(in srgb, var(--projects-warning) 35%, transparent);
-  color: var(--projects-warning);
-  background: color-mix(in srgb, var(--projects-warning) 8%, transparent);
-}
-
-.admin-badge.is-danger {
-  border-color: color-mix(in srgb, var(--projects-danger) 35%, transparent);
-  color: var(--projects-danger);
-  background: color-mix(in srgb, var(--projects-danger) 8%, transparent);
-}
-
-.admin-page-body {
-  margin: 0 auto;
-  display: flex;
-  width: 100%;
-  max-width: 1440px;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px 16px 48px;
-}
-
-@media (min-width: 640px) {
-  .admin-page-body {
-    padding: 20px 24px 48px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .admin-page-body {
-    padding: 20px 28px 48px;
-  }
-}
-
-.admin-empty {
-  margin: 0;
-  padding: 40px 16px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--projects-muted);
-}
-
-.admin-select-trigger {
-  height: 36px;
-  border: 1px solid var(--projects-border);
-  border-radius: 8px;
-  background: #141416;
-  color: var(--projects-text);
-  font-size: 12.5px;
-  padding: 0 12px;
-}
-
 /* The auth forms on /login and /signup: every field is one .auth-field grid
    (label above input) and the form spreads the fields with an even rhythm, so
    the sign-up stack no longer reads cramped against the provider buttons. */
@@ -4494,9 +3508,6 @@ body {
 }
 
 /* The old password-only top margin is superseded by the field rhythm above. */
-.auth-fields .password-label {
-  margin-top: 0;
-}
 
 /* The one-line lead under the heading on the reset pages. */
 .auth-lead {
@@ -4678,12 +3689,6 @@ body {
 .auth-page .support-copy {
   color: #999999;
 }
-.auth-page .legal-copy {
-  color: #666666;
-}
-.auth-page .legal-copy a:hover {
-  color: #eaeaea;
-}
 
 .auth-page .notice {
   border-color: #904506;
@@ -4706,10 +3711,6 @@ body {
 .auth-page .submit-button:focus-visible,
 .auth-page .skip-link:focus-visible {
   outline-color: #4693ff;
-}
-
-.admin-select-trigger:hover {
-  border-color: var(--projects-border-hover);
 }
 
 /* ==========================================================================
@@ -5464,7 +4465,6 @@ body {
   color: #7a7886;
 }
 
-.orgs-loading-state,
 .orgs-empty-card {
   display: flex;
   flex-direction: column;
@@ -7024,30 +6024,6 @@ body {
   color: #ffffff;
 }
 
-.project-spec-pill {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background-color: #141318;
-  border: 1px solid #232129;
-}
-
-.project-spec-label {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #636170;
-}
-
-.project-spec-val {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #ffffff;
-  font-family: monospace;
-  margin-top: 2px;
-}
-
 .project-proxy-badge {
   display: inline-flex;
   align-items: center;
@@ -7951,16 +6927,6 @@ body {
   background-color: #3ecf8e;
 }
 
-.usage-meters {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 28px;
-  padding: 16px 18px;
-  background-color: #17161b;
-  border: 1px solid #25232c;
-  border-radius: 8px;
-}
-
 .usage-meter-row {
   min-width: 0;
 }
@@ -8254,7 +7220,6 @@ a.usage-row-name:hover {
 }
 
 @media (max-width: 860px) {
-  .usage-meters,
   .usage-policy-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -8280,7 +7245,6 @@ a.usage-row-name:hover {
     padding: 0 12px;
   }
 
-  .usage-meters,
   .usage-policy-grid {
     grid-template-columns: 1fr;
   }
@@ -9809,10 +8773,6 @@ a.usage-row-name:hover {
   font-size: 13px;
   overflow-wrap: anywhere;
 }
-.supabase-service-side .service-meta,
-.supabase-service-page .svc-panel-meta-two-col .service-meta {
-  grid-template-columns: 1fr;
-}
 
 /* --- Empty states ------------------------------------------------------ */
 .supabase-service-page .dashboard-empty-state {
@@ -9912,8 +8872,7 @@ a.usage-row-name:hover {
 }
 
 /* --- Forms -------------------------------------------------------------- */
-.supabase-service-page .organization-settings-form,
-.supabase-service-page .environment-form {
+.supabase-service-page .organization-settings-form {
   display: grid;
   gap: 14px;
   margin: 0 0 16px;
@@ -9922,19 +8881,16 @@ a.usage-row-name:hover {
   border-radius: 8px;
   background: #111113;
 }
-.supabase-service-page .organization-settings-form:last-child,
-.supabase-service-page .environment-form:last-child {
+.supabase-service-page .organization-settings-form:last-child {
   margin-bottom: 0;
 }
-.supabase-service-page .organization-settings-form label,
-.supabase-service-page .environment-form label {
+.supabase-service-page .organization-settings-form label {
   display: grid;
   gap: 6px;
   color: #d4d4d8;
   font-size: 13px;
 }
-.supabase-service-page .organization-settings-form input,
-.supabase-service-page .environment-form input {
+.supabase-service-page .organization-settings-form input {
   width: 100%;
   height: 38px;
   padding: 0 12px;
@@ -9948,12 +8904,10 @@ a.usage-row-name:hover {
     border-color 0.12s ease,
     box-shadow 0.12s ease;
 }
-.supabase-service-page .organization-settings-form input:focus,
-.supabase-service-page .environment-form input:focus {
+.supabase-service-page .organization-settings-form input:focus {
   border-color: #a1a1aa;
   box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.08);
 }
-.supabase-service-page .environment-form-actions,
 .supabase-service-page .runtime-actions {
   display: flex;
   align-items: center;
@@ -10033,11 +8987,6 @@ a.usage-row-name:hover {
 }
 
 /* --- Misc ---------------------------------------------------------------- */
-.supabase-service-page .dashboard-back-link a {
-  color: #00e08c;
-  font-size: 13px;
-  text-decoration: none;
-}
 .svc-back-link {
   display: inline-block;
   margin-top: 16px;
