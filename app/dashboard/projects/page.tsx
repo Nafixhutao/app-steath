@@ -92,7 +92,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="supabase-projects-page">
-      <div className="supabase-projects-header">
+      <div className="mb-[20px]">
         <h1 className="supabase-projects-title">Projects</h1>
       </div>
 
@@ -145,7 +145,7 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        <div className="supabase-toolbar-right">
+        <div className="flex items-center gap-[10px]">
           <div className="supabase-view-toggle-group">
             <button
               type="button"
@@ -186,7 +186,7 @@ export default function ProjectsPage() {
       {/* Two Column Layout matching Image 2 */}
       <div className="supabase-projects-layout">
         {/* Left / Main Column */}
-        <div className="supabase-projects-main">
+        <div className="min-w-0">
           {projects.loading ? (
             <div className="supabase-projects-grid">
               {[1, 2, 3].map((n) => (
@@ -212,7 +212,7 @@ export default function ProjectsPage() {
                 <Boxes className="w-10 h-10 text-zinc-400" />
               </div>
               <h2 className="supabase-hero-title">Create a project</h2>
-              <p className="supabase-hero-subtitle">Launch a complete backend built on Postgres.</p>
+              <p className="text-[13px] text-[#83818e] mb-[20px]">Launch a complete backend built on Postgres.</p>
               <button
                 type="button"
                 className="supabase-hero-btn"
@@ -252,7 +252,7 @@ export default function ProjectsPage() {
                         {project.name.slice(0, 1).toUpperCase()}
                       </span>
                     </div>
-                    <div className="supabase-card-title-wrap">
+                    <div className="flex-1 min-w-0">
                       <h3 className="supabase-card-name">{project.name}</h3>
                       <p className="supabase-card-slug">{project.slug}</p>
                     </div>
@@ -335,19 +335,19 @@ export default function ProjectsPage() {
         </div>
 
         {/* Right Column: Free Plan Usage Panel matching Image 2 */}
-        <aside className="supabase-usage-sidebar" aria-label="Organization resource usage">
+        <aside className="min-w-0" aria-label="Organization resource usage">
           <div className="supabase-usage-panel">
             <div className="supabase-usage-panel-header">
               <div>
                 <h3 className="supabase-usage-panel-title">Free plan usage</h3>
-                <p className="supabase-usage-panel-sub">Current billing cycle</p>
+                <p className="text-[12px] text-[#716f7c] mt-[2px]">Current billing cycle</p>
               </div>
               <button type="button" className="supabase-upgrade-btn">
                 Upgrade to Pro
               </button>
             </div>
 
-            <div className="supabase-usage-list">
+            <div className="flex flex-col gap-[12px]">
               <div className="supabase-usage-item">
                 <div className="supabase-usage-row">
                   <div className="supabase-usage-row-left">

@@ -4095,11 +4095,6 @@ body {
   padding: 48px 32px;
 }
 
-.orgs-page-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
 .orgs-page-title {
   font-size: 28px;
   font-weight: 600;
@@ -4114,12 +4109,6 @@ body {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 24px;
-}
-
-.orgs-search-box {
-  position: relative;
-  width: 280px;
-  max-width: 100%;
 }
 
 .orgs-search-icon {
@@ -4365,11 +4354,6 @@ body {
   white-space: nowrap;
 }
 
-.org-card-plan {
-  font-size: 13px;
-  color: #7a7886;
-}
-
 .orgs-empty-card {
   display: flex;
   flex-direction: column;
@@ -4390,10 +4374,6 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
-}
-
-.supabase-projects-header {
-  margin-bottom: 20px;
 }
 
 .supabase-projects-title {
@@ -4506,12 +4486,6 @@ body {
   user-select: none;
 }
 
-.supabase-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .supabase-view-toggle-group {
   display: flex;
   align-items: center;
@@ -4560,10 +4534,6 @@ body {
   }
 }
 
-.supabase-projects-main {
-  min-width: 0;
-}
-
 /* Empty Hero Box (matching Image 2) */
 .supabase-create-project-hero {
   display: flex;
@@ -4590,12 +4560,6 @@ body {
   font-weight: 600;
   color: var(--color-ink);
   margin: 0 0 6px;
-}
-
-.supabase-hero-subtitle {
-  font-size: 13px;
-  color: #83818e;
-  margin: 0 0 20px;
 }
 
 .supabase-hero-btn {
@@ -4688,11 +4652,6 @@ body {
   flex-shrink: 0;
 }
 
-.supabase-card-title-wrap {
-  flex: 1;
-  min-width: 0;
-}
-
 .supabase-card-name {
   font-size: 15px;
   font-weight: 600;
@@ -4782,13 +4741,6 @@ body {
   background-color: rgba(255, 255, 255, 0.02);
 }
 
-/* ==========================================================================
-   Free Plan Usage Panel (matching Image 2 right column)
-   ========================================================================== */
-.supabase-usage-sidebar {
-  min-width: 0;
-}
-
 .supabase-usage-panel {
   background-color: #151419;
   border: 1px solid #23212a;
@@ -4809,12 +4761,6 @@ body {
   font-weight: 600;
   color: var(--color-ink);
   margin: 0;
-}
-
-.supabase-usage-panel-sub {
-  font-size: 12px;
-  color: #716f7c;
-  margin: 2px 0 0;
 }
 
 .supabase-upgrade-btn {
@@ -4838,12 +4784,6 @@ body {
 .supabase-upgrade-btn:hover {
   background-color: #24232c;
   border-color: #3e3c4b;
-}
-
-.supabase-usage-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .supabase-usage-row {

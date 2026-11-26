@@ -105,11 +105,11 @@ export default function OrganizationsPage() {
 
   return (
     <div className="orgs-page-container">
-      <div className="orgs-page-inner">
+      <div className="max-w-[1100px] mx-auto">
         <h1 className="orgs-page-title">Your organizations</h1>
 
         <div className="orgs-page-toolbar">
-          <div className="orgs-search-box">
+          <div className="relative w-[280px] max-w-full">
             <Search className="orgs-search-icon" aria-hidden="true" />
             <input
               type="search"
@@ -204,7 +204,7 @@ export default function OrganizationsPage() {
                   <OrgHexIcon />
                   <div className="org-card-content">
                     <span className="org-card-name">{org.name}</span>
-                    <span className="org-card-plan">Free Plan</span>
+                    <span className="text-[13px] text-[#7a7886]">Free Plan</span>
                   </div>
                   {isSwitching && (
                     <Loader2 className="w-4 h-4 animate-spin text-emerald-400 ml-auto" />
