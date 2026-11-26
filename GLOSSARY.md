@@ -107,6 +107,10 @@ _Avoid_: Agent client, agent service, transport layer
 Batas resource yang berlaku untuk sebuah Organization.
 _Avoid_: Limit, plan
 
+**Email provider**:
+Layanan eksternal (Resend atau Mailjet) yang mengirim email transaksional platform. Kredensialnya disimpan terenkrip dan diatur oleh Platform Admin di Admin Console; satu provider menjadi primary dan yang lain fallback saat kuota habis.
+_Avoid_: SMTP server, mailserver
+
 **Backup**:
 Salinan file Volume atau Database pada satu titik waktu.
 _Avoid_: Snapshot, dump
