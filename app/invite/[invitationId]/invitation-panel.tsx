@@ -66,7 +66,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
           </p>
         ) : null}
         {ready ? (
-          <div className="invitation-actions">
+          <div className="flex gap-[10px] mt-[20px]">
             <button
               className="create-project-button"
               type="button"

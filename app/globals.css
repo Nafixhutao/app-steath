@@ -212,10 +212,6 @@ h1 {
   outline: 2px solid #186cee;
   outline-offset: 2px;
 }
-.sso-button {
-  width: 100%;
-  margin-top: 10px;
-}
 .provider-mark {
   width: 16px;
   height: 16px;
@@ -1967,12 +1963,6 @@ a:hover {
 
 .invitation-panel a {
   color: var(--color-violet);
-}
-
-.invitation-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
 }
 
 .dashboard-section-heading {

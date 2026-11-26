@@ -234,7 +234,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           </button>
         </div>
 
-        <button type="button" className="secondary-button sso-button" disabled>
+        <button type="button" className="secondary-button w-full mt-[10px]" disabled>
           <LockMark />
           Continue with SSO
           <span className="provider-soon">Coming soon</span>
