@@ -166,10 +166,10 @@ export default function DatabasesPage() {
     <div className="dashboard-content db-page-wrapper">
       {/* Header */}
       <header className="db-heading">
-        <div className="db-heading-main">
-          <div className="db-title-row">
+        <div className="flex-1 min-w-[280px]">
+          <div className="flex items-center gap-[14px]">
             <div className="db-title-icon-box" aria-hidden="true">
-              <Database className="db-title-icon" />
+              <Database className="w-[22px] h-[22px]" />
             </div>
             <div>
               <div className="db-tagline">Managed Storage</div>
@@ -183,7 +183,7 @@ export default function DatabasesPage() {
         </div>
         <div className="db-actions">
           <span className="db-quota" title="Limit per project in this organization">
-            <Server className="db-quota-icon" aria-hidden="true" />
+            <Server className="w-[14px] h-[14px] text-accent" aria-hidden="true" />
             <span>
               {databasesList.length} of {QUOTAS.databasesPerProject} per Project
             </span>
@@ -207,12 +207,12 @@ export default function DatabasesPage() {
         <div className="db-banner" role="region" aria-label="Storage warning">
           <div className="db-banner-content">
             <div className="db-banner-icon-box" aria-hidden="true">
-              <AlertTriangle className="db-banner-icon" />
+              <AlertTriangle className="w-[18px] h-[18px]" />
             </div>
-            <div className="db-banner-text-wrap">
+            <div className="flex flex-col gap-[2px]">
               <p className="db-banner-text">
                 <strong>{fullDatabase.database.databaseName}</strong> has used{" "}
-                <span className="db-banner-badge">{fullDatabase.percent}%</span> of its{" "}
+                <span className="[font-family:var(--font-mono)] font-bold text-[#f59e0b]">{fullDatabase.percent}%</span> of its{" "}
                 {fullDatabase.database.storageLimitMb} MB disk allocation.
               </p>
               <p className="db-banner-subtext">
@@ -346,7 +346,7 @@ export default function DatabasesPage() {
           <div className="db-empty-art" aria-hidden="true">
             <div className="db-empty-glow" />
             <div className="db-empty-icon-card">
-              <Database className="db-empty-primary-icon" />
+              <Database className="w-[30px] h-[30px]" />
             </div>
           </div>
           <h2>No databases provisioned yet</h2>
@@ -356,7 +356,7 @@ export default function DatabasesPage() {
             scheduled backups.
           </p>
 
-          <Link href="/dashboard/projects" className="db-btn db-btn-primary db-btn-hero">
+          <Link href="/dashboard/projects" className="db-btn db-btn-primary mx-auto">
             <Plus className="db-btn-icon" aria-hidden="true" />
             <span>Go to Projects to Create Database</span>
           </Link>
@@ -438,11 +438,11 @@ export default function DatabasesPage() {
                 return (
                   <tr key={database.id}>
                     <td>
-                      <div className="db-name-cell">
+                      <div className="flex items-center gap-[12px]">
                         <div className="db-row-icon-box" aria-hidden="true">
-                          <Database className="db-row-icon" />
+                          <Database className="w-[16px] h-[16px]" />
                         </div>
-                        <div className="db-name-details">
+                        <div className="flex flex-col">
                           <span className="db-name-title">{database.databaseName}</span>
                           <div className="db-connection-pill">
                             <span className="db-connection-text">{copyText}</span>
@@ -469,14 +469,14 @@ export default function DatabasesPage() {
                         href={`/dashboard/projects/${database.projectId}`}
                         className="db-project-link"
                       >
-                        <Layers className="db-project-icon" aria-hidden="true" />
+                        <Layers className="w-[14px] h-[14px] text-accent" aria-hidden="true" />
                         <span>{database.projectName}</span>
                       </Link>
                     </td>
 
                     <td>
                       <span className={`db-status-pill ${STATUS_DOT[database.status]}`}>
-                        <span className="db-dot-pulse" aria-hidden="true">
+                        <span className="relative inline-flex" aria-hidden="true">
                           <span className={`db-dot ${STATUS_DOT[database.status]}`} />
                         </span>
                         <span className="db-status-text">
@@ -492,7 +492,7 @@ export default function DatabasesPage() {
                     </td>
 
                     <td>
-                      <div className="db-disk">
+                      <div className="min-w-[170px]">
                         <div className="db-disk-meta">
                           <span className="db-disk-used">{usageLabel(database)}</span>
                           <span className="db-disk-cap">of {database.storageLimitMb} MB</span>
@@ -514,7 +514,7 @@ export default function DatabasesPage() {
                         )}
                         {percent !== null && (
                           <div className="db-disk-footer">
-                            <span className="db-disk-percentage">{percent}% utilized</span>
+                            <span className="[font-family:var(--font-mono)]">{percent}% utilized</span>
                           </div>
                         )}
                       </div>
@@ -527,7 +527,7 @@ export default function DatabasesPage() {
                         title={`Manage ${database.databaseName} in ${database.projectName}`}
                       >
                         <span>Manage</span>
-                        <ArrowUpRight className="db-btn-icon-sm" aria-hidden="true" />
+                        <ArrowUpRight className="w-[13px] h-[13px] text-[#9e9aa7]" aria-hidden="true" />
                       </Link>
                     </td>
                   </tr>

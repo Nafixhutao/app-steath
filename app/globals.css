@@ -2028,17 +2028,6 @@ a:hover {
   border-bottom: 1px solid #282631;
 }
 
-.db-heading-main {
-  flex: 1;
-  min-width: 280px;
-}
-
-.db-title-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
 .db-title-icon-box {
   display: flex;
   align-items: center;
@@ -2050,11 +2039,6 @@ a:hover {
   border: 1px solid rgba(99, 102, 241, 0.28);
   color: var(--color-accent);
   flex-shrink: 0;
-}
-
-.db-title-icon {
-  width: 22px;
-  height: 22px;
 }
 
 .db-tagline {
@@ -2106,12 +2090,6 @@ a:hover {
   white-space: nowrap;
 }
 
-.db-quota-icon {
-  width: 14px;
-  height: 14px;
-  color: var(--color-accent);
-}
-
 .db-banner {
   display: flex;
   align-items: center;
@@ -2147,28 +2125,11 @@ a:hover {
   margin-top: 2px;
 }
 
-.db-banner-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.db-banner-text-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
 .db-banner-text {
   margin: 0;
   color: #f3f2f5;
   font-size: 13.5px;
   line-height: 1.45;
-}
-
-.db-banner-badge {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  color: #f59e0b;
 }
 
 .db-banner-subtext {
@@ -2437,12 +2398,6 @@ a:hover {
   background: #1b1922;
 }
 
-.db-name-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .db-row-icon-box {
   display: flex;
   align-items: center;
@@ -2454,16 +2409,6 @@ a:hover {
   border: 1px solid rgba(62, 207, 142, 0.2);
   color: var(--color-accent);
   flex-shrink: 0;
-}
-
-.db-row-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.db-name-details {
-  display: flex;
-  flex-direction: column;
 }
 
 .db-name-title {
@@ -2534,12 +2479,6 @@ a:hover {
   text-decoration: underline;
 }
 
-.db-project-icon {
-  width: 14px;
-  height: 14px;
-  color: var(--color-accent);
-}
-
 .db-status-pill {
   display: inline-flex;
   align-items: center;
@@ -2573,11 +2512,6 @@ a:hover {
   background: rgba(244, 63, 94, 0.1);
   border: 1px solid rgba(244, 63, 94, 0.25);
   color: var(--color-danger);
-}
-
-.db-dot-pulse {
-  position: relative;
-  display: inline-flex;
 }
 
 .db-dot {
@@ -2614,10 +2548,6 @@ a:hover {
   font-size: 11.5px;
   color: #d1d0d8;
   white-space: nowrap;
-}
-
-.db-disk {
-  min-width: 170px;
 }
 
 .db-disk-meta {
@@ -2672,10 +2602,6 @@ a:hover {
   text-align: right;
 }
 
-.db-disk-percentage {
-  font-family: var(--font-mono);
-}
-
 .db-btn-manage {
   display: inline-flex;
   align-items: center;
@@ -2698,12 +2624,6 @@ a:hover {
   background: #252230;
   border-color: #433e54;
   color: var(--color-ink);
-}
-
-.db-btn-icon-sm {
-  width: 13px;
-  height: 13px;
-  color: #9e9aa7;
 }
 
 /* Empty States */
@@ -2741,11 +2661,6 @@ a:hover {
   box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2);
 }
 
-.db-empty-primary-icon {
-  width: 30px;
-  height: 30px;
-}
-
 .db-empty-hero h2 {
   margin: 0;
   font-size: 20px;
@@ -2760,10 +2675,6 @@ a:hover {
   color: #9e9aa7;
   font-size: 14px;
   line-height: 1.6;
-}
-
-.db-btn-hero {
-  margin: 0 auto;
 }
 
 .db-empty-features {
