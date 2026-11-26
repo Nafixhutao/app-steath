@@ -205,9 +205,9 @@ export default function DomainsPage() {
   }
 
   return (
-    <div className="domains-page-container">
+    <div className="pt-[28px] pb-[64px] px-[36px] max-w-[1200px] mx-auto w-full">
       {/* Header */}
-      <header className="domains-page-header">
+      <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
           <div className="domains-header-icon" aria-hidden="true">
             <Globe className="w-5 h-5 text-emerald-400" />
@@ -217,7 +217,7 @@ export default function DomainsPage() {
               <h1 className="domains-page-title">Domains &amp; Networking</h1>
               <span className="supabase-plan-badge">EDGE PROXY</span>
             </div>
-            <p className="domains-page-subtitle">
+            <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage custom brand domains, SSL/TLS certificates, and platform subdomains for{" "}
               {organization?.name ?? "your organization"}.
             </p>
@@ -307,7 +307,7 @@ export default function DomainsPage() {
       </section>
 
       {/* Tabs Navigation */}
-      <div className="domains-tabs-bar">
+      <div className="flex items-center gap-[8px] border-b border-b-[var(--color-surface-raised)] mb-[20px] overflow-x-auto">
         <button
           type="button"
           className={`domains-tab-btn ${activeTab === "custom" ? "is-active" : ""}`}
@@ -342,9 +342,9 @@ export default function DomainsPage() {
       {activeTab === "custom" && (
         <section aria-labelledby="custom-domains-heading">
           {/* Toolbar */}
-          <div className="domains-toolbar">
+          <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[16px]">
             <div className="relative w-full max-w-[380px]">
-              <Search className="domains-search-icon" aria-hidden="true" />
+              <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#706d7e] pointer-events-none" aria-hidden="true" />
               <input
                 type="search"
                 placeholder="Search domains by hostname, service, or project..."
@@ -398,7 +398,7 @@ export default function DomainsPage() {
               </div>
             ) : filteredDomains.length === 0 ? (
               <div className="domains-empty-box">
-                <div className="domains-empty-halo" aria-hidden="true">
+                <div className="w-[52px] h-[52px] rounded-[50%] bg-[rgba(62,207,142,0.08)] border border-[rgba(62,207,142,0.2)] flex items-center justify-center" aria-hidden="true">
                   <Globe className="w-7 h-7 text-emerald-400" />
                 </div>
                 <h3 className="text-base font-semibold text-white mt-3">
@@ -598,7 +598,7 @@ export default function DomainsPage() {
       {/* TAB 2: Platform Subdomains */}
       {activeTab === "platform" && (
         <section aria-labelledby="platform-subdomains-heading">
-          <div className="domains-info-banner mb-4">
+          <div className="mb-4 flex items-start gap-[12px] py-[12px] px-[16px] rounded-card bg-[rgba(6,182,212,0.08)] border border-[rgba(6,182,212,0.25)]">
             <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-cyan-200">
               <strong>Automatic Platform Routing:</strong> Every service deployed on this node is
@@ -719,7 +719,7 @@ export default function DomainsPage() {
       {/* TAB 3: DNS Setup Guide */}
       {activeTab === "guide" && (
         <section aria-labelledby="dns-guide-heading" className="space-y-6">
-          <div className="domains-guide-card">
+          <div className="bg-surface border border-[var(--color-surface-raised)] rounded-panel p-[24px]">
             <h2 id="dns-guide-heading" className="text-base font-semibold text-white mb-2">
               How Custom Domain Routing Works
             </h2>

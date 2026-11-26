@@ -141,16 +141,16 @@ export default function BackupsPage() {
   }
 
   return (
-    <div className="backups-page-container">
+    <div className="pt-[28px] pb-[64px] px-[36px] max-w-[1200px] mx-auto w-full">
       {/* Header */}
-      <header className="backups-page-header">
+      <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
           <div className="backups-header-icon" aria-hidden="true">
             <Archive className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
             <h1 className="backups-page-title">Backups & Restores</h1>
-            <p className="backups-page-subtitle">
+            <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Automated daily disaster recovery snapshots for{" "}
               {organization?.name ?? "your organization"}.
             </p>
@@ -178,7 +178,7 @@ export default function BackupsPage() {
 
       {/* Local Storage Warning */}
       {list?.storageProvider === "local" && (
-        <div className="backups-warning-banner" role="status">
+        <div className="flex items-start gap-[12px] py-[12px] px-[16px] rounded-card bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] mb-[20px]" role="status">
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="text-xs text-amber-200">
             <strong>Local Storage Notice:</strong> S3 credentials are not configured, so backup
@@ -247,9 +247,9 @@ export default function BackupsPage() {
       </section>
 
       {/* Toolbar */}
-      <div className="backups-toolbar">
+      <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[16px]">
         <div className="relative w-full max-w-[340px]">
-          <Search className="backups-search-icon" aria-hidden="true" />
+          <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#706d7e] pointer-events-none" aria-hidden="true" />
           <input
             type="search"
             placeholder="Search backups by target or project..."
@@ -301,7 +301,7 @@ export default function BackupsPage() {
             ))}
           </div>
         ) : filteredBackups.length === 0 ? (
-          <div className="backups-empty-box">
+          <div className="flex flex-col items-center justify-center py-[48px] px-[20px] text-center">
             <Archive className="w-8 h-8 text-zinc-600 mb-2" />
             <p className="text-sm text-zinc-300 font-medium">No backups found</p>
             <p className="text-xs text-zinc-500 mt-1">

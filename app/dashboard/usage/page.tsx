@@ -140,7 +140,7 @@ export default function UsagePage() {
 
   return (
     <div className="usage-page-container">
-      <header className="usage-page-header">
+      <header className="flex items-end justify-between flex-wrap gap-[16px] mb-[18px]">
         <div className="min-w-0">
           <h1 className="usage-page-title">Usage &amp; Quotas</h1>
           <p className="usage-page-subtitle">

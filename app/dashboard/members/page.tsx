@@ -270,9 +270,9 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="members-page-container">
+    <div className="pt-[28px] pb-[64px] px-[36px] max-w-[1200px] mx-auto w-full">
       {/* Page Header */}
-      <header className="members-page-header">
+      <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
           <div className="members-header-icon" aria-hidden="true">
             <Users className="w-5 h-5 text-emerald-400" />
@@ -322,9 +322,9 @@ export default function MembersPage() {
       ) : null}
 
       {/* Filter Toolbar */}
-      <div className="members-toolbar">
+      <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[20px]">
         <div className="relative w-[280px] max-w-full">
-          <Search className="members-search-icon" aria-hidden="true" />
+          <Search className="absolute left-[10px] top-1/2 -translate-y-1/2 w-[14px] h-[14px] text-[#636170] pointer-events-none" aria-hidden="true" />
           <input
             type="search"
             placeholder="Search by name or email..."
@@ -377,7 +377,7 @@ export default function MembersPage() {
             ))}
           </div>
         ) : filteredMembers.length === 0 ? (
-          <div className="members-empty-box">
+          <div className="flex flex-col items-center justify-center py-[48px] px-[20px] text-center">
             <Users className="w-8 h-8 text-zinc-600 mb-2" />
             <p className="text-sm text-zinc-300 font-medium">No team members match this query</p>
             <p className="text-xs text-zinc-500 mt-1">
@@ -419,9 +419,9 @@ export default function MembersPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-[13.5px] font-semibold text-ink">{member.user.name}</span>
-                            {isCurrentUser && <span className="members-you-badge">You</span>}
+                            {isCurrentUser && <span className="text-[10px] font-semibold py-[1px] px-[5px] rounded-control-sm bg-[rgba(62,207,142,0.1)] text-accent border border-[rgba(62,207,142,0.25)]">You</span>}
                           </div>
-                          <span className="members-user-email">{member.user.email}</span>
+                          <span className="block text-[11.5px] text-[#716f7c] [font-family:monospace]">{member.user.email}</span>
                         </div>
                       </div>
                     </td>

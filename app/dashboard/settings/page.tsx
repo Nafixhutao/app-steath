@@ -156,9 +156,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div ref={containerRef} className="settings-page-container">
+    <div ref={containerRef} className="pt-[28px] pb-[64px] px-[36px] max-w-[1200px] mx-auto w-full">
       {/* Header */}
-      <header className="settings-page-header">
+      <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
           <div className="settings-header-icon" aria-hidden="true">
             <Settings className="w-5 h-5 text-emerald-400" />
@@ -168,7 +168,7 @@ export default function SettingsPage() {
               <h1 className="settings-page-title">Organization Settings</h1>
               <span className="supabase-plan-badge">FREE PLAN</span>
             </div>
-            <p className="settings-page-subtitle">
+            <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage organization details, team ownership, and preferences for{" "}
               {organization?.name ?? "your organization"}.
             </p>
@@ -384,7 +384,7 @@ export default function SettingsPage() {
             </form>
           ) : (
             <div className="settings-card-body">
-              <div className="settings-readonly-banner">
+              <div className="flex items-start gap-[12px] py-[12px] px-[16px] rounded-card bg-[rgba(6,182,212,0.08)] border border-[rgba(6,182,212,0.25)]">
                 <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-cyan-200 leading-relaxed">
                   You are viewing this organization as a{" "}
