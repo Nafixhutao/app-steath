@@ -77,8 +77,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               {t.type === "info" && <Info className="w-4 h-4 text-blue-400" />}
             </div>
             <div className="flex-1 min-w-0">
-              <strong className="toast-title">{t.title}</strong>
-              {t.message && <p className="toast-message">{t.message}</p>}
+              <strong className="block text-[13px] font-semibold text-ink">{t.title}</strong>
+              {t.message && <p className="text-[12px] text-[#8c899c] mt-[2px] mb-0 mx-0 [word-break:break-word]">{t.message}</p>}
             </div>
             <button
               type="button"

@@ -207,13 +207,6 @@ h1 {
      and needed per-page overrides. The one centred heading opts in below. */
 }
 
-.provider-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 24px;
-}
-
 .secondary-button {
   display: flex;
   height: 40px;
@@ -434,20 +427,6 @@ form input[type="text"]:focus {
     padding-top: 40px;
     padding-bottom: 40px;
   }
-}
-
-/* Public abuse-report form: a standalone centered card on the same tokens as
-   the auth pages, so the report flows into the platform instead of being
-   unstyled browser defaults. */
-.auth-shell {
-  min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 56px 16px;
-  background:
-    radial-gradient(1100px 560px at 50% -12%, rgb(181 168 255 / 7%), transparent 62%), var(--color-canvas);
-  color: var(--color-ink);
 }
 
 .auth-card {
@@ -722,12 +701,6 @@ form input[type="text"]:focus {
   background: #d8c783;
   color: #201d16;
 }
-.organization-switcher-error {
-  margin: 8px;
-  color: #f39c9c;
-  font-size: 12px;
-  line-height: 1.4;
-}
 .identity-initial {
   display: inline-flex;
   width: 20px;
@@ -905,12 +878,6 @@ form input[type="text"]:focus {
   margin: 0 auto;
   justify-content: center;
   padding: 0;
-}
-.agent-gift {
-  margin-left: auto;
-  color: #ffa057;
-  font-size: 16px;
-  line-height: 16px;
 }
 .sidebar-bottom {
   flex-shrink: 0;
@@ -1498,12 +1465,6 @@ form input[type="text"]:focus {
 }
 .search-result:hover {
   background: #2b2930;
-}
-.search-empty {
-  padding: 32px 10px;
-  color: #8a8791;
-  font-size: 13px;
-  text-align: center;
 }
 .mobile-account-menu {
   position: absolute;
@@ -3547,19 +3508,6 @@ body {
   gap: 12px;
 }
 
-.supabase-logo-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: var(--radius-control);
-  transition: opacity 150ms ease;
-}
-
-.supabase-logo-link:hover {
-  opacity: 0.85;
-}
-
 .supabase-topbar-sep {
   color: #44424d;
   font-size: 14px;
@@ -3603,16 +3551,6 @@ body {
   width: 18px;
   height: 18px;
   font-size: 10px;
-}
-
-.supabase-org-dots {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow:
-    -4px 5px 0 0 currentColor,
-    4px 5px 0 0 currentColor;
 }
 
 .supabase-org-name {
@@ -3753,14 +3691,6 @@ body {
   outline-offset: 2px;
 }
 
-.supabase-avatar-img {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid #3a3845;
-}
-
 /* Account avatar: provider photo when present, initials otherwise. The
    fallback uses the console's existing neutral avatar surface so no new
    palette color is introduced for a placeholder. */
@@ -3860,28 +3790,12 @@ body {
   right: 0;
 }
 
-.supabase-dropdown-header {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #716f7c;
-  padding: 6px 8px 4px;
-}
-
 .supabase-dropdown-user-header {
   display: flex;
   align-items: center;
   gap: 9px;
   min-width: 0;
   padding: 6px 8px 8px;
-}
-
-.supabase-dropdown-user-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
 }
 
 .supabase-dropdown-user-header strong,
@@ -4670,19 +4584,6 @@ body {
   }
 }
 
-.command-palette-dialog {
-  width: 100%;
-  max-width: 580px;
-  background-color: #16151b;
-  border: 1px solid #282633;
-  border-radius: var(--radius-card-lg);
-  overflow: hidden;
-  box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
-  animation: commandSlideIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 @keyframes commandSlideIn {
   from {
     opacity: 0;
@@ -4692,14 +4593,6 @@ body {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-}
-
-.command-palette-search-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  border-bottom: 1px solid #23212b;
 }
 
 .command-palette-input {
@@ -4728,16 +4621,6 @@ body {
   color: var(--color-ink);
 }
 
-.command-palette-kbd {
-  font-size: 10px;
-  font-family: inherit;
-  padding: 2px 6px;
-  border-radius: var(--radius-control-sm);
-  background-color: #211f29;
-  border: 1px solid #322f3e;
-  color: #7d7a8c;
-}
-
 .command-palette-item {
   display: flex;
   align-items: center;
@@ -4751,54 +4634,6 @@ body {
 
 .command-palette-item.is-selected {
   background-color: #201e28;
-}
-
-.command-palette-item-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-control);
-  background-color: #24222f;
-  flex-shrink: 0;
-}
-
-.command-palette-item-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.command-palette-item-sub {
-  font-size: 11.5px;
-  color: #787687;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.command-palette-item-cat {
-  font-size: 10.5px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #615f6e;
-  padding: 2px 6px;
-  border-radius: var(--radius-control-sm);
-  background-color: #1a1922;
-}
-
-.command-palette-footer {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 18px;
-  background-color: #131217;
-  border-top: 1px solid #23212b;
-  font-size: 11.5px;
-  color: #716f7c;
 }
 
 .command-palette-footer-item {
@@ -4853,20 +4688,6 @@ body {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-}
-
-.toast-title {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-ink);
-}
-
-.toast-message {
-  font-size: 12px;
-  color: #8c899c;
-  margin: 2px 0 0;
-  word-break: break-word;
 }
 
 .toast-close-btn {
@@ -8355,15 +8176,6 @@ a.usage-row-name:hover {
    left-aligned like the rest of the console. */
 .cf-admin h1 {
   text-align: left;
-}
-
-/* Cloudflare tabs: a thin underline marks the active section. */
-.cf-tab-list {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--projects-border);
-  margin-bottom: 20px;
 }
 
 .cf-tab {

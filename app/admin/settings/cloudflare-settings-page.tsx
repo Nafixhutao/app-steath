@@ -90,7 +90,7 @@ export function CloudflareSettingsPage() {
         ) : null}
       </AdminHeader>
 
-      <div className="cf-tab-list" role="tablist" aria-label="Settings sections">
+      <div className="flex gap-[4px] overflow-x-auto border-b border-b-[var(--projects-border)] mb-[20px]" role="tablist" aria-label="Settings sections">
         {TABS.map((item) => (
           <button
             key={item.id}

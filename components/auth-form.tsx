@@ -211,7 +211,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
             kredensialnya di panel Settings: tombol yang terkonfigurasi
             mengalihkan lewat better-auth, yang belum tetap "Coming soon"
             supaya tidak ada kontrol setengah jalan. */}
-        <div className="provider-grid">
+        <div className="grid grid-cols-2 gap-[10px] mt-[24px]">
           <button
             type="button"
             className="secondary-button"

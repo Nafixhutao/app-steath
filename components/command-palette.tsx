@@ -261,12 +261,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       }}
     >
       <div
-        className="command-palette-dialog"
+        className="w-full max-w-[580px] bg-[#16151b] border border-[#282633] rounded-card-lg overflow-hidden [box-shadow:0_24px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)] animate-[commandSlideIn_150ms_cubic-bezier(0.16,1,0.3,1)]"
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
       >
-        <div className="command-palette-search-row">
+        <div className="flex items-center gap-[12px] py-[14px] px-[18px] border-b border-b-[#23212b]">
           <Search className="w-4 h-4 text-zinc-500 flex-shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
@@ -294,7 +294,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               <X className="w-3.5 h-3.5" />
             </button>
           ) : null}
-          <kbd className="command-palette-kbd">ESC</kbd>
+          <kbd className="text-[10px] [font-family:inherit] py-[2px] px-[6px] rounded-control-sm bg-[#211f29] border border-[#322f3e] text-[#7d7a8c]">ESC</kbd>
         </div>
 
         <div className="max-h-[340px] overflow-y-auto p-[8px]" role="listbox">
@@ -317,14 +317,14 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   onClick={command.onSelect}
                   onMouseEnter={() => setSelectedIndex(idx)}
                 >
-                  <div className="command-palette-item-icon">{command.icon}</div>
-                  <div className="command-palette-item-text">
+                  <div className="flex items-center justify-center w-[28px] h-[28px] rounded-control bg-[#24222f] shrink-0">{command.icon}</div>
+                  <div className="flex-1 min-w-0 flex flex-col">
                     <span className="text-[13.5px] font-medium text-ink">{command.title}</span>
                     {command.subtitle && (
-                      <span className="command-palette-item-sub">{command.subtitle}</span>
+                      <span className="truncate text-[11.5px] text-[#787687]">{command.subtitle}</span>
                     )}
                   </div>
-                  <span className="command-palette-item-cat">{command.category}</span>
+                  <span className="text-[10.5px] font-medium uppercase tracking-[0.05em] text-[#615f6e] py-[2px] px-[6px] rounded-control-sm bg-[#1a1922]">{command.category}</span>
                   {isSelected && (
                     <ArrowRight className="w-3.5 h-3.5 text-zinc-400 ml-2" aria-hidden="true" />
                   )}
@@ -334,7 +334,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           )}
         </div>
 
-        <div className="command-palette-footer">
+        <div className="flex items-center gap-[16px] py-[10px] px-[18px] bg-[#131217] border-t border-t-[#23212b] text-[11.5px] text-[#716f7c]">
           <span className="command-palette-footer-item">
             <kbd className="command-palette-mini-kbd">&uarr;&darr;</kbd> Navigate
           </span>

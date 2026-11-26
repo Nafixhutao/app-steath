@@ -269,7 +269,7 @@ function NavRow({
       <Icon name={icon} />
       {!collapsed ? <span className="sidebar-row-label">{label}</span> : null}
       {!collapsed && accent ? (
-        <Gift size={16} strokeWidth={1.7} className="agent-gift" aria-hidden="true" />
+        <Gift size={16} strokeWidth={1.7} className="ml-auto text-[#ffa057] text-[16px] leading-[16px]" aria-hidden="true" />
       ) : null}
     </Link>
   );
@@ -348,7 +348,7 @@ function SearchDialog({
               </button>
             ))
           ) : (
-            <p className="search-empty">No results found.</p>
+            <p className="py-[32px] px-[10px] text-[#8a8791] text-[13px] text-center">No results found.</p>
           )}
         </div>
       </div>
@@ -566,7 +566,7 @@ export function Sidebar({
               </button>
             ))}
             {organizationError ? (
-              <p className="organization-switcher-error" role="alert">
+              <p className="m-[8px] text-[#f39c9c] text-[12px] leading-[1.4]" role="alert">
                 {organizationError}
               </p>
             ) : null}

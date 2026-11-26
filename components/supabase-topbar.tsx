@@ -89,7 +89,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
         </button>
         <Link
           href="/dashboard/organizations"
-          className="supabase-logo-link"
+          className="flex items-center justify-center p-[4px] rounded-control [transition:opacity_150ms_ease] hover:opacity-[0.85]"
           title="Stealth Home"
           aria-label="Stealth Home"
         >
@@ -118,7 +118,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
               aria-haspopup="menu"
             >
               <div className="supabase-org-icon-badge" aria-hidden="true">
-                <div className="supabase-org-dots" />
+                <div className="w-[8px] h-[8px] rounded-[50%] bg-current [box-shadow:-4px_5px_0_0_currentColor,4px_5px_0_0_currentColor]" />
               </div>
               <span className="supabase-org-name">{activeOrg?.name ?? "Select Org"}</span>
               <span className="supabase-free-pill">FREE</span>
@@ -127,7 +127,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
 
             {orgDropdownOpen && (
               <div className="supabase-dropdown-menu" role="menu">
-                <div className="supabase-dropdown-header">Your Organizations</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#716f7c] pt-[6px] pb-[4px] px-[8px]">Your Organizations</div>
                 <div className="flex flex-col gap-[2px]">
                   {organizations?.map((org) => {
                     const isActive = org.id === activeOrg?.id;
@@ -221,14 +221,14 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
             aria-haspopup="menu"
             aria-label="User account menu"
           >
-            <UserAvatar user={user} size={26} className="supabase-avatar-img" decorative />
+            <UserAvatar user={user} size={26} className="w-[26px] h-[26px] rounded-[50%] object-cover border border-[#3a3845]" decorative />
           </button>
 
           {userDropdownOpen && (
             <div className="supabase-dropdown-menu right-aligned" role="menu">
               <div className="supabase-dropdown-user-header">
                 <UserAvatar user={user} size={36} />
-                <div className="supabase-dropdown-user-meta">
+                <div className="flex flex-col gap-[1px] min-w-0">
                   <strong title={userName}>{userName}</strong>
                   <small title={user?.email ?? undefined}>
                     {user?.email ?? "No email on file"}
