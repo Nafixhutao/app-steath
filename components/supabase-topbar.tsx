@@ -107,9 +107,9 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
         </span>
 
         {isOrgsPage ? (
-          <span className="supabase-breadcrumb-text">Organizations</span>
+          <span className="text-[14px] font-medium text-ink-console">Organizations</span>
         ) : (
-          <div className="supabase-org-dropdown-wrapper" ref={dropdownRef}>
+          <div className="relative" ref={dropdownRef}>
             <button
               type="button"
               className="supabase-org-dropdown-btn"
@@ -128,7 +128,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
             {orgDropdownOpen && (
               <div className="supabase-dropdown-menu" role="menu">
                 <div className="supabase-dropdown-header">Your Organizations</div>
-                <div className="supabase-dropdown-list">
+                <div className="flex flex-col gap-[2px]">
                   {organizations?.map((org) => {
                     const isActive = org.id === activeOrg?.id;
                     return (
@@ -212,7 +212,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
           <Bell className="w-4 h-4" aria-hidden="true" />
         </button>
 
-        <div className="supabase-user-menu-wrapper" ref={userMenuRef}>
+        <div className="relative" ref={userMenuRef}>
           <button
             type="button"
             className="supabase-avatar-btn"

@@ -297,9 +297,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           <kbd className="command-palette-kbd">ESC</kbd>
         </div>
 
-        <div className="command-palette-list-wrap" role="listbox">
+        <div className="max-h-[340px] overflow-y-auto p-[8px]" role="listbox">
           {filteredCommands.length === 0 ? (
-            <div className="command-palette-empty">
+            <div className="py-[36px] px-[20px] text-center">
               <p className="text-zinc-400 text-sm">No results found for &ldquo;{query}&rdquo;</p>
               <p className="text-zinc-500 text-xs mt-1">
                 Try searching for Projects, Databases, Services, or Team settings.
@@ -319,7 +319,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 >
                   <div className="command-palette-item-icon">{command.icon}</div>
                   <div className="command-palette-item-text">
-                    <span className="command-palette-item-title">{command.title}</span>
+                    <span className="text-[13.5px] font-medium text-ink">{command.title}</span>
                     {command.subtitle && (
                       <span className="command-palette-item-sub">{command.subtitle}</span>
                     )}

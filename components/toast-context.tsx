@@ -71,12 +71,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div className="toast-viewport" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
           <div key={t.id} className={`toast-card toast-${t.type}`} role="alert">
-            <div className="toast-icon-wrap">
+            <div className="shrink-0 mt-[1px]">
               {t.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
               {t.type === "error" && <AlertCircle className="w-4 h-4 text-rose-400" />}
               {t.type === "info" && <Info className="w-4 h-4 text-blue-400" />}
             </div>
-            <div className="toast-text-wrap">
+            <div className="flex-1 min-w-0">
               <strong className="toast-title">{t.title}</strong>
               {t.message && <p className="toast-message">{t.message}</p>}
             </div>

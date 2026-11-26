@@ -3793,16 +3793,6 @@ body {
   font-weight: 300;
 }
 
-.supabase-breadcrumb-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-ink-console);
-}
-
-.supabase-org-dropdown-wrapper {
-  position: relative;
-}
-
 .supabase-org-dropdown-btn {
   display: flex;
   align-items: center;
@@ -3960,10 +3950,6 @@ body {
 .supabase-icon-btn:focus-visible {
   outline: 2px solid #818cf8;
   outline-offset: 2px;
-}
-
-.supabase-user-menu-wrapper {
-  position: relative;
 }
 
 .supabase-avatar-btn {
@@ -4147,12 +4133,6 @@ body {
 .supabase-user-handle {
   font-size: 11px;
   color: #716f7c;
-}
-
-.supabase-dropdown-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
 .supabase-dropdown-item {
@@ -5198,17 +5178,6 @@ body {
   color: #7d7a8c;
 }
 
-.command-palette-list-wrap {
-  max-height: 340px;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-.command-palette-empty {
-  padding: 36px 20px;
-  text-align: center;
-}
-
 .command-palette-item {
   display: flex;
   align-items: center;
@@ -5240,12 +5209,6 @@ body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-}
-
-.command-palette-item-title {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--color-ink);
 }
 
 .command-palette-item-sub {
@@ -5332,16 +5295,6 @@ body {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-}
-
-.toast-icon-wrap {
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.toast-text-wrap {
-  flex: 1;
-  min-width: 0;
 }
 
 .toast-title {
