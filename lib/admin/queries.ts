@@ -62,15 +62,17 @@ export function usePolledQuery<T>(
     error: Error | null;
     loading: boolean;
   }>({ data: undefined, error: null, loading: true });
-  const keepRef = useRef<T | undefined>(undefined);
   const ticketRef = useRef(0);
 
   const load = useCallback(async () => {
     const ticket = ++ticketRef.current;
+    // Mark the fetch in flight so `isFetching` (and any Refresh button bound to
+    // it) reports the truth during a poll or a manual refetch, not only on the
+    // first load.
+    setState((current) => (current.loading ? current : { ...current, loading: true }));
     try {
       const data = await adminGet<T>(path);
       if (ticketRef.current !== ticket) return;
-      keepRef.current = data;
       setState({ data, error: null, loading: false });
     } catch (error) {
       if (ticketRef.current !== ticket) return;

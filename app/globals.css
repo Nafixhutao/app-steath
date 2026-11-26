@@ -40,6 +40,10 @@
   --projects-accent-border: #078153;
   --projects-warning: #f59e0b;
   --projects-danger: #ff7a82;
+  /* Off-state switch track, and the pressed/hover shade of the primary button.
+     Referenced by components/motion/switch.tsx and the admin email panel. */
+  --projects-ring: #3a3a40;
+  --projects-accent-hover: #00613f;
   /* Semantic "info" — the one tone the platform palette does not define. */
   --admin-info: #6ea8fe;
   /* Pixel-sweep skeleton, ported from the stealth-forge admin console. The
@@ -124,7 +128,9 @@ h1 {
   font-weight: 700;
   line-height: 32px;
   letter-spacing: -0.01em;
-  text-align: center;
+  /* `text-align` is deliberately absent: the browser default (left) is what
+     every page title wants. Centering here leaked into the whole dashboard
+     and needed per-page overrides. The one centred heading opts in below. */
 }
 
 .provider-grid {
@@ -2351,6 +2357,8 @@ a:hover {
 .invitation-panel h1 {
   margin: 8px 0 12px;
   font-size: 22px;
+  /* The invitation card centres its eyebrow and title. */
+  text-align: center;
 }
 
 .invitation-panel > p:not(.auth-eyebrow) {
@@ -7124,11 +7132,14 @@ body {
   border-radius: 8px;
   background-color: #17161b;
   border: 1px solid #25232c;
-  overflow: hidden;
+  /* Scroll, not clip: the table is wider than a phone and owns the Action
+     column, so `hidden` silently removed it at narrow widths. */
+  overflow-x: auto;
 }
 
 .members-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   font-size: 13px;
   text-align: left;
@@ -10337,6 +10348,8 @@ a.usage-row-name:hover {
   --projects-warning: #f6b73c;
   --projects-danger: #ef6b73;
   --admin-info: #5b9cf8;
+  --projects-ring: #2f2f2f;
+  --projects-accent-hover: #1a5fd0;
 }
 
 /* Rail and top bar: replace the Forge near-black/violet neutrals with the
