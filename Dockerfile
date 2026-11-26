@@ -36,7 +36,9 @@ ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build" \
     BETTER_AUTH_SECRET="build-placeholder-secret-at-least-32-chars" \
     BETTER_AUTH_URL="http://localhost:3000"
 
-RUN npm run build
+# The Turbopack/webpack cache is build-only. Shipping it bloats the image and
+# the export layer; `next start` recreates .next/cache/images on demand.
+RUN npm run build && rm -rf .next/cache
 
 FROM node:24-bookworm-slim AS runner
 WORKDIR /app
