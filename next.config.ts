@@ -9,6 +9,20 @@ const nextConfig: NextConfig = {
   // stale shell long after a new build ships. Keep these responses uncached.
   async headers() {
     return [
+      // Applied to every route: the console and its APIs must not be framed
+      // (no clickjacking), sniffed, or leak a Referer to third parties.
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          },
+        ],
+      },
       {
         source: "/dashboard/:path*",
         headers: [
