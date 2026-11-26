@@ -85,8 +85,40 @@ export function usePolledQuery<T>(
   useEffect(() => {
     void load();
     if (typeof intervalMs !== "number" || intervalMs <= 0) return;
-    const timer = window.setInterval(() => void load(), intervalMs);
-    return () => window.clearInterval(timer);
+
+    let timer: number | undefined;
+    const start = () => {
+      if (timer === undefined) {
+        timer = window.setInterval(() => void load(), intervalMs);
+      }
+    };
+    const stop = () => {
+      if (timer !== undefined) {
+        window.clearInterval(timer);
+        timer = undefined;
+      }
+    };
+
+    // A background tab keeps the console mounted, so an unconditional interval
+    // would have every panel keep polling the control plane while nobody is
+    // looking. Pause when hidden and fetch once on return, so the first paint
+    // back is not stale.
+    const sync = () => {
+      if (document.visibilityState === "hidden") {
+        stop();
+        return;
+      }
+      void load();
+      start();
+    };
+
+    if (document.visibilityState !== "hidden") start();
+    document.addEventListener("visibilitychange", sync);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", sync);
+    };
   }, [load, intervalMs]);
 
   return {

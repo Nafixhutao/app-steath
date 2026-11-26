@@ -30,13 +30,7 @@ interface CommandItem {
   onSelect: () => void;
 }
 
-export function CommandPalette({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -44,8 +38,11 @@ export function CommandPalette({
 
   const { data: activeOrg } = useActiveOrganization();
 
+  // The palette is mounted by the dashboard shell for the whole session, so
+  // loading it only when opened keeps every dashboard page from fetching the
+  // project list for a dialog the user did not open.
   const projects = useResource(() => listProjects(), [activeOrg?.id], {
-    enabled: Boolean(activeOrg?.id),
+    enabled: open && Boolean(activeOrg?.id),
   });
   const projectList: ProjectSummary[] = useMemo(() => projects.data ?? [], [projects.data]);
 
@@ -239,9 +236,7 @@ export function CommandPalette({
         setSelectedIndex((prev) => (prev + 1) % Math.max(1, cmds.length));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev - 1 < 0 ? Math.max(0, cmds.length - 1) : prev - 1,
-        );
+        setSelectedIndex((prev) => (prev - 1 < 0 ? Math.max(0, cmds.length - 1) : prev - 1));
       } else if (e.key === "Enter") {
         e.preventDefault();
         const selected = cmds[idx];
