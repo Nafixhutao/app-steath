@@ -279,7 +279,7 @@ export default function MembersPage() {
           </div>
           <div>
             <h1 className="members-page-title">Team Members</h1>
-            <p className="members-page-subtitle">
+            <p className="text-[13px] text-[#8e8c99] mt-[3px]">
               Manage team access, invitations, and role-based permissions in {organizationName}.
             </p>
           </div>
@@ -323,7 +323,7 @@ export default function MembersPage() {
 
       {/* Filter Toolbar */}
       <div className="members-toolbar">
-        <div className="members-search-box">
+        <div className="relative w-[280px] max-w-full">
           <Search className="members-search-icon" aria-hidden="true" />
           <input
             type="search"
@@ -418,7 +418,7 @@ export default function MembersPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="members-user-name">{member.user.name}</span>
+                            <span className="text-[13.5px] font-semibold text-ink">{member.user.name}</span>
                             {isCurrentUser && <span className="members-you-badge">You</span>}
                           </div>
                           <span className="members-user-email">{member.user.email}</span>

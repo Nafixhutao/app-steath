@@ -174,7 +174,7 @@ export default function UsagePage() {
       ) : null}
 
       {error ? (
-        <div className="dashboard-alert is-error usage-alert" role="alert">
+        <div className="dashboard-alert is-error mb-[16px]" role="alert">
           {error}
         </div>
       ) : null}

@@ -5944,12 +5944,6 @@ body {
   line-height: 1.2;
 }
 
-.members-page-subtitle {
-  font-size: 13px;
-  color: #8e8c99;
-  margin: 3px 0 0;
-}
-
 .members-toolbar {
   display: flex;
   align-items: center;
@@ -5957,12 +5951,6 @@ body {
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
-}
-
-.members-search-box {
-  position: relative;
-  width: 280px;
-  max-width: 100%;
 }
 
 .members-search-icon {
@@ -6072,12 +6060,6 @@ body {
   font-weight: 600;
   font-size: 12px;
   flex-shrink: 0;
-}
-
-.members-user-name {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--color-ink);
 }
 
 .members-user-email {
@@ -6264,12 +6246,6 @@ body {
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 16px;
-}
-
-.backups-search-box {
-  position: relative;
-  width: 100%;
-  max-width: 340px;
 }
 
 .backups-search-icon {
@@ -6481,10 +6457,6 @@ body {
   color: var(--color-ink-muted);
   margin-top: 4px;
   line-height: 1.4;
-}
-
-.usage-alert {
-  margin-bottom: 16px;
 }
 
 /* Totals read as one line of facts, not four framed cards with four accents. */

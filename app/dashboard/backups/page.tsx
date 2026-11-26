@@ -248,7 +248,7 @@ export default function BackupsPage() {
 
       {/* Toolbar */}
       <div className="backups-toolbar">
-        <div className="backups-search-box">
+        <div className="relative w-full max-w-[340px]">
           <Search className="backups-search-icon" aria-hidden="true" />
           <input
             type="search"
