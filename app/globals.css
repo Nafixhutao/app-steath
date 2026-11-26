@@ -3861,6 +3861,8 @@ body {
   margin: 6px 0;
 }
 
+/* ===== ORGANIZATIONS ===== */
+
 .orgs-page-title {
   font-size: 28px;
   font-weight: 600;
@@ -4096,6 +4098,8 @@ body {
   border-radius: var(--radius-card);
   text-align: center;
 }
+
+/* ===== PROJECTS ===== */
 
 .supabase-projects-title {
   font-size: 26px;
@@ -5339,6 +5343,8 @@ body {
   transform: none;
   box-shadow: none;
 }
+
+/* ===== MEMBERS ===== */
 
 .members-header-icon {
   display: flex;
