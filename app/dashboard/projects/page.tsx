@@ -91,7 +91,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="supabase-projects-page">
+    <div className="pt-[28px] pb-[60px] px-[36px] max-w-[1400px] mx-auto w-full">
       <div className="mb-[20px]">
         <h1 className="supabase-projects-title">Projects</h1>
       </div>
@@ -103,8 +103,8 @@ export default function ProjectsPage() {
       ) : null}
 
       {/* Toolbar matching Image 2 */}
-      <div className="supabase-projects-toolbar">
-        <div className="supabase-toolbar-left">
+      <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[24px]">
+        <div className="flex items-center gap-[10px] flex-wrap">
           <div className="supabase-project-search">
             <Search className="w-4 h-4 text-zinc-500" aria-hidden="true" />
             <input
@@ -137,7 +137,7 @@ export default function ProjectsPage() {
               <option value="active">Status: Active</option>
               <option value="empty">Status: Empty</option>
             </select>
-            <ChevronDown className="supabase-select-icon" aria-hidden="true" />
+            <ChevronDown className="absolute right-[8px] w-[14px] h-[14px] text-[#716f7c] pointer-events-none" aria-hidden="true" />
           </div>
 
           <div className="supabase-filter-select-wrap">
@@ -208,7 +208,7 @@ export default function ProjectsPage() {
           ) : projectList.length === 0 ? (
             /* Create a project Hero Box matching Image 2 */
             <div className="supabase-create-project-hero">
-              <div className="supabase-hero-box-icon" aria-hidden="true">
+              <div className="flex items-center justify-center mb-[16px] text-[#6a6877]" aria-hidden="true">
                 <Boxes className="w-10 h-10 text-zinc-400" />
               </div>
               <h2 className="supabase-hero-title">Create a project</h2>
@@ -247,14 +247,14 @@ export default function ProjectsPage() {
                   className="supabase-project-card"
                 >
                   <div className="supabase-card-header">
-                    <div className="supabase-card-icon-box">
+                    <div className="flex items-center justify-center w-[32px] h-[32px] rounded-control bg-[#211f27] shrink-0">
                       <span className="font-bold text-sm text-emerald-400">
                         {project.name.slice(0, 1).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="supabase-card-name">{project.name}</h3>
-                      <p className="supabase-card-slug">{project.slug}</p>
+                      <h3 className="truncate text-[15px] font-semibold text-ink m-0">{project.name}</h3>
+                      <p className="truncate text-[12px] text-[#716f7c] [font-family:monospace] mt-[2px] mb-0 mx-0">{project.slug}</p>
                     </div>
                     <ArrowUpRight className="supabase-card-arrow" aria-hidden="true" />
                   </div>
@@ -274,7 +274,7 @@ export default function ProjectsPage() {
             </div>
           ) : (
             /* List View */
-            <div className="supabase-projects-list-table-wrap">
+            <div className="bg-surface border border-[var(--color-surface-raised)] rounded-card overflow-hidden">
               <table className="supabase-projects-list-table">
                 <thead>
                   <tr>
@@ -336,10 +336,10 @@ export default function ProjectsPage() {
 
         {/* Right Column: Free Plan Usage Panel matching Image 2 */}
         <aside className="min-w-0" aria-label="Organization resource usage">
-          <div className="supabase-usage-panel">
-            <div className="supabase-usage-panel-header">
+          <div className="bg-[#151419] border border-[#23212a] rounded-card p-[20px]">
+            <div className="flex items-start justify-between gap-[12px] mb-[20px]">
               <div>
-                <h3 className="supabase-usage-panel-title">Free plan usage</h3>
+                <h3 className="text-[14px] font-semibold text-ink m-0">Free plan usage</h3>
                 <p className="text-[12px] text-[#716f7c] mt-[2px]">Current billing cycle</p>
               </div>
               <button type="button" className="supabase-upgrade-btn">

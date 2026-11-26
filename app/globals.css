@@ -4091,39 +4091,12 @@ body {
   margin: 6px 0;
 }
 
-/* ===== ORGANIZATIONS ===== */
-.orgs-page-container {
-  min-height: calc(100dvh - 48px);
-  background-color: var(--color-console);
-  color: var(--color-ink-console);
-  padding: 48px 32px;
-}
-
 .orgs-page-title {
   font-size: 28px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--color-ink);
   margin: 0 0 24px;
-}
-
-.orgs-page-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.orgs-search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 15px;
-  height: 15px;
-  color: #6a6875;
-  pointer-events: none;
 }
 
 .orgs-search-input {
@@ -4342,22 +4315,6 @@ body {
   flex-shrink: 0;
 }
 
-.org-card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.org-card-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .orgs-empty-card {
   display: flex;
   flex-direction: column;
@@ -4370,36 +4327,12 @@ body {
   text-align: center;
 }
 
-/* ===== PROJECTS ===== */
-.supabase-projects-page {
-  padding: 28px 36px 60px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-}
-
 .supabase-projects-title {
   font-size: 26px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--color-ink);
   margin: 0;
-}
-
-.supabase-projects-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.supabase-toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
 }
 
 .supabase-project-search {
@@ -4464,15 +4397,6 @@ body {
 
 .supabase-filter-select:focus {
   border-color: var(--color-accent);
-}
-
-.supabase-select-icon {
-  position: absolute;
-  right: 8px;
-  width: 14px;
-  height: 14px;
-  color: #716f7c;
-  pointer-events: none;
 }
 
 .supabase-sort-label {
@@ -4547,14 +4471,6 @@ body {
   border-radius: var(--radius-card);
   background-color: #151419;
   border: 1px solid #24222b;
-}
-
-.supabase-hero-box-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-  color: #6a6877;
 }
 
 .supabase-hero-title {
@@ -4643,37 +4559,6 @@ body {
   gap: 12px;
 }
 
-.supabase-card-icon-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-control);
-  background-color: #211f27;
-  flex-shrink: 0;
-}
-
-.supabase-card-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-ink);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.supabase-card-slug {
-  font-size: 12px;
-  color: #716f7c;
-  font-family: monospace;
-  margin: 2px 0 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .supabase-card-arrow {
   width: 16px;
   height: 16px;
@@ -4705,14 +4590,6 @@ body {
   color: #8e8c99;
 }
 
-/* Projects List Table */
-.supabase-projects-list-table-wrap {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-surface-raised);
-  border-radius: var(--radius-card);
-  overflow: hidden;
-}
-
 .supabase-projects-list-table {
   width: 100%;
   border-collapse: collapse;
@@ -4741,28 +4618,6 @@ body {
 
 .supabase-projects-list-table tr:hover td {
   background-color: rgba(255, 255, 255, 0.02);
-}
-
-.supabase-usage-panel {
-  background-color: #151419;
-  border: 1px solid #23212a;
-  border-radius: var(--radius-card);
-  padding: 20px;
-}
-
-.supabase-usage-panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.supabase-usage-panel-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-ink);
-  margin: 0;
 }
 
 .supabase-upgrade-btn {
@@ -5217,17 +5072,6 @@ body {
   }
 }
 
-.org-card-skeleton {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-radius: var(--radius-card);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-surface-raised);
-  min-height: 70px;
-}
-
 .supabase-project-skeleton-card {
   display: flex;
   flex-direction: column;
@@ -5247,14 +5091,6 @@ body {
   width: 100%;
 }
 
-.project-breadcrumbs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  margin-bottom: 14px;
-}
-
 .project-breadcrumb-link {
   color: #8e8c99;
   text-decoration: none;
@@ -5263,15 +5099,6 @@ body {
 
 .project-breadcrumb-link:hover {
   color: var(--color-ink-console);
-}
-
-.project-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 22px;
 }
 
 .project-icon-badge {
@@ -5325,16 +5152,6 @@ body {
   box-shadow: 0 0 8px rgba(62, 207, 142, 0.6);
 }
 
-.project-slug-code {
-  font-size: 12px;
-  font-family: monospace;
-  color: #716f7c;
-  background-color: #17161c;
-  padding: 1px 6px;
-  border-radius: var(--radius-control-sm);
-  border: 1px solid #262430;
-}
-
 .project-copy-slug-btn {
   display: inline-flex;
   align-items: center;
@@ -5367,14 +5184,6 @@ body {
   color: #8e8c99;
 }
 
-/* Tab Bar */
-.project-tab-bar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-}
-
 .project-tab-button {
   display: inline-flex;
   align-items: center;
@@ -5400,14 +5209,6 @@ body {
 .project-tab-button.is-active {
   color: var(--color-ink);
   border-bottom-color: var(--color-accent);
-}
-
-.project-tab-count {
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 99px;
-  background-color: #22202a;
-  color: #a19fa9;
 }
 
 .project-tab-status-dot {
@@ -5584,23 +5385,6 @@ body {
   background-color: #211f29;
 }
 
-/* Database Overview Card */
-.project-db-overview-card {
-  padding: 20px;
-  border-radius: var(--radius-card);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-surface-raised);
-}
-
-.project-db-overview-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
 .project-health-badge {
   font-size: 11px;
   font-weight: 600;
@@ -5679,17 +5463,6 @@ body {
   opacity: 0.6;
 }
 
-.db-engine-option-tag {
-  align-self: flex-start;
-  margin-top: 2px;
-  padding: 2px 6px;
-  border-radius: var(--radius-control-sm);
-  background: #211f29;
-  font-size: 10.5px;
-  font-weight: 500;
-  color: #b4b3bd;
-}
-
 @media (max-width: 480px) {
   .db-engine-choice {
     grid-template-columns: 1fr;
@@ -5723,16 +5496,6 @@ body {
   font-size: 12px;
   color: #716f7c;
   margin: 3px 0 0;
-}
-
-.project-settings-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 14px 20px;
-  background-color: #141318;
-  border-top: 1px solid #23212a;
-  margin-top: 20px;
 }
 
 .project-form-label {

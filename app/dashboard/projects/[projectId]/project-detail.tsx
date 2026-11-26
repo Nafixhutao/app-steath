@@ -158,7 +158,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     <div className="project-detail-container">
       {/* Top Header */}
       <header className="border-b border-[#23222a] pb-0 mb-[24px]">
-        <nav className="project-breadcrumbs" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-[8px] text-[13px] mb-[14px]" aria-label="Breadcrumb">
           <Link href="/dashboard/projects" className="project-breadcrumb-link">
             Projects
           </Link>
@@ -166,7 +166,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           <span className="text-ink-console font-medium">{project.name}</span>
         </nav>
 
-        <div className="project-title-row">
+        <div className="flex items-center justify-between flex-wrap gap-[16px] mb-[22px]">
           <div className="flex items-center gap-[14px]">
             <div className="project-icon-badge" aria-hidden="true">
               <Boxes className="w-5 h-5 text-emerald-400" />
@@ -184,7 +184,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <code className="project-slug-code">{project.slug}</code>
+                <code className="text-[12px] [font-family:monospace] text-[#716f7c] bg-[#17161c] py-[1px] px-[6px] rounded-control-sm border border-[#262430]">{project.slug}</code>
                 <button
                   type="button"
                   className="project-copy-slug-btn"
@@ -215,7 +215,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         </div>
 
         {/* Tab Navigation */}
-        <div className="project-tab-bar" role="tablist" aria-label="Project sections">
+        <div className="flex items-center gap-[4px] mt-[8px]" role="tablist" aria-label="Project sections">
           <button
             type="button"
             role="tab"
@@ -227,7 +227,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           >
             <Container className="w-4 h-4" />
             <span>Services</span>
-            <span className="project-tab-count">{project.serviceCount}</span>
+            <span className="text-[11px] py-[1px] px-[6px] rounded-[99px] bg-[#22202a] text-[#a19fa9]">{project.serviceCount}</span>
           </button>
 
           <button
@@ -368,7 +368,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                     </div>
                   </div>
 
-                  <div className="project-settings-card-footer">
+                  <div className="flex items-center justify-end py-[14px] px-[20px] bg-[#141318] border-t border-t-[#23212a] mt-[20px]">
                     <button
                       type="submit"
                       className="supabase-btn-green"

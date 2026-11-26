@@ -346,7 +346,7 @@ export function DatabasePanel({
                         {choice.name} {choice.version}
                       </span>
                       <span className="text-[11.5px] leading-[1.45] text-[#8b8b96]">{choice.note}</span>
-                      <span className="db-engine-option-tag">{choice.client}</span>
+                      <span className="self-start mt-[2px] py-[2px] px-[6px] rounded-control-sm bg-[#211f29] text-[10.5px] font-medium text-[#b4b3bd]">{choice.client}</span>
                     </button>
                   );
                 })}
@@ -379,8 +379,8 @@ export function DatabasePanel({
         /* Database Overview */
         <>
           {/* Metrics Overview Card */}
-          <div className="project-db-overview-card">
-            <div className="project-db-overview-head">
+          <div className="p-[20px] rounded-card bg-surface border border-[var(--color-surface-raised)]">
+            <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[16px]">
               <div className="flex items-center gap-2.5">
                 <div className="project-service-icon" aria-hidden="true">
                   <Database className="w-4 h-4 text-emerald-400" />

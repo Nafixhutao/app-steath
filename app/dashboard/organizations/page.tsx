@@ -104,13 +104,13 @@ export default function OrganizationsPage() {
   }
 
   return (
-    <div className="orgs-page-container">
+    <div className="min-h-[calc(100dvh_-_48px)] bg-console text-ink-console py-[48px] px-[32px]">
       <div className="max-w-[1100px] mx-auto">
         <h1 className="orgs-page-title">Your organizations</h1>
 
-        <div className="orgs-page-toolbar">
+        <div className="flex items-center justify-between gap-[16px] mb-[24px]">
           <div className="relative w-[280px] max-w-full">
-            <Search className="orgs-search-icon" aria-hidden="true" />
+            <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#6a6875] pointer-events-none" aria-hidden="true" />
             <input
               type="search"
               placeholder="Search for an organization"
@@ -146,7 +146,7 @@ export default function OrganizationsPage() {
         {isPending ? (
           <div className="orgs-grid" aria-label="Loading organizations">
             {[1, 2].map((n) => (
-              <div key={n} className="org-card-skeleton" aria-hidden="true">
+              <div key={n} className="flex items-center gap-[16px] py-[16px] px-[20px] rounded-card bg-surface border border-[var(--color-surface-raised)] min-h-[70px]" aria-hidden="true">
                 <div className="supabase-skeleton-box w-9 h-9 rounded-lg" />
                 <div className="flex-1 space-y-2">
                   <div className="supabase-skeleton-box h-4 rounded w-32" />
@@ -202,8 +202,8 @@ export default function OrganizationsPage() {
                   title={`Open ${org.name}`}
                 >
                   <OrgHexIcon />
-                  <div className="org-card-content">
-                    <span className="org-card-name">{org.name}</span>
+                  <div className="flex flex-col gap-[2px] min-w-0">
+                    <span className="truncate text-[15px] font-semibold text-ink">{org.name}</span>
                     <span className="text-[13px] text-[#7a7886]">Free Plan</span>
                   </div>
                   {isSwitching && (
