@@ -319,7 +319,7 @@ function SearchDialog({
           />
           <kbd>ESC</kbd>
         </div>
-        <div className="search-results">
+        <div className="h-[304px] overflow-y-auto p-[6px]">
           <p className="search-section-label">Navigation</p>
           {results.length ? (
             results.map((item) => (

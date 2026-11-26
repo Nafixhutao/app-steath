@@ -1486,11 +1486,6 @@ a:hover {
 .search-dialog-input input::placeholder {
   color: #8a8791;
 }
-.search-results {
-  height: 304px;
-  overflow-y: auto;
-  padding: 6px;
-}
 .search-section-label {
   margin: 0;
   padding: 8px;
