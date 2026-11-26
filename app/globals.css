@@ -7132,12 +7132,6 @@ a.usage-row-name:hover {
   margin-bottom: 16px;
 }
 
-.domains-search-box {
-  position: relative;
-  width: 100%;
-  max-width: 380px;
-}
-
 .domains-search-icon {
   position: absolute;
   left: 12px;
@@ -7448,16 +7442,6 @@ a.usage-row-name:hover {
   line-height: 1.4;
 }
 
-.services-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.services-alert {
-  margin-bottom: 16px;
-}
-
 /* One quiet status line replaces the four-card overview. Counts describe the
    fleet, so they belong in the reading flow, not in separate framed tiles. */
 .services-summary {
@@ -7575,18 +7559,6 @@ a.usage-row-name:hover {
   flex: 1;
 }
 
-.services-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.services-search-box {
-  position: relative;
-  width: 100%;
-  max-width: 340px;
-}
-
 .services-search-icon {
   position: absolute;
   left: 12px;
@@ -7639,11 +7611,6 @@ a.usage-row-name:hover {
   color: var(--color-ink-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.services-view {
-  display: flex;
-  flex-direction: column;
 }
 
 .services-grid {

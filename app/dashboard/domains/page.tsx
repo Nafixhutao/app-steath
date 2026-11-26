@@ -343,7 +343,7 @@ export default function DomainsPage() {
         <section aria-labelledby="custom-domains-heading">
           {/* Toolbar */}
           <div className="domains-toolbar">
-            <div className="domains-search-box">
+            <div className="relative w-full max-w-[380px]">
               <Search className="domains-search-icon" aria-hidden="true" />
               <input
                 type="search"

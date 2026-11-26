@@ -165,7 +165,7 @@ export default function ServicesPage() {
           </p>
         </div>
 
-        <div className="services-header-actions">
+        <div className="flex items-center gap-[8px]">
           <button
             type="button"
             className="supabase-btn-secondary"
@@ -192,7 +192,7 @@ export default function ServicesPage() {
       </header>
 
       {servicesResource.error ? (
-        <div className="dashboard-alert is-error services-alert" role="alert">
+        <div className="dashboard-alert is-error mb-[16px]" role="alert">
           {servicesResource.error}
         </div>
       ) : null}
@@ -219,7 +219,7 @@ export default function ServicesPage() {
 
       <div className="services-toolbar">
         <div className="services-toolbar-left">
-          <div className="services-search-box">
+          <div className="relative w-full max-w-[340px]">
             <Search className="services-search-icon" aria-hidden="true" />
             <input
               type="search"
@@ -273,7 +273,7 @@ export default function ServicesPage() {
           ) : null}
         </div>
 
-        <div className="services-toolbar-right">
+        <div className="flex items-center gap-[12px]">
           <span className="services-count">{filteredServices.length} shown</span>
           <div className="supabase-view-toggle-group" role="group" aria-label="View mode">
             <button
@@ -343,7 +343,7 @@ export default function ServicesPage() {
           )}
         </div>
       ) : viewMode === "grid" ? (
-        <div className="services-view">
+        <div className="flex flex-col">
           {groups.map((group) => (
             <section key={group.id} className="services-group" aria-label={`Project ${group.name}`}>
               <div className="services-group-head">
