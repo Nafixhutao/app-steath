@@ -35,6 +35,7 @@ import { listOrganizationServices } from "@/lib/services-client";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
 import { copyToClipboard } from "@/lib/clipboard";
+import { ModalDialog } from "@/components/supabase-modal";
 
 export default function DomainsPage() {
   const { toast } = useToast();
@@ -780,388 +781,367 @@ export default function DomainsPage() {
 
       {/* MODAL 1: Add Custom Domain */}
       {addModalOpen && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="add-domain-title"
-          >
-            <div className="supabase-modal-header">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-emerald-400" />
-                <h2 id="add-domain-title">Add Custom Domain</h2>
-              </div>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setAddModalOpen(false)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <ModalDialog labelledBy="add-domain-title" onClose={() => setAddModalOpen(false)}>
+          <div className="supabase-modal-header">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-emerald-400" />
+              <h2 id="add-domain-title">Add Custom Domain</h2>
             </div>
-
-            <form onSubmit={handleAddDomain}>
-              <div className="supabase-modal-body space-y-4">
-                {addError && (
-                  <div className="dashboard-alert is-error" role="alert">
-                    {addError}
-                  </div>
-                )}
-
-                {availableServices.length === 0 ? (
-                  <div className="p-4 rounded-lg bg-amber-950/20 border border-amber-900/40 text-amber-200 text-xs">
-                    All deployed services in this organization already have a custom domain
-                    assigned. Each service supports 1 custom domain.
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <label htmlFor="service-select" className="supabase-modal-label">
-                        Target Service:
-                      </label>
-                      <select
-                        id="service-select"
-                        value={selectedServiceId}
-                        onChange={(e) => setSelectedServiceId(e.target.value)}
-                        className="supabase-modal-input"
-                        required
-                      >
-                        {availableServices.map((srv) => (
-                          <option key={srv.id} value={srv.id}>
-                            {srv.name} ({srv.projectName})
-                          </option>
-                        ))}
-                      </select>
-                      <span className="text-[11px] text-zinc-500 mt-1 block">
-                        Incoming requests to this domain will route directly to this service.
-                      </span>
-                    </div>
-
-                    <div>
-                      <label htmlFor="hostname-input" className="supabase-modal-label">
-                        Domain Name / Hostname:
-                      </label>
-                      <input
-                        id="hostname-input"
-                        type="text"
-                        placeholder="e.g. app.mycompany.com"
-                        value={newHostname}
-                        onChange={(e) => setNewHostname(e.target.value)}
-                        required
-                        className="supabase-modal-input font-mono"
-                        autoFocus
-                      />
-                      <span className="text-[11px] text-zinc-500 mt-1 block">
-                        Enter a bare hostname without <code>https://</code> or trailing slashes.
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="supabase-modal-footer">
-                <button
-                  type="button"
-                  className="supabase-btn-secondary"
-                  onClick={() => setAddModalOpen(false)}
-                  disabled={busyAdd}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="supabase-btn-green"
-                  disabled={busyAdd || availableServices.length === 0 || !newHostname.trim()}
-                >
-                  {busyAdd ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                      Adding...
-                    </>
-                  ) : (
-                    "Add Domain"
-                  )}
-                </button>
-              </div>
-            </form>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setAddModalOpen(false)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        </div>
-      )}
 
-      {/* MODAL 2: DNS Instructions */}
-      {instructionsDomain && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog max-w-xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="instructions-title"
-          >
-            <div className="supabase-modal-header">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-emerald-400" />
-                <h2 id="instructions-title" className="font-mono text-sm">
-                  DNS Setup for {instructionsDomain.hostname}
-                </h2>
-              </div>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setInstructionsDomain(null)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
+          <form onSubmit={handleAddDomain}>
             <div className="supabase-modal-body space-y-4">
-              <p className="text-xs text-zinc-400">
-                Add these DNS records at your DNS host (Cloudflare, AWS Route 53, Namecheap, etc.)
-                to verify ownership and route traffic:
-              </p>
-
-              {/* Record 1: TXT Record */}
-              <div className="domains-record-box">
-                <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="domains-badge-type">TXT</span>
-                    <span className="text-xs font-semibold text-white">Ownership Verification</span>
-                  </div>
-                  <span className="text-[11px] text-zinc-500">Required</span>
-                </div>
-
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-[11px] text-zinc-500 block">Record Name / Host:</span>
-                    <div className="flex items-center justify-between p-2 rounded bg-zinc-950/50 border border-zinc-800">
-                      <code className="text-xs font-mono text-zinc-200 break-all">
-                        {instructionsDomain.instructions.txt.name}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyText(instructionsDomain.instructions.txt.name, "txt-name", "TXT Host")
-                        }
-                        className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
-                        title="Copy TXT Host"
-                      >
-                        {copiedKey === "txt-name" ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-[11px] text-zinc-500 block">Record Value / Content:</span>
-                    <div className="flex items-center justify-between p-2 rounded bg-zinc-950/50 border border-zinc-800">
-                      <code className="text-xs font-mono text-emerald-400 break-all">
-                        {instructionsDomain.instructions.txt.value}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyText(
-                            instructionsDomain.instructions.txt.value,
-                            "txt-val",
-                            "TXT Value",
-                          )
-                        }
-                        className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
-                        title="Copy TXT Value"
-                      >
-                        {copiedKey === "txt-val" ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Record 2: CNAME or A Record */}
-              <div className="domains-record-box">
-                <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="domains-badge-type">CNAME</span>
-                    <span className="text-xs font-semibold text-white">Traffic Routing</span>
-                  </div>
-                  <span className="text-[11px] text-zinc-500">Required</span>
-                </div>
-
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-[11px] text-zinc-500 block">Record Name / Host:</span>
-                    <div className="flex items-center justify-between p-2 rounded bg-zinc-950/50 border border-zinc-800">
-                      <code className="text-xs font-mono text-zinc-200">
-                        {instructionsDomain.instructions.cname.name}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyText(
-                            instructionsDomain.instructions.cname.name,
-                            "cname-name",
-                            "CNAME Host",
-                          )
-                        }
-                        className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
-                        title="Copy CNAME Host"
-                      >
-                        {copiedKey === "cname-name" ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-[11px] text-zinc-500 block">Target / Points To:</span>
-                    <div className="flex items-center justify-between p-2 rounded bg-zinc-950/50 border border-zinc-800">
-                      <code className="text-xs font-mono text-emerald-400">
-                        {instructionsDomain.instructions.cname.value}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyText(
-                            instructionsDomain.instructions.cname.value,
-                            "cname-val",
-                            "CNAME Target",
-                          )
-                        }
-                        className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
-                        title="Copy CNAME Target"
-                      >
-                        {copiedKey === "cname-val" ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {instructionsDomain.instructions.a.value && (
-                    <div className="pt-1">
-                      <span className="text-[11px] text-zinc-500 block">
-                        Or for Apex/Root domains, use an <strong>A Record</strong> pointing to:
-                      </span>
-                      <code className="text-xs font-mono text-cyan-400 mt-0.5 inline-block">
-                        {instructionsDomain.instructions.a.value}
-                      </code>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="supabase-modal-footer">
-              <button
-                type="button"
-                className="supabase-btn-secondary"
-                onClick={() => setInstructionsDomain(null)}
-              >
-                Close
-              </button>
-              {canManage && (
-                <button
-                  type="button"
-                  className="supabase-btn-green"
-                  onClick={() => void handleVerify(instructionsDomain)}
-                  disabled={verifyingId === instructionsDomain.id}
-                >
-                  {verifyingId === instructionsDomain.id ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                      Checking DNS...
-                    </>
-                  ) : (
-                    "Verify Propagation Now"
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: Delete Domain Confirmation */}
-      {deletingDomain && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-domain-title"
-          >
-            <div className="supabase-modal-header border-rose-900/40">
-              <div className="flex items-center gap-2 text-rose-400">
-                <Trash2 className="w-4 h-4" />
-                <h2 id="delete-domain-title">Disconnect Custom Domain</h2>
-              </div>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setDeletingDomain(null)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="supabase-modal-body space-y-3">
-              {deleteError && (
+              {addError && (
                 <div className="dashboard-alert is-error" role="alert">
-                  {deleteError}
+                  {addError}
                 </div>
               )}
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Are you sure you want to delete <strong>{deletingDomain.hostname}</strong>? Its
-                routing rules and TLS certificate status on the edge proxy will be removed
-                immediately.
-              </p>
-              <p className="text-xs text-zinc-500">
-                The target service <strong>{deletingDomain.serviceName}</strong> will continue
-                serving normally on its platform subdomain.
-              </p>
+
+              {availableServices.length === 0 ? (
+                <div className="p-4 rounded-lg bg-amber-950/20 border border-amber-900/40 text-amber-200 text-xs">
+                  All deployed services in this organization already have a custom domain assigned.
+                  Each service supports 1 custom domain.
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label htmlFor="service-select" className="supabase-modal-label">
+                      Target Service:
+                    </label>
+                    <select
+                      id="service-select"
+                      value={selectedServiceId}
+                      onChange={(e) => setSelectedServiceId(e.target.value)}
+                      className="supabase-modal-input"
+                      required
+                    >
+                      {availableServices.map((srv) => (
+                        <option key={srv.id} value={srv.id}>
+                          {srv.name} ({srv.projectName})
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-[11px] text-zinc-500 mt-1 block">
+                      Incoming requests to this domain will route directly to this service.
+                    </span>
+                  </div>
+
+                  <div>
+                    <label htmlFor="hostname-input" className="supabase-modal-label">
+                      Domain Name / Hostname:
+                    </label>
+                    <input
+                      id="hostname-input"
+                      type="text"
+                      placeholder="e.g. app.mycompany.com"
+                      value={newHostname}
+                      onChange={(e) => setNewHostname(e.target.value)}
+                      required
+                      className="supabase-modal-input font-mono"
+                      autoFocus
+                    />
+                    <span className="text-[11px] text-zinc-500 mt-1 block">
+                      Enter a bare hostname without <code>https://</code> or trailing slashes.
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="supabase-modal-footer">
               <button
                 type="button"
                 className="supabase-btn-secondary"
-                onClick={() => setDeletingDomain(null)}
-                disabled={busyDelete}
+                onClick={() => setAddModalOpen(false)}
+                disabled={busyAdd}
               >
                 Cancel
               </button>
               <button
-                type="button"
-                className="project-btn-danger"
-                onClick={() => void handleDeleteDomain()}
-                disabled={busyDelete}
+                type="submit"
+                className="supabase-btn-green"
+                disabled={busyAdd || availableServices.length === 0 || !newHostname.trim()}
               >
-                {busyDelete ? (
+                {busyAdd ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                    Deleting...
+                    Adding...
                   </>
                 ) : (
-                  "Delete Domain"
+                  "Add Domain"
                 )}
               </button>
             </div>
+          </form>
+        </ModalDialog>
+      )}
+
+      {/* MODAL 2: DNS Instructions */}
+      {instructionsDomain && (
+        <ModalDialog
+          labelledBy="instructions-title"
+          onClose={() => setInstructionsDomain(null)}
+          className="max-w-xl"
+        >
+          <div className="supabase-modal-header">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-emerald-400" />
+              <h2 id="instructions-title" className="font-mono text-sm">
+                DNS Setup for {instructionsDomain.hostname}
+              </h2>
+            </div>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setInstructionsDomain(null)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        </div>
+
+          <div className="supabase-modal-body space-y-4">
+            <p className="text-xs text-zinc-400">
+              Add these DNS records at your DNS host (Cloudflare, AWS Route 53, Namecheap, etc.) to
+              verify ownership and route traffic:
+            </p>
+
+            {/* Record 1: TXT Record */}
+            <div className="domains-record-box">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="domains-badge-type">TXT</span>
+                  <span className="text-xs font-semibold text-white">Ownership Verification</span>
+                </div>
+                <span className="text-[11px] text-zinc-500">Required</span>
+              </div>
+
+              <div className="space-y-2">
+                <div>
+                  <span className="text-[11px] text-zinc-500 block">Record Name / Host:</span>
+                  <div className="flex items-center justify-between p-2 rounded bg-zinc-950/50 border border-zinc-800">
+                    <code className="text-xs font-mono text-zinc-200 break-all">
+                      {instructionsDomain.instructions.txt.name}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyText(instructionsDomain.instructions.txt.name, "txt-name", "TXT Host")
+                      }
+                      className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
+                      title="Copy TXT Host"
+                    >
+                      {copiedKey === "txt-name" ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[11px] text-zinc-500 block">Record Value / Content:</span>
+                  <div className="flex items-center justify-between p-2 rounded bg-zinc-950/50 border border-zinc-800">
+                    <code className="text-xs font-mono text-emerald-400 break-all">
+                      {instructionsDomain.instructions.txt.value}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyText(instructionsDomain.instructions.txt.value, "txt-val", "TXT Value")
+                      }
+                      className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
+                      title="Copy TXT Value"
+                    >
+                      {copiedKey === "txt-val" ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Record 2: CNAME or A Record */}
+            <div className="domains-record-box">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="domains-badge-type">CNAME</span>
+                  <span className="text-xs font-semibold text-white">Traffic Routing</span>
+                </div>
+                <span className="text-[11px] text-zinc-500">Required</span>
+              </div>
+
+              <div className="space-y-2">
+                <div>
+                  <span className="text-[11px] text-zinc-500 block">Record Name / Host:</span>
+                  <div className="flex items-center justify-between p-2 rounded bg-zinc-950/50 border border-zinc-800">
+                    <code className="text-xs font-mono text-zinc-200">
+                      {instructionsDomain.instructions.cname.name}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyText(
+                          instructionsDomain.instructions.cname.name,
+                          "cname-name",
+                          "CNAME Host",
+                        )
+                      }
+                      className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
+                      title="Copy CNAME Host"
+                    >
+                      {copiedKey === "cname-name" ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[11px] text-zinc-500 block">Target / Points To:</span>
+                  <div className="flex items-center justify-between p-2 rounded bg-zinc-950/50 border border-zinc-800">
+                    <code className="text-xs font-mono text-emerald-400">
+                      {instructionsDomain.instructions.cname.value}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyText(
+                          instructionsDomain.instructions.cname.value,
+                          "cname-val",
+                          "CNAME Target",
+                        )
+                      }
+                      className="text-zinc-500 hover:text-white ml-2 flex-shrink-0"
+                      title="Copy CNAME Target"
+                    >
+                      {copiedKey === "cname-val" ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {instructionsDomain.instructions.a.value && (
+                  <div className="pt-1">
+                    <span className="text-[11px] text-zinc-500 block">
+                      Or for Apex/Root domains, use an <strong>A Record</strong> pointing to:
+                    </span>
+                    <code className="text-xs font-mono text-cyan-400 mt-0.5 inline-block">
+                      {instructionsDomain.instructions.a.value}
+                    </code>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="supabase-modal-footer">
+            <button
+              type="button"
+              className="supabase-btn-secondary"
+              onClick={() => setInstructionsDomain(null)}
+            >
+              Close
+            </button>
+            {canManage && (
+              <button
+                type="button"
+                className="supabase-btn-green"
+                onClick={() => void handleVerify(instructionsDomain)}
+                disabled={verifyingId === instructionsDomain.id}
+              >
+                {verifyingId === instructionsDomain.id ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    Checking DNS...
+                  </>
+                ) : (
+                  "Verify Propagation Now"
+                )}
+              </button>
+            )}
+          </div>
+        </ModalDialog>
+      )}
+
+      {/* MODAL 3: Delete Domain Confirmation */}
+      {deletingDomain && (
+        <ModalDialog labelledBy="delete-domain-title" onClose={() => setDeletingDomain(null)}>
+          <div className="supabase-modal-header border-rose-900/40">
+            <div className="flex items-center gap-2 text-rose-400">
+              <Trash2 className="w-4 h-4" />
+              <h2 id="delete-domain-title">Disconnect Custom Domain</h2>
+            </div>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setDeletingDomain(null)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="supabase-modal-body space-y-3">
+            {deleteError && (
+              <div className="dashboard-alert is-error" role="alert">
+                {deleteError}
+              </div>
+            )}
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Are you sure you want to delete <strong>{deletingDomain.hostname}</strong>? Its
+              routing rules and TLS certificate status on the edge proxy will be removed
+              immediately.
+            </p>
+            <p className="text-xs text-zinc-500">
+              The target service <strong>{deletingDomain.serviceName}</strong> will continue serving
+              normally on its platform subdomain.
+            </p>
+          </div>
+
+          <div className="supabase-modal-footer">
+            <button
+              type="button"
+              className="supabase-btn-secondary"
+              onClick={() => setDeletingDomain(null)}
+              disabled={busyDelete}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="project-btn-danger"
+              onClick={() => void handleDeleteDomain()}
+              disabled={busyDelete}
+            >
+              {busyDelete ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Domain"
+              )}
+            </button>
+          </div>
+        </ModalDialog>
       )}
     </div>
   );

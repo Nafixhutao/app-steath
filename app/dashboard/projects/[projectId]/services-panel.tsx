@@ -24,6 +24,7 @@ import {
 import { QUOTAS } from "@/lib/platform/quota-limits";
 import { getError, useResource } from "@/lib/resource";
 import { useToast } from "@/components/toast-context";
+import { ModalDialog } from "@/components/supabase-modal";
 
 const EMPTY_FORM = {
   name: "",
@@ -263,216 +264,206 @@ export function ServicesPanel({
 
       {/* Modal: Create Service */}
       {modalOpen && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog max-w-lg"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-service-title"
-          >
-            <div className="supabase-modal-header">
-              <h2 id="create-service-title">Create a new service</h2>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setModalOpen(false)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <ModalDialog
+          labelledBy="create-service-title"
+          onClose={() => setModalOpen(false)}
+          className="max-w-lg"
+        >
+          <div className="supabase-modal-header">
+            <h2 id="create-service-title">Create a new service</h2>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setModalOpen(false)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={submit}>
+            <div className="supabase-modal-body space-y-3.5">
+              <p className="text-sm text-zinc-400 mb-4">
+                Each service builds from a public Git repository and runs as an isolated Docker
+                container with its own subdomain.
+              </p>
+              <div>
+                <label htmlFor="service-name-input" className="supabase-modal-label">
+                  Service Name
+                </label>
+                <input
+                  id="service-name-input"
+                  value={form.name}
+                  maxLength={80}
+                  required
+                  placeholder="e.g. web-frontend"
+                  onChange={(e) => update("name", e.target.value)}
+                  className="supabase-modal-input"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label htmlFor="repo-url-input" className="supabase-modal-label">
+                  Git Repository URL (public HTTPS)
+                </label>
+                <input
+                  id="repo-url-input"
+                  value={form.repoUrl}
+                  type="url"
+                  required
+                  placeholder="https://github.com/org/repo"
+                  onChange={(e) => update("repoUrl", e.target.value)}
+                  className="supabase-modal-input"
+                />
+                <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                  No Dockerfile needed: static sites and Node.js/Next.js projects are detected
+                  automatically. Pasting a folder URL (…/tree/main/app) builds just that folder.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="branch-input" className="supabase-modal-label">
+                    Git Branch
+                  </label>
+                  <input
+                    id="branch-input"
+                    value={form.branch}
+                    placeholder="main"
+                    onChange={(e) => update("branch", e.target.value)}
+                    className="supabase-modal-input"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="port-input" className="supabase-modal-label">
+                    Container Port
+                  </label>
+                  <input
+                    id="port-input"
+                    value={form.containerPort}
+                    inputMode="numeric"
+                    placeholder="3000"
+                    onChange={(e) => update("containerPort", e.target.value)}
+                    className="supabase-modal-input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="dockerfile-input" className="supabase-modal-label">
+                    Dockerfile Path (Optional)
+                  </label>
+                  <input
+                    id="dockerfile-input"
+                    value={form.dockerfilePath}
+                    placeholder="Dockerfile"
+                    onChange={(e) => update("dockerfilePath", e.target.value)}
+                    className="supabase-modal-input font-mono text-xs"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="health-input" className="supabase-modal-label">
+                    Health Check Path (Optional)
+                  </label>
+                  <input
+                    id="health-input"
+                    value={form.healthPath}
+                    placeholder="/health"
+                    onChange={(e) => update("healthPath", e.target.value)}
+                    className="supabase-modal-input font-mono text-xs"
+                  />
+                </div>
+              </div>
             </div>
 
-            <form onSubmit={submit}>
-              <div className="supabase-modal-body space-y-3.5">
-                <p className="text-sm text-zinc-400 mb-4">
-                  Each service builds from a public Git repository and runs as an isolated Docker
-                  container with its own subdomain.
-                </p>
-                <div>
-                  <label htmlFor="service-name-input" className="supabase-modal-label">
-                    Service Name
-                  </label>
-                  <input
-                    id="service-name-input"
-                    value={form.name}
-                    maxLength={80}
-                    required
-                    placeholder="e.g. web-frontend"
-                    onChange={(e) => update("name", e.target.value)}
-                    className="supabase-modal-input"
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="repo-url-input" className="supabase-modal-label">
-                    Git Repository URL (public HTTPS)
-                  </label>
-                  <input
-                    id="repo-url-input"
-                    value={form.repoUrl}
-                    type="url"
-                    required
-                    placeholder="https://github.com/org/repo"
-                    onChange={(e) => update("repoUrl", e.target.value)}
-                    className="supabase-modal-input"
-                  />
-                  <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-                    No Dockerfile needed: static sites and Node.js/Next.js projects are detected
-                    automatically. Pasting a folder URL (…/tree/main/app) builds just that folder.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="branch-input" className="supabase-modal-label">
-                      Git Branch
-                    </label>
-                    <input
-                      id="branch-input"
-                      value={form.branch}
-                      placeholder="main"
-                      onChange={(e) => update("branch", e.target.value)}
-                      className="supabase-modal-input"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="port-input" className="supabase-modal-label">
-                      Container Port
-                    </label>
-                    <input
-                      id="port-input"
-                      value={form.containerPort}
-                      inputMode="numeric"
-                      placeholder="3000"
-                      onChange={(e) => update("containerPort", e.target.value)}
-                      className="supabase-modal-input"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="dockerfile-input" className="supabase-modal-label">
-                      Dockerfile Path (Optional)
-                    </label>
-                    <input
-                      id="dockerfile-input"
-                      value={form.dockerfilePath}
-                      placeholder="Dockerfile"
-                      onChange={(e) => update("dockerfilePath", e.target.value)}
-                      className="supabase-modal-input font-mono text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="health-input" className="supabase-modal-label">
-                      Health Check Path (Optional)
-                    </label>
-                    <input
-                      id="health-input"
-                      value={form.healthPath}
-                      placeholder="/health"
-                      onChange={(e) => update("healthPath", e.target.value)}
-                      className="supabase-modal-input font-mono text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="supabase-modal-footer">
-                <button
-                  type="button"
-                  className="supabase-btn-secondary"
-                  onClick={() => setModalOpen(false)}
-                  disabled={busy}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="supabase-btn-green"
-                  disabled={busy || !form.name.trim() || !form.repoUrl.trim()}
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create service"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setModalOpen(false)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="supabase-btn-green"
+                disabled={busy || !form.name.trim() || !form.repoUrl.trim()}
+              >
+                {busy ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create service"
+                )}
+              </button>
+            </div>
+          </form>
+        </ModalDialog>
       )}
 
       {/* Modal: Delete Service Confirmation */}
       {deleteTarget && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-service-dialog-title"
-          >
-            <div className="supabase-modal-header border-rose-900/40">
-              <div className="flex items-center gap-2 text-rose-400">
-                <AlertTriangle className="w-4 h-4" />
-                <h2 id="delete-service-dialog-title">Delete Service</h2>
+        <ModalDialog labelledBy="delete-service-dialog-title" onClose={() => setDeleteTarget(null)}>
+          <div className="supabase-modal-header border-rose-900/40">
+            <div className="flex items-center gap-2 text-rose-400">
+              <AlertTriangle className="w-4 h-4" />
+              <h2 id="delete-service-dialog-title">Delete Service</h2>
+            </div>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setDeleteTarget(null)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleDelete}>
+            <div className="supabase-modal-body space-y-3">
+              <p className="text-xs text-zinc-300">
+                This action will permanently stop container execution and delete all deployments for{" "}
+                <strong className="text-white">{deleteTarget.name}</strong>.
+              </p>
+              <div>
+                <label htmlFor="delete-service-confirm-input" className="supabase-modal-label">
+                  Type <strong>{deleteTarget.name}</strong> to confirm:
+                </label>
+                <input
+                  id="delete-service-confirm-input"
+                  value={deleteConfirm}
+                  onChange={(e) => setDeleteConfirm(e.target.value)}
+                  placeholder={deleteTarget.name}
+                  className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
+                  autoFocus
+                />
               </div>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setDeleteTarget(null)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
             </div>
 
-            <form onSubmit={handleDelete}>
-              <div className="supabase-modal-body space-y-3">
-                <p className="text-xs text-zinc-300">
-                  This action will permanently stop container execution and delete all deployments
-                  for <strong className="text-white">{deleteTarget.name}</strong>.
-                </p>
-                <div>
-                  <label htmlFor="delete-service-confirm-input" className="supabase-modal-label">
-                    Type <strong>{deleteTarget.name}</strong> to confirm:
-                  </label>
-                  <input
-                    id="delete-service-confirm-input"
-                    value={deleteConfirm}
-                    onChange={(e) => setDeleteConfirm(e.target.value)}
-                    placeholder={deleteTarget.name}
-                    className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              <div className="supabase-modal-footer">
-                <button
-                  type="button"
-                  className="supabase-btn-secondary"
-                  onClick={() => setDeleteTarget(null)}
-                  disabled={busy}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="project-btn-danger"
-                  disabled={busy || deleteConfirm !== deleteTarget.name}
-                >
-                  {busy ? "Deleting..." : "Delete Service"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setDeleteTarget(null)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="project-btn-danger"
+                disabled={busy || deleteConfirm !== deleteTarget.name}
+              >
+                {busy ? "Deleting..." : "Delete Service"}
+              </button>
+            </div>
+          </form>
+        </ModalDialog>
       )}
     </div>
   );

@@ -21,6 +21,7 @@ import { QUOTAS } from "@/lib/platform/quota-limits";
 import { getError, useResource } from "@/lib/resource";
 import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
 import { useToast } from "@/components/toast-context";
+import { ModalDialog } from "@/components/supabase-modal";
 
 export default function ProjectsPage() {
   const { toast } = useToast();
@@ -438,97 +439,86 @@ export default function ProjectsPage() {
 
       {/* Modal: Create Project */}
       {modalOpen && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-project-title"
-          >
-            <div className="supabase-modal-header">
-              <h2 id="create-project-title">Create a new project</h2>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setModalOpen(false)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <ModalDialog labelledBy="create-project-title" onClose={() => setModalOpen(false)}>
+          <div className="supabase-modal-header">
+            <h2 id="create-project-title">Create a new project</h2>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setModalOpen(false)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleCreateProject}>
+            <div className="supabase-modal-body">
+              <p className="text-sm text-zinc-400 mb-4">
+                Each project provides an isolated environment for your services and a dedicated
+                PostgreSQL or MySQL database.
+              </p>
+
+              <div className="mb-4">
+                <label htmlFor="project-name-input" className="supabase-modal-label">
+                  Project name
+                </label>
+                <input
+                  id="project-name-input"
+                  type="text"
+                  required
+                  placeholder="e.g. My Next.js Backend"
+                  maxLength={80}
+                  value={name}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setName(value);
+                    if (!slugEdited) setSlug(slugify(value));
+                  }}
+                  className="supabase-modal-input"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label htmlFor="project-slug-input" className="supabase-modal-label">
+                  Slug identifier
+                </label>
+                <input
+                  id="project-slug-input"
+                  type="text"
+                  maxLength={MAX_SLUG_LENGTH}
+                  placeholder="my-next-backend"
+                  value={slug}
+                  onChange={(event) => {
+                    setSlugEdited(true);
+                    setSlug(event.target.value);
+                  }}
+                  className="supabase-modal-input font-mono text-sm"
+                />
+                <p className="text-xs text-zinc-500 mt-1">
+                  Used in service domain names and internal routing.
+                </p>
+              </div>
+
+              {formError && <p className="text-xs text-rose-400 mt-3">{formError}</p>}
             </div>
 
-            <form onSubmit={handleCreateProject}>
-              <div className="supabase-modal-body">
-                <p className="text-sm text-zinc-400 mb-4">
-                  Each project provides an isolated environment for your services and a dedicated
-                  PostgreSQL or MySQL database.
-                </p>
-
-                <div className="mb-4">
-                  <label htmlFor="project-name-input" className="supabase-modal-label">
-                    Project name
-                  </label>
-                  <input
-                    id="project-name-input"
-                    type="text"
-                    required
-                    placeholder="e.g. My Next.js Backend"
-                    maxLength={80}
-                    value={name}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setName(value);
-                      if (!slugEdited) setSlug(slugify(value));
-                    }}
-                    className="supabase-modal-input"
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="project-slug-input" className="supabase-modal-label">
-                    Slug identifier
-                  </label>
-                  <input
-                    id="project-slug-input"
-                    type="text"
-                    maxLength={MAX_SLUG_LENGTH}
-                    placeholder="my-next-backend"
-                    value={slug}
-                    onChange={(event) => {
-                      setSlugEdited(true);
-                      setSlug(event.target.value);
-                    }}
-                    className="supabase-modal-input font-mono text-sm"
-                  />
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Used in service domain names and internal routing.
-                  </p>
-                </div>
-
-                {formError && <p className="text-xs text-rose-400 mt-3">{formError}</p>}
-              </div>
-
-              <div className="supabase-modal-footer">
-                <button
-                  type="button"
-                  className="supabase-btn-secondary"
-                  onClick={() => setModalOpen(false)}
-                  disabled={busy}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="supabase-btn-green"
-                  disabled={busy || !name.trim()}
-                >
-                  {busy ? "Creating..." : "Create project"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setModalOpen(false)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="supabase-btn-green" disabled={busy || !name.trim()}>
+                {busy ? "Creating..." : "Create project"}
+              </button>
+            </div>
+          </form>
+        </ModalDialog>
       )}
     </div>
   );

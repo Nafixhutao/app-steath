@@ -4,21 +4,22 @@ import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 
 /**
- * Shared dialog shell for the Supabase-style console forms (create project,
- * create service, add variable, add volume, add domain). Callers supply the
- * `<form>` — with `supabase-modal-body` and `supabase-modal-footer` inside it —
- * so the modal owns only the chrome, escape/backdrop closing and a11y wiring.
+ * Dialog chrome shared by every console modal. Owns the backdrop, Escape and
+ * backdrop-click closing, the Tab focus trap, and focus restoration to whatever
+ * was focused before the dialog opened. Callers supply the header and body.
+ *
+ * `labelledBy` must name the id of the element that titles the dialog.
  */
-export function SupabaseModal({
-  title,
+export function ModalDialog({
+  labelledBy,
   onClose,
+  className,
   children,
-  wide = false,
 }: {
-  title: string;
+  labelledBy?: string;
   onClose: () => void;
+  className?: string;
   children: ReactNode;
-  wide?: boolean;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -75,24 +76,52 @@ export function SupabaseModal({
     >
       <div
         ref={dialogRef}
-        className={`supabase-modal-dialog${wide ? " max-w-lg" : ""}`}
+        className={`supabase-modal-dialog${className ? ` ${className}` : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="supabase-modal-title"
+        aria-labelledby={labelledBy}
       >
-        <div className="supabase-modal-header">
-          <h2 id="supabase-modal-title">{title}</h2>
-          <button
-            type="button"
-            className="supabase-modal-close"
-            onClick={onClose}
-            aria-label="Close dialog"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
         {children}
       </div>
     </div>
+  );
+}
+
+/**
+ * Shared dialog shell for the Supabase-style console forms (create project,
+ * create service, add variable, add volume, add domain). Callers supply the
+ * `<form>` — with `supabase-modal-body` and `supabase-modal-footer` inside it —
+ * so the modal owns only the chrome, escape/backdrop closing and a11y wiring.
+ */
+export function SupabaseModal({
+  title,
+  onClose,
+  children,
+  wide = false,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <ModalDialog
+      labelledBy="supabase-modal-title"
+      onClose={onClose}
+      className={wide ? "max-w-lg" : undefined}
+    >
+      <div className="supabase-modal-header">
+        <h2 id="supabase-modal-title">{title}</h2>
+        <button
+          type="button"
+          className="supabase-modal-close"
+          onClick={onClose}
+          aria-label="Close dialog"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      {children}
+    </ModalDialog>
   );
 }
