@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* ===== THEME TOKENS ===== */
+
 /* Tokens used by ported beUI components (copy-paste source from beui.dev).
    They map to the console palette so the components inherit the same system. */
 @theme {
@@ -39,6 +41,8 @@
   --font-console-sans: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
   --font-console-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
+
+/* ===== ROOT VARIABLES ===== */
 
 /*
  * Palette (deliberate, semantic). Neutrals: #0f0f0f / #121014 / #17171a ...
@@ -83,6 +87,8 @@
   --skeleton-gradient-end: #9b5de5;
 }
 
+/* ===== BASE / RESET ===== */
+
 * {
   box-sizing: border-box;
 }
@@ -121,6 +127,47 @@ input:disabled,
 select:disabled {
   cursor: not-allowed;
 }
+
+a {
+  color: #4d8dff;
+  font-weight: 500;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: #7fabff;
+}
+
+.skip-link {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: var(--color-ink);
+  color: var(--color-canvas);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
+}
+
+/* ===== AUTH ===== */
 
 .auth-page {
   min-height: 100dvh;
@@ -380,41 +427,7 @@ form input[type="text"]:focus {
 .support-copy.compact {
   margin-top: 4px;
 }
-a {
-  color: #4d8dff;
-  font-weight: 500;
-  text-underline-offset: 2px;
-}
-a:hover {
-  color: #7fabff;
-}
 
-.skip-link {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 10;
-  padding: 8px 12px;
-  border-radius: var(--radius-control);
-  background: var(--color-ink);
-  color: var(--color-canvas);
-  transform: translateY(-200%);
-}
-.skip-link:focus {
-  transform: translateY(0);
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-  clip-path: inset(50%);
-}
 
 @media (max-width: 480px) {
   .auth-page {
@@ -540,6 +553,8 @@ a:hover {
 }
 
 /* User-console navigation ported from console/src/features/navigation. */
+/* ===== CONSOLE SHELL & SIDEBAR ===== */
+
 .console-layout {
   height: 100dvh;
   max-height: 100dvh;
@@ -1722,6 +1737,8 @@ a:hover {
   }
 }
 
+/* ===== DASHBOARD BASE ===== */
+
 .dashboard-loading {
   display: grid;
   min-height: 100dvh;
@@ -2009,6 +2026,8 @@ a:hover {
  * empty state with feature highlights.
  * Everything is strictly scoped to .db-* so the rest of the console is unchanged.
  */
+/* ===== DATABASES ===== */
+
 .db-page-wrapper {
   max-width: 1200px;
 }
@@ -2969,10 +2988,10 @@ a:hover {
   }
 }
 
-/* ============================================================
-   UI polish: tactile states, data typography, readability, depth.
-   Sidebar/navigation intentionally untouched.
-   ============================================================ */
+/* ===== UI POLISH & SKELETONS ===== */
+
+/* Tactile states, data typography, readability, depth.
+   Sidebar/navigation intentionally untouched. */
 
 html {
   scroll-behavior: smooth;
@@ -3056,9 +3075,7 @@ body {
   color: #6d6974;
 }
 
-/* ============================================================
-   Dashboard overview: stat cards, status dots, skeleton loader.
-   ============================================================ */
+/* Dashboard overview: stat cards, status dots, skeleton loader. */
 
 .dashboard-skeleton-row {
   height: 46px;
@@ -3082,9 +3099,7 @@ body {
   }
 }
 
-/* ============================================================
-   Projects list: skeleton cards + on-brand project mark.
-   ============================================================ */
+/* Projects list: skeleton cards + on-brand project mark. */
 
 /* One accent: the project marks share a single purple tint instead of three
    identical neutral squares. */
@@ -3123,6 +3138,8 @@ body {
 .metric-card:hover {
   border-color: #322d38;
 }
+
+/* ===== ADMIN CONSOLE ===== */
 
 /* Admin console — ported from stealth-forge's styles/admin.css. The [data-admin]
    shell is rendered by the ported AdminShell, so this block scopes the exact
@@ -3397,6 +3414,8 @@ body {
   background: rgba(255, 255, 255, 0.02);
 }
 
+/* ===== AUTH PAGE OVERRIDES ===== */
+
 /* The auth forms on /login and /signup: every field is one .auth-field grid
    (label above input) and the form spreads the fields with an even rhythm, so
    the sign-up stack no longer reads cramped against the provider buttons. */
@@ -3629,11 +3648,7 @@ body {
   outline-color: #4693ff;
 }
 
-/* ==========================================================================
-   Supabase Design System - Topbar, Organizations, Projects, and Usage Panel
-   ========================================================================== */
-
-/* Topbar */
+/* ===== SUPABASE TOPBAR ===== */
 /* The new global header replaces the old fixed mobile topbar; its menu button
    is the only way to open the navigation sheet on small screens. */
 .supabase-mobile-menu-btn {
@@ -4076,9 +4091,7 @@ body {
   margin: 6px 0;
 }
 
-/* ==========================================================================
-   Organizations Page (Image 1)
-   ========================================================================== */
+/* ===== ORGANIZATIONS ===== */
 .orgs-page-container {
   min-height: calc(100dvh - 48px);
   background-color: var(--color-console);
@@ -4357,9 +4370,7 @@ body {
   text-align: center;
 }
 
-/* ==========================================================================
-   Projects Page & Layout (Image 2)
-   ========================================================================== */
+/* ===== PROJECTS ===== */
 .supabase-projects-page {
   padding: 28px 36px 60px;
   max-width: 1400px;
@@ -4801,9 +4812,7 @@ body {
   font-size: 12px;
 }
 
-/* ==========================================================================
-   Supabase Dialog Modals
-   ========================================================================== */
+/* ===== MODALS ===== */
 .supabase-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -4927,9 +4936,7 @@ body {
   }
 }
 
-/* ==========================================================================
-   Command Palette (Ctrl+K)
-   ========================================================================== */
+/* ===== COMMAND PALETTE ===== */
 .command-palette-backdrop {
   position: fixed;
   inset: 0;
@@ -5099,9 +5106,7 @@ body {
   color: #8c899c;
 }
 
-/* ==========================================================================
-   Toast Notifications
-   ========================================================================== */
+/* ===== TOASTS ===== */
 .toast-viewport {
   position: fixed;
   bottom: 20px;
@@ -5167,9 +5172,7 @@ body {
   color: var(--color-ink);
 }
 
-/* ==========================================================================
-   Visual Progress Bars & Skeletons
-   ========================================================================== */
+/* ===== PROGRESS & SKELETONS ===== */
 .supabase-usage-item {
   display: flex;
   flex-direction: column;
@@ -5236,9 +5239,7 @@ body {
   min-height: 120px;
 }
 
-/* ==========================================================================
-   Project Detail View (Supabase-Style Tabbed Dashboard)
-   ========================================================================== */
+/* ===== PROJECT DETAIL ===== */
 .project-detail-container {
   padding: 24px 32px 64px;
   max-width: 1300px;
@@ -5899,9 +5900,7 @@ body {
   box-shadow: none;
 }
 
-/* ==========================================================================
-   Members / Team Page (Supabase Style)
-   ========================================================================== */
+/* ===== MEMBERS ===== */
 .members-page-container {
   padding: 28px 36px 64px;
   max-width: 1200px;
@@ -6145,9 +6144,7 @@ body {
   text-align: center;
 }
 
-/* ==========================================================================
-   Supabase Style - Backups & Restores Page
-   ========================================================================== */
+/* ===== BACKUPS ===== */
 
 .backups-page-container {
   padding: 28px 36px 64px;
@@ -6419,9 +6416,7 @@ body {
   text-align: center;
 }
 
-/* ==========================================================================
-   Supabase Style - Usage & Quotas Page
-   ========================================================================== */
+/* ===== USAGE ===== */
 
 .usage-page-container {
   padding: 24px 32px 56px;
@@ -6993,9 +6988,7 @@ a.usage-row-name:hover {
   }
 }
 
-/* ==========================================================================
-   Supabase Style - Domains & Networking Page
-   ========================================================================== */
+/* ===== DOMAINS ===== */
 
 .domains-page-container {
   padding: 28px 36px 64px;
@@ -7402,9 +7395,7 @@ a.usage-row-name:hover {
   border: 1px solid rgba(62, 207, 142, 0.25);
 }
 
-/* ==========================================================================
-   Supabase Style - Services Directory Page
-   ========================================================================== */
+/* ===== SERVICES ===== */
 
 .services-page-container {
   padding: 24px 32px 56px;
@@ -7952,9 +7943,7 @@ a.usage-row-name:hover {
   }
 }
 
-/* ==========================================================================
-   Supabase Style - Organization Settings Page
-   ========================================================================== */
+/* ===== SETTINGS ===== */
 
 .settings-page-container {
   padding: 28px 36px 64px;
@@ -8200,10 +8189,10 @@ a.usage-row-name:hover {
   box-shadow: none;
 }
 
-/* ==========================================================================
-   Service detail — Vercel-style layout: flat neutral header, underlined
-   tab navigation, single-column content. Scoped to .supabase-service-page.
-   ========================================================================== */
+/* ===== SERVICE DETAIL ===== */
+
+/* Vercel-style layout: flat neutral header, underlined tab navigation,
+   single-column content. Scoped to .supabase-service-page. */
 .dashboard-content.supabase-service-page {
   max-width: 1080px;
   margin: 0 auto;
@@ -8883,6 +8872,8 @@ a.usage-row-name:hover {
    with break-all: a 24-character schema must never push the card sideways on a
    360px screen. The copy button is 44px tall, the minimum comfortable target.
    Shared by the MySQL and PostgreSQL panels. */
+/* ===== DATABASE CREDENTIALS ===== */
+
 .db-cred-card {
   display: flex;
   flex-direction: column;
@@ -9058,6 +9049,8 @@ a.usage-row-name:hover {
  * never edited: they consume these inherited tokens and the few chrome colors
  * hardcoded in the shell are overridden from this call-site scope.
  * ------------------------------------------------------------------------ */
+/* ===== ADMIN SHELL (CLOUDFLARE) ===== */
+
 .cf-admin {
   --projects-bg: #0b0b0b;
   --projects-surface: #0b0b0b;
