@@ -157,17 +157,17 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   return (
     <div className="project-detail-container">
       {/* Top Header */}
-      <header className="project-detail-header">
+      <header className="border-b border-[#23222a] pb-0 mb-[24px]">
         <nav className="project-breadcrumbs" aria-label="Breadcrumb">
           <Link href="/dashboard/projects" className="project-breadcrumb-link">
             Projects
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-zinc-600" aria-hidden="true" />
-          <span className="project-breadcrumb-current">{project.name}</span>
+          <span className="text-ink-console font-medium">{project.name}</span>
         </nav>
 
         <div className="project-title-row">
-          <div className="project-title-meta">
+          <div className="flex items-center gap-[14px]">
             <div className="project-icon-badge" aria-hidden="true">
               <Boxes className="w-5 h-5 text-emerald-400" />
             </div>
@@ -202,7 +202,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             </div>
           </div>
 
-          <div className="project-header-stats">
+          <div className="flex items-center gap-[8px]">
             <div className="project-stat-pill">
               <Container className="w-3.5 h-3.5 text-zinc-400" />
               <span>{project.serviceCount} Services</span>
@@ -291,7 +291,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
       ) : null}
 
       {/* Tab Panels */}
-      <main className="project-tab-content">
+      <main className="min-h-[400px]">
         {activeTab === "services" && (
           <div id="panel-services" role="tabpanel" aria-labelledby="tab-services">
             <ServicesPanel
@@ -338,7 +338,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
               </div>
 
               {canManage ? (
-                <form onSubmit={rename} className="project-settings-body">
+                <form onSubmit={rename} className="p-[20px]">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="edit-project-name" className="project-form-label">

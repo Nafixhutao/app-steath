@@ -342,10 +342,10 @@ export function DatabasePanel({
                       onClick={() => setEngine(choice.id)}
                       disabled={busy}
                     >
-                      <span className="db-engine-option-name">
+                      <span className="text-[13.5px] font-semibold text-ink-bright">
                         {choice.name} {choice.version}
                       </span>
-                      <span className="db-engine-option-note">{choice.note}</span>
+                      <span className="text-[11.5px] leading-[1.45] text-[#8b8b96]">{choice.note}</span>
                       <span className="db-engine-option-tag">{choice.client}</span>
                     </button>
                   );

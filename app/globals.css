@@ -3065,10 +3065,6 @@ body {
    Dashboard overview: stat cards, status dots, skeleton loader.
    ============================================================ */
 
-.dashboard-skeleton {
-  padding: 8px 0;
-}
-
 .dashboard-skeleton-row {
   height: 46px;
   margin-bottom: 8px;
@@ -5255,12 +5251,6 @@ body {
   width: 100%;
 }
 
-.project-detail-header {
-  border-bottom: 1px solid #23222a;
-  padding-bottom: 0;
-  margin-bottom: 24px;
-}
-
 .project-breadcrumbs {
   display: flex;
   align-items: center;
@@ -5279,11 +5269,6 @@ body {
   color: var(--color-ink-console);
 }
 
-.project-breadcrumb-current {
-  color: var(--color-ink-console);
-  font-weight: 500;
-}
-
 .project-title-row {
   display: flex;
   align-items: center;
@@ -5291,12 +5276,6 @@ body {
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 22px;
-}
-
-.project-title-meta {
-  display: flex;
-  align-items: center;
-  gap: 14px;
 }
 
 .project-icon-badge {
@@ -5380,12 +5359,6 @@ body {
   color: var(--color-ink-console);
 }
 
-.project-header-stats {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .project-stat-pill {
   display: flex;
   align-items: center;
@@ -5454,10 +5427,6 @@ body {
 
 .project-tab-status-dot.is-none {
   background-color: #555360;
-}
-
-.project-tab-content {
-  min-height: 400px;
 }
 
 /* Service Items */
@@ -5714,18 +5683,6 @@ body {
   opacity: 0.6;
 }
 
-.db-engine-option-name {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--color-ink-bright);
-}
-
-.db-engine-option-note {
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: #8b8b96;
-}
-
 .db-engine-option-tag {
   align-self: flex-start;
   margin-top: 2px;
@@ -5770,10 +5727,6 @@ body {
   font-size: 12px;
   color: #716f7c;
   margin: 3px 0 0;
-}
-
-.project-settings-body {
-  padding: 20px;
 }
 
 .project-settings-card-footer {

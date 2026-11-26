@@ -16,7 +16,7 @@ export function ProjectGateFallback() {
         <div role="status" aria-label="Loading project">
           <div className="dashboard-heading-skeleton" />
           <div className="dashboard-heading-skeleton short" />
-          <div className="dashboard-skeleton">
+          <div className="py-[8px]">
             <div className="dashboard-skeleton-row" />
             <div className="dashboard-skeleton-row" />
             <div className="dashboard-skeleton-row" />
