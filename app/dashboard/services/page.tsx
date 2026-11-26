@@ -157,10 +157,10 @@ export default function ServicesPage() {
 
   return (
     <div className="services-page-container">
-      <header className="services-page-header">
+      <header className="flex items-end justify-between flex-wrap gap-[16px] mb-[18px]">
         <div className="min-w-0">
           <h1 className="services-page-title">Services</h1>
-          <p className="services-page-subtitle">
+          <p className="text-[13px] text-ink-muted mt-[4px] leading-[1.4]">
             Containers, builds and public routing for {organization?.name ?? "your organization"}.
           </p>
         </div>
@@ -202,7 +202,7 @@ export default function ServicesPage() {
           <strong>{serviceList.length}</strong>
           <span>services across {projectList.length} projects</span>
         </div>
-        <div className="services-summary-states">
+        <div className="flex items-center flex-wrap gap-[16px]">
           <span className="services-summary-state is-running">
             <span className="project-status-dot" aria-hidden="true" />
             {runningCount} running
@@ -217,10 +217,10 @@ export default function ServicesPage() {
         </span>
       </div>
 
-      <div className="services-toolbar">
-        <div className="services-toolbar-left">
+      <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[20px]">
+        <div className="flex items-center flex-wrap gap-[10px] flex-1">
           <div className="relative w-full max-w-[340px]">
-            <Search className="services-search-icon" aria-hidden="true" />
+            <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#706d7e] pointer-events-none" aria-hidden="true" />
             <input
               type="search"
               placeholder="Search name, repo or hostname..."
@@ -274,7 +274,7 @@ export default function ServicesPage() {
         </div>
 
         <div className="flex items-center gap-[12px]">
-          <span className="services-count">{filteredServices.length} shown</span>
+          <span className="text-[12px] text-ink-muted tabular-nums whitespace-nowrap">{filteredServices.length} shown</span>
           <div className="supabase-view-toggle-group" role="group" aria-label="View mode">
             <button
               type="button"
@@ -303,7 +303,7 @@ export default function ServicesPage() {
       {loading && serviceList.length === 0 ? (
         <div className="services-grid" role="status" aria-label="Loading services">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="services-skeleton-card" aria-hidden="true">
+            <div key={item} className="bg-surface border border-[var(--color-surface-raised)] rounded-card p-[16px]" aria-hidden="true">
               <div className="supabase-skeleton-box h-4 w-36 rounded mb-3" />
               <div className="supabase-skeleton-box h-3 w-24 rounded mb-4" />
               <div className="supabase-skeleton-box h-3 w-2/3 rounded" />
@@ -311,11 +311,11 @@ export default function ServicesPage() {
           ))}
         </div>
       ) : filteredServices.length === 0 ? (
-        <div className="services-empty-box">
-          <h2 className="services-empty-title">
+        <div className="py-[48px] px-[20px] border border-dashed border-[#2a2833] rounded-card text-center">
+          <h2 className="text-[14px] font-semibold text-ink-bright mt-0 mb-[6px] mx-0">
             {hasFilters ? "No services match these filters" : "No services yet"}
           </h2>
-          <p className="services-empty-copy">
+          <p className="max-w-[460px] mt-0 mb-[18px] mx-auto text-[12px] leading-[1.5] text-ink-muted">
             {hasFilters
               ? "Clear the search or filters to see the rest of the fleet."
               : "Create a project, then deploy a service from a Git repository. HTTPS routing is set up for you."}
@@ -345,8 +345,8 @@ export default function ServicesPage() {
       ) : viewMode === "grid" ? (
         <div className="flex flex-col">
           {groups.map((group) => (
-            <section key={group.id} className="services-group" aria-label={`Project ${group.name}`}>
-              <div className="services-group-head">
+            <section key={group.id} className="mb-[22px] last:mb-0" aria-label={`Project ${group.name}`}>
+              <div className="flex items-baseline gap-[8px] mb-[8px]">
                 <h2 className="services-group-name">{group.name}</h2>
                 <span className="services-group-count">{group.items.length}</span>
                 <Link href={`/dashboard/projects/${group.id}`} className="services-group-link">
@@ -357,7 +357,7 @@ export default function ServicesPage() {
               <div className="services-grid">
                 {group.items.map((service) => (
                   <article key={service.id} className="services-card">
-                    <div className="services-card-header">
+                    <div className="flex items-start justify-between gap-[12px] mb-[10px]">
                       <div className="min-w-0">
                         <Link
                           href={`/dashboard/services/${service.id}`}
@@ -391,7 +391,7 @@ export default function ServicesPage() {
                       {renderCopyButton(service)}
                     </div>
 
-                    <div className="services-card-footer">
+                    <div className="flex items-center justify-between gap-[10px] pt-[10px] border-t border-t-[#211f29] mt-auto">
                       <span className="services-specs">
                         {service.cpuLimit} vCPU · {service.memoryLimitMb} MB · :
                         {service.containerPort}
@@ -475,7 +475,7 @@ export default function ServicesPage() {
                     </td>
                     <td className="services-mono">:{service.containerPort}</td>
                     <td>
-                      <div className="services-row-actions">
+                      <div className="flex items-center justify-end gap-[6px]">
                         <a
                           href={service.url}
                           target="_blank"

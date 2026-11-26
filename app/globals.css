@@ -1190,18 +1190,6 @@ form input[type="text"]:focus {
 .environment-value {
   overflow-wrap: anywhere;
 }
-.volume-usage {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 140px;
-}
-.volume-usage-bar {
-  display: block;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--color-violet);
-}
 .dashboard-link-button {
   padding: 0;
   border: 0;
@@ -1225,15 +1213,6 @@ form input[type="text"]:focus {
   cursor: not-allowed;
 }
 /* --- Deployment history ------------------------------------------------ */
-/* One row per Deployment: status, commit, age, duration on one line, with the
-   log folded away until asked for. Before this every row turned into a
-   seven-row card on a phone, so three Deployments filled a screen. */
-.deployment-list {
-  overflow: hidden;
-  border: 1px solid #27272a;
-  border-radius: var(--radius-card);
-  background: #0c0c0d;
-}
 .deployment-list-head {
   display: grid;
   grid-template-columns: 116px 92px minmax(0, 1fr) 74px 44px 68px;
@@ -7044,28 +7023,12 @@ a.usage-row-name:hover {
   width: 100%;
 }
 
-.services-page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
 .services-page-title {
   font-size: 20px;
   font-weight: 600;
   color: var(--color-ink);
   letter-spacing: -0.015em;
   margin: 0;
-}
-
-.services-page-subtitle {
-  font-size: 13px;
-  color: var(--color-ink-muted);
-  margin-top: 4px;
-  line-height: 1.4;
 }
 
 /* One quiet status line replaces the four-card overview. Counts describe the
@@ -7095,13 +7058,6 @@ a.usage-row-name:hover {
   font-variant-numeric: tabular-nums;
 }
 
-.services-summary-states {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
 .services-summary-state {
   display: inline-flex;
   align-items: center;
@@ -7124,22 +7080,6 @@ a.usage-row-name:hover {
   font-size: 11px;
   font-family: var(--font-console-mono);
   color: var(--color-ink-muted);
-}
-
-/* Project groups give the list its hierarchy without repeated columns. */
-.services-group {
-  margin-bottom: 22px;
-}
-
-.services-group:last-child {
-  margin-bottom: 0;
-}
-
-.services-group-head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 8px;
 }
 
 .services-group-name {
@@ -7166,34 +7106,6 @@ a.usage-row-name:hover {
 
 .services-group-link:hover {
   color: #6ee7b7;
-}
-
-.services-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.services-toolbar-left {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  flex: 1;
-}
-
-.services-search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 15px;
-  height: 15px;
-  color: #706d7e;
-  pointer-events: none;
 }
 
 .services-search-input {
@@ -7232,13 +7144,6 @@ a.usage-row-name:hover {
   color: var(--color-ink-console);
 }
 
-.services-count {
-  font-size: 12px;
-  color: var(--color-ink-muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 .services-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -7258,14 +7163,6 @@ a.usage-row-name:hover {
 
 .services-card:hover {
   border-color: #3a3744;
-}
-
-.services-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
 }
 
 .services-card-name {
@@ -7341,16 +7238,6 @@ a.usage-row-name:hover {
 .services-copy-btn:hover {
   background: #23212b;
   color: var(--color-ink-console);
-}
-
-.services-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #211f29;
-  margin-top: auto;
 }
 
 .services-specs {
@@ -7442,35 +7329,6 @@ a.usage-row-name:hover {
   background-color: var(--color-ink-muted);
 }
 
-.services-skeleton-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-surface-raised);
-  border-radius: var(--radius-card);
-  padding: 16px;
-}
-
-.services-empty-box {
-  padding: 48px 20px;
-  border: 1px dashed #2a2833;
-  border-radius: var(--radius-card);
-  text-align: center;
-}
-
-.services-empty-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-ink-bright);
-  margin: 0 0 6px;
-}
-
-.services-empty-copy {
-  max-width: 460px;
-  margin: 0 auto 18px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--color-ink-muted);
-}
-
 .services-table-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-surface-raised);
@@ -7541,13 +7399,6 @@ a.usage-row-name:hover {
 
 .services-table .services-url-cell {
   margin-bottom: 0;
-}
-
-.services-row-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
 }
 
 .services-table .services-row-btn {
@@ -7879,12 +7730,6 @@ a.usage-row-name:hover {
   margin: 4px 0 0;
   color: var(--color-ink-muted);
   font-size: 14px;
-}
-.svc-header {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-  padding-bottom: 20px;
 }
 .svc-header-title-row {
   display: flex;
@@ -8328,12 +8173,6 @@ a.usage-row-name:hover {
 .svc-back-link:hover {
   color: #ededf2;
 }
-.svc-not-found {
-  padding: 48px 32px;
-  border: 1px solid #27272a;
-  border-radius: var(--radius-card);
-  background: #0c0c0d;
-}
 .svc-page-loader {
   display: flex;
   align-items: center;
@@ -8341,14 +8180,6 @@ a.usage-row-name:hover {
   padding: 40px 0;
   color: #71717a;
   font-size: 13px;
-}
-.svc-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #3f3f46;
-  border-top-color: #ededf2;
-  border-radius: 50%;
-  animation: svc-spin 0.7s linear infinite;
 }
 @keyframes svc-spin {
   to {

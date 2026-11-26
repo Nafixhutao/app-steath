@@ -199,7 +199,7 @@ export function DeploymentsPanel({
           <p>Deploy this Service to build its image from the repository.</p>
         </div>
       ) : (
-        <div className="deployment-list">
+        <div className="overflow-hidden border border-[#27272a] rounded-card bg-[#0c0c0d]">
           <div className="deployment-list-head" aria-hidden="true">
             <span>Status</span>
             <span>Commit</span>

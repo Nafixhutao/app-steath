@@ -202,11 +202,11 @@ export function VolumePanel({
                 </td>
                 <td data-label="Size">{volume.sizeMb} MB</td>
                 <td data-label="Usage" className="svc-cell-wide">
-                  <div className="volume-usage">
+                  <div className="flex flex-col gap-[6px] min-w-[140px]">
                     <span>{usageLabel(volume)}</span>
                     {volume.exists && volume.usageMb !== null ? (
                       <span
-                        className="volume-usage-bar"
+                        className="block h-[4px] rounded-[999px] bg-violet"
                         aria-hidden="true"
                         style={{
                           width: `${Math.min(100, Math.round((volume.usageMb / volume.sizeMb) * 100))}%`,

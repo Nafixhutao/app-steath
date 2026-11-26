@@ -121,7 +121,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
     return (
       <div className="dashboard-content supabase-service-page">
         <div className="svc-page-loader" role="status">
-          <span className="svc-spinner" aria-hidden="true" />
+          <span className="w-[14px] h-[14px] border-2 border-[#3f3f46] border-t-[#ededf2] rounded-[50%] animate-[svc-spin_0.7s_linear_infinite]" aria-hidden="true" />
           Loading Service...
         </div>
       </div>
@@ -136,7 +136,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
           <span aria-hidden="true">/</span>
           <span className="supabase-service-breadcrumb-current">Not found</span>
         </p>
-        <div className="svc-not-found">
+        <div className="py-[48px] px-[32px] border border-[#27272a] rounded-card bg-[#0c0c0d]">
           <h1 className="supabase-service-title">Service not found</h1>
           <p className="supabase-service-subtitle">
             This Service does not exist in the active Organization.
@@ -164,7 +164,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         <span className="supabase-service-breadcrumb-current">{service.name}</span>
       </p>
 
-      <header className="svc-header">
+      <header className="grid gap-[10px] min-w-0 pb-[20px]">
         <div className="svc-header-title-row">
           <h1 className="supabase-service-title">{service.name}</h1>
           <span className={`supabase-service-status is-${service.status}`}>
