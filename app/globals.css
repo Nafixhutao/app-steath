@@ -10313,3 +10313,151 @@ a.usage-row-name:hover {
     flex: 1 1 auto;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Admin Console — near-black palette (the reference dashboard design).
+ * Scoped to .cf-admin (set only by app/admin/layout.tsx) so the user console
+ * and the .auth-page block keep their own palettes. The Forge components are
+ * never edited: they consume these inherited tokens and the few chrome colors
+ * hardcoded in the shell are overridden from this call-site scope.
+ * ------------------------------------------------------------------------ */
+.cf-admin {
+  --projects-bg: #0b0b0b;
+  --projects-surface: #0b0b0b;
+  --projects-card-bg: #121212;
+  --projects-control: #181818;
+  --projects-border: #2a2a2a;
+  --projects-border-hover: #3d3d3d;
+  --projects-divider: #232323;
+  --projects-text: #f2f2f2;
+  --projects-muted: #9a9a9a;
+  --projects-accent: #3c87ff;
+  --projects-accent-strong: #1f6feb;
+  --projects-accent-border: #1a5fd0;
+  --projects-warning: #f6b73c;
+  --projects-danger: #ef6b73;
+  --admin-info: #5b9cf8;
+}
+
+/* Rail and top bar: replace the Forge near-black/violet neutrals with the
+   near-black canvas and the blue active state the console design uses. */
+.cf-admin aside[aria-label="Admin navigation"],
+.cf-admin [class*="max-w-[320px]"] {
+  background-color: #0b0b0b !important;
+  border-color: #232323 !important;
+}
+
+/* Only the sticky top bar carries chrome; panel headers stay transparent. */
+.cf-admin header[class*="sticky"] {
+  background-color: rgba(11, 11, 11, 0.94) !important;
+  border-color: #232323 !important;
+}
+
+.cf-admin aside [aria-current="page"] {
+  color: #3c87ff !important;
+  background-color: rgba(60, 135, 255, 0.12) !important;
+}
+
+.cf-admin aside [aria-current="page"] svg {
+  color: #3c87ff !important;
+}
+
+.cf-admin aside span[class*="border-[#322F37]"] {
+  border-color: #2a2a2a !important;
+  background-color: #151515 !important;
+}
+
+.cf-admin aside [class*="bg-[#26242b]"] {
+  background-color: #232323 !important;
+}
+
+/* The Forge panels hardcode their own graphite surfaces. The black pass maps
+   those call-site colors onto the admin tokens instead of editing the ported
+   components (ADR-0008). */
+.cf-admin [class*="bg-[#141416]"] {
+  background-color: var(--projects-card-bg) !important;
+}
+.cf-admin [class*="bg-[#1b1b1e]"],
+.cf-admin [class*="bg-[#1B191D]"],
+.cf-admin [class*="bg-[#0F1013]"] {
+  background-color: var(--projects-control) !important;
+}
+.cf-admin [class*="bg-[#0f0f11]"] {
+  background-color: #0f0f0f !important;
+}
+.cf-admin [class*="bg-[#121014]"] {
+  background-color: #0b0b0b !important;
+}
+.cf-admin [class*="border-[#322F37]"],
+.cf-admin [class*="border-[#302E34]"] {
+  border-color: var(--projects-border) !important;
+}
+.cf-admin [class*="border-[#26242b]"] {
+  border-color: var(--projects-divider) !important;
+}
+
+/* The global auth rule centers every h1; admin page and top-bar titles are
+   left-aligned like the rest of the console. */
+.cf-admin h1 {
+  text-align: left;
+}
+
+/* Cloudflare tabs: a thin underline marks the active section. */
+.cf-tab-list {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--projects-border);
+  margin-bottom: 20px;
+}
+
+.cf-tab {
+  position: relative;
+  padding: 9px 14px 11px;
+  color: var(--projects-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 120ms ease;
+}
+
+.cf-tab:hover {
+  color: var(--projects-text);
+}
+
+.cf-tab[aria-selected="true"] {
+  color: var(--projects-accent);
+}
+
+.cf-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--projects-accent);
+}
+
+.cf-button-primary {
+  display: inline-flex;
+  height: 34px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--projects-accent-border);
+  border-radius: 6px;
+  background: var(--projects-accent-strong);
+  padding: 0 14px;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: filter 120ms ease;
+}
+
+.cf-button-primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.cf-button-primary:disabled {
+  opacity: 0.5;
+}

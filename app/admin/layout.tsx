@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getPlatformAdminStatus } from "@/lib/platform/platform-admin";
 import { AdminShell } from "@/features/admin/components/admin-shell";
+import { AdminScrollReset } from "./admin-scroll-reset";
 
 /**
  * Server-side admin gate: resolves the session and redirects a signed-out
@@ -11,19 +12,22 @@ import { AdminShell } from "@/features/admin/components/admin-shell";
  * is the ported stealth-forge AdminShell, so every admin page shares its
  * exact chrome.
  */
-async function AdminGateContent({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+async function AdminGateContent({ children }: Readonly<{ children: React.ReactNode }>) {
   if (!(await getPlatformAdminStatus(await headers()))) {
     redirect("/");
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  // Cloudflare-style chrome is a presentation choice applied from the call
+  // site. The Forge AdminShell stays byte-identical (ADR-0008).
+  return (
+    <div className="cf-admin">
+      <AdminScrollReset />
+      <AdminShell>{children}</AdminShell>
+    </div>
+  );
 }
 
-export default async function AdminLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <Suspense fallback={null}>
       <AdminGateContent>{children}</AdminGateContent>
