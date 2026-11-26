@@ -209,7 +209,7 @@ export function DeploymentsPanel({
             {canManage ? <span>Actions</span> : null}
           </div>
 
-          <ul className="deployment-list-body">
+          <ul className="m-0 p-0 [list-style:none]">
             {visibleDeployments.map((deployment) => {
               const acting = actingOn === deployment.id;
               const open = expandedId === deployment.id;

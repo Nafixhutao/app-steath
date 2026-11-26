@@ -1232,11 +1232,6 @@ a:hover {
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
-.deployment-list-body {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
 .deployment-item + .deployment-item {
   border-top: 1px solid #1c1c20;
 }
@@ -8288,9 +8283,6 @@ a.usage-row-name:hover {
   text-decoration: none;
   border-bottom: 1px solid #3f3f46;
   padding-bottom: 1px;
-}
-.svc-url-text {
-  overflow-wrap: anywhere;
 }
 .svc-url-link:hover {
   color: #fff;

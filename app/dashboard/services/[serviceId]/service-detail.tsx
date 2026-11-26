@@ -179,7 +179,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
             rel="noreferrer"
             title={`Open ${service.platformHostname}`}
           >
-            <span className="svc-url-text">{service.platformHostname}</span>
+            <span className="[overflow-wrap:anywhere]">{service.platformHostname}</span>
             <svg
               viewBox="0 0 16 16"
               width="12"
