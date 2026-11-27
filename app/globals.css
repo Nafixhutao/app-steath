@@ -355,24 +355,11 @@ form input[type="text"]:focus {
 .organization-switcher-create button {
   font-size: 12px;
 }
-.search-dialog kbd {
-  flex: 0 0 auto;
-  color: #b5b2b9;
-  font-family: inherit;
-  font-size: 12px;
-  line-height: 15px;
-}
 .search-dialog-input input:focus-visible {
   outline: 2px solid #aaa6ec;
   outline-offset: 1px;
-}.dashboard-link-button {
-  background: none;
 }
-.runtime-actions .dashboard-link-button:disabled,
-.runtime-actions .create-project-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+
 /* --- Deployment history ------------------------------------------------ */
 @keyframes deployment-pulse {
   0%,
@@ -385,37 +372,6 @@ form input[type="text"]:focus {
 }
 .deployment-icon-btn.is-danger:hover:not(:disabled) {
   color: #f87171;
-}
-.search-dialog-input input {
-  min-width: 0;
-  flex: 1;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--color-ink-bright);
-  font-size: 14px;
-}
-.search-dialog-input input::placeholder {
-  color: #8a8791;
-}
-.mobile-account-menu strong {
-  max-width: 100%;
-  overflow: hidden;
-  font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.mobile-account-menu small {
-  color: #8a8791;
-  font-size: 12px;
-}
-.mobile-account-menu button {
-  height: 30px;
-  border: 0;
-  background: transparent;
-  color: #b3b0ba;
-  cursor: pointer;
-  text-align: left;
 }
 
 @media (prefers-reduced-motion: reduce) {

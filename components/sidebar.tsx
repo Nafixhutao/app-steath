@@ -307,9 +307,10 @@ function SearchDialog({
         aria-label="Close search"
       />
       <div className="search-dialog relative z-[1] w-[min(520px,100%)] overflow-hidden border border-[#3a373f] rounded-card bg-[#232127] [box-shadow:0_24px_80px_rgb(0_0_0_/_60%)]" role="dialog" aria-modal="true" aria-label="Search">
-        <div className="search-dialog-input flex h-[48px] items-center gap-[12px] py-0 px-[14px] border-b border-b-[#322f37] text-[#8a8791]">
+        <div className="search-dialog-input flex h-[48px] items-center gap-[12px] py-0 px-[14px] border-b border-b-[#322f37] text-[14px] text-[#8a8791] [&>kbd]:flex-none [&>kbd]:text-[#b5b2b9] [&>kbd]:[font-family:inherit] [&>kbd]:text-[12px] [&>kbd]:leading-[15px]">
           <Icon name="search" />
           <input
+            className="min-w-0 flex-1 border-0 outline-none bg-transparent text-[#f4f4f5] placeholder:text-[#8a8791]"
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -773,7 +774,7 @@ export function Sidebar({
           </button>
         </div>
         {mobileAccountOpen ? (
-          <div className="mobile-account-menu absolute top-[48px] right-[12px] z-[45] flex w-[min(248px,calc(100vw_-_24px))] min-w-0 flex-col gap-[3px] p-[10px] border border-[#303033] rounded-card bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_40%)]" role="menu">
+          <div className="mobile-account-menu [&>strong]:max-w-full [&>strong]:overflow-hidden [&>strong]:text-ellipsis [&>strong]:whitespace-nowrap [&>strong]:text-[13px] [&>small]:text-[#8a8791] [&>small]:text-[12px] [&>button]:h-[30px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:text-[#b3b0ba] [&>button]:cursor-pointer [&>button]:text-left absolute top-[48px] right-[12px] z-[45] flex w-[min(248px,calc(100vw_-_24px))] min-w-0 flex-col gap-[3px] p-[10px] border border-[#303033] rounded-card bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_40%)]" role="menu">
             <strong title={user.name}>{user.name}</strong>
             <small>{user.role}</small>
             <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
