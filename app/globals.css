@@ -875,8 +875,7 @@ form input[type="text"]:focus {
   font-size: 12px;
 }
 
-.organization-settings-form input,
-.organization-table select {
+.organization-settings-form input {
   min-width: 0;
   min-height: 40px;
   padding: 0 11px;
@@ -888,51 +887,13 @@ form input[type="text"]:focus {
   font: inherit;
 }
 
-.organization-settings-form input:focus,
-.organization-table select:focus {
+.organization-settings-form input:focus {
   border-color: #8a78e8;
   box-shadow: 0 0 0 3px rgb(138 120 232 / 16%);
 }
 
-.organization-table, .db-table, .admin-table, .supabase-projects-list-table, .members-table, .backups-table, .usage-table, .domains-table, .services-table {
+.db-table, .admin-table, .supabase-projects-list-table, .members-table, .backups-table, .usage-table, .domains-table, .services-table {
   border-collapse: collapse;
-}
-
-.organization-table th,
-.organization-table td {
-  padding: 13px 12px;
-  border-bottom: 1px solid #29262e;
-  color: #c9c5ce;
-  font-size: 13px;
-  vertical-align: middle;
-}
-
-.organization-table th {
-  color: #918c97;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.organization-table td:first-child strong,
-.organization-table td:first-child small {
-  display: block;
-}
-
-.organization-table td:first-child strong {
-  color: #e9e6ed;
-  font-weight: 500;
-}
-
-.organization-table td:first-child small {
-  margin-top: 4px;
-  color: #918c97;
-  font-size: 12px;
-}
-
-.organization-table select {
-  min-height: 32px;
-  padding: 0 8px;
-  font-size: 12px;
 }
 
 .organization-danger-zone > p {
@@ -1091,13 +1052,6 @@ form input[type="text"]:focus {
   .organization-settings-form {
   align-items: stretch;
 }
-
-  .organization-table th,
-  .organization-table td {
-    padding-right: 9px;
-    padding-left: 9px;
-    white-space: nowrap;
-  }
 }
 
 /* ===== UI POLISH & SKELETONS ===== */
@@ -1148,26 +1102,12 @@ body {
   letter-spacing: -0.015em;
 }
 
-/* Live tables: a quiet row hover keeps dense data scannable. */
-.organization-table tbody tr {
-  transition: background 140ms ease;
-}
-
-.organization-table tbody tr:hover {
-  background: rgb(255 255 255 / 2.5%);
-}
-
-/* Softer placeholder tone that still meets contrast. */
+/* Live tables: a quiet row hover keeps dense data scannable. *//* Softer placeholder tone that still meets contrast. */
 ::placeholder {
   color: #6d6974;
 }
 
 /* Dashboard overview: stat cards, status dots, skeleton loader. */
-
-.dashboard-skeleton-row {
-  background-size: 200% 100%;
-}
-
 @keyframes dashboard-shimmer {
   from {
     background-position: 200% 0;
@@ -1183,13 +1123,6 @@ body {
    identical neutral squares. */
 
 /* Counts align like the rest of the data surfaces. */
-
-.dashboard-heading-skeleton.short {
-  width: min(170px, 40%);
-  height: 14px;
-  margin-top: 10px;
-}
-
 /* Host metrics: Platform Admin node dashboard. The cards reuse the semantic
  * palette; usage bars carry the state hue (ok green, warning gold, danger red)
  * so a ratio is readable at a glance without a second number. */
@@ -2226,41 +2159,7 @@ a.usage-row-name:hover {
   font-size: 13px;
 }
 
-/* --- Tables ------------------------------------------------------------ */
-.supabase-service-page .organization-table th,
-.supabase-service-page .organization-table td {
-  padding: 10px 14px;
-  border-bottom: 1px solid #1f1f22;
-}
-.supabase-service-page .organization-table th {
-  background: #111113;
-  color: #71717a;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.supabase-service-page .organization-table td {
-  color: #d4d4d8;
-  vertical-align: middle;
-}
-.supabase-service-page .organization-table tbody tr {
-  transition: background 0.12s ease;
-}
-.supabase-service-page .organization-table tbody tr:hover {
-  background: #131316;
-}
-.supabase-service-page .organization-table tbody tr:last-child td {
-  border-bottom: 0;
-}
-.supabase-service-page .organization-table code {
-  padding: 2px 6px;
-  border-radius: var(--radius-control-sm);
-  background: #27272a;
-  color: #d4d4d8;
-  font-size: 12px;
-}
-
-/* --- Buttons & link buttons -------------------------------------------- */
+/* --- Tables ------------------------------------------------------------ *//* --- Buttons & link buttons -------------------------------------------- */
 .supabase-service-page .dashboard-link-button {
   padding: 5px 10px;
   border: 1px solid #3f3f46;
@@ -2340,61 +2239,6 @@ a.usage-row-name:hover {
   .dashboard-content.supabase-service-page {
     padding: 20px 20px 56px;
   }}
-
-/* Environment Variables and Volumes keep their wide tables on desktop and need
-   a phone layout. Below 720px each row becomes a two-column card with a label
-   above every value, so nothing needs sideways panning. Deployments no longer
-   use this table: they render as compact rows (see `.deployment-list`). */
-@media (max-width: 720px) {
-  .supabase-service-page .organization-table-wrap {
-  overflow: visible;
-}
-  .supabase-service-page .organization-table,
-  .supabase-service-page .organization-table tbody,
-  .supabase-service-page .organization-table tr,
-  .supabase-service-page .organization-table td {
-    display: block;
-    width: auto;
-  }
-  .supabase-service-page .organization-table thead {
-    display: none;
-  }
-  .supabase-service-page .organization-table tbody {
-    display: grid;
-    gap: 10px;
-  }
-  .supabase-service-page .organization-table tr {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 16px;
-    padding: 14px;
-    border: 1px solid #27272a;
-    border-radius: var(--radius-card);
-    background: #0c0c0d;
-  }
-  .supabase-service-page .organization-table tbody tr:hover {
-    background: #0c0c0d;
-  }
-  .supabase-service-page .organization-table td {
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    font-size: 13px;
-    overflow-wrap: anywhere;
-  }
-  .supabase-service-page .organization-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 4px;
-    color: #71717a;
-    font-size: 11px;
-    font-weight: 500;
-  }
-  .supabase-service-page .organization-table code {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-}
 
 @media (max-width: 640px) {
   /* Underline tabs stay on one row like the desktop bar. The strip scrolls
