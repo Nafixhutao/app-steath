@@ -88,7 +88,7 @@ export function VolumePanel({
   }
 
   return (
-    <section className="dashboard-section mt-[26px]" aria-labelledby="volume-heading">
+    <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="volume-heading">
       <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="volume-heading">Volume</h2>
         {canManage && !volume ? (
@@ -104,7 +104,7 @@ export function VolumePanel({
       </div>
 
       {redeployNeeded ? (
-        <p className="environment-redeploy-banner mt-[14px] mb-0 mx-0 py-[11px] px-[14px] border border-[#6b5a33] rounded-[9px] bg-[rgb(58_46_22_/_40%)] text-[#e8d49a] text-[13px]" role="status">
+        <p className="environment-redeploy-banner mx-0 px-[14px] border border-[#6b5a33] text-[#e8d49a] text-[13px] mt-0 mb-[16px] py-[10px] border-[rgba(245,158,11,0.3)] rounded-control bg-[rgba(245,158,11,0.08)] text-[#f5a623]" role="status">
           Volume changes are saved but not live yet. Redeploy this Service to apply them.
         </p>
       ) : null}
@@ -172,11 +172,11 @@ export function VolumePanel({
       ) : null}
 
       {loading ? (
-        <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]" role="status">
+        <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center" role="status">
           Loading Volume...
         </p>
       ) : !volume ? (
-        <div className="dashboard-empty-state py-[46px] px-[20px] border-b border-b-[#322f37] text-center">
+        <div className="dashboard-empty-state px-[20px] text-center py-[32px] border border-dashed border-[#3f3f46] rounded-card bg-transparent">
           <h3>No Volume</h3>
           <p>
             A Volume keeps files across restarts and redeploys. Each Service can have one, up to 1
@@ -184,8 +184,8 @@ export function VolumePanel({
           </p>
         </div>
       ) : (
-        <div className="organization-table-wrap overflow-x-auto">
-          <table className="organization-table w-full text-left tabular-nums">
+        <div className="organization-table-wrap overflow-x-auto border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:720px)]:border-0 [@media(max-width:720px)]:rounded-[0] [@media(max-width:720px)]:bg-transparent">
+          <table className="organization-table w-full text-left tabular-nums m-0 text-[13px]">
             <thead>
               <tr>
                 <th scope="col">Mount path</th>

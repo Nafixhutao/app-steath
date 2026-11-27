@@ -3249,13 +3249,6 @@ a.usage-row-name:hover {
 }
 
 /* --- Sections: flat cards, Vercel neutral ------------------------------ */
-.supabase-service-page .dashboard-section {
-  margin: 0 0 24px;
-  padding: 20px;
-  border: 1px solid #27272a;
-  border-radius: var(--radius-card);
-  background: #0c0c0d;
-}
 .supabase-service-page .dashboard-section-heading {
   display: flex;
   align-items: center;
@@ -3281,8 +3274,6 @@ a.usage-row-name:hover {
 /* --- Definition list meta --------------------------------------------- */
 .supabase-service-page .service-meta {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px 24px;
-  margin: 0;
 }
 .supabase-service-page .service-meta > div {
   display: block;
@@ -3302,37 +3293,14 @@ a.usage-row-name:hover {
 }
 
 /* --- Empty states ------------------------------------------------------ */
-.supabase-service-page .dashboard-empty-state {
-  padding: 32px 20px;
-  border: 1px dashed #3f3f46;
-  border-radius: var(--radius-card);
-  background: transparent;
-  text-align: center;
-}
 .supabase-service-page .dashboard-empty-state h3 {
   font-size: 14px;
 }
 .supabase-service-page .dashboard-empty-state p {
   font-size: 13px;
 }
-.supabase-service-page .dashboard-table-empty {
-  padding: 20px;
-  color: #71717a;
-  font-size: 13px;
-  text-align: center;
-}
 
 /* --- Tables ------------------------------------------------------------ */
-.supabase-service-page .organization-table-wrap {
-  border: 1px solid #27272a;
-  border-radius: var(--radius-card);
-  background: #0c0c0d;
-  overflow-x: auto;
-}
-.supabase-service-page .organization-table {
-  margin: 0;
-  font-size: 13px;
-}
 .supabase-service-page .organization-table th,
 .supabase-service-page .organization-table td {
   padding: 10px 14px;
@@ -3399,18 +3367,6 @@ a.usage-row-name:hover {
 }
 
 /* --- Forms -------------------------------------------------------------- */
-.supabase-service-page .organization-settings-form {
-  display: grid;
-  gap: 14px;
-  margin: 0 0 16px;
-  padding: 16px;
-  border: 1px solid #27272a;
-  border-radius: var(--radius-card);
-  background: #111113;
-}
-.supabase-service-page .organization-settings-form:last-child {
-  margin-bottom: 0;
-}
 .supabase-service-page .organization-settings-form label {
   display: grid;
   gap: 6px;
@@ -3435,54 +3391,14 @@ a.usage-row-name:hover {
   border-color: var(--color-ink-muted);
   box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.08);
 }
-.supabase-service-page .runtime-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.supabase-service-page .environment-redeploy-banner {
-  margin: 0 0 16px;
-  padding: 10px 14px;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: var(--radius-control);
-  background: rgba(245, 158, 11, 0.08);
-  color: #f5a623;
-  font-size: 13px;
-}
 
 /* --- Node status & logs ------------------------------------------------- */
 /* A status strip, not a pill: the heartbeat timestamp is long, and a pill that
    wraps splits the node name and the state across ragged lines. */
-.supabase-service-page .deployment-node {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 0 16px;
-  padding: 7px 12px;
-  border: 1px solid #3f3f46;
-  border-radius: var(--radius-card);
-  background: transparent;
-  color: #71717a;
-  font-size: 12.5px;
-  line-height: 1.5;
-}
-.supabase-service-page .deployment-node-name {
-  white-space: nowrap;
-}
 .supabase-service-page .deployment-node strong {
   color: #d4d4d8;
   font-weight: 500;
   white-space: nowrap;
-}
-.supabase-service-page .deployment-node-state {
-  font-weight: 500;
-}
-.supabase-service-page .deployment-node-time {
-  opacity: 0.75;
 }
 .supabase-service-page .deployment-node.is-healthy {
   border-color: rgba(0, 176, 107, 0.35);
@@ -3498,9 +3414,6 @@ a.usage-row-name:hover {
 
 /* DNS instructions sit directly under the Custom Domain meta list; browser
    default heading and paragraph margins were the only spacing they had. */
-.supabase-service-page .custom-domain-records {
-  margin-top: 20px;
-}
 .supabase-service-page .custom-domain-records h3 {
   margin: 0 0 4px;
   color: #d4d4d8;
@@ -3516,10 +3429,6 @@ a.usage-row-name:hover {
   to {
     transform: rotate(360deg);
   }
-}
-.supabase-service-page .organization-danger-zone {
-  border-color: rgba(239, 68, 68, 0.3);
-  background: #0c0c0d;
 }
 .supabase-service-page .organization-danger-zone .dashboard-section-heading h2 {
   color: #f87171;
@@ -3546,11 +3455,8 @@ a.usage-row-name:hover {
    use this table: they render as compact rows (see `.deployment-list`). */
 @media (max-width: 720px) {
   .supabase-service-page .organization-table-wrap {
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    overflow: visible;
-  }
+  overflow: visible;
+}
   .supabase-service-page .organization-table,
   .supabase-service-page .organization-table tbody,
   .supabase-service-page .organization-table tr,
@@ -3643,9 +3549,6 @@ a.usage-row-name:hover {
   }
   .supabase-service-page .service-meta {
     grid-template-columns: 1fr;
-  }
-  .supabase-service-page .dashboard-section {
-    padding: 16px;
   }
   .supabase-service-page .dashboard-section-heading {
     margin: -16px -16px 14px;

@@ -148,7 +148,7 @@ export function DeploymentsPanel({
   const hiddenCount = deployments.length - visibleDeployments.length;
 
   return (
-    <section className="dashboard-section mt-[26px]" aria-labelledby="deployments-heading">
+    <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="deployments-heading">
       <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="deployments-heading">Deployments</h2>
         {canDeploy ? (
@@ -164,21 +164,21 @@ export function DeploymentsPanel({
       </div>
 
       {node ? (
-        <p className={`deployment-node mt-0 mb-[12px] mx-0 text-[#9e99a4] text-[12px] is-${node.status}`}>
-          <span className="deployment-node-name">
+        <p className={`deployment-node mt-0 mx-0 is-${node.status} flex items-center flex-wrap gap-[4px_8px] w-[fit-content] max-w-[100%] mb-[16px] py-[7px] px-[12px] border border-[#3f3f46] rounded-card bg-transparent text-[#71717a] text-[12.5px] leading-[1.5]`}>
+          <span className="deployment-node-name whitespace-nowrap">
             Node <strong>{node.name}</strong>
           </span>
-          <span className="deployment-node-state">
+          <span className="deployment-node-state font-medium">
             {nodeHealthy ? "healthy" : "unavailable, Deployments are blocked"}
           </span>
           {node.lastSeenAt ? (
-            <span className="deployment-node-time">
+            <span className="deployment-node-time opacity-[0.75]">
               Last heartbeat {formatDateTime(node.lastSeenAt)}
             </span>
           ) : null}
         </p>
       ) : (
-        <p className="deployment-node mt-0 mb-[12px] mx-0 text-[#9e99a4] text-[12px] is-unknown">
+        <p className="deployment-node mt-0 mx-0 is-unknown flex items-center flex-wrap gap-[4px_8px] w-[fit-content] max-w-[100%] mb-[16px] py-[7px] px-[12px] border border-[#3f3f46] rounded-card bg-transparent text-[#71717a] text-[12.5px] leading-[1.5]">
           No Node Agent has reported in, so Deployments are blocked.
         </p>
       )}
@@ -190,11 +190,11 @@ export function DeploymentsPanel({
       ) : null}
 
       {loading ? (
-        <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]" role="status">
+        <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center" role="status">
           Loading Deployments...
         </p>
       ) : deployments.length === 0 ? (
-        <div className="dashboard-empty-state py-[46px] px-[20px] border-b border-b-[#322f37] text-center">
+        <div className="dashboard-empty-state px-[20px] text-center py-[32px] border border-dashed border-[#3f3f46] rounded-card bg-transparent">
           <h3>No Deployments yet</h3>
           <p>Deploy this Service to build its image from the repository.</p>
         </div>

@@ -93,7 +93,7 @@ export function CustomDomainPanel({
   }
 
   return (
-    <section className="dashboard-section mt-[26px]" aria-labelledby="custom-domain-heading">
+    <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="custom-domain-heading">
       <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="custom-domain-heading">Custom Domain</h2>
         {canManage && !domainData ? (
@@ -154,11 +154,11 @@ export function CustomDomainPanel({
       ) : null}
 
       {domain.loading ? (
-        <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]" role="status">
+        <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center" role="status">
           Loading Custom Domain...
         </p>
       ) : !domainData ? (
-        <div className="dashboard-empty-state py-[46px] px-[20px] border-b border-b-[#322f37] text-center">
+        <div className="dashboard-empty-state px-[20px] text-center py-[32px] border border-dashed border-[#3f3f46] rounded-card bg-transparent">
           <h3>No Custom Domain</h3>
           <p>
             A Service can serve one domain you own in addition to its Platform Subdomain. You will
@@ -167,7 +167,7 @@ export function CustomDomainPanel({
         </div>
       ) : (
         <div className="custom-domain-details">
-          <dl className="service-meta grid gap-[10px] mt-[16px] mb-0 mx-0 p-0">
+          <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0">
             <div>
               <dt>Hostname</dt>
               <dd>{domainData.hostname}</dd>
@@ -200,12 +200,12 @@ export function CustomDomainPanel({
             </p>
           ) : null}
 
-          <div className="custom-domain-records">
+          <div className="custom-domain-records mt-[20px]">
             <h3>DNS records</h3>
             <p>
               Add these records at your DNS provider, then verify. DNS changes can take a while.
             </p>
-            <table className="organization-table w-full text-left tabular-nums svc-table-records">
+            <table className="organization-table w-full text-left tabular-nums svc-table-records m-0 text-[13px]">
               <thead>
                 <tr>
                   <th scope="col">Type</th>

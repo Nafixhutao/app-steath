@@ -90,11 +90,11 @@ export function RuntimePanel({
   const running = status === "running";
 
   return (
-    <section className="dashboard-section mt-[26px]" aria-labelledby="runtime-heading">
+    <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="runtime-heading">
       <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="runtime-heading">Runtime</h2>
         {canManage ? (
-          <div className="runtime-actions flex gap-[10px] items-center">
+          <div className="runtime-actions flex items-center gap-[8px] flex-wrap">
             <button
               className="supabase-btn-green"
               type="button"
@@ -127,7 +127,7 @@ export function RuntimePanel({
         </p>
       ) : null}
 
-      <dl className="service-meta grid gap-[10px] mt-[16px] mb-0 mx-0 p-0">
+      <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0">
         <div>
           <dt>Container</dt>
           <dd>{runtime.loading ? "Checking..." : serviceRuntimeLabel(status)}</dd>
@@ -158,7 +158,7 @@ export function RuntimePanel({
       </dl>
 
       {status === "absent" && !runtime.loading ? (
-        <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]">
+        <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center">
           This Service has no container yet. Deploy it to start one.
         </p>
       ) : null}
@@ -192,7 +192,7 @@ export function RuntimePanel({
             {logLines.length > 0 ? logLines.join("\n") : "Waiting for output..."}
           </pre>
         ) : (
-          <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]">Follow the log to see what the container writes.</p>
+          <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center">Follow the log to see what the container writes.</p>
         )}
       </div>
     </section>

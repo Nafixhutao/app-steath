@@ -264,11 +264,11 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
 
         {tab === "settings" && canManage ? (
           <>
-            <section className="dashboard-section mt-[26px]" aria-labelledby="configuration-heading">
+            <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="configuration-heading">
               <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
                 <h2 id="configuration-heading">Configuration</h2>
               </div>
-              <dl className="service-meta grid gap-[10px] mt-[16px] mb-0 mx-0 p-0">
+              <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0">
                 <div>
                   <dt>Repository</dt>
                   <dd>
@@ -301,7 +301,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
             </section>
 
             <section
-              className="dashboard-section mt-[26px] organization-danger-zone p-[16px] border border-[#713a44] rounded-[9px] bg-[rgb(49_26_32_/_35%)]"
+              className="dashboard-section organization-danger-zone border mt-0 mb-[24px] mx-0 p-[20px] border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px] border-[rgba(239,68,68,0.3)]"
               aria-labelledby="danger-heading"
             >
               <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
@@ -311,7 +311,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
                 Deleting this Service stops its container and removes its Volume, Environment
                 Variables, and Domains.
               </p>
-              <form className="organization-settings-form [@media(max-width:760px)]:flex-col flex gap-[12px] py-[18px] px-0" onSubmit={remove}>
+              <form className="organization-settings-form [@media(max-width:760px)]:flex-col grid gap-[14px] mt-0 mb-[16px] mx-0 p-[16px] border border-[#27272a] rounded-card bg-[#111113] last:mb-[0]" onSubmit={remove}>
                 <label>
                   Type <strong>{service.name}</strong> to confirm
                   <input
