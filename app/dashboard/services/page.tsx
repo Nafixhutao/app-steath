@@ -208,7 +208,7 @@ export default function ServicesPage() {
             {runningCount} running
           </span>
           <span className="services-summary-state inline-flex items-center gap-[7px] text-[12px] text-ink-muted tabular-nums is-deploying">{deployingCount} deploying</span>
-          <span className="services-summary-state inline-flex items-center gap-[7px] text-[12px] text-ink-muted tabular-nums is-attention">
+          <span className="services-summary-state inline-flex items-center gap-[7px] text-[12px] text-ink-muted tabular-nums is-attention text-[#fda4af]">
             {attentionCount} need attention
           </span>
         </div>
@@ -347,7 +347,7 @@ export default function ServicesPage() {
           {groups.map((group) => (
             <section key={group.id} className="mb-[22px] last:mb-0" aria-label={`Project ${group.name}`}>
               <div className="flex items-baseline gap-[8px] mb-[8px]">
-                <h2 className="services-group-name text-[13px] font-semibold text-ink-console m-0">{group.name}</h2>
+                <h2 className="services-group-name text-[12px] font-semibold text-ink-console m-0">{group.name}</h2>
                 <span className="services-group-count text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
                 <Link href={`/dashboard/projects/${group.id}`} className="services-group-link text-accent hover:text-[#6ee7b7] inline-flex items-center gap-[3px] ml-[auto] text-[11px]">
                   Open project
@@ -429,8 +429,8 @@ export default function ServicesPage() {
               <tbody key={group.id}>
                 <tr className="services-group-row">
                   <th colSpan={6} scope="rowgroup" className="px-[14px] py-[9px] bg-[#131217] border-b border-[var(--color-surface-raised)] font-normal text-left">
-                    <span className="services-group-name text-[13px] font-semibold text-ink-console m-0">{group.name}</span>
-                    <span className="services-group-count text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
+                    <span className="services-group-name text-[12px] font-semibold text-ink-console m-0">{group.name}</span>
+                    <span className="services-group-count text-[12px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
                     <Link href={`/dashboard/projects/${group.id}`} className="services-group-link text-accent hover:text-[#6ee7b7] inline-flex items-center gap-[3px] ml-[auto] text-[11px]">
                       Open project
                       <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
@@ -457,7 +457,7 @@ export default function ServicesPage() {
                     </td>
                     <td>{renderStatusPill(service.status)}</td>
                     <td>
-                      <div className="services-url-cell flex items-center gap-[6px] min-w-0 mb-[10px]">
+                      <div className="services-url-cell flex items-center gap-[6px] min-w-0 mb-0">
                         <a
                           href={service.url}
                           target="_blank"

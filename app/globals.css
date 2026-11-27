@@ -2242,133 +2242,15 @@ body {
 
 /* ===== USAGE ===== */
 
-.usage-status-line.is-healthy .project-status-dot {
-  background-color: var(--color-accent);
-}
-
-.usage-status-line.is-attention {
-  color: var(--color-warning);
-}
-
-.usage-status-line.is-attention .project-status-dot {
-  background-color: var(--color-warning);
-}
-
 /* One primary quota plus its supporting limits. The asymmetry is intentional:
    the operator's next decision is about service capacity, not four equal tiles. */
-.usage-meter-numbers span {
-  color: var(--color-ink-muted);
-}
-
-.usage-meter-percent.is-pending {
-  color: var(--color-warning);
-}
-
-.usage-meter-percent.is-failed {
-  color: #fda4af;
-}
-
-.usage-progress-fill.is-pending {
-  background-color: var(--color-warning);
-}
-
-.usage-progress-fill.is-failed {
-  background-color: var(--color-danger);
-}
-
-.usage-table thead th {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-ink-muted);
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--color-surface-raised);
-  background-color: #131217;
-}
-
-.usage-table tbody td {
-  padding: 11px 14px;
-  border-bottom: 1px solid #1f1d25;
-  font-size: 13px;
-  vertical-align: middle;
-}
-
-.usage-table tbody tr:hover td {
-  background-color: rgba(255, 255, 255, 0.015);
-}
-
-.usage-table .usage-group-row th {
-  padding: 9px 14px;
-  background-color: #131217;
-  border-bottom: 1px solid var(--color-surface-raised);
-  font-weight: 400;
-  text-align: left;
-}
-
 a.usage-row-name:hover {
   color: #6ee7b7;
-}
-
-.usage-number span {
-  color: var(--color-ink-muted);
-}
-
-.usage-status-pill.is-running {
-  background-color: #0f2e21;
-  border: 1px solid #1d4a36;
-  color: var(--color-accent);
-}
-
-.usage-status-pill.is-running .project-status-dot {
-  background-color: var(--color-accent);
-}
-
-.usage-status-pill.is-failed {
-  background-color: #2d1419;
-  border: 1px solid #4d222a;
-  color: #fda4af;
-}
-
-.usage-status-pill.is-failed .project-status-dot {
-  background-color: #fda4af;
-}
-
-.usage-status-pill.is-pending {
-  background-color: #2a2012;
-  border: 1px solid #48381c;
-  color: var(--color-warning);
-}
-
-.usage-status-pill.is-pending .project-status-dot {
-  background-color: var(--color-warning);
 }
 
 /* ===== DOMAINS ===== */
 
 /* ===== SERVICES ===== */
-
-.services-summary-state.is-attention {
-  color: #fda4af;
-}
-
-.services-table .services-group-row .services-group-name,
-.services-table .services-group-row .services-group-count {
-  font-size: 12px;
-  color: var(--color-ink-console);
-}
-
-.services-table .services-group-row .services-group-count {
-  color: var(--color-ink-muted);
-}
-
-.services-table .services-group-row .services-group-link {
-  font-size: 11px;
-}
-
-.services-table .services-url-cell {
-  margin-bottom: 0;
-}
 
 .services-table .services-row-btn {
   height: 28px;

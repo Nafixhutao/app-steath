@@ -31,6 +31,18 @@ function quotaTone(used: number, limit: number): "is-healthy" | "is-pending" | "
   return "is-healthy";
 }
 
+const TONE_TEXT = {
+  "is-healthy": "",
+  "is-pending": "text-[var(--color-warning)]",
+  "is-failed": "text-[#fda4af]",
+} as const;
+
+const TONE_FILL = {
+  "is-healthy": "",
+  "is-pending": "bg-[var(--color-warning)]",
+  "is-failed": "bg-[var(--color-danger)]",
+} as const;
+
 function QuotaMeter({
   label,
   used,
@@ -51,10 +63,10 @@ function QuotaMeter({
     <div className="min-w-0">
       <div className="flex items-baseline gap-[10px] mb-[6px]">
         <span className="text-[12px] font-medium text-ink-console">{label}</span>
-        <span className="usage-meter-numbers ml-[auto] [font-family:var(--font-console-mono)] text-[12px] tabular-nums text-ink-bright">
+        <span className="usage-meter-numbers ml-[auto] [font-family:var(--font-console-mono)] text-[12px] tabular-nums text-ink-bright [&_span]:text-[var(--color-ink-muted)]">
           {used} <span>/ {limit}</span>
         </span>
-        <span className={`usage-meter-percent [font-family:var(--font-console-mono)] text-[12px] tabular-nums text-ink-bright min-w-[36px] text-ink-muted text-right ${tone}`}>{percent}%</span>
+        <span className={`usage-meter-percent [font-family:var(--font-console-mono)] text-[12px] tabular-nums text-ink-bright min-w-[36px] text-ink-muted text-right ${TONE_TEXT[tone]}`}>{percent}%</span>
       </div>
       <div
         className="bg-[#1a1922] h-[6px] w-full rounded-[9999px] overflow-hidden"
@@ -64,7 +76,7 @@ function QuotaMeter({
         aria-valuemax={100}
         aria-label={`${label} usage`}
       >
-        <div className={`usage-progress-fill h-full rounded-[9999px] bg-accent ${tone}`} style={{ width: `${percent}%` }} />
+        <div className={`usage-progress-fill h-full rounded-[9999px] bg-accent ${TONE_FILL[tone]}`} style={{ width: `${percent}%` }} />
       </div>
       {description ? <p className="mt-[6px] mb-0 mx-0 text-[11px] text-ink-muted">{description}</p> : null}
     </div>
@@ -163,7 +175,7 @@ export default function UsagePage() {
       </header>
 
       {usageData ? (
-        <div className={`usage-status-line inline-flex items-center gap-[8px] mb-[18px] text-[12px] text-ink-muted ${quotaAttention ? "is-attention" : "is-healthy"}`}>
+        <div className={`usage-status-line inline-flex items-center gap-[8px] mb-[18px] text-[12px] text-ink-muted ${quotaAttention ? "text-[var(--color-warning)] [&_.project-status-dot]:bg-[var(--color-warning)]" : "[&_.project-status-dot]:bg-[var(--color-accent)]"}`}>
           <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
           <span>
             {quotaAttention === 0
@@ -236,7 +248,7 @@ export default function UsagePage() {
                   aria-label="Service quota usage"
                 >
                   <div
-                    className={`usage-progress-fill h-full rounded-[9999px] bg-accent ${serviceQuotaTone}`}
+                    className={`usage-progress-fill h-full rounded-[9999px] bg-accent ${TONE_FILL[serviceQuotaTone]}`}
                     style={{
                       width: `${calculatePercent(usageData.counts.services.used, usageData.counts.services.limit)}%`,
                     }}
@@ -358,7 +370,7 @@ export default function UsagePage() {
                   </p>
                 </div>
               ) : (
-                <table className="usage-table w-full min-w-[640px] text-left">
+                <table className="usage-table w-full min-w-[640px] text-left [&_thead_th]:text-[11px] [&_thead_th]:font-medium [&_thead_th]:uppercase [&_thead_th]:tracking-[0.05em] [&_thead_th]:text-[var(--color-ink-muted)] [&_thead_th]:px-[14px] [&_thead_th]:py-[10px] [&_thead_th]:border-b [&_thead_th]:border-[var(--color-surface-raised)] [&_thead_th]:bg-[#131217] [&_tbody_td]:px-[14px] [&_tbody_td]:py-[11px] [&_tbody_td]:border-b [&_tbody_td]:border-[#1f1d25] [&_tbody_td]:text-[13px] [&_tbody_td]:align-middle [&_tbody_tr:hover>td]:bg-[rgba(255,255,255,0.015)]">
                   <thead>
                     <tr>
                       <th scope="col">Service</th>
@@ -371,7 +383,7 @@ export default function UsagePage() {
                   {serviceGroups.map((group) => (
                     <tbody key={group.id}>
                       <tr className="usage-group-row">
-                        <th colSpan={5} scope="rowgroup">
+                        <th colSpan={5} scope="rowgroup" className="px-[14px] py-[9px] bg-[#131217] border-b border-[var(--color-surface-raised)] font-normal text-left">
                           <span className="text-[12px] font-semibold text-ink-console">{group.name}</span>
                           <span className="ml-[8px] text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
                           <Link
@@ -392,7 +404,7 @@ export default function UsagePage() {
                               {service.name}
                             </Link>
                           </td>
-                          <td className="usage-number text-[12px] [font-family:var(--font-console-mono)] tabular-nums text-ink-bright">
+                          <td className="usage-number text-[12px] [font-family:var(--font-console-mono)] tabular-nums text-ink-bright [&_span]:text-[var(--color-ink-muted)]">
                             {service.cpuUsage.toFixed(2)}
                             {canSeeLimitDetail ? (
                               <span> / {service.cpuLimit} vCPU</span>
@@ -400,13 +412,13 @@ export default function UsagePage() {
                               <span> vCPU</span>
                             )}
                           </td>
-                          <td className="usage-number text-[12px] [font-family:var(--font-console-mono)] tabular-nums text-ink-bright">
+                          <td className="usage-number text-[12px] [font-family:var(--font-console-mono)] tabular-nums text-ink-bright [&_span]:text-[var(--color-ink-muted)]">
                             {formatMb(service.memoryUsageMb)}
                             {canSeeLimitDetail ? (
                               <span> / {formatMb(service.memoryLimitMb)}</span>
                             ) : null}
                           </td>
-                          <td className="usage-number text-[12px] [font-family:var(--font-console-mono)] tabular-nums text-ink-bright">
+                          <td className="usage-number text-[12px] [font-family:var(--font-console-mono)] tabular-nums text-ink-bright [&_span]:text-[var(--color-ink-muted)]">
                             {formatMb(service.volumeUsageMb)}
                             {canSeeLimitDetail ? (
                               <span> / {formatMb(service.volumeLimitMb)}</span>
@@ -416,10 +428,10 @@ export default function UsagePage() {
                             <span
                               className={`usage-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                                 service.status === "running"
-                                  ? "is-running"
+                                  ? "bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
                                   : service.status === "failed"
-                                    ? "is-failed"
-                                    : "is-pending"
+                                    ? "bg-[#2d1419] border border-[#4d222a] text-[#fda4af]"
+                                    : "bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                               }`}
                             >
                               <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
@@ -445,7 +457,7 @@ export default function UsagePage() {
                 Measured storage used by each database in this organization.
               </p>
               <div className="bg-surface border border-surface-raised rounded-card overflow-x-auto">
-                <table className="usage-table w-full min-w-[640px] text-left">
+                <table className="usage-table w-full min-w-[640px] text-left [&_thead_th]:text-[11px] [&_thead_th]:font-medium [&_thead_th]:uppercase [&_thead_th]:tracking-[0.05em] [&_thead_th]:text-[var(--color-ink-muted)] [&_thead_th]:px-[14px] [&_thead_th]:py-[10px] [&_thead_th]:border-b [&_thead_th]:border-[var(--color-surface-raised)] [&_thead_th]:bg-[#131217] [&_tbody_td]:px-[14px] [&_tbody_td]:py-[11px] [&_tbody_td]:border-b [&_tbody_td]:border-[#1f1d25] [&_tbody_td]:text-[13px] [&_tbody_td]:align-middle [&_tbody_tr:hover>td]:bg-[rgba(255,255,255,0.015)]">
                   <thead>
                     <tr>
                       <th scope="col">Database</th>
@@ -468,7 +480,7 @@ export default function UsagePage() {
                             {database.projectName}
                           </Link>
                         </td>
-                        <td className="usage-number text-[12px] [font-family:var(--font-console-mono)] tabular-nums text-ink-bright">
+                        <td className="usage-number text-[12px] [font-family:var(--font-console-mono)] tabular-nums text-ink-bright [&_span]:text-[var(--color-ink-muted)]">
                           {formatMb(database.usageMb)}
                           {canSeeLimitDetail ? (
                             <span> / {formatMb(database.storageLimitMb)}</span>
@@ -477,7 +489,9 @@ export default function UsagePage() {
                         <td>
                           <span
                             className={`usage-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
-                              database.overQuota ? "is-failed" : "is-running"
+                              database.overQuota
+                                ? "bg-[#2d1419] border border-[#4d222a] text-[#fda4af]"
+                                : "bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
                             }`}
                           >
                             <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
