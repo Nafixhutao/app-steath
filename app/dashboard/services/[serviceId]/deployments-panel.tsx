@@ -200,7 +200,7 @@ export function DeploymentsPanel({
         </div>
       ) : (
         <div className="overflow-hidden border border-[#27272a] rounded-card bg-[#0c0c0d]">
-          <div className="deployment-list-head grid gap-[12px] py-[9px] px-[14px] border-b border-b-[#27272a] bg-[#111113] text-[#71717a] text-[11px] font-medium tracking-[0.02em] uppercase" aria-hidden="true">
+          <div className="deployment-list-head grid grid-cols-[116px_92px_minmax(0,1fr)_74px_44px_68px] [@media(max-width:720px)]:hidden gap-[12px] py-[9px] px-[14px] border-b border-b-[#27272a] bg-[#111113] text-[#71717a] text-[11px] font-medium tracking-[0.02em] uppercase" aria-hidden="true">
             <span>Status</span>
             <span>Commit</span>
             <span>Started</span>
@@ -209,30 +209,41 @@ export function DeploymentsPanel({
             {canManage ? <span>Actions</span> : null}
           </div>
 
-          <ul className="m-0 p-0 [list-style:none]">
+          <ul className="m-0 p-0 [list-style:none] [&>li+li]:border-t [&>li+li]:border-t-[#1c1c20]">
             {visibleDeployments.map((deployment) => {
               const acting = actingOn === deployment.id;
               const open = expandedId === deployment.id;
               const logId = `deployment-log-${deployment.id}`;
               const redeployBlocked = acting || isDeploymentActive(latest?.status ?? "running");
+              const statusTone =
+                deployment.status === "running"
+                  ? "text-[#00e08c]"
+                  : deployment.status === "failed"
+                    ? "text-[#f87171]"
+                    : ["queued", "building", "deploying"].includes(deployment.status)
+                      ? "text-[#f5a623]"
+                      : "text-ink-muted";
+              const statusPulse = ["queued", "building", "deploying"].includes(deployment.status)
+                ? "animate-[deployment-pulse_1.4s_ease-in-out_infinite]"
+                : "";
 
               return (
                 <li className="deployment-item" key={deployment.id}>
-                  <div className={`deployment-row [@media(max-width:720px)]:gap-[8px] [@media(max-width:720px)]:min-h-[52px] [@media(max-width:720px)]:py-0 [@media(max-width:720px)]:px-[12px] grid items-center gap-[12px] min-h-[44px] py-0 px-[14px] [transition:background-color_120ms_ease] hover:bg-[#111113]${open ? " is-open" : ""}`}>
-                    <span className={`deployment-status inline-flex items-center gap-[7px] text-ink-muted text-[12.5px] font-medium whitespace-nowrap is-${deployment.status}`}>
-                      <span className="deployment-dot w-[7px] h-[7px] rounded-[999px] bg-current [box-shadow:0_0_0_3px_rgb(255_255_255_/_4%)]" aria-hidden="true" />
+                  <div className={`deployment-row grid-cols-[116px_92px_minmax(0,1fr)_74px_44px_68px] [@media(max-width:720px)]:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] [@media(max-width:720px)]:gap-[8px] [@media(max-width:720px)]:min-h-[52px] [@media(max-width:720px)]:py-0 [@media(max-width:720px)]:px-[12px] grid items-center gap-[12px] min-h-[44px] py-0 px-[14px] [transition:background-color_120ms_ease] hover:bg-[#111113]${open ? " bg-[#111113]" : ""}`}>
+                    <span className={`deployment-status inline-flex items-center gap-[7px] text-[12.5px] font-medium whitespace-nowrap is-${deployment.status} ${statusTone}`}>
+                      <span className={`deployment-dot w-[7px] h-[7px] rounded-[999px] bg-current [box-shadow:0_0_0_3px_rgb(255_255_255_/_4%)] ${statusPulse}`} aria-hidden="true" />
                       {deploymentStatusLabel(deployment.status)}
                     </span>
                     <code className="text-[#d4d4d8] [font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px]" title={deployment.commitSha ?? "N/A"}>
                       {shortCommit(deployment.commitSha)}
                     </code>
                     <span
-                      className="deployment-when min-w-0 overflow-hidden text-ink-muted text-[12px] text-ellipsis whitespace-nowrap"
+                      className="deployment-when min-w-0 overflow-hidden text-ink-muted text-[12px] text-ellipsis whitespace-nowrap [@media(max-width:720px)]:text-right"
                       title={formatDateTime(deployment.startedAt ?? deployment.createdAt)}
                     >
                       {formatRelative(deployment.startedAt ?? deployment.createdAt)}
                     </span>
-                    <span className="deployment-duration text-ink-muted text-[12px] tabular-nums">
+                    <span className="deployment-duration text-ink-muted text-[12px] tabular-nums [@media(max-width:720px)]:hidden">
                       {deploymentDuration(deployment) ?? "N/A"}
                     </span>
                     <button
@@ -287,7 +298,7 @@ export function DeploymentsPanel({
 
                   {open ? (
                     <div className="deployment-detail [@media(max-width:720px)]:pt-0 [@media(max-width:720px)]:pb-[12px] [@media(max-width:720px)]:px-[12px] pt-0 pb-[14px] px-[14px] border-t border-t-[#1c1c20] bg-[#111113]" id={logId}>
-                      <dl className="deployment-meta flex flex-wrap gap-[6px_24px] m-0 py-[10px] px-0 text-[12px]">
+                      <dl className="deployment-meta flex flex-wrap gap-[6px_24px] m-0 py-[10px] px-0 text-[12px] [&>div]:flex [&>div]:gap-[6px] [&_dt]:text-[#71717a] [&_dd]:m-0 [&_dd]:text-[#d4d4d8] [&_code]:text-[11.5px]">
                         <div>
                           <dt>Started</dt>
                           <dd>{formatDateTime(deployment.startedAt)}</dd>

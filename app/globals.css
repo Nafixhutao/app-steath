@@ -575,31 +575,6 @@ form input[type="text"]:focus {
   cursor: not-allowed;
 }
 /* --- Deployment history ------------------------------------------------ */
-.deployment-list-head, .deployment-row {
-  grid-template-columns: 116px 92px minmax(0, 1fr) 74px 44px 68px;
-}
-.deployment-item + .deployment-item {
-  border-top: 1px solid #1c1c20;
-}
-.deployment-row.is-open {
-  background: #111113;
-}
-.deployment-status.is-running {
-  color: #00e08c;
-}
-.deployment-status.is-failed {
-  color: #f87171;
-}
-.deployment-status.is-queued,
-.deployment-status.is-building,
-.deployment-status.is-deploying {
-  color: #f5a623;
-}
-.deployment-status.is-queued .deployment-dot,
-.deployment-status.is-building .deployment-dot,
-.deployment-status.is-deploying .deployment-dot {
-  animation: deployment-pulse 1.4s ease-in-out infinite;
-}
 @keyframes deployment-pulse {
   0%,
   100% {
@@ -611,38 +586,7 @@ form input[type="text"]:focus {
 }
 .deployment-icon-btn.is-danger:hover:not(:disabled) {
   color: #f87171;
-}
-.deployment-meta > div {
-  display: flex;
-  gap: 6px;
-}
-.deployment-meta dt {
-  color: #71717a;
-}
-.deployment-meta dd {
-  margin: 0;
-  color: #d4d4d8;
-}
-.deployment-meta code {
-  font-size: 11.5px;
-}
-@media (max-width: 720px) {
-  .deployment-list-head {
-    display: none;
-  }
-  .deployment-row {
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
-}
-  .deployment-duration {
-    display: none;
-  }
-  .deployment-when {
-    text-align: right;
-  }
-  
-  
-}
-.search-dialog-input input {
+}.search-dialog-input input {
   min-width: 0;
   flex: 1;
   border: 0;
