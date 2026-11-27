@@ -310,7 +310,7 @@ export default function DomainsPage() {
       <div className="flex items-center gap-[8px] border-b border-b-[var(--color-surface-raised)] mb-[20px] overflow-x-auto">
         <button
           type="button"
-          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium text-[#878492] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:all_120ms_ease] whitespace-nowrap hover:text-ink-console ${activeTab === "custom" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:all_120ms_ease] whitespace-nowrap ${activeTab === "custom" ? "is-active text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#878492] border-b-transparent hover:text-ink-console"}`}
           onClick={() => setActiveTab("custom")}
         >
           <Globe className="w-4 h-4 mr-2" />
@@ -320,7 +320,7 @@ export default function DomainsPage() {
 
         <button
           type="button"
-          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium text-[#878492] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:all_120ms_ease] whitespace-nowrap hover:text-ink-console ${activeTab === "platform" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:all_120ms_ease] whitespace-nowrap ${activeTab === "platform" ? "is-active text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#878492] border-b-transparent hover:text-ink-console"}`}
           onClick={() => setActiveTab("platform")}
         >
           <Server className="w-4 h-4 mr-2" />
@@ -330,7 +330,7 @@ export default function DomainsPage() {
 
         <button
           type="button"
-          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium text-[#878492] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:all_120ms_ease] whitespace-nowrap hover:text-ink-console ${activeTab === "guide" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:all_120ms_ease] whitespace-nowrap ${activeTab === "guide" ? "is-active text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#878492] border-b-transparent hover:text-ink-console"}`}
           onClick={() => setActiveTab("guide")}
         >
           <HelpCircle className="w-4 h-4 mr-2" />
@@ -350,7 +350,7 @@ export default function DomainsPage() {
                 placeholder="Search domains by hostname, service, or project..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="domains-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
+                className="domains-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease] focus:border-[var(--color-accent)]"
               />
               {search && (
                 <button
@@ -427,7 +427,7 @@ export default function DomainsPage() {
                 )}
               </div>
             ) : (
-              <table className="domains-table w-full text-left">
+              <table className="domains-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217] [&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px] [&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)] [&_tr:last-child>td]:border-b-0">
                 <thead>
                   <tr>
                     <th scope="col">Domain / Hostname</th>
@@ -504,7 +504,7 @@ export default function DomainsPage() {
                         <td>
                           <span
                             className={`domains-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
-                              isActive ? "is-active" : isFailed ? "is-failed" : "is-pending"
+                              isActive ? "is-active bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]" : isFailed ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]" : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                             }`}
                           >
                             <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
@@ -524,10 +524,10 @@ export default function DomainsPage() {
                           <span
                             className={`domains-cert-pill inline-flex items-center h-[22px] py-0 px-[8px] rounded-control-sm text-[11px] font-medium ${
                               isCertIssued
-                                ? "is-issued"
+                                ? "is-issued bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
                                 : dom.certificateStatus === "failed"
-                                  ? "is-failed"
-                                  : "is-pending"
+                                  ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]"
+                                  : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                             }`}
                           >
                             <Lock className="w-3 h-3 mr-1" />
@@ -617,7 +617,7 @@ export default function DomainsPage() {
                 </p>
               </div>
             ) : (
-              <table className="domains-table w-full text-left">
+              <table className="domains-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217] [&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px] [&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)] [&_tr:last-child>td]:border-b-0">
                 <thead>
                   <tr>
                     <th scope="col">Service</th>
@@ -685,10 +685,10 @@ export default function DomainsPage() {
                         <span
                           className={`domains-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                             srv.status === "running"
-                              ? "is-active"
+                              ? "is-active bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
                               : srv.status === "failed"
-                                ? "is-failed"
-                                : "is-pending"
+                                ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]"
+                                : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                           }`}
                         >
                           <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
