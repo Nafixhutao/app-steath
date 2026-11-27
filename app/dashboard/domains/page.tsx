@@ -350,7 +350,7 @@ export default function DomainsPage() {
                 placeholder="Search domains by hostname, service, or project..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="domains-search-input"
+                className="domains-search-input w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
               />
               {search && (
                 <button

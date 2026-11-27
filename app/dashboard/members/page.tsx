@@ -330,7 +330,7 @@ export default function MembersPage() {
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="members-search-input"
+            className="members-search-input w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
           />
           {search ? (
             <button

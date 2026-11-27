@@ -163,7 +163,7 @@ export default function DatabasesPage() {
   }
 
   return (
-    <div className="dashboard-content db-page-wrapper">
+    <div className="dashboard-content max-w-[1200px]">
       {/* Header */}
       <header className="db-heading">
         <div className="flex-1 min-w-[280px]">
@@ -176,7 +176,7 @@ export default function DatabasesPage() {
               <h1>Databases</h1>
             </div>
           </div>
-          <p className="db-description">
+          <p className="mt-[8px] mb-0 mx-0 max-w-[620px] text-[#9e9aa7] text-[14px] leading-[1.55]">
             Dedicated PostgreSQL 16 or MySQL 8 instances with private networking, connection
             isolation, and automated daily backups.
           </p>
@@ -210,19 +210,19 @@ export default function DatabasesPage() {
               <AlertTriangle className="w-[18px] h-[18px]" />
             </div>
             <div className="flex flex-col gap-[2px]">
-              <p className="db-banner-text">
+              <p className="m-0 text-[#f3f2f5] text-[13.5px] leading-[1.45]">
                 <strong>{fullDatabase.database.databaseName}</strong> has used{" "}
                 <span className="[font-family:var(--font-mono)] font-bold text-[#f59e0b]">{fullDatabase.percent}%</span> of its{" "}
                 {fullDatabase.database.storageLimitMb} MB disk allocation.
               </p>
-              <p className="db-banner-subtext">
+              <p className="m-0 text-[#9e9aa7] text-[12.5px] leading-[1.4]">
                 Expand disk storage before usage reaches 95% to prevent automatic read-only lock.
               </p>
             </div>
           </div>
           <Link
             href={`/dashboard/projects/${fullDatabase.database.projectId}`}
-            className="db-btn db-btn-warning"
+            className="db-btn-warning db-btn border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.12)] hover:bg-[rgba(245,158,11,0.2)] hover:border-[rgba(245,158,11,0.6)]"
           >
             <span>Expand Storage</span>
             <ArrowUpRight className="db-btn-icon" aria-hidden="true" />
@@ -350,7 +350,7 @@ export default function DatabasesPage() {
             </div>
           </div>
           <h2>No databases provisioned yet</h2>
-          <p className="db-empty-lead">
+          <p className="max-w-[520px] mt-[10px] mb-[26px] mx-auto text-[#9e9aa7] text-[14px] leading-[1.6]">
             Every project in Stealth Hosting can host its own dedicated PostgreSQL 16 or MySQL 8
             database. Databases run in private container networks with persistent storage and
             scheduled backups.
@@ -467,7 +467,7 @@ export default function DatabasesPage() {
                     <td>
                       <Link
                         href={`/dashboard/projects/${database.projectId}`}
-                        className="db-project-link"
+                        className="db-project-link inline-flex items-center gap-[7px] no-underline font-medium [transition:color_120ms_ease] hover:underline focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px]"
                       >
                         <Layers className="w-[14px] h-[14px] text-accent" aria-hidden="true" />
                         <span>{database.projectName}</span>
@@ -523,7 +523,7 @@ export default function DatabasesPage() {
                     <td className="text-right">
                       <Link
                         href={`/dashboard/projects/${database.projectId}`}
-                        className="db-btn db-btn-manage"
+                        className="db-btn-manage db-btn bg-[#1c1a24] border border-[#2d2a3a] hover:bg-[#252230] hover:border-[#433e54]"
                         title={`Manage ${database.databaseName} in ${database.projectName}`}
                       >
                         <span>Manage</span>

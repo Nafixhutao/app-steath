@@ -223,7 +223,7 @@ export function DeploymentsPanel({
                       <span className="deployment-dot" aria-hidden="true" />
                       {deploymentStatusLabel(deployment.status)}
                     </span>
-                    <code className="deployment-commit" title={deployment.commitSha ?? "N/A"}>
+                    <code className="text-[#d4d4d8] [font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px]" title={deployment.commitSha ?? "N/A"}>
                       {shortCommit(deployment.commitSha)}
                     </code>
                     <span
@@ -247,7 +247,7 @@ export function DeploymentsPanel({
                       <ScrollText size={15} strokeWidth={1.8} aria-hidden="true" />
                     </button>
                     {canManage ? (
-                      <div className="deployment-row-actions">
+                      <div className="flex gap-[2px] justify-end">
                         <button
                           className="deployment-icon-btn"
                           type="button"

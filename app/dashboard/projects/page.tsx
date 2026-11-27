@@ -112,7 +112,7 @@ export default function ProjectsPage() {
               placeholder="Search for a project"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="supabase-project-search-input"
+              className="supabase-project-search-input w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
             />
             {search && (
               <button
@@ -211,11 +211,11 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-center mb-[16px] text-[#6a6877]" aria-hidden="true">
                 <Boxes className="w-10 h-10 text-zinc-400" />
               </div>
-              <h2 className="supabase-hero-title">Create a project</h2>
+              <h2 className="text-[18px] font-semibold text-ink mt-0 mb-[6px] mx-0">Create a project</h2>
               <p className="text-[13px] text-[#83818e] mb-[20px]">Launch a complete backend built on Postgres.</p>
               <button
                 type="button"
-                className="supabase-hero-btn"
+                className="inline-flex items-center gap-[8px] min-h-[38px] py-[8px] px-[18px] rounded-card border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] text-ink text-[13.5px]! font-medium! cursor-pointer whitespace-nowrap [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:opacity-[0.5] disabled:cursor-not-allowed disabled:transform-none disabled:[box-shadow:none]"
                 onClick={() => setModalOpen(true)}
                 disabled={!canManage || atLimit}
               >

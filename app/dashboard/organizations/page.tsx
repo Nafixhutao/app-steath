@@ -116,7 +116,7 @@ export default function OrganizationsPage() {
               placeholder="Search for an organization"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="orgs-search-input"
+              className="orgs-search-input w-full h-[36px] py-0 pr-[32px] pl-[34px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
             />
             {search && (
               <button

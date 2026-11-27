@@ -76,7 +76,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
               {busy ? "Please wait..." : "Accept invitation"}
             </button>
             <button
-              className="dashboard-secondary-button"
+              className="dashboard-secondary-button min-h-[36px] py-0 px-[12px] border border-[#403c45] rounded-[7px] text-[#e8e5ed] [font:inherit] text-[12px]! cursor-pointer hover:border-[#696370] disabled:cursor-not-allowed disabled:opacity-[0.55] [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] active:translate-y-[1] active:scale-[0.99]"
               type="button"
               disabled={busy}
               onClick={() => void decline()}

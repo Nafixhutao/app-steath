@@ -120,7 +120,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
   if (loading) {
     return (
       <div className="dashboard-content supabase-service-page">
-        <div className="svc-page-loader" role="status">
+        <div className="flex items-center gap-[10px] py-[40px] px-0 text-[#71717a] text-[13px]" role="status">
           <span className="w-[14px] h-[14px] border-2 border-[#3f3f46] border-t-[#ededf2] rounded-[50%] animate-[svc-spin_0.7s_linear_infinite]" aria-hidden="true" />
           Loading Service...
         </div>
@@ -138,7 +138,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         </p>
         <div className="py-[48px] px-[32px] border border-[#27272a] rounded-card bg-[#0c0c0d]">
           <h1 className="supabase-service-title">Service not found</h1>
-          <p className="supabase-service-subtitle">
+          <p className="mt-[4px] mb-0 mx-0 text-ink-muted text-[14px]">
             This Service does not exist in the active Organization.
           </p>
           {error || actionError ? (
@@ -146,7 +146,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
               {error || actionError}
             </p>
           ) : null}
-          <Link className="svc-back-link" href="/dashboard/projects">
+          <Link className="svc-back-link inline-block mt-[16px] text-[13px] no-underline" href="/dashboard/projects">
             ← Back to Projects
           </Link>
         </div>
@@ -165,13 +165,13 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
       </p>
 
       <header className="grid gap-[10px] min-w-0 pb-[20px]">
-        <div className="svc-header-title-row">
+        <div className="flex items-center gap-[12px] flex-wrap">
           <h1 className="supabase-service-title">{service.name}</h1>
           <span className={`supabase-service-status is-${service.status}`}>
             {serviceStatusLabel(service.status)}
           </span>
         </div>
-        <div className="svc-header-meta">
+        <div className="flex items-center flex-wrap gap-[8px_14px] min-w-0 text-ink-muted text-[13px]">
           <a
             className="svc-url-link"
             href={service.url}
@@ -198,10 +198,10 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
             </svg>
           </a>
           <span className="svc-meta-item" title={service.repoUrl}>
-            <code className="svc-repo-chip">{repoLabel(service.repoUrl)}</code>
-            <span className="svc-meta-branch">@{service.branch}</span>
+            <code className="inline-block max-w-[100%] overflow-hidden text-ellipsis whitespace-nowrap align-bottom">{repoLabel(service.repoUrl)}</code>
+            <span className="shrink-0 text-ink-muted">@{service.branch}</span>
           </span>
-          <span className="svc-meta-item svc-meta-resources">
+          <span className="svc-meta-item text-ink-muted">
             {service.cpuLimit} vCPU · {service.memoryLimitMb} MB RAM
           </span>
         </div>
@@ -232,7 +232,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         })}
       </nav>
 
-      <div className="svc-tab-panel">
+      <div className="min-w-0">
         {tab === "deployments" ? (
           <DeploymentsPanel serviceId={service.id} canDeploy={canDeploy} canManage={canManage} />
         ) : null}
@@ -322,7 +322,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
                   />
                 </label>
                 <button
-                  className="supabase-btn-danger"
+                  className="supabase-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] text-ink text-[13.5px]! font-semibold! [box-shadow:0_1px_2px_rgba(0,0,0,0.25)] [transition:filter_140ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                   type="submit"
                   disabled={busy || confirmation !== service.name}
                 >

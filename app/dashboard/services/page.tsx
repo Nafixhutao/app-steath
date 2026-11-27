@@ -226,7 +226,7 @@ export default function ServicesPage() {
               placeholder="Search name, repo or hostname..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="services-search-input"
+              className="services-search-input w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
               aria-label="Search services"
             />
             {search ? (
@@ -361,7 +361,7 @@ export default function ServicesPage() {
                       <div className="min-w-0">
                         <Link
                           href={`/dashboard/services/${service.id}`}
-                          className="services-card-name"
+                          className="services-card-name block text-[14px] font-semibold! leading-[1.3]"
                           title={service.name}
                         >
                           {service.name}
@@ -398,7 +398,7 @@ export default function ServicesPage() {
                       </span>
                       <Link
                         href={`/dashboard/services/${service.id}`}
-                        className="services-card-manage-link"
+                        className="services-card-manage-link inline-flex items-center gap-[4px] text-[12px] font-medium"
                       >
                         Manage
                         <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
@@ -442,7 +442,7 @@ export default function ServicesPage() {
                     <td>
                       <Link
                         href={`/dashboard/services/${service.id}`}
-                        className="services-row-name"
+                        className="services-row-name block text-[13px] font-semibold!"
                       >
                         {service.name}
                       </Link>

@@ -202,7 +202,7 @@ function Identity({
       </span>
       {!collapsed ? (
         <>
-          <span className="identity-name" title={organization.name}>
+          <span className="identity-name max-w-[min(18ch,100%)] tracking-[-0.01em]" title={organization.name}>
             {organization.name}
           </span>
           <ChevronDown size={16} strokeWidth={1.7} aria-hidden="true" />
@@ -267,7 +267,7 @@ function NavRow({
       title={collapsed ? label : undefined}
     >
       <Icon name={icon} />
-      {!collapsed ? <span className="sidebar-row-label">{label}</span> : null}
+      {!collapsed ? <span className="relative z-[1] min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{label}</span> : null}
       {!collapsed && accent ? (
         <Gift size={16} strokeWidth={1.7} className="ml-auto text-[#ffa057] text-[16px] leading-[16px]" aria-hidden="true" />
       ) : null}
@@ -299,10 +299,10 @@ function SearchDialog({
   if (!open) return null;
 
   return (
-    <div className="search-overlay" role="presentation">
+    <div className="search-overlay fixed inset-0 z-[100] bg-[rgb(0_0_0_/_45%)] [backdrop-filter:blur(3px)]" role="presentation">
       <button
         type="button"
-        className="search-backdrop"
+        className="search-backdrop absolute inset-0 border-0 bg-transparent"
         onClick={onClose}
         aria-label="Close search"
       />
@@ -326,7 +326,7 @@ function SearchDialog({
               <button
                 key={item}
                 type="button"
-                className="search-result"
+                className="search-result flex w-full h-[32px] items-center gap-[12px] py-0 px-[10px] border-0 rounded-[5px] text-ink-bright cursor-pointer text-[14px]! text-left"
                 onClick={() => {
                   onSelect(item);
                   onClose();
@@ -522,7 +522,7 @@ export function Sidebar({
         {mobile ? (
           <button
             type="button"
-            className="sidebar-close"
+            className="sidebar-close inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control text-[#b5b2b9] cursor-pointer hover:text-ink-console"
             onClick={() => setMobileOpen(false)}
             aria-label="Close sidebar"
           >
@@ -561,7 +561,7 @@ export function Sidebar({
                 <span className="identity-initial" aria-hidden="true">
                   {getInitials(item.name)}
                 </span>
-                <span className="organization-switcher-name">{item.name}</span>
+                <span className="min-w-0 flex-1 overflow-hidden text-[13px] text-ellipsis whitespace-nowrap">{item.name}</span>
                 {item.id === activeOrganizationId ? <small>Active</small> : null}
               </button>
             ))}
@@ -598,7 +598,7 @@ export function Sidebar({
             ) : (
               <button
                 type="button"
-                className="organization-switcher-add"
+                className="organization-switcher-add flex w-full min-h-[36px] items-center gap-[8px] py-[4px] px-[8px] border-0 rounded-[0] text-[#d8c783] cursor-pointer text-left mt-[6px] border-t border-t-[#39363f] text-[13px]!"
                 onClick={() => {
                   setOrganizationError("");
                   setCreateOrganizationOpen(true);

@@ -251,7 +251,7 @@ export function ServicesPanel({
 
                   <Link
                     href={`/dashboard/services/${service.id}`}
-                    className="project-service-view-link ml-auto"
+                    className="project-service-view-link ml-auto text-[12px] font-medium no-underline [transition:color_150ms]"
                   >
                     Manage Service &rarr;
                   </Link>

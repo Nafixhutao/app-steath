@@ -121,7 +121,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                 <div className="w-[8px] h-[8px] rounded-[50%] bg-current [box-shadow:-4px_5px_0_0_currentColor,4px_5px_0_0_currentColor]" />
               </div>
               <span className="supabase-org-name">{activeOrg?.name ?? "Select Org"}</span>
-              <span className="supabase-free-pill">FREE</span>
+              <span className="supabase-free-pill text-[10px] font-bold tracking-[0.04em] py-[1px] px-[5px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] leading-[1.2]">FREE</span>
               <ChevronsUpDown className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
             </button>
 
@@ -142,7 +142,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                         <div className="supabase-org-icon-badge small" aria-hidden="true">
                           <span className="text-[10px] font-bold">{getInitials(org.name)}</span>
                         </div>
-                        <span className="supabase-dropdown-item-name">{org.name}</span>
+                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{org.name}</span>
                         {isActive && (
                           <Check className="w-4 h-4 text-emerald-400" aria-hidden="true" />
                         )}

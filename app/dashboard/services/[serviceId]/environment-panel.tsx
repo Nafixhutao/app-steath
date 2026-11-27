@@ -222,7 +222,7 @@ export function EnvironmentPanel({
                       <code className="environment-key">{variable.key}</code>
                     </td>
                     <td data-label="Value">
-                      <code className="environment-value">
+                      <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] [overflow-wrap:anywhere] tabular-nums">
                         {isRevealed ? (revealed?.value ?? "") : variable.maskedValue}
                       </code>
                     </td>

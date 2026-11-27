@@ -49,8 +49,8 @@ function QuotaMeter({
 
   return (
     <div className="usage-meter-row">
-      <div className="usage-meter-top">
-        <span className="usage-meter-label">{label}</span>
+      <div className="flex items-baseline gap-[10px] mb-[6px]">
+        <span className="text-[12px] font-medium text-ink-console">{label}</span>
         <span className="usage-meter-numbers">
           {used} <span>/ {limit}</span>
         </span>
@@ -66,7 +66,7 @@ function QuotaMeter({
       >
         <div className={`usage-progress-fill ${tone}`} style={{ width: `${percent}%` }} />
       </div>
-      {description ? <p className="usage-meter-desc">{description}</p> : null}
+      {description ? <p className="mt-[6px] mb-0 mx-0 text-[11px] text-ink-muted">{description}</p> : null}
     </div>
   );
 }
@@ -143,7 +143,7 @@ export default function UsagePage() {
       <header className="flex items-end justify-between flex-wrap gap-[16px] mb-[18px]">
         <div className="min-w-0">
           <h1 className="text-[20px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Usage &amp; Quotas</h1>
-          <p className="usage-page-subtitle">
+          <p className="text-[13px] text-ink-muted mt-[4px] leading-[1.4]">
             Measured resources and limits for {organization?.name ?? "your organization"}.
           </p>
         </div>
@@ -180,12 +180,12 @@ export default function UsagePage() {
       ) : null}
 
       {loading && !usageData ? (
-        <div className="usage-skeleton" role="status" aria-label="Loading usage data">
+        <div className="py-[16px] px-0" role="status" aria-label="Loading usage data">
           <div className="supabase-skeleton-box h-3 w-64 rounded mb-3" />
           <div className="supabase-skeleton-box h-7 w-48 rounded" />
         </div>
       ) : !usageData ? (
-        <div className="usage-empty-state">
+        <div className="py-[48px] px-[20px] text-center border border-dashed border-[#2a2833] rounded-card">
           <h2 className="usage-empty-title">Quota unavailable</h2>
           <p className="usage-empty-copy">
             The organization quota could not be loaded. Try refreshing.
@@ -219,7 +219,7 @@ export default function UsagePage() {
             </div>
             <div className="usage-capacity">
               <div className="usage-capacity-primary">
-                <span className="usage-capacity-label">Services in this organization</span>
+                <span className="text-[11px] uppercase tracking-[0.04em] text-ink-muted">Services in this organization</span>
                 <div className="usage-capacity-value">
                   <strong>{usageData.counts.services.used}</strong>
                   <span>/ {usageData.counts.services.limit}</span>
@@ -244,7 +244,7 @@ export default function UsagePage() {
                 </div>
                 <p>Docker services currently running in this organization.</p>
               </div>
-              <div className="usage-capacity-side">
+              <div className="flex flex-col justify-center gap-[14px] min-w-0">
                 <QuotaMeter
                   label="Projects"
                   used={usageData.counts.projects.used}
@@ -273,7 +273,7 @@ export default function UsagePage() {
               <span>{usageData.services.length} services</span>
             </div>
             {statusSegments.some((segment) => segment.value > 0) ? (
-              <div className="usage-health-card">
+              <div className="usage-health-card py-[16px] px-[18px] border border-surface-raised rounded-card">
                 <DonutChart
                   segments={statusSegments}
                   label="Service status distribution"
@@ -306,7 +306,7 @@ export default function UsagePage() {
               <h2 id="projects-usage-heading">Projects at a glance</h2>
               <span>{usageData.projects.length} projects</span>
             </div>
-            <div className="usage-project-list">
+            <div className="usage-project-list border border-surface-raised rounded-card overflow-hidden">
               {usageData.projects.map((project) => (
                 <div key={project.id} className="usage-project-row">
                   <Link href={`/dashboard/projects/${project.id}`} className="usage-row-name">
@@ -372,8 +372,8 @@ export default function UsagePage() {
                     <tbody key={group.id}>
                       <tr className="usage-group-row">
                         <th colSpan={5} scope="rowgroup">
-                          <span className="usage-group-name">{group.name}</span>
-                          <span className="usage-group-count">{group.items.length}</span>
+                          <span className="text-[12px] font-semibold text-ink-console">{group.name}</span>
+                          <span className="ml-[8px] text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
                           <Link
                             href={`/dashboard/projects/${group.id}`}
                             className="usage-group-link"
@@ -463,7 +463,7 @@ export default function UsagePage() {
                         <td>
                           <Link
                             href={`/dashboard/projects/${database.projectId}`}
-                            className="usage-subtle-link"
+                            className="usage-subtle-link text-[12px]"
                           >
                             {database.projectName}
                           </Link>
@@ -497,7 +497,7 @@ export default function UsagePage() {
               <div className="usage-section-head">
                 <h2 id="limit-detail-heading">Platform allocation policy</h2>
               </div>
-              <div className="usage-policy-card">
+              <div className="usage-policy-card border border-surface-raised rounded-card overflow-hidden">
                 <div className="usage-policy-grid">
                   <div>
                     <span>CPU cap per service</span>
@@ -524,7 +524,7 @@ export default function UsagePage() {
                     <strong>{usageData.limits.logRetentionDays} days</strong>
                   </div>
                 </div>
-                <div className="usage-policy-footer">
+                <div className="usage-policy-footer py-[12px] px-[18px] border-t border-t-surface-raised text-[12px] text-ink-muted">
                   Values above are the platform limits applied to this organization.
                 </div>
               </div>
@@ -532,7 +532,7 @@ export default function UsagePage() {
           ) : null}
 
           {usageData.capturedAt ? (
-            <p className="usage-timestamp">
+            <p className="flex items-center gap-[7px] mt-[4px] mb-[24px] mx-0 text-[12px] text-ink-muted">
               <Clock className="w-3.5 h-3.5" aria-hidden="true" />
               Last measured {formatDateTime(usageData.capturedAt)}.
             </p>

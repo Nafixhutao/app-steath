@@ -159,7 +159,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
       {/* Top Header */}
       <header className="border-b border-[#23222a] pb-0 mb-[24px]">
         <nav className="flex items-center gap-[8px] text-[13px] mb-[14px]" aria-label="Breadcrumb">
-          <Link href="/dashboard/projects" className="project-breadcrumb-link">
+          <Link href="/dashboard/projects" className="project-breadcrumb-link no-underline [transition:color_150ms]">
             Projects
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-zinc-600" aria-hidden="true" />

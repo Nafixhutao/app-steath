@@ -137,7 +137,7 @@ export function RuntimePanel({
           <dd>
             {status === "running" ? (
               <a
-                className="service-url"
+                className="text-violet! text-[12px] no-underline [overflow-wrap:anywhere] hover:underline tabular-nums"
                 href={`https://${hostname}`}
                 target="_blank"
                 rel="noreferrer"
