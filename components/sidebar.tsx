@@ -223,7 +223,7 @@ function MobileSidebarSheet({
 
   return (
     <motion.aside
-      className="mobile-sidebar-sheet [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[60] [@media(max-width:1023px)]:w-[min(100%,560px)] [@media(max-width:1023px)]:h-[min(82dvh,720px)] [@media(max-width:1023px)]:my-0 [@media(max-width:1023px)]:mx-auto [@media(max-width:1023px)]:overflow-hidden [@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#302e34] [@media(max-width:1023px)]:border-b-0 [@media(max-width:1023px)]:rounded-[20px_20px_0_0] [@media(max-width:1023px)]:bg-[#232127] [@media(max-width:1023px)]:[box-shadow:0_-4px_14px_rgb(0_0_0_/_42%)]"
+      className="mobile-sidebar-sheet hidden [@media(max-width:1023px)]:block [@media(max-width:1023px)]:inset-[auto_0_0] [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[60] [@media(max-width:1023px)]:w-[min(100%,560px)] [@media(max-width:1023px)]:h-[min(82dvh,720px)] [@media(max-width:1023px)]:my-0 [@media(max-width:1023px)]:mx-auto [@media(max-width:1023px)]:overflow-hidden [@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#302e34] [@media(max-width:1023px)]:border-b-0 [@media(max-width:1023px)]:rounded-[20px_20px_0_0] [@media(max-width:1023px)]:bg-[#232127] [@media(max-width:1023px)]:[box-shadow:0_-4px_14px_rgb(0_0_0_/_42%)]"
       role="dialog"
       aria-modal="true"
       aria-label="Main navigation"
@@ -261,7 +261,7 @@ function NavRow({
   return (
     <Link
       href={href}
-      className={`sidebar-row [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink-console relative isolate flex h-[36px] flex-none items-center gap-[10px] hover:bg-[rgb(255_255_255_/_6%)] focus-visible:bg-[rgb(255_255_255_/_6%)] [&>svg]:relative [&>svg]:z-[1] [&>svg]:flex-none [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] border-0 rounded-control text-[#9e9aa7] cursor-pointer text-[13.5px] font-medium leading-[20px] text-left hover:text-ink-console focus-visible:text-ink-console focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] ${active ? "bg-[#161418] text-ink-console" : ""} ${collapsed ? "w-[40px] mx-auto justify-center p-0" : "w-[calc(100%_-_24px)] my-[1px] mx-[12px] py-0 px-[8px]"}`}
+      className={`sidebar-row [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink-console relative isolate flex h-[36px] flex-none items-center gap-[10px] hover:bg-[rgb(255_255_255_/_6%)] focus-visible:bg-[rgb(255_255_255_/_6%)] [&>svg]:relative [&>svg]:z-[1] [&>svg]:flex-none [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] border-0 rounded-control text-[#9e9aa7] cursor-pointer text-[13.5px] font-medium leading-[20px] text-left hover:text-ink-console focus-visible:text-ink-console focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] ${active ? "bg-[#161418] text-ink-console" : ""} ${collapsed ? "w-[40px] mx-auto justify-center p-0" : "w-[calc(100%_-_24px)] my-[1px] mx-[12px] py-0 px-[8px] [@media(max-width:1023px)]:h-[40px] [@media(max-width:1023px)]:my-0"}`}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       title={collapsed ? label : undefined}
@@ -500,7 +500,7 @@ export function Sidebar({
   };
 
   const renderContent = (mobile = false) => (
-    <div className={`sidebar-panel flex w-full min-w-0 h-full flex-col overflow-hidden border-r border-r-[#282631] bg-console ${mobile ? "mobile-sidebar-panel" : ""}`}>
+    <div className={`sidebar-panel flex w-full min-w-0 h-full flex-col overflow-hidden border-r border-r-[#282631] bg-console [@media(max-width:1023px)]:bg-[#232127] [@media(max-width:1023px)]:rounded-t-[20px] ${mobile ? "mobile-sidebar-panel" : ""}`}>
       <header className={`sidebar-header relative flex h-[48px] shrink-0 items-center [transition:gap_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "justify-center gap-0 p-0" : "gap-[8px] py-0 px-[16px]"}`}>
         {!collapsed || mobile ? (
           <button
@@ -620,7 +620,7 @@ export function Sidebar({
       </header>
       <button
         type="button"
-        className={`sidebar-search flex h-[32px] items-center gap-[8px] border-0 rounded-control text-[#eeedf0] cursor-pointer text-left [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] [&>svg]:flex-none [&>svg]:text-[#b5b2b9] [&>span]:min-w-0 [&>span]:flex-1 [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap [&>span]:text-[14px] [&>span]:font-medium [&>span]:leading-[20px] [&>kbd]:flex-none [&>kbd]:text-[#b5b2b9] [&>kbd]:[font-family:inherit] [&>kbd]:text-[12px] [&>kbd]:leading-[15px] ${collapsed && !mobile ? "w-[32px] mx-auto mt-[6px] justify-center p-0 bg-transparent" : "w-[calc(100%_-_16px)] mt-[6px] mb-0 mx-[8px] py-0 pr-[14px] pl-[8px] bg-[#171519] hover:bg-[#1c1a1f]"}`}
+        className={`sidebar-search flex h-[32px] items-center gap-[8px] border-0 rounded-control text-[#eeedf0] cursor-pointer text-left [@media(max-width:1023px)]:h-[40px] [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] [&>svg]:flex-none [&>svg]:text-[#b5b2b9] [&>span]:min-w-0 [&>span]:flex-1 [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap [&>span]:text-[14px] [&>span]:font-medium [&>span]:leading-[20px] [&>kbd]:flex-none [&>kbd]:text-[#b5b2b9] [&>kbd]:[font-family:inherit] [&>kbd]:text-[12px] [&>kbd]:leading-[15px] ${collapsed && !mobile ? "w-[32px] mx-auto mt-[6px] justify-center p-0 bg-transparent" : "w-[calc(100%_-_16px)] mt-[6px] mb-0 mx-[8px] py-0 pr-[14px] pl-[8px] bg-[#171519] hover:bg-[#1c1a1f]"}`}
         onClick={() => setSearchOpen(true)}
         aria-label="Search Ctrl K"
       >
@@ -677,7 +677,7 @@ export function Sidebar({
         {mobile ? (
           <>
             <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
-            <div className={`profile-area relative pt-[10px] pb-[6px] px-[12px] [transition:padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "is-collapsed" : ""}`}>
+            <div className={`profile-area relative pt-[10px] pb-[6px] px-[12px] [@media(max-width:1023px)]:pb-[calc(13px_+_env(safe-area-inset-bottom))] [transition:padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "is-collapsed" : ""}`}>
               {profileOpen && !mobile ? (
                 <div
                   className={`profile-menu absolute right-[12px] bottom-[calc(100%_+_5px)] left-[12px] z-[60] p-[6px] border border-[#2d2d35] rounded-card-lg bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_50%)] ${collapsed ? "is-collapsed" : ""}`}
@@ -737,11 +737,11 @@ export function Sidebar({
 
   return (
     <>
-      <div className="user-mobile-topbar [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[40] [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:h-[59px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-between [@media(max-width:1023px)]:py-0 [@media(max-width:1023px)]:px-[16px] [@media(max-width:1023px)]:border-b [@media(max-width:1023px)]:border-b-[#2b2b2e] [@media(max-width:1023px)]:bg-[#1a181d]">
+      <div className="user-mobile-topbar hidden [@media(max-width:1023px)]:inset-[0_0_auto] [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[40] [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:h-[59px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-between [@media(max-width:1023px)]:py-0 [@media(max-width:1023px)]:px-[16px] [@media(max-width:1023px)]:border-b [@media(max-width:1023px)]:border-b-[#2b2b2e] [@media(max-width:1023px)]:bg-[#1a181d]">
         <Link href="/dashboard" className="mobile-brand [@media(max-width:1023px)]:inline-flex [@media(max-width:1023px)]:w-[44px] [@media(max-width:1023px)]:h-[44px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-center [@media(max-width:1023px)]:rounded-card focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]" aria-label="Stealth home">
-          <Image src="/stealth-cat.png" alt="" width={24} height={24} priority />
+          <Image src="/stealth-cat.png" alt="" width={24} height={24} className="h-[24px] w-[24px] object-contain" priority />
         </Link>
-        <div className="mobile-topbar-actions [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:gap-[6px]">
+        <div className="mobile-topbar-actions [@media(max-width:1023px)]:[&>button]:inline-flex [@media(max-width:1023px)]:[&>button]:h-[44px] [@media(max-width:1023px)]:[&>button]:w-[44px] [@media(max-width:1023px)]:[&>button]:items-center [@media(max-width:1023px)]:[&>button]:justify-center [@media(max-width:1023px)]:[&>button]:p-0 [@media(max-width:1023px)]:[&>button]:border-0 [@media(max-width:1023px)]:[&>button]:rounded-card [@media(max-width:1023px)]:[&>button]:bg-transparent [@media(max-width:1023px)]:[&>button]:text-ink-bright [@media(max-width:1023px)]:[&>button]:cursor-pointer [@media(max-width:1023px)]:[&>button:hover]:bg-[#1b1b1e] [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:gap-[6px]">
           <button
             type="button"
             className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-2"
@@ -790,7 +790,7 @@ export function Sidebar({
         ) : null}
       </div>
       <motion.aside
-        className={`sidebar relative z-50 w-[264px] min-w-0 flex-none h-full flex flex-col bg-[#121014] desktop-sidebar ${collapsed ? "overflow-hidden" : ""}`}
+        className={`sidebar relative z-50 w-[264px] min-w-0 flex-none h-full flex flex-col bg-[#121014] desktop-sidebar [@media(max-width:1023px)]:hidden ${collapsed ? "overflow-hidden" : ""}`}
         aria-label="Main navigation"
         initial={false}
         animate={{
@@ -804,7 +804,7 @@ export function Sidebar({
         {mobileOpen ? (
           <motion.button
             type="button"
-            className="mobile-sidebar-overlay [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:inset-0 [@media(max-width:1023px)]:z-[50] [@media(max-width:1023px)]:border-0 [@media(max-width:1023px)]:bg-[rgb(0_0_0_/_50%)]"
+            className="mobile-sidebar-overlay hidden [@media(max-width:1023px)]:block [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:inset-0 [@media(max-width:1023px)]:z-[50] [@media(max-width:1023px)]:border-0 [@media(max-width:1023px)]:bg-[rgb(0_0_0_/_50%)]"
             onClick={() => setMobileOpen(false)}
             aria-label="Close sidebar overlay"
             initial={{ opacity: 0 }}

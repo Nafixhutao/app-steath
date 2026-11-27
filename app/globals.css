@@ -365,16 +365,7 @@ form input[type="text"]:focus {
 .search-dialog-input input:focus-visible {
   outline: 2px solid #aaa6ec;
   outline-offset: 1px;
-}
-.user-mobile-topbar {
-  display: none;
-}
-.mobile-sidebar-overlay,
-.mobile-sidebar-sheet {
-  display: none;
-}
-
-.dashboard-link-button {
+}.dashboard-link-button {
   background: none;
 }
 .runtime-actions .dashboard-link-button:disabled,
@@ -428,52 +419,12 @@ form input[type="text"]:focus {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar {
-    transition: none;
-  }
   * {
     scroll-behavior: auto !important;
   }
 }
 
 @media (max-width: 1023px) {
-  .console-layout {
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-  .desktop-sidebar {
-    display: none;
-  }
-  .console-main {
-  min-height: calc(100dvh - 59px);
-  overflow-y: visible;
-}
-  .user-mobile-topbar {
-  inset: 0 0 auto;
-}
-  
-  .mobile-brand img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-  }
-  
-  .mobile-topbar-actions button {
-    display: inline-flex;
-    width: 44px;
-    height: 44px;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-card);
-    background: transparent;
-    color: var(--color-ink-bright);
-    cursor: pointer;
-  }
-  .mobile-topbar-actions button:hover {
-    background: #1b1b1e;
-  }
   /* The hamburger used to be a single 1px line, which read as a stray dash.
      Draw the three bars explicitly instead. */
   .mobile-topbar-actions button > span:not(.mobile-account-avatar) {
@@ -497,26 +448,11 @@ form input[type="text"]:focus {
   .mobile-topbar-actions button > span:not(.mobile-account-avatar)::after {
     top: 6px;
   }
-  
+
   /* The fixed topbar covers the first rows of the page, so the console
      content needs headroom for it on every console page. */
   .dashboard-content {
     padding-top: 83px;
-  }
-  .console-main {
-  min-height: calc(100dvh - 75px);
-}
-  .mobile-sidebar-overlay {
-  display: block;
-}
-  .mobile-sidebar-sheet {
-  inset: auto 0 0;
-  display: block;
-}
-  .mobile-sidebar-panel {
-    height: 100%;
-    border-radius: 20px 20px 0 0;
-    background: #232127;
   }
   .mobile-sidebar-panel::before {
     display: block;
@@ -526,26 +462,6 @@ form input[type="text"]:focus {
     border-radius: 999px;
     background: #4a4650;
     content: "";
-  }
-  .mobile-sidebar-panel .sidebar-header {
-    height: 48px;
-    padding: 0 16px;
-  }
-  .mobile-sidebar-panel .sidebar-search {
-    width: calc(100% - 16px);
-    height: 40px;
-    margin-top: 6px;
-  }
-  .mobile-sidebar-panel .sidebar-nav {
-    margin-top: 8px;
-  }
-  .mobile-sidebar-panel .sidebar-row {
-    width: calc(100% - 24px);
-    height: 40px;
-    margin: 0 12px;
-  }
-  .mobile-sidebar-panel .profile-area {
-    padding-bottom: calc(13px + env(safe-area-inset-bottom));
   }
 }
 
@@ -1379,9 +1295,6 @@ body {
    `.user-mobile-topbar` is hidden, and the topbar trims its secondary actions
    so the org switcher and avatar fit without horizontal overflow. */
 @media (max-width: 1023px) {
-  .console-main {
-  min-height: calc(100dvh - 52px);
-}
   .dashboard-content {
     min-height: calc(100dvh - 52px);
     padding-top: 20px;
