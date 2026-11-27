@@ -57,7 +57,7 @@ function QuotaMeter({
         <span className={`usage-meter-percent ${tone}`}>{percent}%</span>
       </div>
       <div
-        className="usage-progress-track"
+        className="usage-progress-track h-[6px] w-full rounded-[9999px] overflow-hidden"
         role="progressbar"
         aria-valuenow={percent}
         aria-valuemin={0}
@@ -181,13 +181,13 @@ export default function UsagePage() {
 
       {loading && !usageData ? (
         <div className="py-[16px] px-0" role="status" aria-label="Loading usage data">
-          <div className="supabase-skeleton-box h-3 w-64 rounded mb-3" />
-          <div className="supabase-skeleton-box h-7 w-48 rounded" />
+          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-64 rounded mb-3" />
+          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-7 w-48 rounded" />
         </div>
       ) : !usageData ? (
         <div className="py-[48px] px-[20px] text-center border border-dashed border-[#2a2833] rounded-card">
-          <h2 className="usage-empty-title">Quota unavailable</h2>
-          <p className="usage-empty-copy">
+          <h2 className="text-[14px] font-semibold text-ink-bright mt-0 mb-[6px] mx-0">Quota unavailable</h2>
+          <p className="max-w-[460px] my-0 mx-auto text-[12px] leading-[1.5] text-ink-muted">
             The organization quota could not be loaded. Try refreshing.
           </p>
         </div>
@@ -212,7 +212,7 @@ export default function UsagePage() {
             </div>
           </section>
 
-          <section className="usage-section" aria-labelledby="quotas-section-heading">
+          <section className="mb-[26px]" aria-labelledby="quotas-section-heading">
             <div className="usage-section-head">
               <h2 id="quotas-section-heading">Capacity &amp; quotas</h2>
               <span>Platform limits</span>
@@ -225,7 +225,7 @@ export default function UsagePage() {
                   <span>/ {usageData.counts.services.limit}</span>
                 </div>
                 <div
-                  className="usage-progress-track"
+                  className="usage-progress-track h-[6px] w-full rounded-[9999px] overflow-hidden"
                   role="progressbar"
                   aria-valuenow={calculatePercent(
                     usageData.counts.services.used,
@@ -267,7 +267,7 @@ export default function UsagePage() {
             </div>
           </section>
 
-          <section className="usage-section" aria-labelledby="service-health-heading">
+          <section className="mb-[26px]" aria-labelledby="service-health-heading">
             <div className="usage-section-head">
               <h2 id="service-health-heading">Service status</h2>
               <span>{usageData.services.length} services</span>
@@ -288,20 +288,20 @@ export default function UsagePage() {
                 </DonutChart>
               </div>
             ) : (
-              <div className="usage-empty-box">
-                <p className="usage-empty-title">No services to measure yet</p>
-                <p className="usage-empty-copy">
+              <div className="py-[40px] px-[20px] text-center">
+                <p className="text-[14px] font-semibold text-ink-bright mt-0 mb-[6px] mx-0">No services to measure yet</p>
+                <p className="max-w-[460px] my-0 mx-auto text-[12px] leading-[1.5] text-ink-muted">
                   Deploy a service from a project. Its CPU, memory, storage and status will appear
                   here automatically.
                 </p>
-                <Link href="/dashboard/projects" className="usage-group-link">
+                <Link href="/dashboard/projects" className="usage-group-link ml-[12px] text-[11px]">
                   Go to Projects
                 </Link>
               </div>
             )}
           </section>
 
-          <section className="usage-section" aria-labelledby="projects-usage-heading">
+          <section className="mb-[26px]" aria-labelledby="projects-usage-heading">
             <div className="usage-section-head">
               <h2 id="projects-usage-heading">Projects at a glance</h2>
               <span>{usageData.projects.length} projects</span>
@@ -341,19 +341,19 @@ export default function UsagePage() {
             </div>
           </section>
 
-          <section className="usage-section" aria-labelledby="services-usage-heading">
+          <section className="mb-[26px]" aria-labelledby="services-usage-heading">
             <div className="usage-section-head">
               <h2 id="services-usage-heading">Service resource breakdown</h2>
               <span>{usageData.services.length} services</span>
             </div>
-            <p className="usage-section-intro">
+            <p className="mt-[-4px] mb-[10px] mx-0 text-[12px] leading-[1.5] text-ink-muted">
               Measured CPU, memory and disk for each deployed container, grouped by project.
             </p>
-            <div className="usage-table-card">
+            <div className="usage-table-card border border-surface-raised rounded-card overflow-x-auto">
               {usageData.services.length === 0 ? (
-                <div className="usage-empty-box">
-                  <p className="usage-empty-title">No deployed services</p>
-                  <p className="usage-empty-copy">
+                <div className="py-[40px] px-[20px] text-center">
+                  <p className="text-[14px] font-semibold text-ink-bright mt-0 mb-[6px] mx-0">No deployed services</p>
+                  <p className="max-w-[460px] my-0 mx-auto text-[12px] leading-[1.5] text-ink-muted">
                     Deploy a service from a project to start measuring container compute and memory.
                   </p>
                 </div>
@@ -376,7 +376,7 @@ export default function UsagePage() {
                           <span className="ml-[8px] text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
                           <Link
                             href={`/dashboard/projects/${group.id}`}
-                            className="usage-group-link"
+                            className="usage-group-link ml-[12px] text-[11px]"
                           >
                             Open project
                           </Link>
@@ -436,15 +436,15 @@ export default function UsagePage() {
           </section>
 
           {usageData.databases.length > 0 ? (
-            <section className="usage-section" aria-labelledby="databases-usage-heading">
+            <section className="mb-[26px]" aria-labelledby="databases-usage-heading">
               <div className="usage-section-head">
                 <h2 id="databases-usage-heading">Database storage</h2>
                 <span>{usageData.databases.length} databases</span>
               </div>
-              <p className="usage-section-intro">
+              <p className="mt-[-4px] mb-[10px] mx-0 text-[12px] leading-[1.5] text-ink-muted">
                 Measured storage used by each database in this organization.
               </p>
-              <div className="usage-table-card">
+              <div className="usage-table-card border border-surface-raised rounded-card overflow-x-auto">
                 <table className="usage-table">
                   <thead>
                     <tr>
@@ -493,7 +493,7 @@ export default function UsagePage() {
           ) : null}
 
           {canSeeLimitDetail ? (
-            <section className="usage-section" aria-labelledby="limit-detail-heading">
+            <section className="mb-[26px]" aria-labelledby="limit-detail-heading">
               <div className="usage-section-head">
                 <h2 id="limit-detail-heading">Platform allocation policy</h2>
               </div>

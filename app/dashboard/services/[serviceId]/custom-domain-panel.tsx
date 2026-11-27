@@ -217,20 +217,20 @@ export function CustomDomainPanel({
                 <tr>
                   <td data-label="Type">TXT</td>
                   <td data-label="Name">
-                    <code className="environment-key">{domainData.instructions.txt.name}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.txt.name}</code>
                   </td>
                   <td data-label="Value" className="svc-cell-wide">
-                    <code className="environment-key">{domainData.instructions.txt.value}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.txt.value}</code>
                   </td>
                 </tr>
                 <tr>
                   <td data-label="Type">A</td>
                   <td data-label="Name">
-                    <code className="environment-key">{domainData.instructions.a.name}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.a.name}</code>
                   </td>
                   <td data-label="Value" className="svc-cell-wide">
                     {domainData.instructions.a.value ? (
-                      <code className="environment-key">{domainData.instructions.a.value}</code>
+                      <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.a.value}</code>
                     ) : (
                       <span>Not configured. Use the CNAME instead</span>
                     )}
@@ -239,10 +239,10 @@ export function CustomDomainPanel({
                 <tr>
                   <td data-label="Type">CNAME</td>
                   <td data-label="Name">
-                    <code className="environment-key">{domainData.instructions.cname.name}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.cname.name}</code>
                   </td>
                   <td data-label="Value" className="svc-cell-wide">
-                    <code className="environment-key">{domainData.instructions.cname.value}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.cname.value}</code>
                   </td>
                 </tr>
               </tbody>

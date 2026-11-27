@@ -284,13 +284,13 @@ export function DatabasePanel({
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="supabase-project-skeleton-card h-44" aria-hidden="true">
-          <div className="supabase-skeleton-box h-5 w-48 rounded mb-4" />
+        <div className="supabase-project-skeleton-card flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px] h-44" aria-hidden="true">
+          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-5 w-48 rounded mb-4" />
           <div className="grid grid-cols-4 gap-4">
-            <div className="supabase-skeleton-box h-12 rounded" />
-            <div className="supabase-skeleton-box h-12 rounded" />
-            <div className="supabase-skeleton-box h-12 rounded" />
-            <div className="supabase-skeleton-box h-12 rounded" />
+            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
           </div>
         </div>
       </div>
@@ -314,8 +314,8 @@ export function DatabasePanel({
 
       {!database ? (
         /* Empty State */
-        <div className="project-empty-card">
-          <div className="project-empty-icon-wrap" aria-hidden="true">
+        <div className="project-empty-card flex flex-col items-center justify-center py-[56px] px-[24px] rounded-card border border-dashed border-[#262430] text-center">
+          <div className="project-empty-icon-wrap flex items-center justify-center w-[48px] h-[48px] rounded-card-lg" aria-hidden="true">
             <Database className="w-8 h-8 text-emerald-400" />
           </div>
           <h3 className="text-base font-semibold text-white mt-3">No Database in this Project</h3>
@@ -382,7 +382,7 @@ export function DatabasePanel({
           <div className="p-[20px] rounded-card bg-surface border border-[var(--color-surface-raised)]">
             <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[16px]">
               <div className="flex items-center gap-2.5">
-                <div className="project-service-icon" aria-hidden="true">
+                <div className="project-service-icon flex items-center justify-center w-[32px] h-[32px] rounded-control shrink-0" aria-hidden="true">
                   <Database className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
@@ -415,12 +415,12 @@ export function DatabasePanel({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-zinc-800/80">
-              <div className="project-db-metric-box">
-                <span className="project-db-metric-label">Disk Storage</span>
-                <span className="project-db-metric-value">{usageLabel(database)}</span>
-                <div className="supabase-usage-bar-track mt-1.5">
+              <div className="flex flex-col">
+                <span className="text-[11.5px] text-[#716f7c] mb-[3px]">Disk Storage</span>
+                <span className="text-[13px] font-semibold text-ink">{usageLabel(database)}</span>
+                <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden mt-1.5">
                   <div
-                    className="supabase-usage-bar-fill"
+                    className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]"
                     style={{
                       width: `${Math.min(
                         100,
@@ -431,9 +431,9 @@ export function DatabasePanel({
                 </div>
               </div>
 
-              <div className="project-db-metric-box">
-                <span className="project-db-metric-label">Network Scope</span>
-                <span className="project-db-metric-value flex items-center gap-1.5">
+              <div className="flex flex-col">
+                <span className="text-[11.5px] text-[#716f7c] mb-[3px]">Network Scope</span>
+                <span className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Private Network</span>
                 </span>
@@ -442,9 +442,9 @@ export function DatabasePanel({
                 </span>
               </div>
 
-              <div className="project-db-metric-box">
-                <span className="project-db-metric-label">Created At</span>
-                <span className="project-db-metric-value text-xs text-zinc-300">
+              <div className="flex flex-col">
+                <span className="text-[11.5px] text-[#716f7c] mb-[3px]">Created At</span>
+                <span className="text-[13px] font-semibold text-ink text-xs text-zinc-300">
                   {formatDateTime(database.createdAt)}
                 </span>
                 <span className="text-[11px] text-zinc-500 mt-1">Daily backups active</span>
@@ -453,11 +453,11 @@ export function DatabasePanel({
           </div>
 
           {/* Connection URI Card */}
-          <div className="project-settings-card">
-            <div className="project-settings-card-head">
+          <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+            <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
               <div>
-                <h3 className="project-settings-title">Private Connection String</h3>
-                <p className="project-settings-desc">
+                <h3 className="text-[14.5px] font-semibold text-ink m-0">Private Connection String</h3>
+                <p className="text-[12px] text-[#716f7c] mt-[3px] mb-0 mx-0">
                   Reachable directly from services in this project via{" "}
                   <code>db:{database.engine === "mysql" ? "3306" : "5432"}</code>. Injected
                   automatically as <code>DATABASE_URL</code>.
@@ -479,7 +479,7 @@ export function DatabasePanel({
 
             <div className="p-5 space-y-4">
               {database.connectionString ? (
-                <div className="project-code-box">
+                <div className="project-code-box flex items-center justify-between gap-[10px] py-[10px] px-[14px] rounded-control border border-[#232129]">
                   <div className="flex-1 font-mono text-xs text-zinc-300 overflow-x-auto select-all">
                     {revealPrivateUri
                       ? database.connectionString
@@ -488,7 +488,7 @@ export function DatabasePanel({
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
                       type="button"
-                      className="project-code-btn"
+                      className="project-code-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
                       onClick={() => setRevealPrivateUri((prev) => !prev)}
                       title={revealPrivateUri ? "Hide password" : "Show password"}
                       aria-label="Toggle password visibility"
@@ -501,7 +501,7 @@ export function DatabasePanel({
                     </button>
                     <button
                       type="button"
-                      className="project-code-btn"
+                      className="project-code-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
                       onClick={() => copyText(database.connectionString ?? "", "private")}
                       title="Copy connection string"
                       aria-label="Copy connection string"
@@ -521,7 +521,7 @@ export function DatabasePanel({
               )}
 
               {database.engine === "postgres" ? (
-                <div className="db-cred-card">
+                <div className="db-cred-card flex flex-col rounded-card border border-[#232129] overflow-hidden">
                   <CredentialRow
                     label="Host"
                     value={databaseHost}
@@ -551,9 +551,9 @@ export function DatabasePanel({
                     />
                   ) : (
                     <div className="db-cred-row">
-                      <span className="db-cred-label">Password</span>
-                      <div className="db-cred-value-wrap">
-                        <span className="db-cred-value db-cred-muted">Owner or admin only</span>
+                      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Password</span>
+                      <div className="flex items-start gap-[10px] min-w-0">
+                        <span className="db-cred-value db-cred-muted [font-family:inherit]">Owner or admin only</span>
                       </div>
                     </div>
                   )}
@@ -561,7 +561,7 @@ export function DatabasePanel({
               ) : null}
 
               {credentialError && database.engine === "postgres" ? (
-                <p className="db-cred-error" role="alert">
+                <p className="text-[11.5px] text-[#ff7a82] mt-[6px]" role="alert">
                   <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
                   {credentialError}
                 </p>
@@ -571,14 +571,14 @@ export function DatabasePanel({
 
           {/* phpMyAdmin Card (MySQL only) */}
           {database.phpMyAdmin.enabled ? (
-            <div className="project-settings-card">
-              <div className="project-settings-card-head">
+            <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+              <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
                 <div>
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-emerald-400" />
-                    <h3 className="project-settings-title">phpMyAdmin</h3>
+                    <h3 className="text-[14.5px] font-semibold text-ink m-0">phpMyAdmin</h3>
                   </div>
-                  <p className="project-settings-desc">
+                  <p className="text-[12px] text-[#716f7c] mt-[3px] mb-0 mx-0">
                     A browser client for this Database, served on the Platform Domain over HTTPS.
                     It reaches MySQL through the private Project network.
                   </p>
@@ -611,13 +611,13 @@ export function DatabasePanel({
                     </button>
 
                     {credentialError ? (
-                      <p className="db-cred-error" role="alert">
+                      <p className="text-[11.5px] text-[#ff7a82] mt-[6px]" role="alert">
                         <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
                         {credentialError}
                       </p>
                     ) : null}
 
-                    <div className="db-cred-card">
+                    <div className="db-cred-card flex flex-col rounded-card border border-[#232129] overflow-hidden">
                       <CredentialRow
                         label="Host"
                         value={databaseHost}
@@ -647,9 +647,9 @@ export function DatabasePanel({
                         />
                       ) : (
                         <div className="db-cred-row">
-                          <span className="db-cred-label">Password</span>
-                          <div className="db-cred-value-wrap">
-                            <span className="db-cred-value db-cred-muted">
+                          <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Password</span>
+                          <div className="flex items-start gap-[10px] min-w-0">
+                            <span className="db-cred-value db-cred-muted [font-family:inherit]">
                               Owner or admin only
                             </span>
                           </div>
@@ -674,14 +674,14 @@ export function DatabasePanel({
 
           {/* Public Proxy Card (PostgreSQL only) */}
           {database.engine === "postgres" ? (
-            <div className="project-settings-card">
-              <div className="project-settings-card-head">
+            <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+              <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
                 <div>
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-cyan-400" />
-                    <h3 className="project-settings-title">Public Proxy (External Access)</h3>
+                    <h3 className="text-[14.5px] font-semibold text-ink m-0">Public Proxy (External Access)</h3>
                   </div>
-                  <p className="project-settings-desc">
+                  <p className="text-[12px] text-[#716f7c] mt-[3px] mb-0 mx-0">
                     {database.proxy.enabled
                       ? `Proxy active on public port ${database.proxy.port}. Encrypted via TLS with strict CIDR allowlist enforcement.`
                       : "Disabled. This database cannot be reached from outside the private network."}
@@ -713,7 +713,7 @@ export function DatabasePanel({
                         placeholder="0.0.0.0/0"
                         rows={3}
                         spellCheck={false}
-                        className="project-form-input font-mono text-xs"
+                        className="project-form-input w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] font-mono text-xs"
                       />
                     </div>
 
@@ -744,7 +744,7 @@ export function DatabasePanel({
                         <span className="project-form-label block mb-1.5">
                           Public Connection URI
                         </span>
-                        <div className="project-code-box">
+                        <div className="project-code-box flex items-center justify-between gap-[10px] py-[10px] px-[14px] rounded-control border border-[#232129]">
                           <div className="flex-1 font-mono text-xs text-zinc-300 overflow-x-auto select-all">
                             {revealPublicUri
                               ? database.proxy.connectionString
@@ -753,7 +753,7 @@ export function DatabasePanel({
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             <button
                               type="button"
-                              className="project-code-btn"
+                              className="project-code-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
                               onClick={() => setRevealPublicUri((prev) => !prev)}
                               title={revealPublicUri ? "Hide password" : "Show password"}
                               aria-label="Toggle public password visibility"
@@ -766,7 +766,7 @@ export function DatabasePanel({
                             </button>
                             <button
                               type="button"
-                              className="project-code-btn"
+                              className="project-code-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
                               onClick={() =>
                                 copyText(database.proxy.connectionString ?? "", "public")
                               }
@@ -793,14 +793,14 @@ export function DatabasePanel({
               </div>
             </div>
           ) : (
-            <div className="project-settings-card">
-              <div className="project-settings-card-head">
+            <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+              <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
                 <div>
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-cyan-400" />
-                    <h3 className="project-settings-title">External Access</h3>
+                    <h3 className="text-[14.5px] font-semibold text-ink m-0">External Access</h3>
                   </div>
-                  <p className="project-settings-desc">
+                  <p className="text-[12px] text-[#716f7c] mt-[3px] mb-0 mx-0">
                     A MySQL Database is reached through phpMyAdmin above. The TCP public proxy is
                     PostgreSQL-only because it forwards a TLS stream MySQL does not speak.
                   </p>
@@ -811,20 +811,20 @@ export function DatabasePanel({
 
           {/* Delete Database Danger Zone */}
           {canManage && (
-            <div className="project-danger-card">
-              <div className="project-danger-card-head">
+            <div className="project-danger-card rounded-card border border-[rgba(244,63,94,0.25)] overflow-hidden">
+              <div className="project-danger-card-head py-[16px] px-[20px] border-b border-b-[rgba(244,63,94,0.15)]">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-rose-400" />
-                  <h3 className="project-danger-title">Delete Database</h3>
+                  <h3 className="text-[14.5px] font-semibold text-[var(--color-danger)] m-0">Delete Database</h3>
                 </div>
-                <p className="project-danger-desc">
+                <p className="text-[12px] text-[#9e9aa8] mt-[4px] mb-0 mx-0">
                   Permanently deletes the {database.engine === "mysql" ? "MySQL" : "PostgreSQL"}{" "}
                   container, its phpMyAdmin sidecar if any, volume storage, and all relational data.
                   This action is irreversible.
                 </p>
               </div>
 
-              <form onSubmit={remove} className="project-danger-body">
+              <form onSubmit={remove} className="p-[20px]">
                 <div className="max-w-md">
                   <label htmlFor="delete-db-confirm-input" className="project-form-label">
                     Type <strong>{projectName}</strong> to confirm deletion:
@@ -836,14 +836,14 @@ export function DatabasePanel({
                     placeholder={projectName}
                     autoComplete="off"
                     required
-                    className="project-form-input border-rose-900/50 focus:border-rose-500"
+                    className="project-form-input w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
                   />
                 </div>
 
-                <div className="project-danger-card-footer">
+                <div className="project-danger-card-footer flex items-center justify-end py-[14px] px-[20px] border-t border-t-[rgba(244,63,94,0.15)] mt-[20px]">
                   <button
                     type="submit"
-                    className="project-btn-danger"
+                    className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                     disabled={busy || confirmation !== projectName}
                   >
                     {busy ? "Deleting..." : "Delete Database"}

@@ -198,7 +198,7 @@ export function VolumePanel({
             <tbody>
               <tr>
                 <td data-label="Mount path">
-                  <code className="environment-key">{volume.mountPath}</code>
+                  <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{volume.mountPath}</code>
                 </td>
                 <td data-label="Size">{volume.sizeMb} MB</td>
                 <td data-label="Usage" className="svc-cell-wide">

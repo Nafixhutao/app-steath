@@ -197,7 +197,7 @@ function Identity({
 }) {
   return (
     <>
-      <span className="identity-initial" aria-hidden="true">
+      <span className="identity-initial w-[20px] items-center justify-center rounded-control" aria-hidden="true">
         {getInitials(organization.name)}
       </span>
       {!collapsed ? (
@@ -558,7 +558,7 @@ export function Sidebar({
                 onClick={() => void switchOrganization(item.id)}
                 disabled={organizationBusy}
               >
-                <span className="identity-initial" aria-hidden="true">
+                <span className="identity-initial w-[20px] items-center justify-center rounded-control" aria-hidden="true">
                   {getInitials(item.name)}
                 </span>
                 <span className="min-w-0 flex-1 overflow-hidden text-[13px] text-ellipsis whitespace-nowrap">{item.name}</span>
@@ -641,7 +641,7 @@ export function Sidebar({
       </nav>
 
       <div className="sidebar-bottom">
-        <div className="sidebar-divider" />
+        <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
         <nav aria-label="Organization links">
           {secondaryItems.map((item) => (
             <NavRow
@@ -668,7 +668,7 @@ export function Sidebar({
         </nav>
         {mobile ? (
           <>
-            <div className="sidebar-divider" />
+            <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
             <div className={`profile-area ${collapsed && !mobile ? "is-collapsed" : ""}`}>
               {profileOpen && !mobile ? (
                 <div
@@ -683,7 +683,7 @@ export function Sidebar({
                       <small>{user.role}</small>
                     </div>
                   </div>
-                  <div className="sidebar-divider" />
+                  <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
 
                   <button
                     type="button"
@@ -765,7 +765,7 @@ export function Sidebar({
           <div className="mobile-account-menu" role="menu">
             <strong title={user.name}>{user.name}</strong>
             <small>{user.role}</small>
-            <div className="sidebar-divider" />
+            <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
             <button
               type="button"
               onClick={async () => {

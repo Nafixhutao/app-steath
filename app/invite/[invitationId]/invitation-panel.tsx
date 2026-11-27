@@ -55,7 +55,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
   }
 
   return (
-    <main className="invitation-page">
+    <main className="invitation-page grid min-h-[100dvh] p-[24px] bg-console text-ink-console">
       <section className="invitation-panel">
         <p className="auth-eyebrow">Organization invitation</p>
         <h1>Join an Organization</h1>

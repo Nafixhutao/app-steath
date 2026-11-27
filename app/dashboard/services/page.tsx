@@ -244,7 +244,7 @@ export default function ServicesPage() {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="supabase-filter-select"
+            className="supabase-filter-select h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
             aria-label="Filter by service status"
           >
             <option value="all">All statuses</option>
@@ -260,7 +260,7 @@ export default function ServicesPage() {
             <select
               value={projectFilter}
               onChange={(event) => setProjectFilter(event.target.value)}
-              className="supabase-filter-select"
+              className="supabase-filter-select h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
               aria-label="Filter by project"
             >
               <option value="all">All projects</option>
@@ -275,7 +275,7 @@ export default function ServicesPage() {
 
         <div className="flex items-center gap-[12px]">
           <span className="text-[12px] text-ink-muted tabular-nums whitespace-nowrap">{filteredServices.length} shown</span>
-          <div className="supabase-view-toggle-group" role="group" aria-label="View mode">
+          <div className="supabase-view-toggle-group flex items-center border border-[#282631] rounded-control p-[2px]" role="group" aria-label="View mode">
             <button
               type="button"
               className={`supabase-view-btn ${viewMode === "grid" ? "is-active" : ""}`}
@@ -301,12 +301,12 @@ export default function ServicesPage() {
       </div>
 
       {loading && serviceList.length === 0 ? (
-        <div className="services-grid" role="status" aria-label="Loading services">
+        <div className="services-grid grid gap-[12px]" role="status" aria-label="Loading services">
           {[1, 2, 3, 4].map((item) => (
             <div key={item} className="bg-surface border border-[var(--color-surface-raised)] rounded-card p-[16px]" aria-hidden="true">
-              <div className="supabase-skeleton-box h-4 w-36 rounded mb-3" />
-              <div className="supabase-skeleton-box h-3 w-24 rounded mb-4" />
-              <div className="supabase-skeleton-box h-3 w-2/3 rounded" />
+              <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-36 rounded mb-3" />
+              <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-24 rounded mb-4" />
+              <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-2/3 rounded" />
             </div>
           ))}
         </div>
@@ -354,7 +354,7 @@ export default function ServicesPage() {
                   <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
                 </Link>
               </div>
-              <div className="services-grid">
+              <div className="services-grid grid gap-[12px]">
                 {group.items.map((service) => (
                   <article key={service.id} className="bg-surface border border-surface-raised rounded-card py-[14px] px-[16px] flex flex-col min-w-0 [transition:border-color_120ms_ease] hover:border-[#3a3744]">
                     <div className="flex items-start justify-between gap-[12px] mb-[10px]">
@@ -368,7 +368,7 @@ export default function ServicesPage() {
                         </Link>
                         <div className="services-card-meta">
                           <GitBranch className="w-3 h-3" aria-hidden="true" />
-                          <span className="services-mono">{service.branch}</span>
+                          <span className="services-mono [font-family:var(--font-console-mono)]">{service.branch}</span>
                           <span aria-hidden="true">·</span>
                           <span title={service.repoUrl}>
                             {service.repoUrl.replace(/^https?:\/\//, "").split("/")[0]}
@@ -378,12 +378,12 @@ export default function ServicesPage() {
                       {renderStatusPill(service.status)}
                     </div>
 
-                    <div className="services-card-url-row">
+                    <div className="flex items-center gap-[6px] min-w-0 mb-[10px]">
                       <a
                         href={service.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="services-card-url"
+                        className="services-card-url min-w-0 overflow-hidden text-ellipsis whitespace-nowrap [font-family:var(--font-console-mono)] text-[12px]"
                         title="Open live service in a new tab"
                       >
                         {service.platformHostname}
@@ -392,7 +392,7 @@ export default function ServicesPage() {
                     </div>
 
                     <div className="flex items-center justify-between gap-[10px] pt-[10px] border-t border-t-[#211f29] mt-auto">
-                      <span className="services-specs">
+                      <span className="services-specs [font-family:var(--font-console-mono)] text-ink-muted tabular-nums whitespace-nowrap">
                         {service.cpuLimit} vCPU · {service.memoryLimitMb} MB · :
                         {service.containerPort}
                       </span>
@@ -448,7 +448,7 @@ export default function ServicesPage() {
                       </Link>
                       <div className="services-card-meta">
                         <GitBranch className="w-3 h-3" aria-hidden="true" />
-                        <span className="services-mono">{service.branch}</span>
+                        <span className="services-mono [font-family:var(--font-console-mono)]">{service.branch}</span>
                         <span aria-hidden="true">·</span>
                         <span title={service.repoUrl}>
                           {service.repoUrl.replace(/^https?:\/\//, "").split("/")[0]}
@@ -462,7 +462,7 @@ export default function ServicesPage() {
                           href={service.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="services-card-url"
+                          className="services-card-url min-w-0 overflow-hidden text-ellipsis whitespace-nowrap [font-family:var(--font-console-mono)] text-[12px]"
                           title={service.url}
                         >
                           {service.platformHostname}
@@ -470,10 +470,10 @@ export default function ServicesPage() {
                         {renderCopyButton(service)}
                       </div>
                     </td>
-                    <td className="services-specs">
+                    <td className="services-specs [font-family:var(--font-console-mono)] text-ink-muted tabular-nums whitespace-nowrap">
                       {service.cpuLimit} vCPU · {service.memoryLimitMb} MB
                     </td>
-                    <td className="services-mono">:{service.containerPort}</td>
+                    <td className="services-mono [font-family:var(--font-console-mono)]">:{service.containerPort}</td>
                     <td>
                       <div className="flex items-center justify-end gap-[6px]">
                         <a

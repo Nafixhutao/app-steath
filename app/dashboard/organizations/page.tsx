@@ -144,13 +144,13 @@ export default function OrganizationsPage() {
         </div>
 
         {isPending ? (
-          <div className="orgs-grid" aria-label="Loading organizations">
+          <div className="orgs-grid grid gap-[16px]" aria-label="Loading organizations">
             {[1, 2].map((n) => (
               <div key={n} className="flex items-center gap-[16px] py-[16px] px-[20px] rounded-card bg-surface border border-[var(--color-surface-raised)] min-h-[70px]" aria-hidden="true">
-                <div className="supabase-skeleton-box w-9 h-9 rounded-lg" />
+                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-lg" />
                 <div className="flex-1 space-y-2">
-                  <div className="supabase-skeleton-box h-4 rounded w-32" />
-                  <div className="supabase-skeleton-box h-3 rounded w-20" />
+                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 rounded w-32" />
+                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 rounded w-20" />
                 </div>
               </div>
             ))}
@@ -189,7 +189,7 @@ export default function OrganizationsPage() {
             )}
           </div>
         ) : (
-          <div ref={gridRef} className="orgs-grid">
+          <div ref={gridRef} className="orgs-grid grid gap-[16px]">
             {filteredOrgs.map((org) => {
               const isSwitching = switchingId === org.id;
               return (
@@ -223,7 +223,7 @@ export default function OrganizationsPage() {
             <h2 id="modal-title">Create a new organization</h2>
             <button
               type="button"
-              className="supabase-modal-close"
+              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >

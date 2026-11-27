@@ -335,14 +335,14 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         </div>
 
         <div className="flex items-center gap-[16px] py-[10px] px-[18px] bg-[#131217] border-t border-t-[#23212b] text-[11.5px] text-[#716f7c]">
-          <span className="command-palette-footer-item">
-            <kbd className="command-palette-mini-kbd">&uarr;&darr;</kbd> Navigate
+          <span className="flex items-center gap-[5px]">
+            <kbd className="command-palette-mini-kbd text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">&uarr;&darr;</kbd> Navigate
           </span>
-          <span className="command-palette-footer-item">
-            <kbd className="command-palette-mini-kbd">&crarr;</kbd> Select
+          <span className="flex items-center gap-[5px]">
+            <kbd className="command-palette-mini-kbd text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">&crarr;</kbd> Select
           </span>
-          <span className="command-palette-footer-item">
-            <kbd className="command-palette-mini-kbd">ESC</kbd> Close
+          <span className="flex items-center gap-[5px]">
+            <kbd className="command-palette-mini-kbd text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">ESC</kbd> Close
           </span>
         </div>
       </div>

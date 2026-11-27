@@ -114,7 +114,7 @@ export function SupabaseModal({
         <h2 id="supabase-modal-title">{title}</h2>
         <button
           type="button"
-          className="supabase-modal-close"
+          className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
           onClick={onClose}
           aria-label="Close dialog"
         >

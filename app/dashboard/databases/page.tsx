@@ -189,7 +189,7 @@ export default function DatabasesPage() {
             </span>
           </span>
           <Link href="/dashboard/projects" className="db-btn db-btn-primary">
-            <Plus className="db-btn-icon" aria-hidden="true" />
+            <Plus className="w-[15px] h-[15px]" aria-hidden="true" />
             <span>New Database</span>
           </Link>
         </div>
@@ -225,33 +225,33 @@ export default function DatabasesPage() {
             className="db-btn-warning db-btn border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.12)] hover:bg-[rgba(245,158,11,0.2)] hover:border-[rgba(245,158,11,0.6)]"
           >
             <span>Expand Storage</span>
-            <ArrowUpRight className="db-btn-icon" aria-hidden="true" />
+            <ArrowUpRight className="w-[15px] h-[15px]" aria-hidden="true" />
           </Link>
         </div>
       ) : null}
 
       {/* Overview Metric Cards */}
       <section className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-[14px] mt-[24px]" aria-label="Database overview metrics">
-        <div className="db-metric-card">
-          <div className="db-metric-header">
-            <span className="db-metric-label">Total Databases</span>
+        <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Total Databases</span>
             <Database className="db-metric-icon text-indigo" aria-hidden="true" />
           </div>
-          <div className="db-metric-value">{databasesList.length}</div>
-          <div className="db-metric-meta">
+          <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">{databasesList.length}</div>
+          <div className="mt-[4px] text-[12px] text-[#9e9aa7]">
             {databasesList.length === 0
               ? "No databases created"
               : `${runningCount} currently active`}
           </div>
         </div>
 
-        <div className="db-metric-card">
-          <div className="db-metric-header">
-            <span className="db-metric-label">Engine & Health</span>
+        <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Engine & Health</span>
             <CheckCircle2 className="db-metric-icon text-emerald" aria-hidden="true" />
           </div>
-          <div className="db-metric-value">{engineSummary(databasesList)}</div>
-          <div className="db-metric-meta">
+          <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">{engineSummary(databasesList)}</div>
+          <div className="mt-[4px] text-[12px] text-[#9e9aa7]">
             {databasesList.length > 0 && runningCount === databasesList.length
               ? "All instances operational"
               : databasesList.length > 0
@@ -260,15 +260,15 @@ export default function DatabasesPage() {
           </div>
         </div>
 
-        <div className="db-metric-card">
-          <div className="db-metric-header">
-            <span className="db-metric-label">Allocated Storage</span>
+        <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Allocated Storage</span>
             <HardDrive className="db-metric-icon text-amber" aria-hidden="true" />
           </div>
-          <div className="db-metric-value">
+          <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">
             {totalAllocatedStorage > 0 ? `${totalUsedStorage} MB` : "0 MB"}
           </div>
-          <div className="db-metric-meta">
+          <div className="mt-[4px] text-[12px] text-[#9e9aa7]">
             {totalAllocatedStorage > 0
               ? `of ${totalAllocatedStorage} MB total capacity`
               : "1024 MB quota per project"}
@@ -334,7 +334,7 @@ export default function DatabasesPage() {
 
       {/* Main Content Area */}
       {databases.loading ? (
-        <div className="db-table-container">
+        <div className="db-table-container mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
           <div className="flex flex-col items-center justify-center gap-[12px] py-[64px] px-[20px] text-[#9e9aa7] text-[13.5px]" role="status">
             <RefreshCw className="w-[24px] h-[24px] text-accent animate-[db-spin_1s_linear_infinite]" aria-hidden="true" />
             <p>Fetching databases in this organization...</p>
@@ -357,13 +357,13 @@ export default function DatabasesPage() {
           </p>
 
           <Link href="/dashboard/projects" className="db-btn db-btn-primary mx-auto">
-            <Plus className="db-btn-icon" aria-hidden="true" />
+            <Plus className="w-[15px] h-[15px]" aria-hidden="true" />
             <span>Go to Projects to Create Database</span>
           </Link>
 
           <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[16px] max-w-[820px] mt-[48px] mb-0 mx-auto text-left">
             <div className="db-feature-item">
-              <div className="db-feature-icon-box">
+              <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
                 <ShieldCheck className="db-feature-icon text-emerald" />
               </div>
               <div>
@@ -372,7 +372,7 @@ export default function DatabasesPage() {
               </div>
             </div>
             <div className="db-feature-item">
-              <div className="db-feature-icon-box">
+              <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
                 <HardDrive className="db-feature-icon text-indigo" />
               </div>
               <div>
@@ -381,7 +381,7 @@ export default function DatabasesPage() {
               </div>
             </div>
             <div className="db-feature-item">
-              <div className="db-feature-icon-box">
+              <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
                 <RefreshCw className="db-feature-icon text-amber" />
               </div>
               <div>
@@ -415,7 +415,7 @@ export default function DatabasesPage() {
         </div>
       ) : (
         /* Databases Table */
-        <div className="db-table-container">
+        <div className="db-table-container mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
           <table className="db-table">
             <thead>
               <tr>

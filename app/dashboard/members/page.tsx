@@ -348,7 +348,7 @@ export default function MembersPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="supabase-filter-select"
+            className="supabase-filter-select h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
             aria-label="Filter by role"
           >
             <option value="all">All Roles</option>
@@ -357,22 +357,22 @@ export default function MembersPage() {
             <option value="member">Members</option>
           </select>
 
-          <span className="members-count-pill">{filteredMembers.length} Members</span>
+          <span className="members-count-pill inline-flex items-center h-[34px] py-0 px-[10px] rounded-control border border-[#282631] text-[12.5px] text-[#8e8c99]">{filteredMembers.length} Members</span>
         </div>
       </div>
 
       {/* Members Table */}
-      <div className="members-table-card">
+      <div className="members-table-card rounded-card border border-surface-raised overflow-x-auto">
         {loading ? (
           <div className="p-6 space-y-4" aria-label="Loading members">
             {[1, 2, 3].map((n) => (
               <div key={n} className="flex items-center gap-3">
-                <div className="supabase-skeleton-box w-9 h-9 rounded-full flex-shrink-0" />
+                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-full flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="supabase-skeleton-box h-4 w-32 rounded" />
-                  <div className="supabase-skeleton-box h-3 w-48 rounded" />
+                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
+                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded" />
                 </div>
-                <div className="supabase-skeleton-box h-6 w-16 rounded" />
+                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-16 rounded" />
               </div>
             ))}
           </div>
@@ -489,10 +489,10 @@ export default function MembersPage() {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-amber-400" />
             <h2 className="text-sm font-semibold text-white">Pending Invitations</h2>
-            <span className="members-count-pill">{invitations.length}</span>
+            <span className="members-count-pill inline-flex items-center h-[34px] py-0 px-[10px] rounded-control border border-[#282631] text-[12.5px] text-[#8e8c99]">{invitations.length}</span>
           </div>
 
-          <div className="members-table-card">
+          <div className="members-table-card rounded-card border border-surface-raised overflow-x-auto">
             <table className="members-table">
               <thead>
                 <tr>
@@ -551,7 +551,7 @@ export default function MembersPage() {
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
               onClick={() => setInviteModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -690,7 +690,7 @@ export default function MembersPage() {
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
               onClick={() => setRemoveTarget(null)}
               aria-label="Close dialog"
             >
@@ -723,7 +723,7 @@ export default function MembersPage() {
             </button>
             <button
               type="button"
-              className="project-btn-danger"
+              className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
               disabled={busy}
               onClick={() => void handleRemoveMember()}
             >

@@ -24,21 +24,21 @@ export function CredentialRow({
 }) {
   return (
     <div className="db-cred-row">
-      <span className="db-cred-label">
+      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         {label}
         {/* The copied confirmation is written out, not just an icon, so it is
             readable at a glance and announced to a screen reader. */}
         {copied ? (
-          <span className="db-cred-copied" role="status">
+          <span className="db-cred-copied text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
-      <div className="db-cred-value-wrap">
+      <div className="flex items-start gap-[10px] min-w-0">
         <span className="db-cred-value is-mono">{value}</span>
         <button
           type="button"
-          className="db-cred-copy"
+          className="db-cred-copy flex-none inline-flex items-center justify-center min-w-[44px] min-h-[44px] p-0 rounded-control border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink disabled:opacity-[0.55] disabled:cursor-not-allowed"
           onClick={() => onCopy(label, value)}
           aria-label={`Copy ${label.toLowerCase()}`}
           title={`Copy ${label.toLowerCase()}`}
@@ -150,18 +150,18 @@ export function PasswordRow({
 
   return (
     <div className="db-cred-row">
-      <span className="db-cred-label">
+      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         Password
         {copied ? (
-          <span className="db-cred-copied" role="status">
+          <span className="db-cred-copied text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
-      <div className="db-cred-value-wrap">
-        <span className="db-cred-value is-mono db-cred-password-value" aria-live="polite">
+      <div className="flex items-start gap-[10px] min-w-0">
+        <span className="db-cred-value is-mono min-h-[21px]" aria-live="polite">
           {loading ? (
-            <span className="db-cred-muted">
+            <span className="db-cred-muted [font-family:inherit]">
               <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Loading…
             </span>
@@ -170,7 +170,7 @@ export function PasswordRow({
           ) : password ? (
             "••••••••••••••••"
           ) : (
-            <span className="db-cred-muted">Hidden</span>
+            <span className="db-cred-muted [font-family:inherit]">Hidden</span>
           )}
         </span>
       </div>

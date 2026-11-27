@@ -150,7 +150,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                     );
                   })}
                 </div>
-                <div className="supabase-dropdown-divider" />
+                <div className="supabase-dropdown-divider h-[1px] my-[6px] mx-0" />
                 <Link
                   href="/dashboard/organizations"
                   className="supabase-dropdown-item"
@@ -234,11 +234,11 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                     {user?.email ?? "No email on file"}
                   </small>
                   {user?.username ? (
-                    <span className="supabase-user-handle">@{user.username}</span>
+                    <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-[#716f7c]">@{user.username}</span>
                   ) : null}
                 </div>
               </div>
-              <div className="supabase-dropdown-divider" />
+              <div className="supabase-dropdown-divider h-[1px] my-[6px] mx-0" />
               <Link
                 href="/dashboard/settings"
                 className="supabase-dropdown-item"

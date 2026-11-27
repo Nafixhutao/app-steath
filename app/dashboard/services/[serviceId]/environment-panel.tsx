@@ -219,7 +219,7 @@ export function EnvironmentPanel({
                 return (
                   <tr key={variable.id}>
                     <td data-label="Key">
-                      <code className="environment-key">{variable.key}</code>
+                      <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{variable.key}</code>
                     </td>
                     <td data-label="Value">
                       <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] [overflow-wrap:anywhere] tabular-nums">

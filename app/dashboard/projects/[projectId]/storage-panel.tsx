@@ -74,19 +74,19 @@ function CopyValue({ label, value }: { label: string; value: string }) {
 
   return (
     <div className="db-cred-row">
-      <span className="db-cred-label">
+      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         {label}
         {copied ? (
-          <span className="db-cred-copied" role="status">
+          <span className="db-cred-copied text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
-      <div className="db-cred-value-wrap">
+      <div className="flex items-start gap-[10px] min-w-0">
         <span className="db-cred-value is-mono">{value}</span>
         <button
           type="button"
-          className="db-cred-copy"
+          className="db-cred-copy flex-none inline-flex items-center justify-center min-w-[44px] min-h-[44px] p-0 rounded-control border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink disabled:opacity-[0.55] disabled:cursor-not-allowed"
           onClick={copy}
           aria-label={`Copy ${label.toLowerCase()}`}
           title={`Copy ${label.toLowerCase()}`}
@@ -147,18 +147,18 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
 
   return (
     <div className="db-cred-row">
-      <span className="db-cred-label">
+      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         Secret key
         {copied ? (
-          <span className="db-cred-copied" role="status">
+          <span className="db-cred-copied text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
-      <div className="db-cred-value-wrap">
-        <span className="db-cred-value is-mono db-cred-password-value" aria-live="polite">
+      <div className="flex items-start gap-[10px] min-w-0">
+        <span className="db-cred-value is-mono min-h-[21px]" aria-live="polite">
           {loading ? (
-            <span className="db-cred-muted">
+            <span className="db-cred-muted [font-family:inherit]">
               <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Loading…
             </span>
@@ -167,7 +167,7 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
           ) : secret ? (
             "••••••••••••••••"
           ) : (
-            <span className="db-cred-muted">Hidden</span>
+            <span className="db-cred-muted [font-family:inherit]">Hidden</span>
           )}
         </span>
       </div>
@@ -231,15 +231,15 @@ await s3.send(new PutObjectCommand({
 ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` : ""}`;
 
   return (
-    <div className="project-service-item">
-      <div className="project-service-head">
+    <div className="project-service-item border border-surface-raised [transition:border-color_150ms] hover:border-[#34323e]">
+      <div className="flex items-center justify-between flex-wrap gap-[12px]">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="project-service-icon" aria-hidden="true">
+          <div className="project-service-icon flex items-center justify-center w-[32px] h-[32px] rounded-control shrink-0" aria-hidden="true">
             <HardDrive className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <h3 className="project-service-name">{bucket.name}</h3>
-            <span className="project-service-hostname">{bucket.objectName}</span>
+            <h3 className="project-service-name text-[14.5px] font-semibold! no-underline [transition:color_150ms]">{bucket.name}</h3>
+            <span className="project-service-hostname inline-flex items-center gap-[4px] text-[12px] [font-family:monospace] no-underline mt-[2px]">{bucket.objectName}</span>
           </div>
         </div>
 
@@ -258,7 +258,7 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
           {canManage ? (
             <button
               type="button"
-              className="project-service-delete-btn"
+              className="project-service-delete-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent text-[#716f7c] cursor-pointer [transition:all_120ms] hover:border-[rgba(244,63,94,0.2)] hover:text-[var(--color-danger)]"
               onClick={() => onDelete(bucket)}
               disabled={busy}
               title={`Delete ${bucket.name}`}
@@ -270,13 +270,13 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
         </div>
       </div>
 
-      <div className="project-service-footer">
-        <div className="project-db-metric-box min-w-[150px]">
-          <span className="project-db-metric-label">Storage used</span>
-          <span className="project-db-metric-value">{usageLabel(bucket)}</span>
-          <div className="supabase-usage-bar-track mt-1.5">
+      <div className="flex items-center flex-wrap gap-[16px] mt-[14px] pt-[12px] border-t border-t-[#211f27] text-[12px] text-[#8e8c99]">
+        <div className="flex flex-col min-w-[150px]">
+          <span className="text-[11.5px] text-[#716f7c] mb-[3px]">Storage used</span>
+          <span className="text-[13px] font-semibold text-ink">{usageLabel(bucket)}</span>
+          <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden mt-1.5">
             <div
-              className="supabase-usage-bar-fill"
+              className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]"
               style={{
                 width: `${
                   bucket.quotaMb > 0
@@ -287,24 +287,24 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
             />
           </div>
         </div>
-        <div className="project-db-metric-box min-w-[150px]">
-          <span className="project-db-metric-label">Created At</span>
-          <span className="project-db-metric-value text-xs text-zinc-300">
+        <div className="flex flex-col min-w-[150px]">
+          <span className="text-[11.5px] text-[#716f7c] mb-[3px]">Created At</span>
+          <span className="text-[13px] font-semibold text-ink text-xs text-zinc-300">
             {formatDateTime(bucket.createdAt)}
           </span>
         </div>
       </div>
 
-      <div className="db-cred-card mt-4">
+      <div className="db-cred-card flex flex-col rounded-card border border-[#232129] overflow-hidden mt-4">
         <CopyValue label="Endpoint URL" value={url} />
         <CopyValue label="Access key" value={bucket.accessKey} />
         {canManage ? (
           <SecretKeyRow projectId={bucket.projectId} bucketId={bucket.id} />
         ) : (
           <div className="db-cred-row">
-            <span className="db-cred-label">Secret key</span>
-            <div className="db-cred-value-wrap">
-              <span className="db-cred-value db-cred-muted">Owner or admin only</span>
+            <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Secret key</span>
+            <div className="flex items-start gap-[10px] min-w-0">
+              <span className="db-cred-value db-cred-muted [font-family:inherit]">Owner or admin only</span>
             </div>
           </div>
         )}
@@ -405,11 +405,11 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
   if (panel.loading) {
     return (
       <div className="space-y-4">
-        <div className="supabase-project-skeleton-card h-44" aria-hidden="true">
-          <div className="supabase-skeleton-box h-5 w-48 rounded mb-4" />
+        <div className="supabase-project-skeleton-card flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px] h-44" aria-hidden="true">
+          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-5 w-48 rounded mb-4" />
           <div className="grid grid-cols-1 gap-4">
-            <div className="supabase-skeleton-box h-12 rounded" />
-            <div className="supabase-skeleton-box h-12 rounded" />
+            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
           </div>
         </div>
       </div>
@@ -452,8 +452,8 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
       ) : null}
 
       {buckets.length === 0 ? (
-        <div className="project-empty-card">
-          <div className="project-empty-icon-wrap" aria-hidden="true">
+        <div className="project-empty-card flex flex-col items-center justify-center py-[56px] px-[24px] rounded-card border border-dashed border-[#262430] text-center">
+          <div className="project-empty-icon-wrap flex items-center justify-center w-[48px] h-[48px] rounded-card-lg" aria-hidden="true">
             <HardDrive className="w-8 h-8 text-zinc-500" />
           </div>
           <h3 className="text-base font-semibold text-white mt-3">No buckets yet</h3>
@@ -501,7 +501,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             <h2 id="create-bucket-title">Create a new bucket</h2>
             <button
               type="button"
-              className="supabase-modal-close"
+              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -574,7 +574,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
               </label>
 
               {actionError ? (
-                <p className="db-cred-error" role="alert">
+                <p className="text-[11.5px] text-[#ff7a82] mt-[6px]" role="alert">
                   <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
                   {actionError}
                 </p>
@@ -619,7 +619,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
               onClick={() => setDeleteTarget(null)}
               aria-label="Close dialog"
             >
@@ -649,7 +649,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
               </div>
 
               {actionError ? (
-                <p className="db-cred-error" role="alert">
+                <p className="text-[11.5px] text-[#ff7a82] mt-[6px]" role="alert">
                   <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
                   {actionError}
                 </p>
@@ -667,7 +667,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
               </button>
               <button
                 type="submit"
-                className="project-btn-danger"
+                className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                 disabled={busy || deleteConfirm !== deleteTarget.name}
               >
                 {busy ? "Deleting…" : "Delete bucket"}

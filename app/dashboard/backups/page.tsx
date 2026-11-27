@@ -193,25 +193,25 @@ export default function BackupsPage() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
         aria-label="Backup metrics"
       >
-        <div className="backups-metric-card">
+        <div className="backups-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="backups-metric-label">Total Backups</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Total Backups</span>
             <Archive className="w-4 h-4 text-emerald-400" />
           </div>
-          <span className="backups-metric-val">{backupsList.length}</span>
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2]">{backupsList.length}</span>
           <span className="text-[11px] text-zinc-500">Retained for 7 days</span>
         </div>
 
-        <div className="backups-metric-card">
+        <div className="backups-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="backups-metric-label">Storage Backend</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Storage Backend</span>
             {list?.storageProvider === "s3" ? (
               <Cloud className="w-4 h-4 text-cyan-400" />
             ) : (
               <Server className="w-4 h-4 text-zinc-500" />
             )}
           </div>
-          <span className="backups-metric-val text-sm font-mono mt-1">
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2] text-sm font-mono mt-1">
             {list?.storageProvider === "s3" ? "S3 Object Storage" : "Local Node Storage"}
           </span>
           <span className="text-[11px] text-zinc-500">
@@ -221,23 +221,23 @@ export default function BackupsPage() {
           </span>
         </div>
 
-        <div className="backups-metric-card">
+        <div className="backups-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="backups-metric-label">Backup Schedule</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Backup Schedule</span>
             <Clock className="w-4 h-4 text-zinc-400" />
           </div>
-          <span className="backups-metric-val text-sm font-mono mt-1">Daily at 02:00 UTC</span>
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2] text-sm font-mono mt-1">Daily at 02:00 UTC</span>
           <span className="text-[11px] text-zinc-500">Automated cron worker</span>
         </div>
 
-        <div className="backups-metric-card">
+        <div className="backups-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="backups-metric-label">Restores in Flight</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Restores in Flight</span>
             <RotateCcw
               className={`w-4 h-4 ${restoring ? "text-amber-400 animate-spin" : "text-zinc-500"}`}
             />
           </div>
-          <span className="backups-metric-val">
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2]">
             {restores?.restores.filter((r) => isActive(r.status)).length ?? 0}
           </span>
           <span className="text-[11px] text-zinc-500">
@@ -273,7 +273,7 @@ export default function BackupsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="supabase-filter-select"
+            className="supabase-filter-select h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
             aria-label="Filter by target type"
           >
             <option value="all">All Targets</option>
@@ -281,22 +281,22 @@ export default function BackupsPage() {
             <option value="volume">Volumes</option>
           </select>
 
-          <span className="backups-count-pill">{filteredBackups.length} Snapshots</span>
+          <span className="backups-count-pill inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium border border-[#282632] text-[#878492]">{filteredBackups.length} Snapshots</span>
         </div>
       </div>
 
       {/* Backups Table Card */}
-      <div className="backups-table-card">
+      <div className="backups-table-card border border-surface-raised rounded-panel overflow-hidden">
         {loading ? (
           <div className="p-6 space-y-4" aria-label="Loading backups">
             {[1, 2, 3].map((n) => (
               <div key={n} className="flex items-center gap-3">
-                <div className="supabase-skeleton-box w-8 h-8 rounded flex-shrink-0" />
+                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-8 h-8 rounded flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="supabase-skeleton-box h-4 w-32 rounded" />
-                  <div className="supabase-skeleton-box h-3 w-48 rounded" />
+                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
+                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded" />
                 </div>
-                <div className="supabase-skeleton-box h-6 w-16 rounded" />
+                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-16 rounded" />
               </div>
             ))}
           </div>
@@ -431,10 +431,10 @@ export default function BackupsPage() {
             <h2 id="recent-restores-heading" className="text-sm font-semibold text-white">
               Recent Restores
             </h2>
-            <span className="backups-count-pill">{restores.restores.length}</span>
+            <span className="backups-count-pill inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium border border-[#282632] text-[#878492]">{restores.restores.length}</span>
           </div>
 
-          <div className="backups-table-card">
+          <div className="backups-table-card border border-surface-raised rounded-panel overflow-hidden">
             <table className="backups-table">
               <thead>
                 <tr>
@@ -496,7 +496,7 @@ export default function BackupsPage() {
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
               onClick={cancelRestore}
               aria-label="Close dialog"
             >
@@ -542,7 +542,7 @@ export default function BackupsPage() {
               </button>
               <button
                 type="submit"
-                className="project-btn-danger"
+                className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                 disabled={submitting || confirmation.trim() !== target.targetName}
               >
                 {submitting ? (

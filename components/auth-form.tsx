@@ -11,7 +11,7 @@ export type AuthFormMode = "signin" | "signup";
 
 function GoogleMark() {
   return (
-    <svg viewBox="0 0 24 24" className="provider-mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="provider-mark w-[16px] h-[16px]" aria-hidden="true">
       <path
         fill="#4285F4"
         d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.57 5.57 0 0 1-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
@@ -34,7 +34,7 @@ function GoogleMark() {
 
 function GitHubMark() {
   return (
-    <svg viewBox="0 0 24 24" className="provider-mark github-mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="provider-mark w-[16px] h-[16px] github-mark" aria-hidden="true">
       <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12 0 1.53-.01 2.76-.01 3.14 0 .3.2.67.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z" />
     </svg>
   );
@@ -42,7 +42,7 @@ function GitHubMark() {
 
 function LockMark() {
   return (
-    <svg viewBox="0 0 24 24" className="small-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="small-icon w-[14px] h-[14px]" aria-hidden="true">
       <rect x="4" y="10" width="16" height="11" rx="2" />
       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </svg>
@@ -51,7 +51,7 @@ function LockMark() {
 
 export function EyeMark({ hidden = false }: { hidden?: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" className="small-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="small-icon w-[14px] h-[14px]" aria-hidden="true">
       {hidden ? (
         <>
           <path d="m3 3 18 18" />

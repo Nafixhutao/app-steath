@@ -126,11 +126,11 @@ export default function ProjectsPage() {
             )}
           </div>
 
-          <div className="supabase-filter-select-wrap">
+          <div className="relative flex items-center">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "empty")}
-              className="supabase-filter-select"
+              className="supabase-filter-select h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
               aria-label="Filter by project status"
             >
               <option value="all">Status: All</option>
@@ -140,13 +140,13 @@ export default function ProjectsPage() {
             <ChevronDown className="absolute right-[8px] w-[14px] h-[14px] text-[#716f7c] pointer-events-none" aria-hidden="true" />
           </div>
 
-          <div className="supabase-filter-select-wrap">
+          <div className="relative flex items-center">
             <span className="inline-flex items-center h-[34px] py-0 px-[12px] rounded-control border border-[#282631] bg-surface text-[#8e8c99] text-[13px] select-none">Sorted by name</span>
           </div>
         </div>
 
         <div className="flex items-center gap-[10px]">
-          <div className="supabase-view-toggle-group">
+          <div className="supabase-view-toggle-group flex items-center border border-[#282631] rounded-control p-[2px]">
             <button
               type="button"
               className={`supabase-view-btn ${viewMode === "grid" ? "is-active" : ""}`}
@@ -188,19 +188,19 @@ export default function ProjectsPage() {
         {/* Left / Main Column */}
         <div className="min-w-0">
           {projects.loading ? (
-            <div className="supabase-projects-grid">
+            <div className="supabase-projects-grid grid gap-[16px]">
               {[1, 2, 3].map((n) => (
-                <div key={n} className="supabase-project-skeleton-card" aria-hidden="true">
-                  <div className="supabase-card-header">
-                    <div className="supabase-skeleton-box w-8 h-8 rounded-md" />
+                <div key={n} className="supabase-project-skeleton-card flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px]" aria-hidden="true">
+                  <div className="flex items-start gap-[12px]">
+                    <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-8 h-8 rounded-md" />
                     <div className="flex-1 space-y-2">
-                      <div className="supabase-skeleton-box h-4 rounded w-3/4" />
-                      <div className="supabase-skeleton-box h-3 rounded w-1/2" />
+                      <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 rounded w-3/4" />
+                      <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 rounded w-1/2" />
                     </div>
                   </div>
-                  <div className="supabase-card-footer mt-4 pt-3 border-t border-zinc-800">
-                    <div className="supabase-skeleton-box h-3 rounded w-16" />
-                    <div className="supabase-skeleton-box h-3 rounded w-16" />
+                  <div className="flex items-center gap-[12px] mt-[16px] pt-[12px] border-t border-t-[#232129] mt-4 pt-3 border-t border-zinc-800">
+                    <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 rounded w-16" />
+                    <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 rounded w-16" />
                   </div>
                 </div>
               ))}
@@ -239,14 +239,14 @@ export default function ProjectsPage() {
             </div>
           ) : viewMode === "grid" ? (
             /* Grid View */
-            <div className="supabase-projects-grid">
+            <div className="supabase-projects-grid grid gap-[16px]">
               {filteredProjects.map((project) => (
                 <Link
                   key={project.id}
                   href={`/dashboard/projects/${project.id}`}
                   className="supabase-project-card"
                 >
-                  <div className="supabase-card-header">
+                  <div className="flex items-start gap-[12px]">
                     <div className="flex items-center justify-center w-[32px] h-[32px] rounded-control bg-[#211f27] shrink-0">
                       <span className="font-bold text-sm text-emerald-400">
                         {project.name.slice(0, 1).toUpperCase()}
@@ -259,12 +259,12 @@ export default function ProjectsPage() {
                     <ArrowUpRight className="supabase-card-arrow" aria-hidden="true" />
                   </div>
 
-                  <div className="supabase-card-footer">
-                    <span className="supabase-card-stat">
+                  <div className="flex items-center gap-[12px] mt-[16px] pt-[12px] border-t border-t-[#232129]">
+                    <span className="flex items-center gap-[5px] text-[12px] text-[#8e8c99]">
                       <Layers className="w-3.5 h-3.5 text-zinc-500" />
                       <span>{project.serviceCount} Services</span>
                     </span>
-                    <span className="supabase-card-stat">
+                    <span className="flex items-center gap-[5px] text-[12px] text-[#8e8c99]">
                       <Database className="w-3.5 h-3.5 text-zinc-500" />
                       <span>{project.databaseCount} DB</span>
                     </span>
@@ -348,32 +348,32 @@ export default function ProjectsPage() {
             </div>
 
             <div className="flex flex-col gap-[12px]">
-              <div className="supabase-usage-item">
-                <div className="supabase-usage-row">
-                  <div className="supabase-usage-row-left">
+              <div className="flex flex-col gap-[6px] py-[4px] px-[6px] rounded-control [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.02)]">
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-[8px]">
                     <Circle className="w-3 h-3 text-zinc-500" />
-                    <span className="supabase-usage-label">Egress</span>
+                    <span className="text-[#a19fa9]">Egress</span>
                   </div>
-                  <span className="supabase-usage-val">0 / 5 GB</span>
+                  <span className="text-ink font-medium [font-family:inherit] text-[12px]">0 / 5 GB</span>
                 </div>
-                <div className="supabase-usage-bar-track">
-                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden">
+                  <div className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]" style={{ width: "0%" }} />
                 </div>
               </div>
 
-              <div className="supabase-usage-item">
-                <div className="supabase-usage-row">
-                  <div className="supabase-usage-row-left">
+              <div className="flex flex-col gap-[6px] py-[4px] px-[6px] rounded-control [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.02)]">
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-[8px]">
                     <Circle className="w-3 h-3 text-zinc-500" />
-                    <span className="supabase-usage-label">Database size</span>
+                    <span className="text-[#a19fa9]">Database size</span>
                   </div>
-                  <span className="supabase-usage-val">
+                  <span className="text-ink font-medium [font-family:inherit] text-[12px]">
                     {totalDatabases > 0 ? `${totalDatabases * 10} / 500 MB` : "0 / 500 MB"}
                   </span>
                 </div>
-                <div className="supabase-usage-bar-track">
+                <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden">
                   <div
-                    className="supabase-usage-bar-fill"
+                    className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]"
                     style={{
                       width: `${Math.min(100, Math.round(((totalDatabases * 10) / 500) * 100))}%`,
                     }}
@@ -381,55 +381,55 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              <div className="supabase-usage-item">
-                <div className="supabase-usage-row">
-                  <div className="supabase-usage-row-left">
+              <div className="flex flex-col gap-[6px] py-[4px] px-[6px] rounded-control [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.02)]">
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-[8px]">
                     <Circle className="w-3 h-3 text-zinc-500" />
-                    <span className="supabase-usage-label">Monthly active users</span>
+                    <span className="text-[#a19fa9]">Monthly active users</span>
                   </div>
-                  <span className="supabase-usage-val">0 / 50,000</span>
+                  <span className="text-ink font-medium [font-family:inherit] text-[12px]">0 / 50,000</span>
                 </div>
-                <div className="supabase-usage-bar-track">
-                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden">
+                  <div className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]" style={{ width: "0%" }} />
                 </div>
               </div>
 
-              <div className="supabase-usage-item">
-                <div className="supabase-usage-row">
-                  <div className="supabase-usage-row-left">
+              <div className="flex flex-col gap-[6px] py-[4px] px-[6px] rounded-control [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.02)]">
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-[8px]">
                     <Circle className="w-3 h-3 text-zinc-500" />
-                    <span className="supabase-usage-label">File storage</span>
+                    <span className="text-[#a19fa9]">File storage</span>
                   </div>
-                  <span className="supabase-usage-val">0 / 1 GB</span>
+                  <span className="text-ink font-medium [font-family:inherit] text-[12px]">0 / 1 GB</span>
                 </div>
-                <div className="supabase-usage-bar-track">
-                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden">
+                  <div className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]" style={{ width: "0%" }} />
                 </div>
               </div>
 
-              <div className="supabase-usage-item">
-                <div className="supabase-usage-row">
-                  <div className="supabase-usage-row-left">
+              <div className="flex flex-col gap-[6px] py-[4px] px-[6px] rounded-control [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.02)]">
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-[8px]">
                     <Circle className="w-3 h-3 text-zinc-500" />
-                    <span className="supabase-usage-label">Log Ingestion</span>
+                    <span className="text-[#a19fa9]">Log Ingestion</span>
                   </div>
-                  <span className="supabase-usage-val">0 / 1 GB</span>
+                  <span className="text-ink font-medium [font-family:inherit] text-[12px]">0 / 1 GB</span>
                 </div>
-                <div className="supabase-usage-bar-track">
-                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden">
+                  <div className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]" style={{ width: "0%" }} />
                 </div>
               </div>
 
-              <div className="supabase-usage-item">
-                <div className="supabase-usage-row">
-                  <div className="supabase-usage-row-left">
+              <div className="flex flex-col gap-[6px] py-[4px] px-[6px] rounded-control [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.02)]">
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-[8px]">
                     <Circle className="w-3 h-3 text-zinc-500" />
-                    <span className="supabase-usage-label">Log Query</span>
+                    <span className="text-[#a19fa9]">Log Query</span>
                   </div>
-                  <span className="supabase-usage-val">0 / 100 GB</span>
+                  <span className="text-ink font-medium [font-family:inherit] text-[12px]">0 / 100 GB</span>
                 </div>
-                <div className="supabase-usage-bar-track">
-                  <div className="supabase-usage-bar-fill" style={{ width: "0%" }} />
+                <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden">
+                  <div className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]" style={{ width: "0%" }} />
                 </div>
               </div>
             </div>
@@ -444,7 +444,7 @@ export default function ProjectsPage() {
             <h2 id="create-project-title">Create a new project</h2>
             <button
               type="button"
-              className="supabase-modal-close"
+              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >

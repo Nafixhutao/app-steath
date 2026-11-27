@@ -166,7 +166,7 @@ export default function SettingsPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Organization Settings</h1>
-              <span className="supabase-plan-badge">FREE PLAN</span>
+              <span className="supabase-plan-badge inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">FREE PLAN</span>
             </div>
             <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage organization details, team ownership, and preferences for{" "}
@@ -201,13 +201,13 @@ export default function SettingsPage() {
       >
         <div className="settings-metric-card is-primary">
           <div className="flex items-center justify-between">
-            <span className="settings-metric-label">Organization Name</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization Name</span>
             <Building className="w-4 h-4 text-emerald-400" />
           </div>
           {isLoading ? (
             <div className="h-6 w-3/4 bg-zinc-800/80 rounded animate-pulse my-0.5" />
           ) : (
-            <span className="settings-metric-val truncate" title={organization?.name}>
+            <span className="text-[18px] font-semibold text-ink leading-[1.3] truncate" title={organization?.name}>
               {organization?.name ?? "-"}
             </span>
           )}
@@ -216,7 +216,7 @@ export default function SettingsPage() {
 
         <div className="settings-metric-card">
           <div className="flex items-center justify-between">
-            <span className="settings-metric-label">Organization Slug</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization Slug</span>
             <button
               type="button"
               onClick={() => copyText(organization?.slug ?? "", "slug", "Slug")}
@@ -235,7 +235,7 @@ export default function SettingsPage() {
             <div className="h-6 w-28 bg-zinc-800/80 rounded animate-pulse my-0.5" />
           ) : (
             <span
-              className="settings-metric-val font-mono text-base truncate text-emerald-400"
+              className="text-[18px] font-semibold text-ink leading-[1.3] font-mono text-base truncate text-emerald-400"
               title={organization?.slug}
             >
               {organization?.slug ?? "-"}
@@ -246,7 +246,7 @@ export default function SettingsPage() {
 
         <div className="settings-metric-card">
           <div className="flex items-center justify-between">
-            <span className="settings-metric-label">Organization ID</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization ID</span>
             <button
               type="button"
               onClick={() => copyText(organization?.id ?? "", "id", "Organization ID")}
@@ -265,7 +265,7 @@ export default function SettingsPage() {
             <div className="h-6 w-36 bg-zinc-800/80 rounded animate-pulse my-0.5" />
           ) : (
             <span
-              className="settings-metric-val font-mono text-xs truncate text-zinc-300"
+              className="text-[18px] font-semibold text-ink leading-[1.3] font-mono text-xs truncate text-zinc-300"
               title={organization?.id}
             >
               {organization?.id ?? "-"}
@@ -276,13 +276,13 @@ export default function SettingsPage() {
 
         <div className="settings-metric-card">
           <div className="flex items-center justify-between">
-            <span className="settings-metric-label">Created Date</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Created Date</span>
             <Calendar className="w-4 h-4 text-zinc-400" />
           </div>
           {isLoading ? (
             <div className="h-6 w-24 bg-zinc-800/80 rounded animate-pulse my-0.5" />
           ) : (
-            <span className="settings-metric-val text-sm font-mono text-zinc-200">
+            <span className="text-[18px] font-semibold text-ink leading-[1.3] text-sm font-mono text-zinc-200">
               {organization?.createdAt
                 ? formatDateTime(
                     organization.createdAt instanceof Date
@@ -300,7 +300,7 @@ export default function SettingsPage() {
       <div className="space-y-6">
         {/* SECTION 1: General Details */}
         <section className="settings-card" aria-labelledby="general-settings-heading">
-          <div className="settings-card-header">
+          <div className="settings-card-header flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
             <div className="flex items-center gap-2.5">
               <Building className="w-4 h-4 text-emerald-400" />
               <h2 id="general-settings-heading" className="text-sm font-semibold text-white">
@@ -312,7 +312,7 @@ export default function SettingsPage() {
 
           {isOwner ? (
             <form onSubmit={handleRename}>
-              <div className="settings-card-body space-y-4">
+              <div className="p-[20px] space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label htmlFor="org-name-input" className="text-xs font-medium text-zinc-300">
@@ -359,7 +359,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="settings-card-footer">
+              <div className="settings-card-footer flex items-center justify-between flex-wrap gap-[12px] py-[14px] px-[20px] border-t border-t-surface-raised">
                 <span className="text-xs text-zinc-400">
                   Name changes take effect immediately across all dashboard projects.
                 </span>
@@ -383,7 +383,7 @@ export default function SettingsPage() {
               </div>
             </form>
           ) : (
-            <div className="settings-card-body">
+            <div className="p-[20px]">
               <div className="flex items-start gap-[12px] py-[12px] px-[16px] rounded-card bg-[rgba(6,182,212,0.08)] border border-[rgba(6,182,212,0.25)]">
                 <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-cyan-200 leading-relaxed">
@@ -398,54 +398,54 @@ export default function SettingsPage() {
 
         {/* SECTION 2: Plan & Entitlements */}
         <section className="settings-card" aria-labelledby="plan-settings-heading">
-          <div className="settings-card-header">
+          <div className="settings-card-header flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
             <div className="flex items-center gap-2.5">
               <CreditCard className="w-4 h-4 text-cyan-400" />
               <h2 id="plan-settings-heading" className="text-sm font-semibold text-white">
                 Subscription &amp; Entitlements
               </h2>
             </div>
-            <span className="supabase-plan-badge">FREE TIER</span>
+            <span className="supabase-plan-badge inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">FREE TIER</span>
           </div>
 
-          <div className="settings-card-body">
+          <div className="p-[20px]">
             <p className="text-xs text-zinc-400 leading-relaxed mb-4">
               Your organization is currently on the <strong>Free Plan</strong>, suitable for
               self-hosted development environments, internal tools, and container workloads.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div className="settings-feature-pill">
+              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Up to {QUOTAS.projectsPerOrganization} Projects</span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>
                   Up to {QUOTAS.servicesPerOrganization} Docker Services (
                   {QUOTAS.servicesPerProject} per Project)
                 </span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Managed databases</span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Automated Daily Backups</span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Custom Domain TLS Routing</span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Caddy Zero-Downtime Edge</span>
               </div>
             </div>
           </div>
 
-          <div className="settings-card-footer">
+          <div className="settings-card-footer flex items-center justify-between flex-wrap gap-[12px] py-[14px] px-[20px] border-t border-t-surface-raised">
             <span className="text-xs text-zinc-400">
               Need higher limits or dedicated node clusters?
             </span>
@@ -462,7 +462,7 @@ export default function SettingsPage() {
         {/* SECTION 3: Danger Zone */}
         {isOwner ? (
           <section className="settings-card is-danger" aria-labelledby="danger-heading">
-            <div className="settings-card-header border-rose-900/30">
+            <div className="settings-card-header flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
               <div className="flex items-center gap-2.5 text-rose-400">
                 <AlertTriangle className="w-4 h-4" />
                 <h2 id="danger-heading" className="text-sm font-semibold text-rose-400">
@@ -472,7 +472,7 @@ export default function SettingsPage() {
               <span className="text-xs text-rose-400/80">Irreversible actions</span>
             </div>
 
-            <div className="settings-card-body space-y-4">
+            <div className="p-[20px] space-y-4">
               <div className="p-3.5 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
                 <strong>Permanent Deletion Warning:</strong> Deleting{" "}
                 <strong>{organization?.name}</strong> will immediately terminate all running
@@ -505,7 +505,7 @@ export default function SettingsPage() {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="project-btn-danger"
+                    className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                     disabled={busy || confirmation.trim() !== organization?.name}
                   >
                     {busy ? (
@@ -526,7 +526,7 @@ export default function SettingsPage() {
           </section>
         ) : (
           <section className="settings-card is-danger" aria-labelledby="leave-heading">
-            <div className="settings-card-header border-rose-900/30">
+            <div className="settings-card-header flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
               <div className="flex items-center gap-2.5 text-rose-400">
                 <LogOut className="w-4 h-4" />
                 <h2 id="leave-heading" className="text-sm font-semibold text-rose-400">
@@ -536,7 +536,7 @@ export default function SettingsPage() {
               <span className="text-xs text-rose-400/80">Revoke membership</span>
             </div>
 
-            <div className="settings-card-body">
+            <div className="p-[20px]">
               <p className="text-xs text-zinc-400 leading-relaxed mb-4">
                 Revoke your membership from <strong>{organization?.name}</strong>. You will
                 immediately lose access to all projects, services, and databases until an owner
@@ -545,7 +545,7 @@ export default function SettingsPage() {
 
               <button
                 type="button"
-                className="project-btn-danger"
+                className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                 onClick={() => void handleLeaveOrganization()}
                 disabled={busy}
               >

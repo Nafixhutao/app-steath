@@ -17,9 +17,9 @@ export function ProjectGateFallback() {
           <div className="dashboard-heading-skeleton" />
           <div className="dashboard-heading-skeleton short" />
           <div className="py-[8px]">
-            <div className="dashboard-skeleton-row" />
-            <div className="dashboard-skeleton-row" />
-            <div className="dashboard-skeleton-row" />
+            <div className="dashboard-skeleton-row h-[46px] mb-[8px] rounded-card [background:linear-gradient(90deg,#1b1a1f_0%,#26242a_50%,#1b1a1f_100%)] animate-[dashboard-shimmer_1.4s_ease_infinite] last:mb-[0]" />
+            <div className="dashboard-skeleton-row h-[46px] mb-[8px] rounded-card [background:linear-gradient(90deg,#1b1a1f_0%,#26242a_50%,#1b1a1f_100%)] animate-[dashboard-shimmer_1.4s_ease_infinite] last:mb-[0]" />
+            <div className="dashboard-skeleton-row h-[46px] mb-[8px] rounded-card [background:linear-gradient(90deg,#1b1a1f_0%,#26242a_50%,#1b1a1f_100%)] animate-[dashboard-shimmer_1.4s_ease_infinite] last:mb-[0]" />
           </div>
           <span className="sr-only">Loading Project…</span>
         </div>
