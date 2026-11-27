@@ -13,7 +13,7 @@ import { EyeMark } from "@/components/auth-form";
 function BrandHeading({ title }: { title: string }) {
   return (
     <>
-      <div className="brand-mark">
+      <div className="brand-mark w-[56px] mt-0 mb-[24px] mx-auto">
         <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority />
       </div>
       <h1>{title}</h1>
@@ -55,14 +55,14 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <main className="auth-page">
-      <a className="skip-link" href="#reset-content">
+    <main className="auth-page min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+      <a className="skip-link fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#reset-content">
         Skip to content
       </a>
 
       <div id="reset-content" className="login-content">
         <BrandHeading title="Reset your password" />
-        <p className="auth-lead">
+        <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#a5a1ad] text-[13.5px] leading-[1.6]">
           Enter the email you registered with and a one-hour reset link will be generated for that
           account.
         </p>
@@ -75,7 +75,7 @@ export function ForgotPasswordForm() {
           {notice}
         </p>
 
-        <form className="auth-fields" onSubmit={handleSubmit} noValidate>
+        <form className="auth-fields grid gap-[18px]" onSubmit={handleSubmit} noValidate>
           <div className="auth-field">
             <label htmlFor="email">Email</label>
             <input
@@ -88,12 +88,12 @@ export function ForgotPasswordForm() {
               disabled={isLoading}
             />
           </div>
-          <button type="submit" className="submit-button" disabled={isLoading}>
+          <button type="submit" className="submit-button w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
             {isLoading ? "Generating link..." : "Send reset link"}
           </button>
         </form>
 
-        <p className="support-copy">
+        <p className="support-copy mt-[20px] mb-0 mx-0 text-[#b3b3ba] text-[13.5px] leading-[20px] text-center">
           Back to <Link href="/login">Sign in</Link>
         </p>
       </div>
@@ -124,14 +124,14 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
 
   if (!token) {
     return (
-      <main className="auth-page">
+      <main className="auth-page min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
         <div className="login-content">
           <BrandHeading title="Reset link invalid" />
-          <p className="auth-lead">
+          <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#a5a1ad] text-[13.5px] leading-[1.6]">
             This reset link is missing its token or it has expired. Request a fresh one and try
             again within the hour.
           </p>
-          <p className="support-copy">
+          <p className="support-copy mt-[20px] mb-0 mx-0 text-[#b3b3ba] text-[13.5px] leading-[20px] text-center">
             <Link href="/forgot-password">Request a new reset link</Link> ·{" "}
             <Link href="/login">Sign in</Link>
           </p>
@@ -165,14 +165,14 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
   }
 
   return (
-    <main className="auth-page">
-      <a className="skip-link" href="#reset-content">
+    <main className="auth-page min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+      <a className="skip-link fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#reset-content">
         Skip to content
       </a>
 
       <div id="reset-content" className="login-content">
         <BrandHeading title="Set a new password" />
-        <p className="auth-lead">Choose a password of at least 8 characters for this account.</p>
+        <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#a5a1ad] text-[13.5px] leading-[1.6]">Choose a password of at least 8 characters for this account.</p>
 
         <p
           className={isError ? "notice is-error" : notice ? "notice" : "sr-only"}
@@ -182,10 +182,10 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
           {notice}
         </p>
 
-        <form className="auth-fields" onSubmit={handleSubmit} noValidate>
+        <form className="auth-fields grid gap-[18px]" onSubmit={handleSubmit} noValidate>
           <div className="auth-field">
             <label htmlFor="password">New password</label>
-            <div className="password-wrap">
+            <div className="password-wrap relative">
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -197,7 +197,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
               />
               <button
                 type="button"
-                className="password-toggle"
+                className="password-toggle absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#9a9aa2] cursor-pointer hover:text-ink"
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}
@@ -207,12 +207,12 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
               </button>
             </div>
           </div>
-          <button type="submit" className="submit-button" disabled={isLoading}>
+          <button type="submit" className="submit-button w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
             {isLoading ? "Updating..." : "Update password"}
           </button>
         </form>
 
-        <p className="support-copy">
+        <p className="support-copy mt-[20px] mb-0 mx-0 text-[#b3b3ba] text-[13.5px] leading-[20px] text-center">
           <Link href="/login">Back to Sign in</Link>
         </p>
       </div>

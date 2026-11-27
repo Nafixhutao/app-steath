@@ -165,7 +165,7 @@ export default function DatabasesPage() {
   return (
     <div className="dashboard-content max-w-[1200px]">
       {/* Header */}
-      <header className="db-heading">
+      <header className="db-heading flex items-start justify-between gap-[24px] flex-wrap pb-[24px] border-b border-b-[#282631]">
         <div className="flex-1 min-w-[280px]">
           <div className="flex items-center gap-[14px]">
             <div className="flex items-center justify-center w-[44px] h-[44px] rounded-card-lg [background:linear-gradient(135deg,rgba(99,102,241,0.16)_0%,rgba(62,207,142,0.08)_100%)] border border-[rgba(99,102,241,0.28)] text-accent shrink-0" aria-hidden="true">
@@ -181,14 +181,14 @@ export default function DatabasesPage() {
             isolation, and automated daily backups.
           </p>
         </div>
-        <div className="db-actions">
-          <span className="db-quota" title="Limit per project in this organization">
+        <div className="db-actions flex items-center gap-[10px] flex-wrap">
+          <span className="db-quota inline-flex items-center gap-[8px] py-[8px] px-[14px] border border-[#282631] rounded-card bg-[#15141a] text-[#9e9aa7] [font-family:var(--font-mono)] text-[12px] leading-[20px] whitespace-nowrap" title="Limit per project in this organization">
             <Server className="w-[14px] h-[14px] text-accent" aria-hidden="true" />
             <span>
               {databasesList.length} of {QUOTAS.databasesPerProject} per Project
             </span>
           </span>
-          <Link href="/dashboard/projects" className="db-btn db-btn-primary">
+          <Link href="/dashboard/projects" className="db-btn active:translate-y-[1px] db-btn-primary border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none disabled:[box-shadow:none]">
             <Plus className="w-[15px] h-[15px]" aria-hidden="true" />
             <span>New Database</span>
           </Link>
@@ -196,7 +196,7 @@ export default function DatabasesPage() {
       </header>
 
       {databases.error ? (
-        <div className="dashboard-alert is-error" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           <AlertCircle className="db-alert-icon" aria-hidden="true" />
           <span>{databases.error}</span>
         </div>
@@ -204,7 +204,7 @@ export default function DatabasesPage() {
 
       {/* Warning banner for disk usage threshold */}
       {fullDatabase ? (
-        <div className="db-banner" role="region" aria-label="Storage warning">
+        <div className="db-banner flex items-center justify-between gap-[16px] flex-wrap mt-[20px] py-[14px] px-[18px] border border-[rgba(245,158,11,0.35)] rounded-panel [background:linear-gradient(90deg,rgba(245,158,11,0.08)_0%,rgba(21,20,26,0.95)_100%)] [box-shadow:0_4px_16px_rgba(245,158,11,0.08)]" role="region" aria-label="Storage warning">
           <div className="flex items-start gap-[12px] min-w-[240px] flex-1">
             <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[rgba(245,158,11,0.15)] text-[#f59e0b] shrink-0 mt-[2px]" aria-hidden="true">
               <AlertTriangle className="w-[18px] h-[18px]" />
@@ -222,7 +222,7 @@ export default function DatabasesPage() {
           </div>
           <Link
             href={`/dashboard/projects/${fullDatabase.database.projectId}`}
-            className="db-btn-warning db-btn border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.12)] hover:bg-[rgba(245,158,11,0.2)] hover:border-[rgba(245,158,11,0.6)]"
+            className="db-btn-warning db-btn active:translate-y-[1px] border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.12)] hover:bg-[rgba(245,158,11,0.2)] hover:border-[rgba(245,158,11,0.6)]"
           >
             <span>Expand Storage</span>
             <ArrowUpRight className="w-[15px] h-[15px]" aria-hidden="true" />
@@ -235,7 +235,7 @@ export default function DatabasesPage() {
         <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Total Databases</span>
-            <Database className="db-metric-icon text-indigo" aria-hidden="true" />
+            <Database className="db-metric-icon w-[16px] h-[16px] text-indigo" aria-hidden="true" />
           </div>
           <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">{databasesList.length}</div>
           <div className="mt-[4px] text-[12px] text-[#9e9aa7]">
@@ -248,7 +248,7 @@ export default function DatabasesPage() {
         <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Engine & Health</span>
-            <CheckCircle2 className="db-metric-icon text-emerald" aria-hidden="true" />
+            <CheckCircle2 className="db-metric-icon w-[16px] h-[16px] text-emerald" aria-hidden="true" />
           </div>
           <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">{engineSummary(databasesList)}</div>
           <div className="mt-[4px] text-[12px] text-[#9e9aa7]">
@@ -263,7 +263,7 @@ export default function DatabasesPage() {
         <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Allocated Storage</span>
-            <HardDrive className="db-metric-icon text-amber" aria-hidden="true" />
+            <HardDrive className="db-metric-icon w-[16px] h-[16px] text-amber" aria-hidden="true" />
           </div>
           <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">
             {totalAllocatedStorage > 0 ? `${totalUsedStorage} MB` : "0 MB"}
@@ -279,7 +279,7 @@ export default function DatabasesPage() {
       {/* Search and Filters toolbar (only when databases exist) */}
       {databasesList.length > 0 && (
         <div className="flex items-center justify-between gap-[14px] flex-wrap mt-[24px]">
-          <div className="db-chip-group" role="group" aria-label="Filter databases by status">
+          <div className="db-chip-group flex items-center gap-[8px] flex-wrap" role="group" aria-label="Filter databases by status">
             {STATUS_FILTERS.map((filter) => {
               const count =
                 filter.value === "all" ? databasesList.length : (counts.get(filter.value) ?? 0);
@@ -288,7 +288,7 @@ export default function DatabasesPage() {
                 <button
                   key={filter.value}
                   type="button"
-                  className="db-chip"
+                  className="db-chip inline-flex items-center gap-[8px] min-h-[40px] py-[8px] px-[14px] border border-[#282631] rounded-card bg-[#15141b] text-[#9e9aa7] cursor-pointer [transition:background-color_150ms_ease,border-color_150ms_ease,color_150ms_ease,box-shadow_150ms_ease] hover:bg-[#1b1922] hover:border-[#393645] hover:text-ink"
                   aria-pressed={statusFilter === filter.value}
                   onClick={() => setStatusFilter(filter.value)}
                 >
@@ -299,13 +299,13 @@ export default function DatabasesPage() {
                     />
                   )}
                   <span>{filter.label}</span>
-                  <span className="db-chip-count">{count}</span>
+                  <span className="db-chip-count [font-family:var(--font-mono)] text-[11px] py-[1px] px-[6px] rounded-panel bg-[#211f29] text-[#8a8694]">{count}</span>
                 </button>
               );
             })}
           </div>
 
-          <div className="db-search">
+          <div className="db-search relative flex-1 min-w-[240px] max-w-[320px]">
             <label htmlFor="db-search-input" className="sr-only">
               Search databases by name, project, or user
             </label>
@@ -342,7 +342,7 @@ export default function DatabasesPage() {
         </div>
       ) : databasesList.length === 0 ? (
         /* Empty State: No databases created in organization */
-        <div className="db-empty-hero">
+        <div className="db-empty-hero mt-[24px] py-[60px] px-[24px] border border-[#262430] rounded-[16px] [background:radial-gradient(_ellipse_at_50%_0%,rgba(62,207,142,0.08)_0%,rgba(21,20,27,0.95)_70%_)] text-center [box-shadow:0_4px_24px_rgba(0,0,0,0.25)]">
           <div className="relative flex justify-center mb-[20px]" aria-hidden="true">
             <div className="db-empty-glow" />
             <div className="flex items-center justify-center w-[64px] h-[64px] rounded-[18px] [background:linear-gradient(135deg,#1e1c27_0%,#15141d_100%)] border border-[#373347] text-accent [box-shadow:0_8px_30px_rgba(99,102,241,0.2)]">
@@ -356,33 +356,33 @@ export default function DatabasesPage() {
             scheduled backups.
           </p>
 
-          <Link href="/dashboard/projects" className="db-btn db-btn-primary mx-auto">
+          <Link href="/dashboard/projects" className="db-btn active:translate-y-[1px] db-btn-primary border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none disabled:[box-shadow:none] mx-auto">
             <Plus className="w-[15px] h-[15px]" aria-hidden="true" />
             <span>Go to Projects to Create Database</span>
           </Link>
 
           <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[16px] max-w-[820px] mt-[48px] mb-0 mx-auto text-left">
-            <div className="db-feature-item">
+            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f]">
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
-                <ShieldCheck className="db-feature-icon text-emerald" />
+                <ShieldCheck className="db-feature-icon w-[16px] h-[16px] text-emerald" />
               </div>
               <div>
                 <h3>Private by Default</h3>
                 <p>Never exposed to the public internet unless you explicitly enable the proxy.</p>
               </div>
             </div>
-            <div className="db-feature-item">
+            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f]">
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
-                <HardDrive className="db-feature-icon text-indigo" />
+                <HardDrive className="db-feature-icon w-[16px] h-[16px] text-indigo" />
               </div>
               <div>
                 <h3>1024 MB Storage</h3>
                 <p>High-performance NVMe storage volume tied directly to your project.</p>
               </div>
             </div>
-            <div className="db-feature-item">
+            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f]">
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
-                <RefreshCw className="db-feature-icon text-amber" />
+                <RefreshCw className="db-feature-icon w-[16px] h-[16px] text-amber" />
               </div>
               <div>
                 <h3>Automated Backups</h3>
@@ -393,7 +393,7 @@ export default function DatabasesPage() {
         </div>
       ) : visibleDatabases.length === 0 ? (
         /* Empty State: Search or filter has no matching records */
-        <div className="db-empty-box">
+        <div className="db-empty-box mt-[20px] py-[50px] px-[20px] border border-dashed border-[#2d2b38] rounded-card-lg bg-[#15141b] text-center">
           <div className="flex items-center justify-center w-[44px] h-[44px] mt-0 mb-[14px] mx-auto rounded-card-lg bg-[#1d1b25] text-[#757180]" aria-hidden="true">
             <SlidersHorizontal className="w-6 h-6 text-muted" />
           </div>
@@ -404,7 +404,7 @@ export default function DatabasesPage() {
           </p>
           <button
             type="button"
-            className="db-btn db-btn-sm border border-[#2a2834] bg-[#181720] text-[#f3f2f5] hover:border-[#3b3749] hover:bg-[#201e2a]"
+            className="db-btn active:translate-y-[1px] db-btn-sm border border-[#2a2834] bg-[#181720] text-[#f3f2f5] hover:border-[#3b3749] hover:bg-[#201e2a]"
             onClick={() => {
               setSearch("");
               setStatusFilter("all");
@@ -416,7 +416,7 @@ export default function DatabasesPage() {
       ) : (
         /* Databases Table */
         <div className="db-table-container mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
-          <table className="db-table">
+          <table className="db-table w-full min-w-[820px] text-left">
             <thead>
               <tr>
                 <th scope="col">Database & User</th>
@@ -454,9 +454,9 @@ export default function DatabasesPage() {
                               aria-label={`Copy credentials for ${database.databaseName}`}
                             >
                               {isCopied ? (
-                                <Check className="db-copy-icon text-emerald" aria-hidden="true" />
+                                <Check className="db-copy-icon w-[12px] h-[12px] text-emerald" aria-hidden="true" />
                               ) : (
-                                <Copy className="db-copy-icon" aria-hidden="true" />
+                                <Copy className="db-copy-icon w-[12px] h-[12px]" aria-hidden="true" />
                               )}
                             </button>
                           </div>
@@ -493,7 +493,7 @@ export default function DatabasesPage() {
 
                     <td>
                       <div className="min-w-[170px]">
-                        <div className="db-disk-meta">
+                        <div className="db-disk-meta flex justify-between gap-[8px] mb-[5px] [font-family:var(--font-mono)] text-[11.5px]">
                           <span className="db-disk-used">{usageLabel(database)}</span>
                           <span className="db-disk-cap">of {database.storageLimitMb} MB</span>
                         </div>
@@ -523,7 +523,7 @@ export default function DatabasesPage() {
                     <td className="text-right">
                       <Link
                         href={`/dashboard/projects/${database.projectId}`}
-                        className="db-btn-manage db-btn bg-[#1c1a24] border border-[#2d2a3a] hover:bg-[#252230] hover:border-[#433e54]"
+                        className="db-btn-manage db-btn active:translate-y-[1px] bg-[#1c1a24] border border-[#2d2a3a] hover:bg-[#252230] hover:border-[#433e54]"
                         title={`Manage ${database.databaseName} in ${database.projectName}`}
                       >
                         <span>Manage</span>

@@ -277,7 +277,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               setSelectedIndex(0);
             }}
             placeholder="Search projects, databases, services, or navigate..."
-            className="command-palette-input"
+            className="command-palette-input flex-1 bg-transparent border-0 text-ink outline-none placeholder:text-[#636170]"
             autoComplete="off"
             spellCheck="false"
           />

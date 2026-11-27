@@ -51,7 +51,7 @@ function QuotaMeter({
     <div className="usage-meter-row">
       <div className="flex items-baseline gap-[10px] mb-[6px]">
         <span className="text-[12px] font-medium text-ink-console">{label}</span>
-        <span className="usage-meter-numbers">
+        <span className="usage-meter-numbers ml-[auto] [font-family:var(--font-console-mono)] text-[12px] tabular-nums text-ink-bright">
           {used} <span>/ {limit}</span>
         </span>
         <span className={`usage-meter-percent ${tone}`}>{percent}%</span>
@@ -139,7 +139,7 @@ export default function UsagePage() {
   }, [usageData]);
 
   return (
-    <div className="usage-page-container">
+    <div className="usage-page-container max-w-[1280px] my-0 mx-auto w-full">
       <header className="flex items-end justify-between flex-wrap gap-[16px] mb-[18px]">
         <div className="min-w-0">
           <h1 className="text-[20px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Usage &amp; Quotas</h1>
@@ -149,7 +149,7 @@ export default function UsagePage() {
         </div>
         <button
           type="button"
-          className="supabase-btn-secondary"
+          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
           onClick={() => void usage.refresh()}
           disabled={loading}
           aria-busy={loading}
@@ -164,7 +164,7 @@ export default function UsagePage() {
 
       {usageData ? (
         <div className={`usage-status-line ${quotaAttention ? "is-attention" : "is-healthy"}`}>
-          <span className="project-status-dot" aria-hidden="true" />
+          <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
           <span>
             {quotaAttention === 0
               ? "All quotas within limits"
@@ -174,7 +174,7 @@ export default function UsagePage() {
       ) : null}
 
       {error ? (
-        <div className="dashboard-alert is-error mb-[16px]" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error mb-[16px]" role="alert">
           {error}
         </div>
       ) : null}
@@ -193,7 +193,7 @@ export default function UsagePage() {
         </div>
       ) : (
         <>
-          <section className="usage-totals" aria-label="Measured resource totals">
+          <section className="usage-totals flex items-center flex-wrap gap-[12px_0] py-[12px] px-0 mb-[24px] border-t border-t-surface-raised border-b border-b-surface-raised" aria-label="Measured resource totals">
             <div>
               <span>CPU</span>
               <strong>{usageData.totals.cpu.toFixed(2)} vCPU</strong>
@@ -213,14 +213,14 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="quotas-section-heading">
-            <div className="usage-section-head">
+            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
               <h2 id="quotas-section-heading">Capacity &amp; quotas</h2>
               <span>Platform limits</span>
             </div>
-            <div className="usage-capacity">
-              <div className="usage-capacity-primary">
+            <div className="usage-capacity grid gap-[16px] p-[18px] border border-surface-raised rounded-card">
+              <div className="usage-capacity-primary flex flex-col justify-center min-w-0 pr-[20px]">
                 <span className="text-[11px] uppercase tracking-[0.04em] text-ink-muted">Services in this organization</span>
-                <div className="usage-capacity-value">
+                <div className="usage-capacity-value flex items-baseline gap-[6px] mt-[4px] mb-[12px] mx-0">
                   <strong>{usageData.counts.services.used}</strong>
                   <span>/ {usageData.counts.services.limit}</span>
                 </div>
@@ -268,7 +268,7 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="service-health-heading">
-            <div className="usage-section-head">
+            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
               <h2 id="service-health-heading">Service status</h2>
               <span>{usageData.services.length} services</span>
             </div>
@@ -302,21 +302,21 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="projects-usage-heading">
-            <div className="usage-section-head">
+            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
               <h2 id="projects-usage-heading">Projects at a glance</h2>
               <span>{usageData.projects.length} projects</span>
             </div>
             <div className="usage-project-list border border-surface-raised rounded-card overflow-hidden">
               {usageData.projects.map((project) => (
-                <div key={project.id} className="usage-project-row">
+                <div key={project.id} className="usage-project-row grid items-center gap-[20px] py-[11px] px-[16px] border-b border-b-[#1f1d25] last:border-b-0">
                   <Link href={`/dashboard/projects/${project.id}`} className="usage-row-name">
                     {project.name}
                   </Link>
-                  <div className="usage-project-metric">
+                  <div className="usage-project-metric min-w-0">
                     <span>
                       Services {project.serviceCount}/{project.serviceLimit}
                     </span>
-                    <div className="usage-mini-track" aria-hidden="true">
+                    <div className="usage-mini-track h-[4px] rounded-[9999px] overflow-hidden" aria-hidden="true">
                       <div
                         style={{
                           width: `${calculatePercent(project.serviceCount, project.serviceLimit)}%`,
@@ -324,11 +324,11 @@ export default function UsagePage() {
                       />
                     </div>
                   </div>
-                  <div className="usage-project-metric">
+                  <div className="usage-project-metric min-w-0">
                     <span>
                       Databases {project.databaseCount}/{project.databaseLimit}
                     </span>
-                    <div className="usage-mini-track" aria-hidden="true">
+                    <div className="usage-mini-track h-[4px] rounded-[9999px] overflow-hidden" aria-hidden="true">
                       <div
                         style={{
                           width: `${calculatePercent(project.databaseCount, project.databaseLimit)}%`,
@@ -342,7 +342,7 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="services-usage-heading">
-            <div className="usage-section-head">
+            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
               <h2 id="services-usage-heading">Service resource breakdown</h2>
               <span>{usageData.services.length} services</span>
             </div>
@@ -358,7 +358,7 @@ export default function UsagePage() {
                   </p>
                 </div>
               ) : (
-                <table className="usage-table">
+                <table className="usage-table w-full min-w-[640px] text-left">
                   <thead>
                     <tr>
                       <th scope="col">Service</th>
@@ -392,7 +392,7 @@ export default function UsagePage() {
                               {service.name}
                             </Link>
                           </td>
-                          <td className="usage-number">
+                          <td className="usage-number [font-family:var(--font-console-mono)] tabular-nums text-ink-bright">
                             {service.cpuUsage.toFixed(2)}
                             {canSeeLimitDetail ? (
                               <span> / {service.cpuLimit} vCPU</span>
@@ -400,13 +400,13 @@ export default function UsagePage() {
                               <span> vCPU</span>
                             )}
                           </td>
-                          <td className="usage-number">
+                          <td className="usage-number [font-family:var(--font-console-mono)] tabular-nums text-ink-bright">
                             {formatMb(service.memoryUsageMb)}
                             {canSeeLimitDetail ? (
                               <span> / {formatMb(service.memoryLimitMb)}</span>
                             ) : null}
                           </td>
-                          <td className="usage-number">
+                          <td className="usage-number [font-family:var(--font-console-mono)] tabular-nums text-ink-bright">
                             {formatMb(service.volumeUsageMb)}
                             {canSeeLimitDetail ? (
                               <span> / {formatMb(service.volumeLimitMb)}</span>
@@ -422,7 +422,7 @@ export default function UsagePage() {
                                     : "is-pending"
                               }`}
                             >
-                              <span className="project-status-dot" aria-hidden="true" />
+                              <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                               <span>{service.status.replace("_", " ")}</span>
                             </span>
                           </td>
@@ -437,7 +437,7 @@ export default function UsagePage() {
 
           {usageData.databases.length > 0 ? (
             <section className="mb-[26px]" aria-labelledby="databases-usage-heading">
-              <div className="usage-section-head">
+              <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
                 <h2 id="databases-usage-heading">Database storage</h2>
                 <span>{usageData.databases.length} databases</span>
               </div>
@@ -445,7 +445,7 @@ export default function UsagePage() {
                 Measured storage used by each database in this organization.
               </p>
               <div className="usage-table-card border border-surface-raised rounded-card overflow-x-auto">
-                <table className="usage-table">
+                <table className="usage-table w-full min-w-[640px] text-left">
                   <thead>
                     <tr>
                       <th scope="col">Database</th>
@@ -468,7 +468,7 @@ export default function UsagePage() {
                             {database.projectName}
                           </Link>
                         </td>
-                        <td className="usage-number">
+                        <td className="usage-number [font-family:var(--font-console-mono)] tabular-nums text-ink-bright">
                           {formatMb(database.usageMb)}
                           {canSeeLimitDetail ? (
                             <span> / {formatMb(database.storageLimitMb)}</span>
@@ -480,7 +480,7 @@ export default function UsagePage() {
                               database.overQuota ? "is-failed" : "is-running"
                             }`}
                           >
-                            <span className="project-status-dot" aria-hidden="true" />
+                            <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                             <span>{database.overQuota ? "Over quota" : database.status}</span>
                           </span>
                         </td>
@@ -494,11 +494,11 @@ export default function UsagePage() {
 
           {canSeeLimitDetail ? (
             <section className="mb-[26px]" aria-labelledby="limit-detail-heading">
-              <div className="usage-section-head">
+              <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
                 <h2 id="limit-detail-heading">Platform allocation policy</h2>
               </div>
               <div className="usage-policy-card border border-surface-raised rounded-card overflow-hidden">
-                <div className="usage-policy-grid">
+                <div className="usage-policy-grid grid gap-[16px_24px] p-[18px]">
                   <div>
                     <span>CPU cap per service</span>
                     <strong>{usageData.limits.cpuPerService} vCPU</strong>

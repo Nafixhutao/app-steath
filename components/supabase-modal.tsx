@@ -110,7 +110,7 @@ export function SupabaseModal({
       onClose={onClose}
       className={wide ? "max-w-lg" : undefined}
     >
-      <div className="supabase-modal-header">
+      <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
         <h2 id="supabase-modal-title">{title}</h2>
         <button
           type="button"

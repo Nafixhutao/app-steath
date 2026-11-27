@@ -162,7 +162,7 @@ export default function OrganizationsPage() {
                 <p className="text-zinc-400">No organizations match &ldquo;{search}&rdquo;.</p>
                 <button
                   type="button"
-                  className="supabase-btn-secondary mt-3"
+                  className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none mt-3"
                   onClick={() => setSearch("")}
                 >
                   Clear search
@@ -219,7 +219,7 @@ export default function OrganizationsPage() {
       {/* Modal New Organization */}
       {modalOpen && (
         <ModalDialog labelledBy="modal-title" onClose={() => setModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <h2 id="modal-title">Create a new organization</h2>
             <button
               type="button"
@@ -259,7 +259,7 @@ export default function OrganizationsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >

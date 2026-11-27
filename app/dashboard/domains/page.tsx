@@ -227,7 +227,7 @@ export default function DomainsPage() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            className="supabase-btn-secondary"
+            className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
             onClick={() => void handleRefresh()}
             disabled={loading}
             title="Refresh domains and routing status"
@@ -257,7 +257,7 @@ export default function DomainsPage() {
 
       {/* Global Alerts */}
       {customDomainsResource.error ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {customDomainsResource.error}
         </div>
       ) : null}
@@ -427,7 +427,7 @@ export default function DomainsPage() {
                 )}
               </div>
             ) : (
-              <table className="domains-table">
+              <table className="domains-table w-full text-left">
                 <thead>
                   <tr>
                     <th scope="col">Domain / Hostname</th>
@@ -507,7 +507,7 @@ export default function DomainsPage() {
                               isActive ? "is-active" : isFailed ? "is-failed" : "is-pending"
                             }`}
                           >
-                            <span className="project-status-dot" aria-hidden="true" />
+                            <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                             <span className="capitalize">{dom.status}</span>
                           </span>
                           {dom.lastError ? (
@@ -550,7 +550,7 @@ export default function DomainsPage() {
                             {!isActive && canManage && (
                               <button
                                 type="button"
-                                className="supabase-btn-secondary text-xs h-7 px-2.5"
+                                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5"
                                 onClick={() => void handleVerify(dom)}
                                 disabled={isVerifying}
                                 title="Check DNS propagation and route domain"
@@ -564,7 +564,7 @@ export default function DomainsPage() {
 
                             <button
                               type="button"
-                              className="supabase-btn-secondary text-xs h-7 px-2"
+                              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2"
                               onClick={() => setInstructionsDomain(dom)}
                               title="View required DNS TXT & CNAME records"
                             >
@@ -617,7 +617,7 @@ export default function DomainsPage() {
                 </p>
               </div>
             ) : (
-              <table className="domains-table">
+              <table className="domains-table w-full text-left">
                 <thead>
                   <tr>
                     <th scope="col">Service</th>
@@ -691,7 +691,7 @@ export default function DomainsPage() {
                                 : "is-pending"
                           }`}
                         >
-                          <span className="project-status-dot" aria-hidden="true" />
+                          <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                           <span className="capitalize">{srv.status}</span>
                         </span>
                       </td>
@@ -701,7 +701,7 @@ export default function DomainsPage() {
                           href={srv.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="supabase-btn-secondary text-xs h-7 px-2.5 inline-flex items-center gap-1"
+                          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5 inline-flex items-center gap-1"
                         >
                           <span>Visit</span>
                           <ExternalLink className="w-3 h-3" />
@@ -782,7 +782,7 @@ export default function DomainsPage() {
       {/* MODAL 1: Add Custom Domain */}
       {addModalOpen && (
         <ModalDialog labelledBy="add-domain-title" onClose={() => setAddModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-emerald-400" />
               <h2 id="add-domain-title">Add Custom Domain</h2>
@@ -800,7 +800,7 @@ export default function DomainsPage() {
           <form onSubmit={handleAddDomain}>
             <div className="supabase-modal-body space-y-4">
               {addError && (
-                <div className="dashboard-alert is-error" role="alert">
+                <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
                   {addError}
                 </div>
               )}
@@ -859,7 +859,7 @@ export default function DomainsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setAddModalOpen(false)}
                 disabled={busyAdd}
               >
@@ -891,7 +891,7 @@ export default function DomainsPage() {
           onClose={() => setInstructionsDomain(null)}
           className="max-w-xl"
         >
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-emerald-400" />
               <h2 id="instructions-title" className="font-mono text-sm">
@@ -1055,7 +1055,7 @@ export default function DomainsPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary"
+              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
               onClick={() => setInstructionsDomain(null)}
             >
               Close
@@ -1084,7 +1084,7 @@ export default function DomainsPage() {
       {/* MODAL 3: Delete Domain Confirmation */}
       {deletingDomain && (
         <ModalDialog labelledBy="delete-domain-title" onClose={() => setDeletingDomain(null)}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <Trash2 className="w-4 h-4" />
               <h2 id="delete-domain-title">Disconnect Custom Domain</h2>
@@ -1101,7 +1101,7 @@ export default function DomainsPage() {
 
           <div className="supabase-modal-body space-y-3">
             {deleteError && (
-              <div className="dashboard-alert is-error" role="alert">
+              <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
                 {deleteError}
               </div>
             )}
@@ -1119,7 +1119,7 @@ export default function DomainsPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary"
+              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
               onClick={() => setDeletingDomain(null)}
               disabled={busyDelete}
             >

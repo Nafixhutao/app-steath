@@ -28,7 +28,7 @@ export default function AbuseReportPage() {
   }
   return (
     <main className="min-h-[100dvh] flex items-center justify-center py-[56px] px-[16px] [background:radial-gradient(1100px_560px_at_50%_-12%,rgb(181_168_255_/_7%),transparent_62%),var(--color-canvas)] text-ink">
-      <section className="auth-card">
+      <section className="auth-card w-[min(100%,560px)] p-[28px] border border-[#322f37] rounded-card-lg bg-[#19171c]">
         <h1>Report abuse</h1>
         <p>
           Report a Service that may violate platform rules. Please include enough detail for review.
@@ -72,7 +72,7 @@ export default function AbuseReportPage() {
           </button>
         </form>
         {message ? (
-          <p className="auth-message" role="status">
+          <p className="auth-message mt-[16px] mb-0 mx-0 text-[#b3b3ba] text-[13px] leading-[18px]" role="status">
             {message}
           </p>
         ) : null}

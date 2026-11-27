@@ -27,9 +27,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function DashboardLayoutFallback() {
   return (
-    <div className="console-layout flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
-      <div className="dashboard-gate">
-        <div className="dashboard-loading" role="status">
+    <div className="console-layout max-h-[100dvh] overflow-hidden text-ink-console flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
+      <div className="dashboard-gate fixed inset-0 z-[60] bg-console">
+        <div className="dashboard-loading grid min-h-[100dvh] bg-console text-[#b5b2b9] text-[14px]" role="status">
           Loading your Organization...
         </div>
       </div>
@@ -90,7 +90,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
-      <div className="console-layout flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
+      <div className="console-layout max-h-[100dvh] overflow-hidden text-ink-console flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
         <SupabaseTopbar onOpenSearch={() => setSearchOpen(true)} />
 
         {isOrgsPage ? (
@@ -112,7 +112,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </Suspense>
             <main
               id="dashboard-content"
-              className="console-main user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden"
+              className="console-main flex-1 min-w-0 h-full user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden"
             >
               {needsOrganization ? <OrganizationOnboarding /> : children}
             </main>
@@ -122,8 +122,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
 
         {!ready || signedOut ? (
-          <div className="dashboard-gate">
-            <div className="dashboard-loading" role="status">
+          <div className="dashboard-gate fixed inset-0 z-[60] bg-console">
+            <div className="dashboard-loading grid min-h-[100dvh] bg-console text-[#b5b2b9] text-[14px]" role="status">
               Loading your Organization...
             </div>
           </div>

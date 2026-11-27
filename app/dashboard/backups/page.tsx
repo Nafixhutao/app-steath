@@ -159,7 +159,7 @@ export default function BackupsPage() {
 
         <button
           type="button"
-          className="supabase-btn-secondary"
+          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
           onClick={() => void board.refresh()}
           disabled={loading}
           title="Refresh backup records"
@@ -171,7 +171,7 @@ export default function BackupsPage() {
 
       {/* Global Alerts */}
       {error || submitError ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {error || submitError}
         </div>
       ) : null}
@@ -311,7 +311,7 @@ export default function BackupsPage() {
             </p>
           </div>
         ) : (
-          <table className="backups-table">
+          <table className="backups-table w-full text-left">
             <thead>
               <tr>
                 <th scope="col">Target</th>
@@ -388,7 +388,7 @@ export default function BackupsPage() {
                               : "is-pending"
                         }`}
                       >
-                        <span className="project-status-dot" aria-hidden="true" />
+                        <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                         <span className="capitalize">{backup.status}</span>
                       </span>
                       {backup.errorMessage ? (
@@ -403,7 +403,7 @@ export default function BackupsPage() {
                         {restorable && isSuccess ? (
                           <button
                             type="button"
-                            className="supabase-btn-secondary text-xs h-7 px-2.5"
+                            className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5"
                             onClick={() => beginRestore(backup)}
                             disabled={Boolean(active) || Boolean(target)}
                           >
@@ -435,7 +435,7 @@ export default function BackupsPage() {
           </div>
 
           <div className="backups-table-card border border-surface-raised rounded-panel overflow-hidden">
-            <table className="backups-table">
+            <table className="backups-table w-full text-left">
               <thead>
                 <tr>
                   <th scope="col">Target</th>
@@ -468,7 +468,7 @@ export default function BackupsPage() {
                             isDone ? "is-completed" : isFail ? "is-failed" : "is-pending"
                           }`}
                         >
-                          <span className="project-status-dot" aria-hidden="true" />
+                          <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                           <span className="capitalize">{restore.status}</span>
                         </span>
                         {restore.errorMessage ? (
@@ -489,7 +489,7 @@ export default function BackupsPage() {
       {/* Modal: Restore Confirmation */}
       {target && (
         <ModalDialog labelledBy="restore-modal-title" onClose={cancelRestore}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <RotateCcw className="w-4 h-4" />
               <h2 id="restore-modal-title">Restore {target.targetName}</h2>
@@ -534,7 +534,7 @@ export default function BackupsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={cancelRestore}
                 disabled={submitting}
               >

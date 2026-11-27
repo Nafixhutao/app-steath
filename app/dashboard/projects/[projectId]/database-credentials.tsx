@@ -35,7 +35,7 @@ export function CredentialRow({
         ) : null}
       </span>
       <div className="flex items-start gap-[10px] min-w-0">
-        <span className="db-cred-value is-mono">{value}</span>
+        <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono">{value}</span>
         <button
           type="button"
           className="db-cred-copy flex-none inline-flex items-center justify-center min-w-[44px] min-h-[44px] p-0 rounded-control border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink disabled:opacity-[0.55] disabled:cursor-not-allowed"
@@ -159,7 +159,7 @@ export function PasswordRow({
         ) : null}
       </span>
       <div className="flex items-start gap-[10px] min-w-0">
-        <span className="db-cred-value is-mono min-h-[21px]" aria-live="polite">
+        <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono min-h-[21px]" aria-live="polite">
           {loading ? (
             <span className="db-cred-muted [font-family:inherit]">
               <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -174,10 +174,10 @@ export function PasswordRow({
           )}
         </span>
       </div>
-      <div className="db-cred-password-actions">
+      <div className="db-cred-password-actions flex flex-wrap gap-[8px] mt-[8px]">
         <button
           type="button"
-          className="db-cred-action"
+          className="db-cred-action disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
           onClick={() => void reveal()}
           disabled={loading}
           aria-label={visible ? "Hide password" : "Reveal password"}
@@ -187,7 +187,7 @@ export function PasswordRow({
         </button>
         <button
           type="button"
-          className="db-cred-action"
+          className="db-cred-action disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
           onClick={() => void copy()}
           disabled={loading}
           aria-label="Copy password"

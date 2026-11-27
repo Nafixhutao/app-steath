@@ -289,7 +289,7 @@ export default function MembersPage() {
           {!activeRoles.includes("owner") && (
             <button
               type="button"
-              className="supabase-btn-secondary text-rose-400 hover:text-rose-300"
+              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-rose-400 hover:text-rose-300"
               onClick={() => void leaveOrganization()}
               disabled={busy}
             >
@@ -316,7 +316,7 @@ export default function MembersPage() {
       </header>
 
       {error ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {error}
         </div>
       ) : null}
@@ -387,7 +387,7 @@ export default function MembersPage() {
             </p>
           </div>
         ) : (
-          <table className="members-table">
+          <table className="members-table w-full min-w-[640px] text-[13px] text-left">
             <thead>
               <tr>
                 <th scope="col">User</th>
@@ -493,7 +493,7 @@ export default function MembersPage() {
           </div>
 
           <div className="members-table-card rounded-card border border-surface-raised overflow-x-auto">
-            <table className="members-table">
+            <table className="members-table w-full min-w-[640px] text-[13px] text-left">
               <thead>
                 <tr>
                   <th scope="col">Invited Email</th>
@@ -526,7 +526,7 @@ export default function MembersPage() {
                     <td className="text-right">
                       <button
                         type="button"
-                        className="supabase-btn-secondary text-xs text-rose-400 hover:text-rose-300 py-1 px-2.5 h-7"
+                        className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs text-rose-400 hover:text-rose-300 py-1 px-2.5 h-7"
                         disabled={busy}
                         onClick={() => void cancelInvitation(invitation.id)}
                       >
@@ -544,7 +544,7 @@ export default function MembersPage() {
       {/* Modal: Invite Member */}
       {inviteModalOpen && (
         <ModalDialog labelledBy="invite-modal-title" onClose={() => setInviteModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-emerald-400" />
               <h2 id="invite-modal-title">Invite Team Member</h2>
@@ -600,7 +600,7 @@ export default function MembersPage() {
               <div className="supabase-modal-footer">
                 <button
                   type="button"
-                  className="supabase-btn-secondary"
+                  className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                   onClick={() => {
                     setInviteUrl("");
                     setInviteModalOpen(false);
@@ -654,7 +654,7 @@ export default function MembersPage() {
               <div className="supabase-modal-footer">
                 <button
                   type="button"
-                  className="supabase-btn-secondary"
+                  className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                   onClick={() => setInviteModalOpen(false)}
                   disabled={busy}
                 >
@@ -683,7 +683,7 @@ export default function MembersPage() {
       {/* Modal: Remove Member Confirmation */}
       {removeTarget && (
         <ModalDialog labelledBy="remove-member-dialog-title" onClose={() => setRemoveTarget(null)}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <AlertTriangle className="w-4 h-4" />
               <h2 id="remove-member-dialog-title">Remove Member</h2>
@@ -715,7 +715,7 @@ export default function MembersPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary"
+              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
               onClick={() => setRemoveTarget(null)}
               disabled={busy}
             >

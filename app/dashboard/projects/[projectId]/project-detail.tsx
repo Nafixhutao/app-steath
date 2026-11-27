@@ -146,7 +146,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             This project does not exist in the active organization or you do not have permission to
             view it.
           </p>
-          <Link href="/dashboard/projects" className="supabase-btn-secondary">
+          <Link href="/dashboard/projects" className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none">
             Back to Projects
           </Link>
         </div>
@@ -179,7 +179,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                     project.status === "active" ? "is-active" : "is-idle"
                   }`}
                 >
-                  <span className="project-status-dot" aria-hidden="true" />
+                  <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                   {project.status === "active" ? "Active" : "Empty"}
                 </span>
               </div>
@@ -285,7 +285,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
       {/* Global Alerts */}
       {error || actionError ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {error || actionError}
         </div>
       ) : null}

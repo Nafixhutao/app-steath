@@ -138,7 +138,7 @@ export function ServicesPanel({
       </div>
 
       {panel.error || actionError ? (
-        <div className="dashboard-alert is-error" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {panel.error || actionError}
         </div>
       ) : null}
@@ -212,7 +212,7 @@ export function ServicesPanel({
                         isLive ? "is-live" : "is-building"
                       }`}
                     >
-                      <span className="project-status-dot" aria-hidden="true" />
+                      <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                       {serviceStatusLabel(service.status)}
                     </span>
 
@@ -269,7 +269,7 @@ export function ServicesPanel({
           onClose={() => setModalOpen(false)}
           className="max-w-lg"
         >
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <h2 id="create-service-title">Create a new service</h2>
             <button
               type="button"
@@ -381,7 +381,7 @@ export function ServicesPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >
@@ -409,7 +409,7 @@ export function ServicesPanel({
       {/* Modal: Delete Service Confirmation */}
       {deleteTarget && (
         <ModalDialog labelledBy="delete-service-dialog-title" onClose={() => setDeleteTarget(null)}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <AlertTriangle className="w-4 h-4" />
               <h2 id="delete-service-dialog-title">Delete Service</h2>
@@ -448,7 +448,7 @@ export function ServicesPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setDeleteTarget(null)}
                 disabled={busy}
               >

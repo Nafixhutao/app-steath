@@ -93,8 +93,8 @@ export function CustomDomainPanel({
   }
 
   return (
-    <section className="dashboard-section" aria-labelledby="custom-domain-heading">
-      <div className="dashboard-section-heading">
+    <section className="dashboard-section mt-[26px]" aria-labelledby="custom-domain-heading">
+      <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="custom-domain-heading">Custom Domain</h2>
         {canManage && !domainData ? (
           <button
@@ -109,7 +109,7 @@ export function CustomDomainPanel({
       </div>
 
       {domain.error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {domain.error || actionError}
         </p>
       ) : null}
@@ -139,7 +139,7 @@ export function CustomDomainPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setAdding(false)}
                 disabled={busy}
               >
@@ -154,11 +154,11 @@ export function CustomDomainPanel({
       ) : null}
 
       {domain.loading ? (
-        <p className="dashboard-table-empty" role="status">
+        <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]" role="status">
           Loading Custom Domain...
         </p>
       ) : !domainData ? (
-        <div className="dashboard-empty-state">
+        <div className="dashboard-empty-state py-[46px] px-[20px] border-b border-b-[#322f37] text-center">
           <h3>No Custom Domain</h3>
           <p>
             A Service can serve one domain you own in addition to its Platform Subdomain. You will
@@ -167,7 +167,7 @@ export function CustomDomainPanel({
         </div>
       ) : (
         <div className="custom-domain-details">
-          <dl className="service-meta">
+          <dl className="service-meta grid gap-[10px] mt-[16px] mb-0 mx-0 p-0">
             <div>
               <dt>Hostname</dt>
               <dd>{domainData.hostname}</dd>
@@ -195,7 +195,7 @@ export function CustomDomainPanel({
           </dl>
 
           {domainData.lastError ? (
-            <p className="dashboard-alert is-error" role="alert">
+            <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
               {domainData.lastError}
             </p>
           ) : null}
@@ -205,7 +205,7 @@ export function CustomDomainPanel({
             <p>
               Add these records at your DNS provider, then verify. DNS changes can take a while.
             </p>
-            <table className="organization-table svc-table-records">
+            <table className="organization-table w-full text-left tabular-nums svc-table-records">
               <thead>
                 <tr>
                   <th scope="col">Type</th>
@@ -252,7 +252,7 @@ export function CustomDomainPanel({
           {canManage ? (
             <div className="deployment-actions">
               <button
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 type="button"
                 onClick={() => void verify()}
                 disabled={busy}
@@ -260,7 +260,7 @@ export function CustomDomainPanel({
                 {busy ? "Checking..." : "Verify DNS"}
               </button>
               <button
-                className="dashboard-link-button is-danger"
+                className="dashboard-link-button p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] is-danger"
                 type="button"
                 onClick={() => void remove()}
                 disabled={busy}

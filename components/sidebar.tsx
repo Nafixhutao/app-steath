@@ -306,8 +306,8 @@ function SearchDialog({
         onClick={onClose}
         aria-label="Close search"
       />
-      <div className="search-dialog" role="dialog" aria-modal="true" aria-label="Search">
-        <div className="search-dialog-input">
+      <div className="search-dialog relative z-[1] w-[min(520px,100%)] overflow-hidden border border-[#3a373f] rounded-card bg-[#232127] [box-shadow:0_24px_80px_rgb(0_0_0_/_60%)]" role="dialog" aria-modal="true" aria-label="Search">
+        <div className="search-dialog-input flex h-[48px] items-center gap-[12px] py-0 px-[14px] border-b border-b-[#322f37] text-[#8a8791]">
           <Icon name="search" />
           <input
             ref={inputRef}
@@ -320,13 +320,13 @@ function SearchDialog({
           <kbd>ESC</kbd>
         </div>
         <div className="h-[304px] overflow-y-auto p-[6px]">
-          <p className="search-section-label">Navigation</p>
+          <p className="search-section-label m-0 p-[8px] text-[#96929d] text-[12px]">Navigation</p>
           {results.length ? (
             results.map((item) => (
               <button
                 key={item}
                 type="button"
-                className="search-result flex w-full h-[32px] items-center gap-[12px] py-0 px-[10px] border-0 rounded-[5px] text-ink-bright cursor-pointer text-[14px]! text-left"
+                className="search-result bg-transparent hover:bg-[#2b2930] flex w-full h-[32px] items-center gap-[12px] py-0 px-[10px] border-0 rounded-[5px] text-ink-bright cursor-pointer text-[14px]! text-left"
                 onClick={() => {
                   onSelect(item);
                   onClose();
@@ -505,7 +505,7 @@ export function Sidebar({
         {!collapsed || mobile ? (
           <button
             type="button"
-            className="org-switcher"
+            className="org-switcher flex min-w-0 flex-1 items-center gap-[8px] p-0 border-0 rounded-control bg-transparent text-[#eeedf0] cursor-pointer text-left"
             onClick={() => {
               setOrganizationSwitcherOpen((value) => !value);
               setCreateOrganizationOpen(false);
@@ -522,7 +522,7 @@ export function Sidebar({
         {mobile ? (
           <button
             type="button"
-            className="sidebar-close inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control text-[#b5b2b9] cursor-pointer hover:text-ink-console"
+            className="sidebar-close bg-transparent hover:bg-[rgb(255_255_255_/_5%)] inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control text-[#b5b2b9] cursor-pointer hover:text-ink-console"
             onClick={() => setMobileOpen(false)}
             aria-label="Close sidebar"
           >
@@ -531,7 +531,7 @@ export function Sidebar({
         ) : (
           <button
             type="button"
-            className="sidebar-toggle"
+            className="sidebar-toggle inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control bg-transparent text-[#b5b2b9] cursor-pointer hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
@@ -544,16 +544,16 @@ export function Sidebar({
         )}
         {organizationSwitcherOpen && (!collapsed || mobile) ? (
           <div
-            className="organization-switcher-menu"
+            className="organization-switcher-menu absolute top-[44px] left-[12px] z-[90] w-[min(280px,calc(100vw_-_32px))] max-h-[min(70dvh,480px)] p-[8px] border border-[#39363f] rounded-control bg-[#201d23] [box-shadow:0_16px_36px_rgb(0_0_0_/_40%)]"
             role="dialog"
             aria-label="Organization switcher"
           >
-            <p className="search-section-label">Your Organizations</p>
+            <p className="search-section-label m-0 p-[8px] text-[#96929d] text-[12px]">Your Organizations</p>
             {organizations?.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                className="organization-switcher-option"
+                className="organization-switcher-option flex w-full min-h-[36px] items-center gap-[8px] py-[4px] px-[8px] border-0 rounded-control-sm bg-transparent text-[#eeedf0] cursor-pointer text-left hover:bg-[rgb(255_255_255_/_6%)]"
                 aria-pressed={item.id === activeOrganizationId}
                 onClick={() => void switchOrganization(item.id)}
                 disabled={organizationBusy}
@@ -571,7 +571,7 @@ export function Sidebar({
               </p>
             ) : null}
             {createOrganizationOpen ? (
-              <form className="organization-switcher-create" onSubmit={createOrganization}>
+              <form className="organization-switcher-create grid gap-[7px] pt-[12px] pb-[4px] px-[8px] border-t border-t-[#39363f]" onSubmit={createOrganization}>
                 <label htmlFor={mobile ? "mobile-new-organization" : "new-organization"}>
                   Organization name
                 </label>
@@ -598,7 +598,7 @@ export function Sidebar({
             ) : (
               <button
                 type="button"
-                className="organization-switcher-add flex w-full min-h-[36px] items-center gap-[8px] py-[4px] px-[8px] border-0 rounded-[0] text-[#d8c783] cursor-pointer text-left mt-[6px] border-t border-t-[#39363f] text-[13px]!"
+                className="bg-transparent hover:bg-[rgb(255_255_255_/_6%)] flex w-full min-h-[36px] items-center gap-[8px] py-[4px] px-[8px] border-0 rounded-[0] text-[#d8c783] cursor-pointer text-left mt-[6px] border-t border-t-[#39363f] text-[13px]!"
                 onClick={() => {
                   setOrganizationError("");
                   setCreateOrganizationOpen(true);
@@ -625,7 +625,7 @@ export function Sidebar({
         ) : null}
       </button>
 
-      <nav className="sidebar-nav" aria-label="Sidebar links">
+      <nav className="sidebar-nav flex min-h-[0] flex-1 flex-col gap-[2px] mt-[8px] pt-0 pb-[8px] px-0" aria-label="Sidebar links">
         {primaryItems.map((item) => (
           <NavRow
             key={item.label}
@@ -640,7 +640,7 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="sidebar-bottom">
+      <div className="sidebar-bottom shrink-0 mt-[auto] pb-[12px] bg-console">
         <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
         <nav aria-label="Organization links">
           {secondaryItems.map((item) => (
@@ -676,8 +676,8 @@ export function Sidebar({
                   role="menu"
                   aria-label="User menu"
                 >
-                  <div className="profile-menu-user">
-                    <UserAvatar user={user} size={36} className="profile-avatar-image large" />
+                  <div className="profile-menu-user flex items-center gap-[10px] p-[10px]">
+                    <UserAvatar user={user} size={36} className="profile-avatar-image w-[40px] h-[40px] flex-none rounded-[50%] object-cover large" />
                     <div>
                       <strong title={user.name}>{user.name}</strong>
                       <small>{user.role}</small>
@@ -687,7 +687,7 @@ export function Sidebar({
 
                   <button
                     type="button"
-                    className="profile-menu-row logout-row"
+                    className="profile-menu-row flex w-full h-[32px] items-center gap-[10px] py-0 px-[10px] border-0 rounded-control bg-transparent text-[#b3b0ba] cursor-pointer text-left hover:bg-[#26262e] hover:text-ink-console logout-row"
                     onClick={async () => {
                       await signOut();
                       router.replace("/");
@@ -698,20 +698,20 @@ export function Sidebar({
                   </button>
                 </div>
               ) : null}
-              <div className="profile-controls">
+              <div className="profile-controls flex items-center gap-[6px]">
                 <button
                   type="button"
-                  className="profile-button"
+                  className="profile-button hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console flex min-w-0 flex-1 items-center gap-[8px] py-[4px] px-[6px] [transition:flex-basis_360ms_cubic-bezier(0.22,1,0.36,1),background-color_150ms_ease] border-0 rounded-card bg-transparent text-ink-console cursor-pointer text-left hover:bg-[rgba(255,255,255,0.05)]"
                   onClick={() => setProfileOpen((value) => !value)}
                   aria-label={profileOpen ? "Close user menu" : "Open user menu"}
                   title={collapsed && !mobile ? "User menu" : undefined}
                   aria-haspopup="menu"
                   aria-expanded={profileOpen}
                 >
-                  <UserAvatar user={user} size={32} className="profile-avatar" decorative />
+                  <UserAvatar user={user} size={32} className="profile-avatar inline-flex w-[32px] h-[32px] flex-none items-center justify-center rounded-[50%] bg-[#2b2930] text-ink-console text-[13px] font-semibold" decorative />
                   {!collapsed || mobile ? (
                     <>
-                      <span className="profile-copy">
+                      <span className="profile-copy min-w-0 flex-1 flex flex-col gap-[2px]">
                         <strong title={user.name}>{user.name}</strong>
                         <small>{user.role}</small>
                       </span>
@@ -730,7 +730,7 @@ export function Sidebar({
   return (
     <>
       <div className="user-mobile-topbar">
-        <Link href="/dashboard" className="mobile-brand" aria-label="Stealth home">
+        <Link href="/dashboard" className="mobile-brand focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]" aria-label="Stealth home">
           <Image src="/stealth-cat.png" alt="" width={24} height={24} priority />
         </Link>
         <div className="mobile-topbar-actions">
@@ -762,7 +762,7 @@ export function Sidebar({
           </button>
         </div>
         {mobileAccountOpen ? (
-          <div className="mobile-account-menu" role="menu">
+          <div className="mobile-account-menu absolute top-[48px] right-[12px] z-[45] flex w-[min(248px,calc(100vw_-_24px))] min-w-0 flex-col gap-[3px] p-[10px] border border-[#303033] rounded-card bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_40%)]" role="menu">
             <strong title={user.name}>{user.name}</strong>
             <small>{user.role}</small>
             <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />

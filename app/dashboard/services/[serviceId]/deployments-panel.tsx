@@ -148,8 +148,8 @@ export function DeploymentsPanel({
   const hiddenCount = deployments.length - visibleDeployments.length;
 
   return (
-    <section className="dashboard-section" aria-labelledby="deployments-heading">
-      <div className="dashboard-section-heading">
+    <section className="dashboard-section mt-[26px]" aria-labelledby="deployments-heading">
+      <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="deployments-heading">Deployments</h2>
         {canDeploy ? (
           <button
@@ -184,23 +184,23 @@ export function DeploymentsPanel({
       )}
 
       {history.error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {history.error || actionError}
         </p>
       ) : null}
 
       {loading ? (
-        <p className="dashboard-table-empty" role="status">
+        <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]" role="status">
           Loading Deployments...
         </p>
       ) : deployments.length === 0 ? (
-        <div className="dashboard-empty-state">
+        <div className="dashboard-empty-state py-[46px] px-[20px] border-b border-b-[#322f37] text-center">
           <h3>No Deployments yet</h3>
           <p>Deploy this Service to build its image from the repository.</p>
         </div>
       ) : (
         <div className="overflow-hidden border border-[#27272a] rounded-card bg-[#0c0c0d]">
-          <div className="deployment-list-head" aria-hidden="true">
+          <div className="deployment-list-head grid gap-[12px] py-[9px] px-[14px] border-b border-b-[#27272a] bg-[#111113] text-[#71717a] text-[11px] font-medium tracking-[0.02em] uppercase" aria-hidden="true">
             <span>Status</span>
             <span>Commit</span>
             <span>Started</span>
@@ -220,23 +220,23 @@ export function DeploymentsPanel({
                 <li className="deployment-item" key={deployment.id}>
                   <div className={`deployment-row${open ? " is-open" : ""}`}>
                     <span className={`deployment-status is-${deployment.status}`}>
-                      <span className="deployment-dot" aria-hidden="true" />
+                      <span className="deployment-dot w-[7px] h-[7px] rounded-[999px] bg-current [box-shadow:0_0_0_3px_rgb(255_255_255_/_4%)]" aria-hidden="true" />
                       {deploymentStatusLabel(deployment.status)}
                     </span>
                     <code className="text-[#d4d4d8] [font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px]" title={deployment.commitSha ?? "N/A"}>
                       {shortCommit(deployment.commitSha)}
                     </code>
                     <span
-                      className="deployment-when"
+                      className="deployment-when min-w-0 overflow-hidden text-ink-muted text-[12px] text-ellipsis whitespace-nowrap"
                       title={formatDateTime(deployment.startedAt ?? deployment.createdAt)}
                     >
                       {formatRelative(deployment.startedAt ?? deployment.createdAt)}
                     </span>
-                    <span className="deployment-duration">
+                    <span className="deployment-duration text-ink-muted text-[12px] tabular-nums">
                       {deploymentDuration(deployment) ?? "N/A"}
                     </span>
                     <button
-                      className="deployment-icon-btn"
+                      className="deployment-icon-btn inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed"
                       type="button"
                       onClick={() => void toggleLog(deployment)}
                       aria-expanded={open}
@@ -249,7 +249,7 @@ export function DeploymentsPanel({
                     {canManage ? (
                       <div className="flex gap-[2px] justify-end">
                         <button
-                          className="deployment-icon-btn"
+                          className="deployment-icon-btn inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed"
                           type="button"
                           onClick={() => void redeploy(deployment)}
                           disabled={redeployBlocked}
@@ -265,7 +265,7 @@ export function DeploymentsPanel({
                         </button>
                         {isDeploymentCancellable(deployment.status) ? (
                           <button
-                            className="deployment-icon-btn is-danger"
+                            className="deployment-icon-btn inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed is-danger"
                             type="button"
                             onClick={() => void cancel(deployment)}
                             disabled={acting}
@@ -280,14 +280,14 @@ export function DeploymentsPanel({
                   </div>
 
                   {deployment.errorMessage ? (
-                    <p className="deployment-row-error" title={deployment.errorMessage}>
+                    <p className="deployment-row-error m-0 pt-0 pb-[9px] px-[14px] overflow-hidden text-[#f87171] text-[12px] text-ellipsis whitespace-nowrap" title={deployment.errorMessage}>
                       {deployment.errorMessage}
                     </p>
                   ) : null}
 
                   {open ? (
-                    <div className="deployment-detail" id={logId}>
-                      <dl className="deployment-meta">
+                    <div className="deployment-detail pt-0 pb-[14px] px-[14px] border-t border-t-[#1c1c20] bg-[#111113]" id={logId}>
+                      <dl className="deployment-meta flex flex-wrap gap-[6px_24px] m-0 py-[10px] px-0 text-[12px]">
                         <div>
                           <dt>Started</dt>
                           <dd>{formatDateTime(deployment.startedAt)}</dd>

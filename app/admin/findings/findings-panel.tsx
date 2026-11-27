@@ -111,7 +111,7 @@ export function FindingsPanel() {
       </AdminHeader>
 
       {list.error ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {list.error}
         </p>
       ) : null}
@@ -192,7 +192,7 @@ export function FindingsPanel() {
           </div>
         ) : (
           <div className="overflow-x-auto admin-scrollbar">
-            <table className="admin-table">
+            <table className="admin-table w-full min-w-[820px] text-left text-[13px]">
               <caption className="sr-only">
                 Image scan findings with severity, scanner, workload, and the time they were found.
               </caption>

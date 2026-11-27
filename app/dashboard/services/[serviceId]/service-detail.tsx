@@ -131,18 +131,18 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
   if (!service) {
     return (
       <div className="dashboard-content supabase-service-page">
-        <p className="supabase-service-breadcrumb">
+        <p className="supabase-service-breadcrumb flex items-center flex-wrap gap-[8px] mt-0 mb-[20px] mx-0 text-ink-muted text-[13px]">
           <Link href="/dashboard/projects">Projects</Link>
           <span aria-hidden="true">/</span>
-          <span className="supabase-service-breadcrumb-current">Not found</span>
+          <span className="supabase-service-breadcrumb-current text-[#ededf2]">Not found</span>
         </p>
         <div className="py-[48px] px-[32px] border border-[#27272a] rounded-card bg-[#0c0c0d]">
-          <h1 className="supabase-service-title">Service not found</h1>
+          <h1 className="supabase-service-title m-0 text-[24px] text-left">Service not found</h1>
           <p className="mt-[4px] mb-0 mx-0 text-ink-muted text-[14px]">
             This Service does not exist in the active Organization.
           </p>
           {error || actionError ? (
-            <p className="dashboard-alert is-error" role="alert">
+            <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
               {error || actionError}
             </p>
           ) : null}
@@ -156,24 +156,24 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
 
   return (
     <div className="dashboard-content supabase-service-page">
-      <p className="supabase-service-breadcrumb">
+      <p className="supabase-service-breadcrumb flex items-center flex-wrap gap-[8px] mt-0 mb-[20px] mx-0 text-ink-muted text-[13px]">
         <Link href="/dashboard/projects">Projects</Link>
         <span aria-hidden="true">/</span>
         <Link href={`/dashboard/projects/${service.projectId}`}>{projectName || "Project"}</Link>
         <span aria-hidden="true">/</span>
-        <span className="supabase-service-breadcrumb-current">{service.name}</span>
+        <span className="supabase-service-breadcrumb-current text-[#ededf2]">{service.name}</span>
       </p>
 
       <header className="grid gap-[10px] min-w-0 pb-[20px]">
         <div className="flex items-center gap-[12px] flex-wrap">
-          <h1 className="supabase-service-title">{service.name}</h1>
+          <h1 className="supabase-service-title m-0 text-[24px] text-left">{service.name}</h1>
           <span className={`supabase-service-status is-${service.status}`}>
             {serviceStatusLabel(service.status)}
           </span>
         </div>
         <div className="flex items-center flex-wrap gap-[8px_14px] min-w-0 text-ink-muted text-[13px]">
           <a
-            className="svc-url-link"
+            className="svc-url-link inline-flex items-center gap-[6px] min-w-0 max-w-[100%] text-[13px] no-underline border-b border-b-[#3f3f46] pb-[1px] hover:border-b-ink-muted"
             href={service.url}
             target="_blank"
             rel="noreferrer"
@@ -185,7 +185,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
               width="12"
               height="12"
               aria-hidden="true"
-              className="svc-url-icon"
+              className="svc-url-icon text-ink-muted"
             >
               <path
                 d="M6 3h7v7M13 3L7.5 8.5M9 13H3V7"
@@ -197,23 +197,23 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
               />
             </svg>
           </a>
-          <span className="svc-meta-item" title={service.repoUrl}>
+          <span className="svc-meta-item inline-flex items-center gap-[6px] min-w-0 max-w-[100%]" title={service.repoUrl}>
             <code className="inline-block max-w-[100%] overflow-hidden text-ellipsis whitespace-nowrap align-bottom">{repoLabel(service.repoUrl)}</code>
             <span className="shrink-0 text-ink-muted">@{service.branch}</span>
           </span>
-          <span className="svc-meta-item text-ink-muted">
+          <span className="svc-meta-item inline-flex items-center gap-[6px] min-w-0 max-w-[100%] text-ink-muted">
             {service.cpuLimit} vCPU · {service.memoryLimitMb} MB RAM
           </span>
         </div>
       </header>
 
       {error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {error || actionError}
         </p>
       ) : null}
 
-      <nav className="svc-tabbar" aria-label="Service sections" ref={tabbarRef}>
+      <nav className="svc-tabbar items-center gap-[4px] border-b border-b-[#27272a] mb-[24px] overflow-x-auto" aria-label="Service sections" ref={tabbarRef}>
         {TABS.map((entry) => {
           // Read-only Members do not get the management tabs.
           const hidden = (entry.id === "environment" || entry.id === "settings") && !canManage;
@@ -264,11 +264,11 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
 
         {tab === "settings" && canManage ? (
           <>
-            <section className="dashboard-section" aria-labelledby="configuration-heading">
-              <div className="dashboard-section-heading">
+            <section className="dashboard-section mt-[26px]" aria-labelledby="configuration-heading">
+              <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
                 <h2 id="configuration-heading">Configuration</h2>
               </div>
-              <dl className="service-meta">
+              <dl className="service-meta grid gap-[10px] mt-[16px] mb-0 mx-0 p-0">
                 <div>
                   <dt>Repository</dt>
                   <dd>
@@ -301,17 +301,17 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
             </section>
 
             <section
-              className="dashboard-section organization-danger-zone"
+              className="dashboard-section mt-[26px] organization-danger-zone"
               aria-labelledby="danger-heading"
             >
-              <div className="dashboard-section-heading">
+              <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
                 <h2 id="danger-heading">Danger zone</h2>
               </div>
               <p>
                 Deleting this Service stops its container and removes its Volume, Environment
                 Variables, and Domains.
               </p>
-              <form className="organization-settings-form" onSubmit={remove}>
+              <form className="organization-settings-form flex gap-[12px] py-[18px] px-0" onSubmit={remove}>
                 <label>
                   Type <strong>{service.name}</strong> to confirm
                   <input

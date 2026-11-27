@@ -130,7 +130,7 @@ export default function ServicesPage() {
         {status === "deploying" ? (
           <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
         ) : (
-          <span className="project-status-dot" aria-hidden="true" />
+          <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
         )}
         <span>{serviceStatusLabel(status)}</span>
       </span>
@@ -156,7 +156,7 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="services-page-container">
+    <div className="services-page-container max-w-[1280px] my-0 mx-auto w-full">
       <header className="flex items-end justify-between flex-wrap gap-[16px] mb-[18px]">
         <div className="min-w-0">
           <h1 className="text-[20px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Services</h1>
@@ -168,7 +168,7 @@ export default function ServicesPage() {
         <div className="flex items-center gap-[8px]">
           <button
             type="button"
-            className="supabase-btn-secondary"
+            className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
             onClick={() => void servicesResource.refresh()}
             disabled={loading}
           >
@@ -192,27 +192,27 @@ export default function ServicesPage() {
       </header>
 
       {servicesResource.error ? (
-        <div className="dashboard-alert is-error mb-[16px]" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error mb-[16px]" role="alert">
           {servicesResource.error}
         </div>
       ) : null}
 
-      <div className="services-summary" aria-label="Services summary">
-        <div className="services-summary-total">
+      <div className="services-summary flex items-center flex-wrap gap-[12px_24px] py-[12px] px-0 mb-[18px] border-t border-t-surface-raised border-b border-b-surface-raised" aria-label="Services summary">
+        <div className="services-summary-total flex items-baseline gap-[8px] text-ink-muted text-[12px]">
           <strong>{serviceList.length}</strong>
           <span>services across {projectList.length} projects</span>
         </div>
         <div className="flex items-center flex-wrap gap-[16px]">
-          <span className="services-summary-state is-running">
-            <span className="project-status-dot" aria-hidden="true" />
+          <span className="services-summary-state inline-flex items-center gap-[7px] text-[12px] text-ink-muted tabular-nums is-running">
+            <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
             {runningCount} running
           </span>
-          <span className="services-summary-state is-deploying">{deployingCount} deploying</span>
-          <span className="services-summary-state is-attention">
+          <span className="services-summary-state inline-flex items-center gap-[7px] text-[12px] text-ink-muted tabular-nums is-deploying">{deployingCount} deploying</span>
+          <span className="services-summary-state inline-flex items-center gap-[7px] text-[12px] text-ink-muted tabular-nums is-attention">
             {attentionCount} need attention
           </span>
         </div>
-        <span className="services-summary-quota">
+        <span className="services-summary-quota ml-[auto] text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">
           {serviceList.length} / {QUOTAS.servicesPerOrganization} used
         </span>
       </div>
@@ -323,7 +323,7 @@ export default function ServicesPage() {
           {hasFilters ? (
             <button
               type="button"
-              className="supabase-btn-secondary"
+              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
               onClick={() => {
                 setSearch("");
                 setStatusFilter("all");
@@ -347,9 +347,9 @@ export default function ServicesPage() {
           {groups.map((group) => (
             <section key={group.id} className="mb-[22px] last:mb-0" aria-label={`Project ${group.name}`}>
               <div className="flex items-baseline gap-[8px] mb-[8px]">
-                <h2 className="services-group-name">{group.name}</h2>
-                <span className="services-group-count">{group.items.length}</span>
-                <Link href={`/dashboard/projects/${group.id}`} className="services-group-link">
+                <h2 className="services-group-name text-[13px] font-semibold text-ink-console m-0">{group.name}</h2>
+                <span className="services-group-count text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
+                <Link href={`/dashboard/projects/${group.id}`} className="services-group-link inline-flex items-center gap-[3px] ml-[auto] text-[11px]">
                   Open project
                   <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
                 </Link>
@@ -366,7 +366,7 @@ export default function ServicesPage() {
                         >
                           {service.name}
                         </Link>
-                        <div className="services-card-meta">
+                        <div className="services-card-meta flex items-center gap-[6px] min-w-0 mt-[3px] text-[11px] text-ink-muted">
                           <GitBranch className="w-3 h-3" aria-hidden="true" />
                           <span className="services-mono [font-family:var(--font-console-mono)]">{service.branch}</span>
                           <span aria-hidden="true">·</span>
@@ -411,8 +411,8 @@ export default function ServicesPage() {
           ))}
         </div>
       ) : (
-        <div className="services-table-card">
-          <table className="services-table">
+        <div className="services-table-card border border-surface-raised rounded-card overflow-hidden">
+          <table className="services-table w-full text-left">
             <thead>
               <tr>
                 <th scope="col">Service</th>
@@ -429,9 +429,9 @@ export default function ServicesPage() {
               <tbody key={group.id}>
                 <tr className="services-group-row">
                   <th colSpan={6} scope="rowgroup">
-                    <span className="services-group-name">{group.name}</span>
-                    <span className="services-group-count">{group.items.length}</span>
-                    <Link href={`/dashboard/projects/${group.id}`} className="services-group-link">
+                    <span className="services-group-name text-[13px] font-semibold text-ink-console m-0">{group.name}</span>
+                    <span className="services-group-count text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
+                    <Link href={`/dashboard/projects/${group.id}`} className="services-group-link inline-flex items-center gap-[3px] ml-[auto] text-[11px]">
                       Open project
                       <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
                     </Link>
@@ -446,7 +446,7 @@ export default function ServicesPage() {
                       >
                         {service.name}
                       </Link>
-                      <div className="services-card-meta">
+                      <div className="services-card-meta flex items-center gap-[6px] min-w-0 mt-[3px] text-[11px] text-ink-muted">
                         <GitBranch className="w-3 h-3" aria-hidden="true" />
                         <span className="services-mono [font-family:var(--font-console-mono)]">{service.branch}</span>
                         <span aria-hidden="true">·</span>
@@ -457,7 +457,7 @@ export default function ServicesPage() {
                     </td>
                     <td>{renderStatusPill(service.status)}</td>
                     <td>
-                      <div className="services-url-cell">
+                      <div className="services-url-cell flex items-center gap-[6px] min-w-0 mb-[10px]">
                         <a
                           href={service.url}
                           target="_blank"
@@ -480,7 +480,7 @@ export default function ServicesPage() {
                           href={service.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="supabase-btn-secondary services-row-btn"
+                          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none services-row-btn"
                           title="Visit live site"
                         >
                           <span>Visit</span>
@@ -488,7 +488,7 @@ export default function ServicesPage() {
                         </a>
                         <Link
                           href={`/dashboard/services/${service.id}`}
-                          className="supabase-btn-secondary services-row-btn services-row-btn-accent"
+                          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none services-row-btn services-row-btn-accent"
                         >
                           <span>Manage</span>
                           <ArrowUpRight className="w-3 h-3" aria-hidden="true" />

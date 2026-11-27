@@ -83,7 +83,7 @@ function CopyValue({ label, value }: { label: string; value: string }) {
         ) : null}
       </span>
       <div className="flex items-start gap-[10px] min-w-0">
-        <span className="db-cred-value is-mono">{value}</span>
+        <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono">{value}</span>
         <button
           type="button"
           className="db-cred-copy flex-none inline-flex items-center justify-center min-w-[44px] min-h-[44px] p-0 rounded-control border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink disabled:opacity-[0.55] disabled:cursor-not-allowed"
@@ -156,7 +156,7 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
         ) : null}
       </span>
       <div className="flex items-start gap-[10px] min-w-0">
-        <span className="db-cred-value is-mono min-h-[21px]" aria-live="polite">
+        <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono min-h-[21px]" aria-live="polite">
           {loading ? (
             <span className="db-cred-muted [font-family:inherit]">
               <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -171,10 +171,10 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
           )}
         </span>
       </div>
-      <div className="db-cred-password-actions">
+      <div className="db-cred-password-actions flex flex-wrap gap-[8px] mt-[8px]">
         <button
           type="button"
-          className="db-cred-action"
+          className="db-cred-action disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
           onClick={() => void toggle()}
           disabled={loading}
           aria-label={visible ? "Hide secret key" : "Reveal secret key"}
@@ -184,7 +184,7 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
         </button>
         <button
           type="button"
-          className="db-cred-action"
+          className="db-cred-action disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
           onClick={() => void copySecret()}
           disabled={loading}
           aria-label="Copy secret key"
@@ -249,7 +249,7 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
             {bucket.public ? "Public" : "Private"}
           </span>
           <span className={`project-service-status-pill ${ready ? "is-live" : "is-building"}`}>
-            <span className="project-status-dot" aria-hidden="true" />
+            <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
             {STATUS_LABELS[bucket.status]}
           </span>
           {bucket.healthy ? null : (
@@ -304,7 +304,7 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
           <div className="db-cred-row">
             <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Secret key</span>
             <div className="flex items-start gap-[10px] min-w-0">
-              <span className="db-cred-value db-cred-muted [font-family:inherit]">Owner or admin only</span>
+              <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] db-cred-muted [font-family:inherit]">Owner or admin only</span>
             </div>
           </div>
         )}
@@ -446,7 +446,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
       </div>
 
       {!modalOpen && !deleteTarget && (panel.error || actionError) ? (
-        <div className="dashboard-alert is-error" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {panel.error || actionError}
         </div>
       ) : null}
@@ -497,7 +497,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
       {/* Modal: Create Bucket */}
       {modalOpen ? (
         <ModalDialog labelledBy="create-bucket-title" onClose={() => setModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <h2 id="create-bucket-title">Create a new bucket</h2>
             <button
               type="button"
@@ -584,7 +584,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >
@@ -612,7 +612,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
       {/* Modal: Delete Bucket Confirmation */}
       {deleteTarget ? (
         <ModalDialog labelledBy="delete-bucket-title" onClose={() => setDeleteTarget(null)}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <AlertTriangle className="w-4 h-4" />
               <h2 id="delete-bucket-title">Delete bucket</h2>
@@ -659,7 +659,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setDeleteTarget(null)}
                 disabled={busy}
               >

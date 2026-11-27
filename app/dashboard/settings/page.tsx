@@ -189,7 +189,7 @@ export default function SettingsPage() {
 
       {/* Global Alerts */}
       {error ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {error}
         </div>
       ) : null}
@@ -451,7 +451,7 @@ export default function SettingsPage() {
             </span>
             <Link
               href="/dashboard/usage"
-              className="supabase-btn-secondary text-xs inline-flex items-center gap-1.5"
+              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs inline-flex items-center gap-1.5"
             >
               <span>View Usage Meters</span>
               <ArrowRight className="w-3 h-3" />

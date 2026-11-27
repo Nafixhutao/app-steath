@@ -107,8 +107,8 @@ export function EnvironmentPanel({
   }
 
   return (
-    <section className="dashboard-section" aria-labelledby="environment-heading">
-      <div className="dashboard-section-heading">
+    <section className="dashboard-section mt-[26px]" aria-labelledby="environment-heading">
+      <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="environment-heading">Environment Variables</h2>
         <button
           className="supabase-btn-green"
@@ -121,13 +121,13 @@ export function EnvironmentPanel({
       </div>
 
       {redeployNeeded ? (
-        <p className="environment-redeploy-banner" role="status">
+        <p className="environment-redeploy-banner mt-[14px] mb-0 mx-0 py-[11px] px-[14px] border border-[#6b5a33] rounded-[9px] bg-[rgb(58_46_22_/_40%)] text-[#e8d49a] text-[13px]" role="status">
           Environment changes are saved but not live yet. Redeploy this Service to apply them.
         </p>
       ) : null}
 
       {environment.error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {environment.error || actionError}
         </p>
       ) : null}
@@ -178,7 +178,7 @@ export function EnvironmentPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setDraft(null)}
                 disabled={busy}
               >
@@ -193,17 +193,17 @@ export function EnvironmentPanel({
       ) : null}
 
       {loading ? (
-        <p className="dashboard-table-empty" role="status">
+        <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]" role="status">
           Loading Environment Variables...
         </p>
       ) : variables.length === 0 ? (
-        <div className="dashboard-empty-state">
+        <div className="dashboard-empty-state py-[46px] px-[20px] border-b border-b-[#322f37] text-center">
           <h3>No Environment Variables</h3>
           <p>Add one to pass a secret, like an API token, into the Service container.</p>
         </div>
       ) : (
-        <div className="organization-table-wrap">
-          <table className="organization-table">
+        <div className="organization-table-wrap overflow-x-auto">
+          <table className="organization-table w-full text-left tabular-nums">
             <thead>
               <tr>
                 <th scope="col">Key</th>
@@ -232,14 +232,14 @@ export function EnvironmentPanel({
                     <td data-label="Actions" className="svc-cell-actions">
                       <div className="deployment-actions">
                         <button
-                          className="dashboard-link-button"
+                          className="dashboard-link-button p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]"
                           type="button"
                           onClick={() => void reveal(variable)}
                         >
                           {isRevealed ? "Hide" : "Reveal"}
                         </button>
                         <button
-                          className="dashboard-link-button"
+                          className="dashboard-link-button p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]"
                           type="button"
                           onClick={() =>
                             setDraft({
@@ -255,7 +255,7 @@ export function EnvironmentPanel({
                           Edit
                         </button>
                         <button
-                          className="dashboard-link-button is-danger"
+                          className="dashboard-link-button p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] is-danger"
                           type="button"
                           onClick={() => void remove(variable)}
                           disabled={busy}

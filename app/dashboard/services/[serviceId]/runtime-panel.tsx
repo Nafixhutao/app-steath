@@ -90,11 +90,11 @@ export function RuntimePanel({
   const running = status === "running";
 
   return (
-    <section className="dashboard-section" aria-labelledby="runtime-heading">
-      <div className="dashboard-section-heading">
+    <section className="dashboard-section mt-[26px]" aria-labelledby="runtime-heading">
+      <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="runtime-heading">Runtime</h2>
         {canManage ? (
-          <div className="runtime-actions">
+          <div className="runtime-actions flex gap-[10px] items-center">
             <button
               className="supabase-btn-green"
               type="button"
@@ -110,7 +110,7 @@ export function RuntimePanel({
                     : "Start"}
             </button>
             <button
-              className="dashboard-link-button"
+              className="dashboard-link-button p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]"
               type="button"
               onClick={() => void act("restart")}
               disabled={busy !== null || runtime.loading || !running}
@@ -122,12 +122,12 @@ export function RuntimePanel({
       </div>
 
       {runtime.error ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {runtime.error}
         </p>
       ) : null}
 
-      <dl className="service-meta">
+      <dl className="service-meta grid gap-[10px] mt-[16px] mb-0 mx-0 p-0">
         <div>
           <dt>Container</dt>
           <dd>{runtime.loading ? "Checking..." : serviceRuntimeLabel(status)}</dd>
@@ -158,7 +158,7 @@ export function RuntimePanel({
       </dl>
 
       {status === "absent" && !runtime.loading ? (
-        <p className="dashboard-table-empty">
+        <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]">
           This Service has no container yet. Deploy it to start one.
         </p>
       ) : null}
@@ -167,7 +167,7 @@ export function RuntimePanel({
         <div className="deployment-log-head">
           <h3>Runtime log</h3>
           <button
-            className="dashboard-link-button"
+            className="dashboard-link-button p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]"
             type="button"
             onClick={() => {
               setLogError("");
@@ -183,7 +183,7 @@ export function RuntimePanel({
           </button>
         </div>
         {logError ? (
-          <p className="dashboard-alert is-error" role="alert">
+          <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
             {logError}
           </p>
         ) : null}
@@ -192,7 +192,7 @@ export function RuntimePanel({
             {logLines.length > 0 ? logLines.join("\n") : "Waiting for output..."}
           </pre>
         ) : (
-          <p className="dashboard-table-empty">Follow the log to see what the container writes.</p>
+          <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]">Follow the log to see what the container writes.</p>
         )}
       </div>
     </section>

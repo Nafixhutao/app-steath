@@ -97,7 +97,7 @@ export default function ProjectsPage() {
       </div>
 
       {projects.error ? (
-        <div className="dashboard-alert is-error mb-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error mb-4" role="alert">
           {projects.error}
         </div>
       ) : null}
@@ -105,7 +105,7 @@ export default function ProjectsPage() {
       {/* Toolbar matching Image 2 */}
       <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[24px]">
         <div className="flex items-center gap-[10px] flex-wrap">
-          <div className="supabase-project-search">
+          <div className="supabase-project-search relative flex items-center w-[240px]">
             <Search className="w-4 h-4 text-zinc-500" aria-hidden="true" />
             <input
               type="search"
@@ -184,7 +184,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* Two Column Layout matching Image 2 */}
-      <div className="supabase-projects-layout">
+      <div className="supabase-projects-layout grid gap-[24px]">
         {/* Left / Main Column */}
         <div className="min-w-0">
           {projects.loading ? (
@@ -228,7 +228,7 @@ export default function ProjectsPage() {
               <p className="text-zinc-400">No projects match the query &ldquo;{search}&rdquo;.</p>
               <button
                 type="button"
-                className="supabase-btn-secondary mt-3"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none mt-3"
                 onClick={() => {
                   setSearch("");
                   setStatusFilter("all");
@@ -244,7 +244,7 @@ export default function ProjectsPage() {
                 <Link
                   key={project.id}
                   href={`/dashboard/projects/${project.id}`}
-                  className="supabase-project-card"
+                  className="supabase-project-card flex flex-col justify-between p-[16px] rounded-card border border-surface-raised no-underline [transition:border-color_150ms,background-color_150ms] min-h-[120px] hover:border-[#373441]"
                 >
                   <div className="flex items-start gap-[12px]">
                     <div className="flex items-center justify-center w-[32px] h-[32px] rounded-control bg-[#211f27] shrink-0">
@@ -256,7 +256,7 @@ export default function ProjectsPage() {
                       <h3 className="truncate text-[15px] font-semibold text-ink m-0">{project.name}</h3>
                       <p className="truncate text-[12px] text-[#716f7c] [font-family:monospace] mt-[2px] mb-0 mx-0">{project.slug}</p>
                     </div>
-                    <ArrowUpRight className="supabase-card-arrow" aria-hidden="true" />
+                    <ArrowUpRight className="supabase-card-arrow w-[16px] h-[16px] text-[#555360] [transition:color_150ms,transform_150ms]" aria-hidden="true" />
                   </div>
 
                   <div className="flex items-center gap-[12px] mt-[16px] pt-[12px] border-t border-t-[#232129]">
@@ -275,7 +275,7 @@ export default function ProjectsPage() {
           ) : (
             /* List View */
             <div className="bg-surface border border-[var(--color-surface-raised)] rounded-card overflow-hidden">
-              <table className="supabase-projects-list-table">
+              <table className="supabase-projects-list-table w-full text-[13px] text-left">
                 <thead>
                   <tr>
                     <th>Project</th>
@@ -440,7 +440,7 @@ export default function ProjectsPage() {
       {/* Modal: Create Project */}
       {modalOpen && (
         <ModalDialog labelledBy="create-project-title" onClose={() => setModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <h2 id="create-project-title">Create a new project</h2>
             <button
               type="button"
@@ -507,7 +507,7 @@ export default function ProjectsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >

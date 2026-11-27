@@ -300,14 +300,14 @@ export function DatabasePanel({
   return (
     <div className="space-y-6">
       {redeployNeeded && (
-        <div className="dashboard-alert is-warning" role="status">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-warning" role="status">
           Database changes are saved but not live yet. Redeploy this project&apos;s Services to
           apply them.
         </div>
       )}
 
       {panel.error || actionError ? (
-        <div className="dashboard-alert is-error" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {panel.error || actionError}
         </div>
       ) : null}
@@ -329,7 +329,7 @@ export function DatabasePanel({
               <p className="text-[11px] uppercase tracking-wide text-zinc-500 mt-4 mb-2">
                 Choose an engine
               </p>
-              <div className="db-engine-choice" role="radiogroup" aria-label="Database engine">
+              <div className="db-engine-choice grid gap-[10px] w-full max-w-[520px] mt-[4px] text-left" role="radiogroup" aria-label="Database engine">
                 {ENGINE_CHOICES.map((choice) => {
                   const selected = engine === choice.id;
                   return (
@@ -401,7 +401,7 @@ export function DatabasePanel({
                     database.status === "running" ? "is-live" : "is-building"
                   }`}
                 >
-                  <span className="project-status-dot" aria-hidden="true" />
+                  <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                   {databaseStatusLabel(database.status)}
                 </span>
                 <span
@@ -467,7 +467,7 @@ export function DatabasePanel({
               {canManage && (
                 <button
                   type="button"
-                  className="supabase-btn-secondary text-xs"
+                  className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs"
                   onClick={() => void rotate()}
                   disabled={busy}
                 >
@@ -553,7 +553,7 @@ export function DatabasePanel({
                     <div className="db-cred-row">
                       <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Password</span>
                       <div className="flex items-start gap-[10px] min-w-0">
-                        <span className="db-cred-value db-cred-muted [font-family:inherit]">Owner or admin only</span>
+                        <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] db-cred-muted [font-family:inherit]">Owner or admin only</span>
                       </div>
                     </div>
                   )}
@@ -649,7 +649,7 @@ export function DatabasePanel({
                         <div className="db-cred-row">
                           <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Password</span>
                           <div className="flex items-start gap-[10px] min-w-0">
-                            <span className="db-cred-value db-cred-muted [font-family:inherit]">
+                            <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] db-cred-muted [font-family:inherit]">
                               Owner or admin only
                             </span>
                           </div>
@@ -730,7 +730,7 @@ export function DatabasePanel({
                       {database.proxy.enabled && (
                         <button
                           type="button"
-                          className="supabase-btn-secondary text-rose-400 hover:text-rose-300"
+                          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-rose-400 hover:text-rose-300"
                           onClick={() => void disableProxy()}
                           disabled={busy}
                         >

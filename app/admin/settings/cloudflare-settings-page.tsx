@@ -98,7 +98,7 @@ export function CloudflareSettingsPage() {
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className="cf-tab inline-flex items-center gap-2"
+            className="cf-tab relative pt-[9px] pb-[11px] px-[14px] text-[var(--projects-muted)] whitespace-nowrap [transition:color_120ms_ease] hover:text-[var(--projects-text)] inline-flex items-center gap-2"
           >
             {item.icon}
             {item.label}

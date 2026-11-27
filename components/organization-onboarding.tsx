@@ -45,17 +45,17 @@ export function OrganizationOnboarding() {
 
   return (
     <div className="dashboard-content">
-      <div className="dashboard-page-heading">
+      <div className="dashboard-page-heading flex min-h-[72px] items-start justify-between gap-[20px] pb-[20px] border-b border-b-[#322f37]">
         <div>
           <h1>Create an Organization</h1>
           <p>You are not a Member of any Organization yet. Create one to continue.</p>
         </div>
       </div>
-      <section className="dashboard-section" aria-labelledby="create-organization-heading">
-        <div className="dashboard-section-heading">
+      <section className="dashboard-section mt-[26px]" aria-labelledby="create-organization-heading">
+        <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
           <h2 id="create-organization-heading">Organization details</h2>
         </div>
-        <form className="organization-settings-form" onSubmit={create}>
+        <form className="organization-settings-form flex gap-[12px] py-[18px] px-0" onSubmit={create}>
           <label>
             Organization name
             <input
@@ -65,12 +65,12 @@ export function OrganizationOnboarding() {
               required
             />
           </label>
-          <button className="create-project-button" type="submit" disabled={busy}>
+          <button className="create-project-button h-[36px] py-0 px-[14px] border border-[#078153] rounded-control bg-[var(--color-accent-strong)] text-[#fff] cursor-pointer hover:bg-[#087f55] [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] active:translate-y-[1px] active:scale-[0.99]" type="submit" disabled={busy}>
             {busy ? "Creating..." : "Create Organization"}
           </button>
         </form>
         {error ? (
-          <p className="dashboard-alert is-error" role="alert">
+          <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
             {error}
           </p>
         ) : null}
