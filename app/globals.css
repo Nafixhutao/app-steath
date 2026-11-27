@@ -488,10 +488,7 @@ form input[type="text"]:focus {
   background: #161418;
   color: var(--color-ink-console);
 }
-.sidebar-row:hover {
-  background: rgb(255 255 255 / 6%);
-}
-.sidebar-row:focus-visible {
+.sidebar-row:hover, .sidebar-row:focus-visible {
   background: rgb(255 255 255 / 6%);
 }
 .sidebar-row svg {
@@ -521,11 +518,7 @@ form input[type="text"]:focus {
   flex: 0 0 32px;
   justify-content: center;
 }
-.profile-avatar.large {
-  width: 36px;
-  height: 36px;
-}
-.profile-avatar-image.large {
+.profile-avatar.large, .profile-avatar-image.large {
   width: 36px;
   height: 36px;
 }
@@ -591,12 +584,6 @@ form input[type="text"]:focus {
 .mobile-sidebar-sheet {
   display: none;
 }
-.project-quota {
-  flex-shrink: 0;
-  color: #a9a5ae;
-  font-size: 12px;
-  white-space: nowrap;
-}
 .service-meta > div {
   display: grid;
   grid-template-columns: 140px minmax(0, 1fr);
@@ -628,14 +615,11 @@ form input[type="text"]:focus {
   cursor: not-allowed;
 }
 /* --- Deployment history ------------------------------------------------ */
-.deployment-list-head {
+.deployment-list-head, .deployment-row {
   grid-template-columns: 116px 92px minmax(0, 1fr) 74px 44px 68px;
 }
 .deployment-item + .deployment-item {
   border-top: 1px solid #1c1c20;
-}
-.deployment-row {
-  grid-template-columns: 116px 92px minmax(0, 1fr) 74px 44px 68px;
 }
 .deployment-row.is-open {
   background: #111113;
@@ -860,7 +844,7 @@ form input[type="text"]:focus {
 
 /* ===== DASHBOARD BASE ===== */
 
-.dashboard-loading {
+.dashboard-loading, .invitation-page {
   place-items: center;
 }
 
@@ -937,7 +921,7 @@ form input[type="text"]:focus {
   box-shadow: 0 0 0 3px rgb(138 120 232 / 16%);
 }
 
-.organization-table {
+.organization-table, .db-table, .admin-table, .supabase-projects-list-table, .members-table, .backups-table, .usage-table, .domains-table, .services-table {
   border-collapse: collapse;
 }
 
@@ -990,10 +974,6 @@ form input[type="text"]:focus {
 
 .organization-danger-zone .dashboard-section-heading h2 {
   color: #ffb9c2;
-}
-
-.invitation-page {
-  place-items: center;
 }
 
 .invitation-panel {
@@ -1128,10 +1108,6 @@ form input[type="text"]:focus {
 /* Table */
 .db-table-container {
   -webkit-overflow-scrolling: touch;
-}
-
-.db-table {
-  border-collapse: collapse;
 }
 
 .db-table th {
@@ -1307,19 +1283,11 @@ form input[type="text"]:focus {
 }
 
 @media (max-width: 640px) {
-  .db-heading {
+  .db-heading, .db-actions, .db-banner {
   align-items: stretch;
 }
 
-  .db-actions {
-  align-items: stretch;
-}
-
-  .db-actions .db-quota {
-    justify-content: center;
-  }
-
-  .db-actions .db-btn-primary {
+  .db-actions .db-quota, .db-actions .db-btn-primary, .db-banner .db-btn {
     justify-content: center;
   }
 
@@ -1338,14 +1306,6 @@ form input[type="text"]:focus {
   
 
   
-
-  .db-banner {
-  align-items: stretch;
-}
-
-  .db-banner .db-btn {
-    justify-content: center;
-  }
 }
 
 @media (max-width: 760px) {
@@ -1396,16 +1356,7 @@ body {
 }
 
 /* Interactive elements respond to the pointer and the keyboard alike. */
-.submit-button {
-  transition:
-    background 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    transform 120ms ease,
-    box-shadow 160ms ease,
-    filter 160ms ease;
-}
-.secondary-button {
+.submit-button, .secondary-button {
   transition:
     background 160ms ease,
     border-color 160ms ease,
@@ -1420,9 +1371,6 @@ body {
 }
 
 /* Data reads cleaner with aligned, non-proportional figures. */
-.project-quota {
-  font-variant-numeric: tabular-nums;
-}
 
 /* Headings wrap without leaving orphaned words. */
 .dashboard-page-heading h1,
@@ -1481,21 +1429,6 @@ body {
 /* Host metrics: Platform Admin node dashboard. The cards reuse the semantic
  * palette; usage bars carry the state hue (ok green, warning gold, danger red)
  * so a ratio is readable at a glance without a second number. */
-
-.metric-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px 18px;
-  border-radius: var(--radius-card-lg);
-  background: #17171a;
-  border: 1px solid #232127;
-  transition: border-color 200ms ease;
-}
-
-.metric-card:hover {
-  border-color: #322d38;
-}
 
 /* ===== ADMIN CONSOLE ===== */
 
@@ -1669,7 +1602,7 @@ body {
 }
 
 /* Admin navigation panel scrollbar (ported from the redesign's base sheet). */
-.sidebar-scrollbar {
+.sidebar-scrollbar, .admin-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #3a373f transparent;
 }
@@ -1683,10 +1616,6 @@ body {
 
 /* Dense data surfaces (log stream, wide tables): slim dark scrollbar with a
    generous min thumb so it stays grabbable in long streams. */
-.admin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #3a373f transparent;
-}
 
 .admin-scrollbar::-webkit-scrollbar {
   width: 8px;
@@ -1732,10 +1661,6 @@ body {
   border: 1px solid var(--projects-border);
   background: var(--projects-card-bg);
   border-radius: var(--radius-card);
-}
-
-.admin-table {
-  border-collapse: collapse;
 }
 
 .admin-table thead tr {
@@ -2026,18 +1951,13 @@ body {
   color: #8e8c99;
 }
 
-.supabase-icon-btn::after {
+.supabase-icon-btn::after, .supabase-avatar-btn::after {
   content: "";
   transform: translate(-50%, -50%);
 }
 
 .supabase-icon-btn:hover {
   color: var(--color-ink-console);
-}
-
-.supabase-avatar-btn::after {
-  content: "";
-  transform: translate(-50%, -50%);
 }
 
 /* Account avatar: provider photo when present, initials otherwise. The
@@ -2319,10 +2239,6 @@ body {
   transform: translate(2px, -2px);
 }
 
-.supabase-projects-list-table {
-  border-collapse: collapse;
-}
-
 .supabase-projects-list-table th {
   padding: 10px 16px;
   background-color: #141318;
@@ -2563,10 +2479,6 @@ body {
   border-color: var(--color-accent);
 }
 
-.members-table {
-  border-collapse: collapse;
-}
-
 .members-table th {
   padding: 11px 16px;
   background-color: #141318;
@@ -2616,10 +2528,6 @@ body {
 
 .backups-search-input:focus {
   border-color: var(--color-accent);
-}
-
-.backups-table {
-  border-collapse: collapse;
 }
 
 .backups-table th {
@@ -2813,10 +2721,6 @@ body {
   background-color: var(--color-danger);
 }
 
-.usage-table {
-  border-collapse: collapse;
-}
-
 .usage-table thead th {
   font-size: 11px;
   font-weight: 500;
@@ -2929,13 +2833,9 @@ a.usage-row-name:hover {
     padding: 0 12px;
   }
 
-  .usage-policy-grid {
+  .usage-policy-grid, .usage-project-row {
     grid-template-columns: 1fr;
   }
-
-  .usage-project-row {
-  grid-template-columns: 1fr;
-}
 }
 
 /* ===== DOMAINS ===== */
@@ -2947,10 +2847,6 @@ a.usage-row-name:hover {
 
 .domains-search-input:focus {
   border-color: var(--color-accent);
-}
-
-.domains-table {
-  border-collapse: collapse;
 }
 
 .domains-table th {
@@ -3111,10 +3007,6 @@ a.usage-row-name:hover {
 
 .services-status-pill.is-not-deployed .project-status-dot {
   background-color: var(--color-ink-muted);
-}
-
-.services-table {
-  border-collapse: collapse;
 }
 
 .services-table thead th {
