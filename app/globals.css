@@ -1699,58 +1699,29 @@ body {
 
 /* ===== SUPABASE TOPBAR ===== */
 /* The new global header replaces the old fixed mobile topbar; its menu button
-   is the only way to open the navigation sheet on small screens. */
-.supabase-mobile-menu-btn {
-  display: none;
-}
-
-.supabase-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 60;
-  display: flex;
-  height: 48px;
-  flex-shrink: 0;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  background-color: var(--color-console);
-  border-bottom: 1px solid #23222a;
-  padding: 0 16px;
-  user-select: none;
-}
-
-.supabase-topbar-sep {
-  font-weight: 300;
-}
-
-.supabase-org-icon-badge.small {
-  width: 18px;
-  height: 18px;
-  font-size: 10px;
-}
-
-.supabase-topbar-link {
+   is the only way to open the navigation sheet on small screens. */.supabase-topbar-link {
   color: #8e8c99;
 }
 
 .supabase-topbar-link:hover {
   color: var(--color-ink-console);
 }
-
 .supabase-icon-btn {
   color: #8e8c99;
-}
-
-.supabase-icon-btn::after, .supabase-avatar-btn::after {
-  content: "";
-  transform: translate(-50%, -50%);
 }
 
 .supabase-icon-btn:hover {
   color: var(--color-ink-console);
 }
 
+.supabase-dropdown-item {
+  color: var(--color-ink-console);
+}
+
+.supabase-icon-btn::after, .supabase-avatar-btn::after {
+  content: "";
+  transform: translate(-50%, -50%);
+}
 /* Account avatar: provider photo when present, initials otherwise. The
    fallback uses the console's existing neutral avatar surface so no new
    palette color is introduced for a placeholder. */
@@ -1775,28 +1746,6 @@ body {
    `.user-mobile-topbar` is hidden, and the topbar trims its secondary actions
    so the org switcher and avatar fit without horizontal overflow. */
 @media (max-width: 1023px) {
-  
-  .supabase-topbar {
-    height: 52px;
-    padding: 0 12px;
-    gap: 8px;
-  }
-  
-  .supabase-topbar-sep,
-  .supabase-topbar-link,
-  .supabase-icon-btn {
-    display: none;
-  }
-  .supabase-mobile-menu-btn {
-    display: inline-flex;
-  }
-  
-  
-  .supabase-search-label,
-  .supabase-search-kbd {
-    display: none;
-  }
-  
   .console-main {
   min-height: calc(100dvh - 52px);
 }
@@ -1804,37 +1753,6 @@ body {
     min-height: calc(100dvh - 52px);
     padding-top: 20px;
   }
-}
-
-.supabase-dropdown-menu.right-aligned {
-  left: auto;
-  right: 0;
-}
-
-.supabase-dropdown-user-header strong, .supabase-dropdown-user-header small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.supabase-dropdown-user-header strong {
-  font-size: 13px;
-  color: var(--color-ink-console);
-}
-
-.supabase-dropdown-user-header small {
-  font-size: 11px;
-  color: var(--color-ink-muted);
-}
-
-.supabase-dropdown-item {
-  color: var(--color-ink-console);
-}
-
-.supabase-dropdown-item.is-active {
-  background-color: rgba(255, 255, 255, 0.08);
-  font-weight: 500;
 }
 
 /* ===== ORGANIZATIONS ===== */

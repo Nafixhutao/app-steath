@@ -77,11 +77,11 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
   const userName = user?.name || user?.email || "User";
 
   return (
-    <header className="supabase-topbar" aria-label="Global header">
+    <header className="supabase-topbar sticky top-0 z-[60] flex h-[48px] shrink-0 w-full items-center justify-between bg-[var(--color-console)] border-b border-[#23222a] px-[16px] select-none [@media(max-width:1023px)]:h-[52px] [@media(max-width:1023px)]:px-[12px] [@media(max-width:1023px)]:gap-[8px]" aria-label="Global header">
       <div className="supabase-topbar-left [@media(max-width:1023px)]:min-w-0 [@media(max-width:1023px)]:gap-[8px] flex items-center gap-[12px]">
         <button
           type="button"
-          className="supabase-mobile-menu-btn items-center justify-center w-[32px] h-[32px] ml-[-4px] border-0 rounded-control bg-transparent text-ink-console cursor-pointer hover:bg-[rgba(255,255,255,0.06)]"
+          className="supabase-mobile-menu-btn hidden [@media(max-width:1023px)]:inline-flex items-center justify-center w-[32px] h-[32px] ml-[-4px] border-0 rounded-control bg-transparent text-ink-console cursor-pointer hover:bg-[rgba(255,255,255,0.06)]"
           onClick={() => window.dispatchEvent(new Event("stealth:open-mobile-nav"))}
           aria-label="Open navigation"
         >
@@ -102,7 +102,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
             className="w-[22px] h-[22px] object-contain"
           />
         </Link>
-        <span className="supabase-topbar-sep text-[#44424d] text-[14px]" aria-hidden="true">
+        <span className="supabase-topbar-sep font-light [@media(max-width:1023px)]:hidden text-[#44424d] text-[14px]" aria-hidden="true">
           /
         </span>
 
@@ -135,11 +135,11 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                       <button
                         key={org.id}
                         type="button"
-                        className={`supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)] ${isActive ? "is-active" : ""}`}
+                        className={`supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)] ${isActive ? "bg-[rgba(255,255,255,0.08)] font-medium hover:bg-[rgba(255,255,255,0.08)]" : ""}`}
                         onClick={() => void handleSelectOrg(org.id)}
                         role="menuitem"
                       >
-                        <div className="supabase-org-icon-badge bg-[#23212a] flex items-center justify-center w-[20px] h-[20px] rounded-control-sm text-[#a1a0aa] small" aria-hidden="true">
+                        <div className="supabase-org-icon-badge bg-[#23212a] flex items-center justify-center w-[20px] h-[20px] rounded-control-sm text-[#a1a0aa] small w-[18px] h-[18px] text-[10px]" aria-hidden="true">
                           <span className="text-[10px] font-bold">{getInitials(org.name)}</span>
                         </div>
                         <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{org.name}</span>
@@ -170,7 +170,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
           href="https://github.com/Nafixhutao/app-steath/issues"
           target="_blank"
           rel="noopener noreferrer"
-          className="supabase-topbar-link text-[13px] no-underline [transition:color_150ms] py-[4px] px-[6px]"
+          className="supabase-topbar-link [@media(max-width:1023px)]:hidden text-[13px] no-underline [transition:color_150ms] py-[4px] px-[6px]"
         >
           Feedback
         </a>
@@ -182,15 +182,15 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
           aria-label="Search or jump to (Ctrl+K)"
         >
           <Search className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
-          <span className="supabase-search-label text-[12px]">Search...</span>
-          <kbd className="supabase-search-kbd bg-[#23212a] text-[10px] [font-family:inherit] py-[1px] px-[5px] rounded-control-sm text-[#716f7c] border border-[#302e3a]">Ctrl K</kbd>
+          <span className="supabase-search-label [@media(max-width:1023px)]:hidden text-[12px]">Search...</span>
+          <kbd className="supabase-search-kbd [@media(max-width:1023px)]:hidden bg-[#23212a] text-[10px] [font-family:inherit] py-[1px] px-[5px] rounded-control-sm text-[#716f7c] border border-[#302e3a]">Ctrl K</kbd>
         </button>
 
         <a
           href="https://docs.nazxf.my.id"
           target="_blank"
           rel="noopener noreferrer"
-          className="supabase-icon-btn cursor-pointer focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
+          className="supabase-icon-btn [@media(max-width:1023px)]:hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
           title="Help & Documentation"
           aria-label="Help & Documentation"
         >
@@ -199,7 +199,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
 
         <button
           type="button"
-          className="supabase-icon-btn cursor-pointer focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
+          className="supabase-icon-btn [@media(max-width:1023px)]:hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
           title="Notifications"
           aria-label="Notifications"
           onClick={() => {
@@ -225,8 +225,8 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
           </button>
 
           {userDropdownOpen && (
-            <div className="supabase-dropdown-menu bg-[#16151a] absolute top-[calc(100%_+_6px)] left-[0] z-[70] min-w-[220px] border border-[#2a2833] rounded-card p-[6px] [box-shadow:0_10px_25px_rgba(0,0,0,0.45)] right-aligned" role="menu">
-              <div className="supabase-dropdown-user-header flex items-center gap-[9px] min-w-0 pt-[6px] pb-[8px] px-[8px]">
+            <div className="supabase-dropdown-menu bg-[#16151a] absolute top-[calc(100%_+_6px)] left-auto right-0 z-[70] min-w-[220px] border border-[#2a2833] rounded-card p-[6px] [box-shadow:0_10px_25px_rgba(0,0,0,0.45)] right-aligned" role="menu">
+              <div className="supabase-dropdown-user-header flex items-center gap-[9px] min-w-0 pt-[6px] pb-[8px] px-[8px] [&_strong]:block [&_strong]:overflow-hidden [&_strong]:text-ellipsis [&_strong]:whitespace-nowrap [&_strong]:text-[13px] [&_strong]:text-[var(--color-ink-console)] [&_small]:block [&_small]:overflow-hidden [&_small]:text-ellipsis [&_small]:whitespace-nowrap [&_small]:text-[11px] [&_small]:text-[var(--color-ink-muted)]">
                 <UserAvatar user={user} size={36} />
                 <div className="flex flex-col gap-[1px] min-w-0">
                   <strong title={userName}>{userName}</strong>
