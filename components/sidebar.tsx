@@ -155,10 +155,10 @@ const iconMap: Record<Exclude<IconName, "slack">, LucideIcon> = {
   admin: ShieldCheck,
 };
 
-function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
+function Icon({ name, size = 16, className }: { name: IconName; size?: number; className?: string }) {
   if (name === "slack") {
     return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
         <path d="M6.2 14.5a2.2 2.2 0 1 1-2.2-2.2h2.2v2.2ZM7.3 14.5a2.2 2.2 0 1 1 4.4 0V20a2.2 2.2 0 1 1-4.4 0v-5.5Z" />
         <path d="M9.5 6.2a2.2 2.2 0 1 1 2.2-2.2v2.2H9.5ZM9.5 7.3a2.2 2.2 0 1 1 0 4.4H4a2.2 2.2 0 1 1 0-4.4h5.5Z" />
         <path d="M17.8 9.5A2.2 2.2 0 1 1 20 11.7h-2.2V9.5ZM16.7 9.5a2.2 2.2 0 1 1-4.4 0V4a2.2 2.2 0 1 1 4.4 0v5.5Z" />
@@ -168,7 +168,7 @@ function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
   }
 
   const IconComponent = iconMap[name];
-  return <IconComponent size={size} strokeWidth={1.7} aria-hidden="true" />;
+  return <IconComponent size={size} strokeWidth={1.7} className={className} aria-hidden="true" />;
 }
 
 function PanelToggleIcon({ collapsed }: { collapsed: boolean }) {
@@ -205,7 +205,7 @@ function Identity({
           <span className="min-w-0 overflow-hidden flex-initial text-ellipsis whitespace-nowrap text-[14px] font-semibold max-w-[min(18ch,100%)] tracking-[-0.01em]" title={organization.name}>
             {organization.name}
           </span>
-          <ChevronDown size={16} strokeWidth={1.7} aria-hidden="true" />
+          <ChevronDown size={16} strokeWidth={1.7} className="flex-none text-[#7e7a84]" aria-hidden="true" />
         </>
       ) : null}
     </>
@@ -261,7 +261,7 @@ function NavRow({
   return (
     <Link
       href={href}
-      className={`sidebar-row [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink-console relative flex w-[calc(100%_-_24px)] h-[36px] flex-none my-[1px] mx-[12px] items-center gap-[10px] py-0 px-[8px] [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] border-0 rounded-control text-[#9e9aa7] cursor-pointer text-[13.5px] font-medium leading-[20px] text-left hover:text-ink-console focus-visible:text-ink-console focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] ${active ? "is-active" : ""} ${collapsed ? "is-collapsed" : ""} ${mobile ? "is-mobile" : ""}`}
+      className={`sidebar-row [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink-console relative isolate flex h-[36px] flex-none items-center gap-[10px] hover:bg-[rgb(255_255_255_/_6%)] focus-visible:bg-[rgb(255_255_255_/_6%)] [&>svg]:relative [&>svg]:z-[1] [&>svg]:flex-none [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] border-0 rounded-control text-[#9e9aa7] cursor-pointer text-[13.5px] font-medium leading-[20px] text-left hover:text-ink-console focus-visible:text-ink-console focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] ${active ? "bg-[#161418] text-ink-console" : ""} ${collapsed ? "w-[40px] mx-auto justify-center p-0" : "w-[calc(100%_-_24px)] my-[1px] mx-[12px] py-0 px-[8px]"}`}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       title={collapsed ? label : undefined}
@@ -500,8 +500,8 @@ export function Sidebar({
   };
 
   const renderContent = (mobile = false) => (
-    <div className={`sidebar-panel flex w-full min-w-0 h-full flex-col overflow-hidden bg-console ${mobile ? "mobile-sidebar-panel" : ""}`}>
-      <header className={`sidebar-header relative flex h-[48px] shrink-0 items-center gap-[8px] py-0 px-[16px] [transition:gap_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "is-collapsed" : ""}`}>
+    <div className={`sidebar-panel flex w-full min-w-0 h-full flex-col overflow-hidden border-r border-r-[#282631] bg-console ${mobile ? "mobile-sidebar-panel" : ""}`}>
+      <header className={`sidebar-header relative flex h-[48px] shrink-0 items-center [transition:gap_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "justify-center gap-0 p-0" : "gap-[8px] py-0 px-[16px]"}`}>
         {!collapsed || mobile ? (
           <button
             type="button"
@@ -531,7 +531,7 @@ export function Sidebar({
         ) : (
           <button
             type="button"
-            className="sidebar-toggle focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control bg-transparent text-[#b5b2b9] cursor-pointer hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console"
+            className="sidebar-toggle [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control bg-transparent text-[#b5b2b9] cursor-pointer hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
@@ -544,11 +544,11 @@ export function Sidebar({
         )}
         {organizationSwitcherOpen && (!collapsed || mobile) ? (
           <div
-            className="organization-switcher-menu absolute top-[44px] left-[12px] z-[90] w-[min(280px,calc(100vw_-_32px))] max-h-[min(70dvh,480px)] p-[8px] border border-[#39363f] rounded-control bg-[#201d23] [box-shadow:0_16px_36px_rgb(0_0_0_/_40%)]"
+            className="organization-switcher-menu overflow-y-auto absolute top-[44px] left-[12px] z-[90] w-[min(280px,calc(100vw_-_32px))] max-h-[min(70dvh,480px)] p-[8px] border border-[#39363f] rounded-control bg-[#201d23] [box-shadow:0_16px_36px_rgb(0_0_0_/_40%)]"
             role="dialog"
             aria-label="Organization switcher"
           >
-            <p className="search-section-label m-0 p-[8px] text-[#96929d] text-[12px]">Your Organizations</p>
+            <p className="search-section-label m-[4px_8px_8px] p-[8px] text-[#96929d] text-[12px]">Your Organizations</p>
             {organizations?.map((item) => (
               <button
                 key={item.id}
@@ -562,7 +562,9 @@ export function Sidebar({
                   {getInitials(item.name)}
                 </span>
                 <span className="min-w-0 flex-1 overflow-hidden text-[13px] text-ellipsis whitespace-nowrap">{item.name}</span>
-                {item.id === activeOrganizationId ? <small>Active</small> : null}
+                {item.id === activeOrganizationId ? (
+                  <small className="text-[#aaa4af] text-[11px]">Active</small>
+                ) : null}
               </button>
             ))}
             {organizationError ? (
@@ -576,21 +578,27 @@ export function Sidebar({
                   Organization name
                 </label>
                 <input
+                  className="w-full h-[34px] px-[8px] border border-[#49444e] rounded-control-sm bg-[#171519] text-[#eeedf0]"
                   id={mobile ? "mobile-new-organization" : "new-organization"}
                   value={organizationName}
                   onChange={(event) => setOrganizationName(event.target.value)}
                   maxLength={80}
                   required
                 />
-                <div>
+                <div className="flex justify-end gap-[6px]">
                   <button
                     type="button"
+                    className="min-h-[30px] px-[9px] border border-[#49444e] rounded-control-sm bg-transparent text-[#eeedf0] cursor-pointer"
                     onClick={() => setCreateOrganizationOpen(false)}
                     disabled={organizationBusy}
                   >
                     Cancel
                   </button>
-                  <button type="submit" disabled={organizationBusy}>
+                  <button
+                    type="submit"
+                    className="min-h-[30px] px-[9px] border border-[#d8c783] rounded-control-sm bg-[#d8c783] text-[#201d16] cursor-pointer"
+                    disabled={organizationBusy}
+                  >
                     {organizationBusy ? "Creating..." : "Create"}
                   </button>
                 </div>
@@ -612,7 +620,7 @@ export function Sidebar({
       </header>
       <button
         type="button"
-        className={`sidebar-search flex h-[32px] w-[calc(100%_-_16px)] mt-[6px] mb-0 mx-[8px] [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] items-center gap-[8px] py-0 pr-[14px] pl-[8px] border-0 rounded-control bg-[#171519] text-[#eeedf0] cursor-pointer text-left hover:bg-[#1c1a1f] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] ${collapsed && !mobile ? "is-collapsed" : ""}`}
+        className={`sidebar-search flex h-[32px] items-center gap-[8px] border-0 rounded-control text-[#eeedf0] cursor-pointer text-left [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] [&>svg]:flex-none [&>svg]:text-[#b5b2b9] [&>span]:min-w-0 [&>span]:flex-1 [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap [&>span]:text-[14px] [&>span]:font-medium [&>span]:leading-[20px] [&>kbd]:flex-none [&>kbd]:text-[#b5b2b9] [&>kbd]:[font-family:inherit] [&>kbd]:text-[12px] [&>kbd]:leading-[15px] ${collapsed && !mobile ? "w-[32px] mx-auto mt-[6px] justify-center p-0 bg-transparent" : "w-[calc(100%_-_16px)] mt-[6px] mb-0 mx-[8px] py-0 pr-[14px] pl-[8px] bg-[#171519] hover:bg-[#1c1a1f]"}`}
         onClick={() => setSearchOpen(true)}
         aria-label="Search Ctrl K"
       >
@@ -625,7 +633,7 @@ export function Sidebar({
         ) : null}
       </button>
 
-      <nav className="sidebar-nav flex min-h-[0] flex-1 flex-col gap-[2px] mt-[8px] pt-0 pb-[8px] px-0" aria-label="Sidebar links">
+      <nav className="sidebar-nav flex min-h-[0] flex-1 flex-col gap-[2px] mt-[8px] pt-0 pb-[8px] px-0 overflow-x-hidden overflow-y-auto" aria-label="Sidebar links">
         {primaryItems.map((item) => (
           <NavRow
             key={item.label}
@@ -642,7 +650,7 @@ export function Sidebar({
 
       <div className="sidebar-bottom shrink-0 mt-[auto] pb-[12px] bg-console">
         <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
-        <nav aria-label="Organization links">
+        <nav className="flex flex-col gap-[2px] py-[8px]" aria-label="Organization links">
           {secondaryItems.map((item) => (
             <NavRow
               key={item.label}
@@ -711,11 +719,11 @@ export function Sidebar({
                   <UserAvatar user={user} size={32} className="profile-avatar inline-flex w-[32px] h-[32px] flex-none items-center justify-center rounded-[50%] bg-[#2b2930] text-ink-console text-[13px] font-semibold" decorative />
                   {!collapsed || mobile ? (
                     <>
-                      <span className="profile-copy min-w-0 flex-1 flex flex-col gap-[2px]">
+                      <span className="profile-copy min-w-0 flex-1 flex flex-col gap-[2px] [&>strong]:overflow-hidden [&>strong]:text-ellipsis [&>strong]:whitespace-nowrap [&>strong]:text-[14px] [&>strong]:font-medium [&>strong]:leading-[17px] [&>small]:text-[#7e7a84] [&>small]:text-[12px] [&>small]:leading-[15px]">
                         <strong title={user.name}>{user.name}</strong>
                         <small>{user.role}</small>
                       </span>
-                      <Icon name="chevrons" size={16} />
+                      <Icon name="chevrons" size={16} className="flex-none text-[#7e7a84]" />
                     </>
                   ) : null}
                 </button>
@@ -736,6 +744,7 @@ export function Sidebar({
         <div className="mobile-topbar-actions [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:gap-[6px]">
           <button
             type="button"
+            className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-2"
             onClick={() => setSearchOpen(true)}
             aria-label="Search"
             title="Search"
@@ -744,6 +753,7 @@ export function Sidebar({
           </button>
           <button
             type="button"
+            className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-2"
             onClick={() => setMobileAccountOpen((value) => !value)}
             aria-label="User menu"
             aria-expanded={mobileAccountOpen}
@@ -752,6 +762,7 @@ export function Sidebar({
           </button>
           <button
             type="button"
+            className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-2"
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
             aria-haspopup="dialog"
@@ -779,7 +790,7 @@ export function Sidebar({
         ) : null}
       </div>
       <motion.aside
-        className={`sidebar desktop-sidebar bg-[#121014] ${collapsed ? "is-collapsed" : ""}`}
+        className={`sidebar relative z-50 w-[264px] min-w-0 flex-none h-full flex flex-col bg-[#121014] desktop-sidebar ${collapsed ? "overflow-hidden" : ""}`}
         aria-label="Main navigation"
         initial={false}
         animate={{

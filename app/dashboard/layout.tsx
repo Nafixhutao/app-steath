@@ -112,7 +112,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </Suspense>
             <main
               id="dashboard-content"
-              className="console-main [@media(max-width:1023px)]:h-[auto] flex-1 min-w-0 h-full user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden"
+              className="console-main [@media(max-width:1023px)]:h-[auto] flex-1 min-w-0 h-full user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
             >
               {needsOrganization ? <OrganizationOnboarding /> : children}
             </main>
