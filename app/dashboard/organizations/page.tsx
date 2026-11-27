@@ -116,7 +116,7 @@ export default function OrganizationsPage() {
               placeholder="Search for an organization"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="orgs-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[34px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
+              className="orgs-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[34px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms] focus:border-[var(--color-accent)]"
             />
             {search && (
               <button
@@ -144,7 +144,7 @@ export default function OrganizationsPage() {
         </div>
 
         {isPending ? (
-          <div className="orgs-grid grid gap-[16px]" aria-label="Loading organizations">
+          <div className="orgs-grid grid gap-[16px] grid-cols-[repeat(auto-fill,minmax(320px,1fr))]" aria-label="Loading organizations">
             {[1, 2].map((n) => (
               <div key={n} className="flex items-center gap-[16px] py-[16px] px-[20px] rounded-card bg-surface border border-[var(--color-surface-raised)] min-h-[70px]" aria-hidden="true">
                 <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-lg" />
@@ -189,14 +189,14 @@ export default function OrganizationsPage() {
             )}
           </div>
         ) : (
-          <div ref={gridRef} className="orgs-grid grid gap-[16px]">
+          <div ref={gridRef} className="orgs-grid grid gap-[16px] grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
             {filteredOrgs.map((org) => {
               const isSwitching = switchingId === org.id;
               return (
                 <button
                   key={org.id}
                   type="button"
-                  className="org-card"
+                  className="org-card flex items-center gap-[16px] py-[16px] px-[20px] rounded-card bg-[var(--color-surface)] border border-[var(--color-surface-raised)] cursor-pointer text-left [transition:border-color_150ms,background-color_150ms] w-full hover:bg-[#1b1a20] hover:border-[#373441]"
                   onClick={() => void handleSelectOrg(org.id)}
                   disabled={Boolean(switchingId)}
                   title={`Open ${org.name}`}

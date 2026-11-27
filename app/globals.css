@@ -1839,10 +1839,6 @@ body {
 
 /* ===== ORGANIZATIONS ===== */
 
-.orgs-search-input:focus {
-  border-color: var(--color-accent);
-}
-
 /* Action Buttons - Unified with Database Button Design System */
 .supabase-btn-green {
   display: inline-flex;
@@ -1954,41 +1950,19 @@ body {
 }
 
 /* Organizations Grid */
-.orgs-grid {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-}
-
-.org-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-radius: var(--radius-card);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-surface-raised);
-  cursor: pointer;
-  text-align: left;
-  transition:
-    border-color 150ms,
-    background-color 150ms;
-  width: 100%;
-}
-
-.org-card:hover {
-  background-color: #1b1a20;
-  border-color: #373441;
-}
-
 /* ===== PROJECTS ===== */
 
-.supabase-project-search svg {
-  position: absolute;
-  left: 10px;
-  pointer-events: none;
-}
-
-.supabase-project-search-input:focus {
-  border-color: var(--color-accent);
+/* Main 2-column layout */
+/* Projects Grid View */
+@keyframes supabaseModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .supabase-filter-select {
@@ -2006,62 +1980,6 @@ body {
 .supabase-view-btn.is-active {
   background-color: #282632;
   color: var(--color-ink);
-}
-
-/* Main 2-column layout */
-.supabase-projects-layout {
-  grid-template-columns: 1fr 340px;
-  align-items: start;
-}
-
-@media (max-width: 1024px) {
-  .supabase-projects-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Projects Grid View */
-.supabase-projects-grid {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-}
-
-.supabase-project-card:hover .supabase-card-arrow {
-  color: var(--color-accent);
-  transform: translate(2px, -2px);
-}
-
-.supabase-projects-list-table th {
-  padding: 10px 16px;
-  background-color: #141318;
-  color: #716f7c;
-  font-weight: 500;
-  font-size: 12px;
-  border-bottom: 1px solid var(--color-surface-raised);
-}
-
-.supabase-projects-list-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #1f1e25;
-  color: #c9c7d2;
-}
-
-.supabase-projects-list-table tr:last-child td {
-  border-bottom: none;
-}
-
-.supabase-projects-list-table tr:hover td {
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
-@keyframes supabaseModalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 .supabase-modal-header {
@@ -2430,118 +2348,8 @@ a.usage-row-name:hover {
 
 /* ===== SERVICES ===== */
 
-.services-summary-total strong {
-  color: var(--color-ink-bright);
-  font-size: 18px;
-  font-variant-numeric: tabular-nums;
-}
-
-.services-summary-state.is-running .project-status-dot {
-  background-color: var(--color-accent);
-}
-
 .services-summary-state.is-attention {
   color: #fda4af;
-}
-
-.services-search-input:focus {
-  border-color: var(--color-accent);
-}
-
-.services-grid {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-}
-
-.services-card-meta > span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.services-status-pill.is-running {
-  background-color: #0f2e21;
-  border: 1px solid #1d4a36;
-  color: var(--color-accent);
-}
-
-.services-status-pill.is-running .project-status-dot {
-  background-color: var(--color-accent);
-}
-
-.services-status-pill.is-deploying {
-  background-color: #2a2012;
-  border: 1px solid #48381c;
-  color: var(--color-warning);
-}
-
-.services-status-pill.is-failed {
-  background-color: #2d1419;
-  border: 1px solid #4d222a;
-  color: var(--color-danger);
-}
-
-.services-status-pill.is-failed .project-status-dot {
-  background-color: var(--color-danger);
-}
-
-.services-status-pill.is-stopped {
-  background-color: #1d1b22;
-  border: 1px solid #282632;
-  color: #878492;
-}
-
-.services-status-pill.is-stopped .project-status-dot {
-  background-color: #878492;
-}
-
-.services-status-pill.is-suspended {
-  background-color: #2a2012;
-  border: 1px solid #48381c;
-  color: var(--color-warning);
-}
-
-.services-status-pill.is-suspended .project-status-dot {
-  background-color: var(--color-warning);
-}
-
-.services-status-pill.is-not-deployed {
-  background-color: #1d1b22;
-  border: 1px solid #282632;
-  color: var(--color-ink-muted);
-}
-
-.services-status-pill.is-not-deployed .project-status-dot {
-  background-color: var(--color-ink-muted);
-}
-
-.services-table thead th {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-ink-muted);
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--color-surface-raised);
-  background-color: #131217;
-}
-
-.services-table tbody td {
-  padding: 11px 14px;
-  border-bottom: 1px solid #1f1d25;
-  font-size: 13px;
-  vertical-align: middle;
-}
-
-.services-table tbody tr:hover td {
-  background-color: rgba(255, 255, 255, 0.015);
-}
-
-.services-table .services-group-row th {
-  padding: 9px 14px;
-  background-color: #131217;
-  border-bottom: 1px solid var(--color-surface-raised);
-  font-weight: 400;
-  text-align: left;
 }
 
 .services-table .services-group-row .services-group-name,

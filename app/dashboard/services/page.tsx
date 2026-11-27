@@ -114,16 +114,16 @@ export default function ServicesPage() {
   function renderStatusPill(status: ServiceStatus) {
     const variant =
       status === "running"
-        ? "is-running"
+        ? "bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
         : status === "deploying"
-          ? "is-deploying"
+          ? "bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
           : status === "failed"
-            ? "is-failed"
+            ? "bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]"
             : status === "suspended"
-              ? "is-suspended"
+              ? "bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
               : status === "not_deployed"
-                ? "is-not-deployed"
-                : "is-stopped";
+                ? "bg-[#1d1b22] border border-[#282632] text-[var(--color-ink-muted)]"
+                : "bg-[#1d1b22] border border-[#282632] text-[#878492]";
 
     return (
       <span className={`services-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium shrink-0 ${variant}`}>
@@ -199,11 +199,11 @@ export default function ServicesPage() {
 
       <div className="services-summary [@media(max-width:720px)]:gap-[10px_16px] flex items-center flex-wrap gap-[12px_24px] py-[12px] px-0 mb-[18px] border-t border-t-surface-raised border-b border-b-surface-raised" aria-label="Services summary">
         <div className="services-summary-total flex items-baseline gap-[8px] text-ink-muted text-[12px]">
-          <strong>{serviceList.length}</strong>
+          <strong className="text-[var(--color-ink-bright)] text-[18px] tabular-nums">{serviceList.length}</strong>
           <span>services across {projectList.length} projects</span>
         </div>
         <div className="flex items-center flex-wrap gap-[16px]">
-          <span className="services-summary-state inline-flex items-center gap-[7px] text-[12px] text-ink-muted tabular-nums is-running">
+          <span className="services-summary-state inline-flex items-center gap-[7px] text-[12px] text-ink-muted tabular-nums is-running [&_.project-status-dot]:bg-[var(--color-accent)]">
             <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
             {runningCount} running
           </span>
@@ -226,7 +226,7 @@ export default function ServicesPage() {
               placeholder="Search name, repo or hostname..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="services-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
+              className="services-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease] focus:border-[var(--color-accent)]"
               aria-label="Search services"
             />
             {search ? (
@@ -301,7 +301,7 @@ export default function ServicesPage() {
       </div>
 
       {loading && serviceList.length === 0 ? (
-        <div className="services-grid grid gap-[12px]" role="status" aria-label="Loading services">
+        <div className="services-grid grid gap-[12px] grid-cols-[repeat(auto-fill,minmax(300px,1fr))]" role="status" aria-label="Loading services">
           {[1, 2, 3, 4].map((item) => (
             <div key={item} className="bg-surface border border-[var(--color-surface-raised)] rounded-card p-[16px]" aria-hidden="true">
               <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-36 rounded mb-3" />
@@ -354,7 +354,7 @@ export default function ServicesPage() {
                   <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
                 </Link>
               </div>
-              <div className="services-grid grid gap-[12px]">
+              <div className="services-grid grid gap-[12px] grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
                 {group.items.map((service) => (
                   <article key={service.id} className="bg-surface border border-surface-raised rounded-card py-[14px] px-[16px] flex flex-col min-w-0 [transition:border-color_120ms_ease] hover:border-[#3a3744]">
                     <div className="flex items-start justify-between gap-[12px] mb-[10px]">
@@ -366,7 +366,7 @@ export default function ServicesPage() {
                         >
                           {service.name}
                         </Link>
-                        <div className="services-card-meta flex items-center gap-[6px] min-w-0 mt-[3px] text-[11px] text-ink-muted">
+                        <div className="services-card-meta flex items-center gap-[6px] min-w-0 mt-[3px] text-[11px] text-ink-muted [&>span:last-child]:overflow-hidden [&>span:last-child]:text-ellipsis [&>span:last-child]:whitespace-nowrap">
                           <GitBranch className="w-3 h-3" aria-hidden="true" />
                           <span className="text-[11px] [font-family:var(--font-console-mono)]">{service.branch}</span>
                           <span aria-hidden="true">·</span>
@@ -412,7 +412,7 @@ export default function ServicesPage() {
         </div>
       ) : (
         <div className="services-table-card [@media(max-width:720px)]:overflow-x-auto bg-surface border border-surface-raised rounded-card overflow-hidden">
-          <table className="services-table [@media(max-width:720px)]:min-w-[680px] w-full text-left">
+          <table className="services-table [@media(max-width:720px)]:min-w-[680px] w-full text-left [&_thead_th]:px-[14px] [&_thead_th]:py-[10px] [&_thead_th]:text-[11px] [&_thead_th]:font-medium [&_thead_th]:uppercase [&_thead_th]:tracking-[0.05em] [&_thead_th]:text-[var(--color-ink-muted)] [&_thead_th]:border-b [&_thead_th]:border-[var(--color-surface-raised)] [&_thead_th]:bg-[#131217] [&_tbody_td]:px-[14px] [&_tbody_td]:py-[11px] [&_tbody_td]:border-b [&_tbody_td]:border-[#1f1d25] [&_tbody_td]:text-[13px] [&_tbody_td]:align-middle [&_tbody_tr:hover>td]:bg-[rgba(255,255,255,0.015)]">
             <thead>
               <tr>
                 <th scope="col">Service</th>
@@ -428,7 +428,7 @@ export default function ServicesPage() {
             {groups.map((group) => (
               <tbody key={group.id}>
                 <tr className="services-group-row">
-                  <th colSpan={6} scope="rowgroup">
+                  <th colSpan={6} scope="rowgroup" className="px-[14px] py-[9px] bg-[#131217] border-b border-[var(--color-surface-raised)] font-normal text-left">
                     <span className="services-group-name text-[13px] font-semibold text-ink-console m-0">{group.name}</span>
                     <span className="services-group-count text-[11px] [font-family:var(--font-console-mono)] text-ink-muted">{group.items.length}</span>
                     <Link href={`/dashboard/projects/${group.id}`} className="services-group-link text-accent hover:text-[#6ee7b7] inline-flex items-center gap-[3px] ml-[auto] text-[11px]">
@@ -446,7 +446,7 @@ export default function ServicesPage() {
                       >
                         {service.name}
                       </Link>
-                      <div className="services-card-meta flex items-center gap-[6px] min-w-0 mt-[3px] text-[11px] text-ink-muted">
+                      <div className="services-card-meta flex items-center gap-[6px] min-w-0 mt-[3px] text-[11px] text-ink-muted [&>span:last-child]:overflow-hidden [&>span:last-child]:text-ellipsis [&>span:last-child]:whitespace-nowrap">
                         <GitBranch className="w-3 h-3" aria-hidden="true" />
                         <span className="text-[11px] [font-family:var(--font-console-mono)]">{service.branch}</span>
                         <span aria-hidden="true">·</span>

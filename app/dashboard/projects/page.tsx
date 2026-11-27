@@ -106,13 +106,13 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[24px]">
         <div className="flex items-center gap-[10px] flex-wrap">
           <div className="supabase-project-search relative flex items-center w-[240px]">
-            <Search className="w-4 h-4 text-zinc-500" aria-hidden="true" />
+            <Search className="absolute left-[10px] w-4 h-4 text-zinc-500 pointer-events-none" aria-hidden="true" />
             <input
               type="search"
               placeholder="Search for a project"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="supabase-project-search-input bg-surface w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
+              className="supabase-project-search-input bg-surface w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms] focus:border-[var(--color-accent)]"
             />
             {search && (
               <button
@@ -184,11 +184,11 @@ export default function ProjectsPage() {
       </div>
 
       {/* Two Column Layout matching Image 2 */}
-      <div className="supabase-projects-layout grid gap-[24px]">
+      <div className="supabase-projects-layout grid gap-[24px] grid-cols-[1fr_340px] [align-items:start] [@media(max-width:1024px)]:grid-cols-1">
         {/* Left / Main Column */}
         <div className="min-w-0">
           {projects.loading ? (
-            <div className="supabase-projects-grid grid gap-[16px]">
+            <div className="supabase-projects-grid grid gap-[16px] grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
               {[1, 2, 3].map((n) => (
                 <div key={n} className="bg-surface flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px]" aria-hidden="true">
                   <div className="flex items-start gap-[12px]">
@@ -239,12 +239,12 @@ export default function ProjectsPage() {
             </div>
           ) : viewMode === "grid" ? (
             /* Grid View */
-            <div className="supabase-projects-grid grid gap-[16px]">
+            <div className="supabase-projects-grid grid gap-[16px] grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
               {filteredProjects.map((project) => (
                 <Link
                   key={project.id}
                   href={`/dashboard/projects/${project.id}`}
-                  className="supabase-project-card bg-surface hover:bg-[#1a1920] flex flex-col justify-between p-[16px] rounded-card border border-surface-raised no-underline [transition:border-color_150ms,background-color_150ms] min-h-[120px] hover:border-[#373441]"
+                  className="supabase-project-card group bg-surface hover:bg-[#1a1920] flex flex-col justify-between p-[16px] rounded-card border border-surface-raised no-underline [transition:border-color_150ms,background-color_150ms] min-h-[120px] hover:border-[#373441]"
                 >
                   <div className="flex items-start gap-[12px]">
                     <div className="flex items-center justify-center w-[32px] h-[32px] rounded-control bg-[#211f27] shrink-0">
@@ -256,7 +256,7 @@ export default function ProjectsPage() {
                       <h3 className="truncate text-[15px] font-semibold text-ink m-0">{project.name}</h3>
                       <p className="truncate text-[12px] text-[#716f7c] [font-family:monospace] mt-[2px] mb-0 mx-0">{project.slug}</p>
                     </div>
-                    <ArrowUpRight className="supabase-card-arrow w-[16px] h-[16px] text-[#555360] [transition:color_150ms,transform_150ms]" aria-hidden="true" />
+                    <ArrowUpRight className="supabase-card-arrow w-[16px] h-[16px] text-[#555360] [transition:color_150ms,transform_150ms] group-hover:text-[var(--color-accent)] group-hover:[transform:translate(2px,-2px)]" aria-hidden="true" />
                   </div>
 
                   <div className="flex items-center gap-[12px] mt-[16px] pt-[12px] border-t border-t-[#232129]">
@@ -275,7 +275,7 @@ export default function ProjectsPage() {
           ) : (
             /* List View */
             <div className="bg-surface border border-[var(--color-surface-raised)] rounded-card overflow-hidden">
-              <table className="supabase-projects-list-table w-full text-[13px] text-left">
+              <table className="supabase-projects-list-table w-full text-[13px] text-left [&_th]:px-[16px] [&_th]:py-[10px] [&_th]:bg-[#141318] [&_th]:text-[#716f7c] [&_th]:font-medium [&_th]:text-[12px] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_td]:px-[16px] [&_td]:py-[12px] [&_td]:border-b [&_td]:border-[#1f1e25] [&_td]:text-[#c9c7d2] [&_tr:last-child>td]:border-b-0 [&_tr:hover>td]:bg-[rgba(255,255,255,0.02)]">
                 <thead>
                   <tr>
                     <th>Project</th>
