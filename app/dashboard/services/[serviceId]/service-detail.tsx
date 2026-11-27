@@ -44,6 +44,16 @@ function repoLabel(repoUrl: string): string {
   return repoUrl;
 }
 
+// Service status pill palette. The dot inherits `currentColor`, so one colour
+// pair per state is enough.
+function statusPillTone(status: string) {
+  if (status === "running")
+    return "bg-[rgba(0,176,107,0.12)] text-[#00e08c] before:animate-[service-status-pulse_2s_ease-in-out_infinite]";
+  if (status === "deploying" || status === "building") return "bg-[rgba(245,158,11,0.12)] text-[#f5a623]";
+  if (status === "failed" || status === "suspended") return "bg-[rgba(239,68,68,0.12)] text-[#f87171]";
+  return "bg-[#27272a] text-[#d4d4d8]";
+}
+
 export function ServiceDetail({ serviceId }: { serviceId: string }) {
   const router = useRouter();
   const { data: activeMember } = useActiveMember();
@@ -167,7 +177,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
       <header className="grid gap-[10px] min-w-0 pb-[20px]">
         <div className="flex items-center gap-[12px] flex-wrap">
           <h1 className="supabase-service-title m-0 text-[24px] text-left">{service.name}</h1>
-          <span className={`supabase-service-status inline-flex shrink-0 items-center gap-[7px] py-[3px] px-[10px] rounded-[999px] bg-[#27272a] text-[#d4d4d8] text-[12px] font-medium before:w-[6px] before:h-[6px] before:rounded-[50%] before:bg-current is-${service.status}`}>
+          <span className={`supabase-service-status inline-flex shrink-0 items-center gap-[7px] py-[3px] px-[10px] rounded-[999px] text-[12px] font-medium before:content-[''] before:w-[6px] before:h-[6px] before:rounded-[50%] before:bg-current is-${service.status} ${statusPillTone(service.status)}`}>
             {serviceStatusLabel(service.status)}
           </span>
         </div>
@@ -213,7 +223,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         </p>
       ) : null}
 
-      <nav className="svc-tabbar flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(max-width:640px)]:gap-[0] [@media(max-width:640px)]:mb-[20px] items-center gap-[4px] border-b border-b-[#27272a] mb-[24px] overflow-x-auto" aria-label="Service sections" ref={tabbarRef}>
+      <nav className="svc-tabbar flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(max-width:640px)]:gap-[0] [@media(max-width:640px)]:mb-[20px] items-center gap-[4px] border-b border-b-[#27272a] mb-[24px] overflow-x-auto [-webkit-overflow-scrolling:touch] [@media(max-width:640px)]:[scroll-snap-type:x_proximity] [@media(max-width:640px)]:text-[13px]" aria-label="Service sections" ref={tabbarRef}>
         {TABS.map((entry) => {
           // Read-only Members do not get the management tabs.
           const hidden = (entry.id === "environment" || entry.id === "settings") && !canManage;
@@ -222,7 +232,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
             <button
               key={entry.id}
               type="button"
-              className={`svc-tab relative pt-[10px] pr-[14px] pb-[12px] pl-[14px] border-0 bg-transparent text-[var(--color-ink-muted)] text-[14px] font-medium whitespace-nowrap cursor-pointer [transition:color_0.15s_ease] hover:text-[#ededf2] focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[-2px]${tab === entry.id ? " is-active" : ""}`}
+              className={`svc-tab relative pt-[10px] pr-[14px] pb-[12px] pl-[14px] border-0 bg-transparent text-[var(--color-ink-muted)] text-[14px] font-medium whitespace-nowrap cursor-pointer [transition:color_0.15s_ease] hover:text-[#ededf2] focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[-2px] [@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:px-[8px] [@media(max-width:640px)]:snap-start ${tab === entry.id ? " text-[#fafafa] after:absolute after:left-[10px] after:right-[10px] after:-bottom-px after:h-[2px] after:rounded-t-[2px] after:bg-[#fafafa] after:content-[''] [@media(max-width:640px)]:after:left-[4px] [@media(max-width:640px)]:after:right-[4px] is-active" : ""}`}
               aria-current={tab === entry.id ? "page" : undefined}
               onClick={() => setTab(entry.id)}
             >
