@@ -68,7 +68,7 @@ export function ModalDialog({
 
   return (
     <div
-      className="supabase-modal-backdrop"
+      className="fixed inset-0 z-[100] bg-[rgba(0,0,0,0.7)] [backdrop-filter:blur(4px)] flex items-center justify-center p-[16px]"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCloseRef.current();

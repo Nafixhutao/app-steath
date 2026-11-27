@@ -209,12 +209,12 @@ export default function DomainsPage() {
       {/* Header */}
       <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
-          <div className="domains-header-icon" aria-hidden="true">
+          <div className="w-[40px] h-[40px] rounded-panel bg-[rgba(62,207,142,0.1)] border border-[rgba(62,207,142,0.25)] flex items-center justify-center shrink-0" aria-hidden="true">
             <Globe className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="domains-page-title">Domains &amp; Networking</h1>
+              <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Domains &amp; Networking</h1>
               <span className="supabase-plan-badge">EDGE PROXY</span>
             </div>
             <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
@@ -356,7 +356,7 @@ export default function DomainsPage() {
                 <button
                   type="button"
                   onClick={() => setSearch("")}
-                  className="domains-search-clear"
+                  className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#706d7e] bg-transparent border-0 cursor-pointer p-[2px] flex items-center justify-center hover:text-ink-console"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -377,7 +377,7 @@ export default function DomainsPage() {
                 <option value="failed">Verification Failed</option>
               </select>
 
-              <span className="domains-count-pill">{filteredDomains.length} Domains</span>
+              <span className="inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium bg-[#1d1b22] border border-[#282632] text-[#878492]">{filteredDomains.length} Domains</span>
             </div>
           </div>
 
@@ -452,7 +452,7 @@ export default function DomainsPage() {
                       <tr key={dom.id}>
                         <td>
                           <div className="flex items-center gap-2.5">
-                            <div className="domains-row-icon" aria-hidden="true">
+                            <div className="w-[30px] h-[30px] rounded-control bg-[#1f1d26] border border-[#2d2a37] flex items-center justify-center shrink-0" aria-hidden="true">
                               <Globe
                                 className={`w-3.5 h-3.5 ${isActive ? "text-emerald-400" : "text-zinc-500"}`}
                               />
@@ -575,7 +575,7 @@ export default function DomainsPage() {
                             {canManage && (
                               <button
                                 type="button"
-                                className="domains-delete-btn"
+                                className="inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent cursor-pointer [transition:all_120ms_ease] hover:bg-[rgba(244,63,94,0.1)] hover:border-[rgba(244,63,94,0.2)]"
                                 onClick={() => setDeletingDomain(dom)}
                                 title="Remove custom domain"
                                 aria-label={`Delete custom domain ${dom.hostname}`}

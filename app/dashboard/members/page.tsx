@@ -274,11 +274,11 @@ export default function MembersPage() {
       {/* Page Header */}
       <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
-          <div className="members-header-icon" aria-hidden="true">
+          <div className="flex items-center justify-center w-[40px] h-[40px] rounded-panel bg-[#1a1922] border border-[#282633] shrink-0" aria-hidden="true">
             <Users className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="members-page-title">Team Members</h1>
+            <h1 className="text-[24px] font-semibold! tracking-[-0.02em]! text-ink m-0 leading-[1.2]!">Team Members</h1>
             <p className="text-[13px] text-[#8e8c99] mt-[3px]">
               Manage team access, invitations, and role-based permissions in {organizationName}.
             </p>
@@ -336,7 +336,7 @@ export default function MembersPage() {
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="members-search-clear"
+              className="absolute right-[8px] top-1/2 -translate-y-1/2 bg-transparent border-0 text-[#716f7c] cursor-pointer p-[2px] flex"
               aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -413,7 +413,7 @@ export default function MembersPage() {
                   <tr key={member.id}>
                     <td>
                       <div className="flex items-center gap-3">
-                        <div className="members-avatar-box" aria-hidden="true">
+                        <div className="flex items-center justify-center w-[34px] h-[34px] rounded-[50%] bg-[#24222f] border border-[#322f3e] text-accent font-semibold text-[12px] shrink-0" aria-hidden="true">
                           <span>{getInitials(member.user.name || member.user.email)}</span>
                         </div>
                         <div>
@@ -433,7 +433,7 @@ export default function MembersPage() {
                           value={member.role}
                           disabled={busy}
                           onChange={(e) => void changeRole(member.id, e.target.value)}
-                          className="members-role-select"
+                          className="h-[28px] py-0 px-[8px] rounded-control-sm bg-[#1a1921] border border-[#2c2a38] text-ink-console text-[12px] outline-none cursor-pointer focus:border-accent"
                         >
                           <option value="member">Member</option>
                           <option value="admin">Admin</option>
@@ -464,7 +464,7 @@ export default function MembersPage() {
                         {!isCurrentUser && !isOwner && (
                           <button
                             type="button"
-                            className="members-action-btn text-zinc-400 hover:text-rose-400"
+                            className="text-zinc-400 hover:text-rose-400 inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent cursor-pointer [transition:all_120ms] hover:bg-[rgba(244,63,94,0.1)] hover:border-[rgba(244,63,94,0.2)]"
                             disabled={busy}
                             onClick={() => setRemoveTarget(member)}
                             title={`Remove ${member.user.name || member.user.email}`}

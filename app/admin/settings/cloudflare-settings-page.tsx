@@ -83,7 +83,7 @@ export function CloudflareSettingsPage() {
         subtitle="Instance preferences, telemetry, sign-in, and transactional email. Email provider changes apply immediately."
       >
         {tab === "general" || tab === "telemetry" || tab === "alerting" ? (
-          <button type="button" onClick={markSaved} className="cf-button-primary">
+          <button type="button" onClick={markSaved} className="inline-flex h-[34px] items-center gap-[8px] border border-[var(--projects-accent-border)] rounded-control bg-[var(--projects-accent-strong)] py-0 px-[14px] text-ink text-[12.5px]! font-semibold! [transition:filter_120ms_ease] [&:hover:not(:disabled)]:[filter:brightness(1.12)] disabled:opacity-[0.5]">
             {saved ? <Check size={14} aria-hidden="true" /> : null}
             {saved ? "Saved" : "Save changes"}
           </button>

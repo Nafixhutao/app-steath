@@ -93,7 +93,7 @@ export default function ProjectsPage() {
   return (
     <div className="pt-[28px] pb-[60px] px-[36px] max-w-[1400px] mx-auto w-full">
       <div className="mb-[20px]">
-        <h1 className="supabase-projects-title">Projects</h1>
+        <h1 className="text-[26px]! font-semibold! tracking-[-0.02em]! text-ink m-0">Projects</h1>
       </div>
 
       {projects.error ? (
@@ -118,7 +118,7 @@ export default function ProjectsPage() {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="supabase-search-clear"
+                className="absolute right-[8px] bg-transparent border-0 text-[#716f7c] cursor-pointer p-[2px] flex"
                 aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -141,7 +141,7 @@ export default function ProjectsPage() {
           </div>
 
           <div className="supabase-filter-select-wrap">
-            <span className="supabase-sort-label">Sorted by name</span>
+            <span className="inline-flex items-center h-[34px] py-0 px-[12px] rounded-control border border-[#282631] bg-surface text-[#8e8c99] text-[13px] select-none">Sorted by name</span>
           </div>
         </div>
 
@@ -207,7 +207,7 @@ export default function ProjectsPage() {
             </div>
           ) : projectList.length === 0 ? (
             /* Create a project Hero Box matching Image 2 */
-            <div className="supabase-create-project-hero">
+            <div className="flex flex-col items-center justify-center text-center py-[64px] px-[32px] rounded-card bg-[#151419] border border-[#24222b]">
               <div className="flex items-center justify-center mb-[16px] text-[#6a6877]" aria-hidden="true">
                 <Boxes className="w-10 h-10 text-zinc-400" />
               </div>
@@ -342,7 +342,7 @@ export default function ProjectsPage() {
                 <h3 className="text-[14px] font-semibold text-ink m-0">Free plan usage</h3>
                 <p className="text-[12px] text-[#716f7c] mt-[2px]">Current billing cycle</p>
               </div>
-              <button type="button" className="supabase-upgrade-btn">
+              <button type="button" className="inline-flex items-center justify-center py-[5px] px-[12px] rounded-control bg-[#1c1b22] border border-[#302e3b] text-ink-console text-[12px]! font-medium! cursor-pointer [transition:background-color_150ms,border-color_150ms] whitespace-nowrap hover:bg-[#24232c] hover:border-[#3e3c4b]">
                 Upgrade to Pro
               </button>
             </div>

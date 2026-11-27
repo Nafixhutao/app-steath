@@ -142,7 +142,7 @@ export default function ServicesPage() {
       <button
         type="button"
         onClick={() => copyUrl(service.url, service.id)}
-        className="services-copy-btn"
+        className="inline-flex items-center justify-center flex-none w-[24px] h-[24px] border-0 rounded-[5px] bg-transparent text-ink-muted cursor-pointer hover:bg-[#23212b] hover:text-ink-console"
         title="Copy full HTTPS URL"
         aria-label={`Copy URL for ${service.name}`}
       >
@@ -159,7 +159,7 @@ export default function ServicesPage() {
     <div className="services-page-container">
       <header className="flex items-end justify-between flex-wrap gap-[16px] mb-[18px]">
         <div className="min-w-0">
-          <h1 className="services-page-title">Services</h1>
+          <h1 className="text-[20px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Services</h1>
           <p className="text-[13px] text-ink-muted mt-[4px] leading-[1.4]">
             Containers, builds and public routing for {organization?.name ?? "your organization"}.
           </p>
@@ -233,7 +233,7 @@ export default function ServicesPage() {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="services-search-clear"
+                className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#706d7e] bg-transparent border-0 cursor-pointer p-[2px] flex items-center justify-center hover:text-ink-console"
                 aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" aria-hidden="true" />
@@ -356,7 +356,7 @@ export default function ServicesPage() {
               </div>
               <div className="services-grid">
                 {group.items.map((service) => (
-                  <article key={service.id} className="services-card">
+                  <article key={service.id} className="bg-surface border border-surface-raised rounded-card py-[14px] px-[16px] flex flex-col min-w-0 [transition:border-color_120ms_ease] hover:border-[#3a3744]">
                     <div className="flex items-start justify-between gap-[12px] mb-[10px]">
                       <div className="min-w-0">
                         <Link

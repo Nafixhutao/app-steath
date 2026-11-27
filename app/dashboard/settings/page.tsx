@@ -160,12 +160,12 @@ export default function SettingsPage() {
       {/* Header */}
       <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
-          <div className="settings-header-icon" aria-hidden="true">
+          <div className="w-[40px] h-[40px] rounded-panel bg-[rgba(62,207,142,0.1)] border border-[rgba(62,207,142,0.25)] flex items-center justify-center shrink-0" aria-hidden="true">
             <Settings className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="settings-page-title">Organization Settings</h1>
+              <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Organization Settings</h1>
               <span className="supabase-plan-badge">FREE PLAN</span>
             </div>
             <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">

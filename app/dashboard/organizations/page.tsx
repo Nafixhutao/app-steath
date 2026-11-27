@@ -10,7 +10,7 @@ import { ModalDialog } from "@/components/supabase-modal";
 
 function OrgHexIcon() {
   return (
-    <div className="org-card-hex-icon" aria-hidden="true">
+    <div className="flex items-center justify-center w-[36px] h-[36px] rounded-card bg-[#211f27] text-[#8e8c99] shrink-0" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor">
         <circle cx="12" cy="7" r="2.5" fill="currentColor" />
         <circle cx="7" cy="15" r="2.5" fill="currentColor" />
@@ -106,7 +106,7 @@ export default function OrganizationsPage() {
   return (
     <div className="min-h-[calc(100dvh_-_48px)] bg-console text-ink-console py-[48px] px-[32px]">
       <div className="max-w-[1100px] mx-auto">
-        <h1 className="orgs-page-title">Your organizations</h1>
+        <h1 className="text-[28px]! font-semibold! tracking-[-0.02em]! text-ink mt-0! mb-[24px]! mx-0!">Your organizations</h1>
 
         <div className="flex items-center justify-between gap-[16px] mb-[24px]">
           <div className="relative w-[280px] max-w-full">
@@ -122,7 +122,7 @@ export default function OrganizationsPage() {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="orgs-search-clear"
+                className="absolute right-[10px] top-1/2 -translate-y-1/2 bg-transparent border-0 text-[#6a6875] cursor-pointer p-[2px] flex hover:text-ink-console"
                 aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -156,7 +156,7 @@ export default function OrganizationsPage() {
             ))}
           </div>
         ) : filteredOrgs.length === 0 ? (
-          <div className="orgs-empty-card">
+          <div className="flex flex-col items-center justify-center py-[60px] px-[24px] bg-surface border border-dashed border-[#26242f] rounded-card text-center">
             {search ? (
               <>
                 <p className="text-zinc-400">No organizations match &ldquo;{search}&rdquo;.</p>

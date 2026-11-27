@@ -68,7 +68,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toast-viewport" aria-live="polite" aria-atomic="true">
+      <div className="fixed bottom-[20px] right-[20px] z-[150] flex flex-col gap-[10px] max-w-[380px] w-[calc(100vw_-_40px)] pointer-events-none" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
           <div key={t.id} className={`toast-card toast-${t.type}`} role="alert">
             <div className="shrink-0 mt-[1px]">
@@ -82,7 +82,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             </div>
             <button
               type="button"
-              className="toast-close-btn"
+              className="bg-transparent border-0 text-[#636170] cursor-pointer p-[2px] flex shrink-0 hover:text-ink"
               onClick={() => removeToast(t.id)}
               aria-label="Close notification"
             >

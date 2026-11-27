@@ -145,11 +145,11 @@ export default function BackupsPage() {
       {/* Header */}
       <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
-          <div className="backups-header-icon" aria-hidden="true">
+          <div className="w-[40px] h-[40px] rounded-panel bg-[rgba(62,207,142,0.1)] border border-[rgba(62,207,142,0.25)] flex items-center justify-center shrink-0" aria-hidden="true">
             <Archive className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="backups-page-title">Backups & Restores</h1>
+            <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Backups & Restores</h1>
             <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Automated daily disaster recovery snapshots for{" "}
               {organization?.name ?? "your organization"}.
@@ -261,7 +261,7 @@ export default function BackupsPage() {
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="backups-search-clear"
+              className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#706d7e] bg-transparent border-0 cursor-pointer p-[2px] flex items-center justify-center hover:text-ink-console"
               aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -339,7 +339,7 @@ export default function BackupsPage() {
                   <tr key={backup.id}>
                     <td>
                       <div className="flex items-center gap-2.5">
-                        <div className="backups-row-icon" aria-hidden="true">
+                        <div className="w-[30px] h-[30px] rounded-control bg-[#1f1d26] border border-[#2d2a37] flex items-center justify-center shrink-0" aria-hidden="true">
                           {isDb ? (
                             <Database className="w-3.5 h-3.5 text-blue-400" />
                           ) : (
@@ -373,7 +373,7 @@ export default function BackupsPage() {
                     </td>
 
                     <td>
-                      <span className="backups-storage-badge">
+                      <span className="inline-flex items-center h-[20px] py-0 px-[7px] rounded-control-sm text-[10px] [font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] font-semibold uppercase bg-[#1f1d27] border border-[#2d2b37] text-[#a6a3b0]">
                         {backup.storageProvider === "s3" ? "S3" : "Local"}
                       </span>
                     </td>

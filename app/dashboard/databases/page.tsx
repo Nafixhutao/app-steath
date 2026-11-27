@@ -168,7 +168,7 @@ export default function DatabasesPage() {
       <header className="db-heading">
         <div className="flex-1 min-w-[280px]">
           <div className="flex items-center gap-[14px]">
-            <div className="db-title-icon-box" aria-hidden="true">
+            <div className="flex items-center justify-center w-[44px] h-[44px] rounded-card-lg [background:linear-gradient(135deg,rgba(99,102,241,0.16)_0%,rgba(62,207,142,0.08)_100%)] border border-[rgba(99,102,241,0.28)] text-accent shrink-0" aria-hidden="true">
               <Database className="w-[22px] h-[22px]" />
             </div>
             <div>
@@ -206,7 +206,7 @@ export default function DatabasesPage() {
       {fullDatabase ? (
         <div className="db-banner" role="region" aria-label="Storage warning">
           <div className="flex items-start gap-[12px] min-w-[240px] flex-1">
-            <div className="db-banner-icon-box" aria-hidden="true">
+            <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[rgba(245,158,11,0.15)] text-[#f59e0b] shrink-0 mt-[2px]" aria-hidden="true">
               <AlertTriangle className="w-[18px] h-[18px]" />
             </div>
             <div className="flex flex-col gap-[2px]">
@@ -321,7 +321,7 @@ export default function DatabasesPage() {
             {search ? (
               <button
                 type="button"
-                className="db-search-clear"
+                className="absolute right-[10px] top-1/2 -translate-y-1/2 flex items-center justify-center w-[22px] h-[22px] border-0 rounded-[50%] bg-[#272531] text-[#9e9aa7] cursor-pointer [transition:background_120ms_ease,color_120ms_ease] hover:bg-[#393647] hover:text-ink"
                 onClick={() => setSearch("")}
                 aria-label="Clear search input"
               >
@@ -345,7 +345,7 @@ export default function DatabasesPage() {
         <div className="db-empty-hero">
           <div className="relative flex justify-center mb-[20px]" aria-hidden="true">
             <div className="db-empty-glow" />
-            <div className="db-empty-icon-card">
+            <div className="flex items-center justify-center w-[64px] h-[64px] rounded-[18px] [background:linear-gradient(135deg,#1e1c27_0%,#15141d_100%)] border border-[#373347] text-accent [box-shadow:0_8px_30px_rgba(99,102,241,0.2)]">
               <Database className="w-[30px] h-[30px]" />
             </div>
           </div>
@@ -394,7 +394,7 @@ export default function DatabasesPage() {
       ) : visibleDatabases.length === 0 ? (
         /* Empty State: Search or filter has no matching records */
         <div className="db-empty-box">
-          <div className="db-filter-empty-icon" aria-hidden="true">
+          <div className="flex items-center justify-center w-[44px] h-[44px] mt-0 mb-[14px] mx-auto rounded-card-lg bg-[#1d1b25] text-[#757180]" aria-hidden="true">
             <SlidersHorizontal className="w-6 h-6 text-muted" />
           </div>
           <h2>No databases match the filter</h2>
@@ -439,16 +439,16 @@ export default function DatabasesPage() {
                   <tr key={database.id}>
                     <td>
                       <div className="flex items-center gap-[12px]">
-                        <div className="db-row-icon-box" aria-hidden="true">
+                        <div className="flex items-center justify-center w-[34px] h-[34px] rounded-card bg-[rgba(62,207,142,0.08)] border border-[rgba(62,207,142,0.2)] text-accent shrink-0" aria-hidden="true">
                           <Database className="w-[16px] h-[16px]" />
                         </div>
                         <div className="flex flex-col">
                           <span className="[font-family:var(--font-mono)] font-semibold text-[14px] text-ink">{database.databaseName}</span>
-                          <div className="db-connection-pill">
+                          <div className="inline-flex items-center gap-[6px] mt-[3px] py-[2px] px-[7px] bg-[#100f14] border border-[#25232d] rounded-control [font-family:var(--font-mono)] text-[11px] text-[#9e9aa7]">
                             <span className="truncate max-w-[200px]">{copyText}</span>
                             <button
                               type="button"
-                              className="db-copy-btn"
+                              className="inline-flex items-center justify-center p-[1px] border-0 bg-transparent text-[#757180] cursor-pointer [transition:color_120ms_ease] hover:text-ink focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-2"
                               onClick={() => copyToClipboard(database.id, copyText)}
                               title="Copy username and database name"
                               aria-label={`Copy credentials for ${database.databaseName}`}
@@ -486,7 +486,7 @@ export default function DatabasesPage() {
                     </td>
 
                     <td>
-                      <span className="db-engine-pill">
+                      <span className="inline-flex py-[3px] px-[8px] rounded-control bg-[#1e1d27] border border-[#2d2b38] [font-family:var(--font-mono)] text-[11.5px] text-[#d1d0d8] whitespace-nowrap">
                         {databaseEngineLabel(database.engine, database.version)}
                       </span>
                     </td>

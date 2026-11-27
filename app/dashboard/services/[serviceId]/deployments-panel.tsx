@@ -307,7 +307,7 @@ export function DeploymentsPanel({
                           </dd>
                         </div>
                       </dl>
-                      <pre className="deployment-detail-log">
+                      <pre className="max-h-[320px] m-0 p-[12px] overflow-auto border border-[#27272a] rounded-control bg-[#09090b] text-[#c8c8ce] [font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[11.5px] leading-[1.6] whitespace-pre-wrap [overflow-wrap:anywhere]">
                         {selected
                           ? selected.lines.length > 0
                             ? selected.lines.join("\n")
@@ -323,7 +323,7 @@ export function DeploymentsPanel({
 
           {hiddenCount > 0 ? (
             <button
-              className="deployment-show-older"
+              className="w-full p-[11px] border-t border-t-[#27272a] bg-[#111113] text-ink-muted text-[12px]! cursor-pointer hover:text-[#fafafa]"
               type="button"
               onClick={() => setVisible((count) => count + PAGE_SIZE)}
             >

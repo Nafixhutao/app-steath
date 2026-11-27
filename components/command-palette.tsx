@@ -254,7 +254,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <div
-      className="command-palette-backdrop"
+      className="fixed inset-0 z-[120] flex items-start justify-center pt-[12vh] pb-[16px] px-[16px] bg-[rgba(0,0,0,0.7)] [backdrop-filter:blur(6px)] animate-[commandFadeIn_120ms_ease]"
       role="presentation"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
@@ -288,7 +288,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 setQuery("");
                 setSelectedIndex(0);
               }}
-              className="command-palette-clear-btn"
+              className="bg-transparent border-0 text-[#716f7c] cursor-pointer p-[2px] flex hover:text-ink"
               aria-label="Clear search query"
             >
               <X className="w-3.5 h-3.5" />

@@ -142,7 +142,7 @@ export default function UsagePage() {
     <div className="usage-page-container">
       <header className="flex items-end justify-between flex-wrap gap-[16px] mb-[18px]">
         <div className="min-w-0">
-          <h1 className="usage-page-title">Usage &amp; Quotas</h1>
+          <h1 className="text-[20px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Usage &amp; Quotas</h1>
           <p className="usage-page-subtitle">
             Measured resources and limits for {organization?.name ?? "your organization"}.
           </p>

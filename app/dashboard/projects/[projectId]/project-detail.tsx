@@ -168,12 +168,12 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
         <div className="flex items-center justify-between flex-wrap gap-[16px] mb-[22px]">
           <div className="flex items-center gap-[14px]">
-            <div className="project-icon-badge" aria-hidden="true">
+            <div className="flex items-center justify-center w-[44px] h-[44px] rounded-panel bg-[#1a1922] border border-[#2a2736] shrink-0" aria-hidden="true">
               <Boxes className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="project-name-heading">{project.name}</h1>
+                <h1 className="text-[24px] font-semibold! tracking-[-0.02em]! text-ink m-0 leading-[1.2]!">{project.name}</h1>
                 <span
                   className={`project-status-pill ${
                     project.status === "active" ? "is-active" : "is-idle"
@@ -187,7 +187,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 <code className="text-[12px] [font-family:monospace] text-[#716f7c] bg-[#17161c] py-[1px] px-[6px] rounded-control-sm border border-[#262430]">{project.slug}</code>
                 <button
                   type="button"
-                  className="project-copy-slug-btn"
+                  className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-control-sm bg-transparent border border-transparent text-[#716f7c] cursor-pointer [transition:all_120ms] hover:bg-[#211f29] hover:border-[#312f3d] hover:text-ink-console"
                   onClick={() => copySlug(project.slug)}
                   title="Copy project slug"
                   aria-label="Copy project slug"
