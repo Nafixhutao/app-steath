@@ -23,19 +23,19 @@ export function CredentialRow({
   copied: boolean;
 }) {
   return (
-    <div className="db-cred-row [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
+    <div className="db-cred-row [&:not(:first-child)]:border-t [&:not(:first-child)]:border-[#232129] [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
       <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         {label}
         {/* The copied confirmation is written out, not just an icon, so it is
             readable at a glance and announced to a screen reader. */}
         {copied ? (
-          <span className="db-cred-copied text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
+          <span className="db-cred-copied normal-case text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
       <div className="flex items-start gap-[10px] min-w-0">
-        <span className="db-cred-value text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono">{value}</span>
+        <span className="db-cred-value flex-auto [word-break:break-all] [font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace] text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono">{value}</span>
         <button
           type="button"
           className="bg-[#1f1e26] [&:hover:not(:disabled)]:bg-[#272532] focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex-none inline-flex items-center justify-center min-w-[44px] min-h-[44px] p-0 rounded-control border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink disabled:opacity-[0.55] disabled:cursor-not-allowed"
@@ -149,17 +149,17 @@ export function PasswordRow({
   }
 
   return (
-    <div className="db-cred-row [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
+    <div className="db-cred-row [&:not(:first-child)]:border-t [&:not(:first-child)]:border-[#232129] [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
       <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         Password
         {copied ? (
-          <span className="db-cred-copied text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
+          <span className="db-cred-copied normal-case text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
       <div className="flex items-start gap-[10px] min-w-0">
-        <span className="db-cred-value text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono min-h-[21px]" aria-live="polite">
+        <span className="db-cred-value flex-auto [word-break:break-all] [font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace] text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono min-h-[21px]" aria-live="polite">
           {loading ? (
             <span className="text-[#716f7c] [font-family:inherit]">
               <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -177,7 +177,7 @@ export function PasswordRow({
       <div className="db-cred-password-actions [@media(max-width:400px)]:w-full flex flex-wrap gap-[8px] mt-[8px]">
         <button
           type="button"
-          className="db-cred-action focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] bg-[#1f1e26] text-[12.5px] font-medium [&:hover:not(:disabled)]:bg-[#272532] disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
+          className="db-cred-action [@media(max-width:400px)]:flex-auto focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] bg-[#1f1e26] text-[12.5px] font-medium [&:hover:not(:disabled)]:bg-[#272532] disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
           onClick={() => void reveal()}
           disabled={loading}
           aria-label={visible ? "Hide password" : "Reveal password"}
@@ -187,7 +187,7 @@ export function PasswordRow({
         </button>
         <button
           type="button"
-          className="db-cred-action focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] bg-[#1f1e26] text-[12.5px] font-medium [&:hover:not(:disabled)]:bg-[#272532] disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
+          className="db-cred-action [@media(max-width:400px)]:flex-auto focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] bg-[#1f1e26] text-[12.5px] font-medium [&:hover:not(:disabled)]:bg-[#272532] disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
           onClick={() => void copy()}
           disabled={loading}
           aria-label="Copy password"

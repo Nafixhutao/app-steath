@@ -2184,55 +2184,6 @@ body {
 
 /* ===== MEMBERS ===== */
 
-.members-search-input:focus {
-  border-color: var(--color-accent);
-}
-
-.members-table th {
-  padding: 11px 16px;
-  background-color: #141318;
-  color: #716f7c;
-  font-weight: 500;
-  font-size: 12px;
-  border-bottom: 1px solid var(--color-surface-raised);
-}
-
-.members-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #1f1e25;
-  color: #c9c7d2;
-}
-
-.members-table tr:last-child td {
-  border-bottom: none;
-}
-
-.members-table tr:hover td {
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
-.members-role-badge {
-  text-transform: capitalize;
-}
-
-.members-role-badge.is-owner {
-  background-color: rgba(168, 85, 247, 0.1);
-  color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.25);
-}
-
-.members-role-badge.is-admin {
-  background-color: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.25);
-}
-
-.members-role-badge.is-member {
-  background-color: #201e27;
-  color: #9e9aa7;
-  border: 1px solid #2a2835;
-}
-
 /* ===== BACKUPS ===== */
 
 
@@ -2264,68 +2215,6 @@ a.usage-row-name:hover {
 }
 
 /* ===== SETTINGS ===== */
-
-.settings-role-badge.is-owner {
-  background-color: #0f2e21;
-  border: 1px solid #1d4a36;
-  color: var(--color-accent);
-}
-
-.settings-role-badge.is-admin {
-  background-color: #171c35;
-  border: 1px solid #2b3363;
-  color: #818cf8;
-}
-
-.settings-role-badge.is-member {
-  background-color: #201e27;
-  border: 1px solid #2a2835;
-  color: #9e9aa7;
-}
-
-.settings-metric-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-surface-raised);
-  border-radius: var(--radius-panel);
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  transition: border-color 150ms ease;
-}
-
-.settings-metric-card:hover {
-  border-color: #34313c;
-}
-
-.settings-metric-card.is-primary {
-  border-color: rgba(62, 207, 142, 0.35);
-  background: linear-gradient(180deg, rgba(62, 207, 142, 0.06) 0%, var(--color-surface) 100%);
-}
-
-.settings-metric-card.is-primary:hover {
-  border-color: rgba(62, 207, 142, 0.55);
-}
-
-.settings-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-surface-raised);
-  border-radius: var(--radius-panel);
-  overflow: hidden;
-}
-
-.settings-card.is-danger {
-  border-color: rgba(244, 63, 94, 0.25);
-  background-color: #161215;
-}
-
-.settings-input {
-  border: 1px solid var(--color-surface-raised);
-}
-
-.settings-input:focus {
-  border-color: var(--color-info);
-}
 
 /* ===== SERVICE DETAIL ===== */
 
@@ -2766,36 +2655,9 @@ a.usage-row-name:hover {
    Shared by the MySQL and PostgreSQL panels. */
 /* ===== DATABASE CREDENTIALS ===== */
 
-.db-cred-row + .db-cred-row {
-  border-top: 1px solid #232129;
-}
-
 /* The copied confirmation sits next to the label so the value itself never
    shifts or reflows when it appears. */
-.db-cred-copied {
-  text-transform: none;
-}
-
-.db-cred-value {
-  flex: 1 1 auto;
-  word-break: break-all;
-}
-
-.db-cred-value.is-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
 /* 360px: trim the row padding so the copy button never forces a scrollbar. */
-@media (max-width: 400px) {
-  
-
-  
-
-  .db-cred-action {
-    flex: 1 1 auto;
-  }
-}
-
 /* ---------------------------------------------------------------------------
  * Admin Console — near-black palette (the reference dashboard design).
  * Scoped to .cf-admin (set only by app/admin/layout.tsx) so the user console

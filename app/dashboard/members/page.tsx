@@ -330,7 +330,7 @@ export default function MembersPage() {
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="members-search-input bg-surface w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
+            className="members-search-input bg-surface w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms] focus:border-[var(--color-accent)]"
           />
           {search ? (
             <button
@@ -387,7 +387,7 @@ export default function MembersPage() {
             </p>
           </div>
         ) : (
-          <table className="members-table w-full min-w-[640px] text-[13px] text-left">
+          <table className="members-table w-full min-w-[640px] text-[13px] text-left [&_th]:px-[16px] [&_th]:py-[11px] [&_th]:bg-[#141318] [&_th]:text-[#716f7c] [&_th]:font-medium [&_th]:text-[12px] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_td]:px-[16px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1e25] [&_td]:text-[#c9c7d2] [&_tr:last-child>td]:border-b-0 [&_tr:hover>td]:bg-[rgba(255,255,255,0.02)]">
             <thead>
               <tr>
                 <th scope="col">User</th>
@@ -441,7 +441,11 @@ export default function MembersPage() {
                       ) : (
                         <span
                           className={`members-role-badge inline-flex items-center text-[11.5px] font-medium py-[2px] px-[8px] rounded-control-sm ${
-                            isOwner ? "is-owner" : isAdmin ? "is-admin" : "is-member"
+                            isOwner
+                              ? "bg-[rgba(168,85,247,0.1)] border border-[rgba(168,85,247,0.25)] text-[#c084fc] capitalize"
+                              : isAdmin
+                                ? "bg-[rgba(56,189,248,0.1)] border border-[rgba(56,189,248,0.25)] text-[#38bdf8] capitalize"
+                                : "bg-[#201e27] border border-[#2a2835] text-[#9e9aa7] capitalize"
                           }`}
                         >
                           {isOwner && <Crown className="w-3 h-3 mr-1" />}
@@ -493,7 +497,7 @@ export default function MembersPage() {
           </div>
 
           <div className="bg-surface rounded-card border border-surface-raised overflow-x-auto">
-            <table className="members-table w-full min-w-[640px] text-[13px] text-left">
+            <table className="members-table w-full min-w-[640px] text-[13px] text-left [&_th]:px-[16px] [&_th]:py-[11px] [&_th]:bg-[#141318] [&_th]:text-[#716f7c] [&_th]:font-medium [&_th]:text-[12px] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_td]:px-[16px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1e25] [&_td]:text-[#c9c7d2] [&_tr:last-child>td]:border-b-0 [&_tr:hover>td]:bg-[rgba(255,255,255,0.02)]">
               <thead>
                 <tr>
                   <th scope="col">Invited Email</th>
@@ -514,7 +518,7 @@ export default function MembersPage() {
                       </div>
                     </td>
                     <td>
-                      <span className="members-role-badge inline-flex items-center text-[11.5px] font-medium py-[2px] px-[8px] rounded-control-sm is-member">{invitation.role}</span>
+                      <span className="members-role-badge inline-flex items-center text-[11.5px] font-medium py-[2px] px-[8px] rounded-control-sm bg-[#201e27] border border-[#2a2835] text-[#9e9aa7] capitalize">{invitation.role}</span>
                     </td>
                     <td className="text-xs text-zinc-400">
                       {new Date(invitation.expiresAt).toLocaleDateString(undefined, {

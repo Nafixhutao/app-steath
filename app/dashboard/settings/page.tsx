@@ -178,7 +178,11 @@ export default function SettingsPage() {
         <div className="flex items-center gap-2">
           <span
             className={`settings-role-badge inline-flex items-center h-[26px] py-0 px-[10px] rounded-[9999px] text-[11px] font-semibold uppercase tracking-[0.04em] ${
-              isOwner ? "is-owner" : activeRoles.includes("admin") ? "is-admin" : "is-member"
+              isOwner
+                ? "bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
+                : activeRoles.includes("admin")
+                  ? "bg-[#171c35] border border-[#2b3363] text-[#818cf8]"
+                  : "bg-[#201e27] border border-[#2a2835] text-[#9e9aa7]"
             }`}
           >
             <Shield className="w-3.5 h-3.5 mr-1" />
@@ -199,7 +203,7 @@ export default function SettingsPage() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
         aria-label="Organization identity"
       >
-        <div className="settings-metric-card is-primary">
+        <div className="settings-metric-card bg-surface border rounded-panel p-[16px_18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] border-[rgba(62,207,142,0.35)] hover:border-[rgba(62,207,142,0.55)] [background:linear-gradient(180deg,rgba(62,207,142,0.06)_0%,var(--color-surface)_100%)]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization Name</span>
             <Building className="w-4 h-4 text-emerald-400" />
@@ -214,7 +218,7 @@ export default function SettingsPage() {
           <span className="text-[11px] text-zinc-400">Active workspace title</span>
         </div>
 
-        <div className="settings-metric-card">
+        <div className="settings-metric-card bg-surface border border-surface-raised rounded-panel p-[16px_18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization Slug</span>
             <button
@@ -244,7 +248,7 @@ export default function SettingsPage() {
           <span className="text-[11px] text-zinc-400">Unique routing identifier</span>
         </div>
 
-        <div className="settings-metric-card">
+        <div className="settings-metric-card bg-surface border border-surface-raised rounded-panel p-[16px_18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization ID</span>
             <button
@@ -274,7 +278,7 @@ export default function SettingsPage() {
           <span className="text-[11px] text-zinc-400">System UUID</span>
         </div>
 
-        <div className="settings-metric-card">
+        <div className="settings-metric-card bg-surface border border-surface-raised rounded-panel p-[16px_18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Created Date</span>
             <Calendar className="w-4 h-4 text-zinc-400" />
@@ -299,7 +303,7 @@ export default function SettingsPage() {
       {/* Main Settings Sections */}
       <div className="space-y-6">
         {/* SECTION 1: General Details */}
-        <section className="settings-card" aria-labelledby="general-settings-heading">
+        <section className="settings-card bg-surface border border-surface-raised rounded-panel overflow-hidden" aria-labelledby="general-settings-heading">
           <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
             <div className="flex items-center gap-2.5">
               <Building className="w-4 h-4 text-emerald-400" />
@@ -327,7 +331,7 @@ export default function SettingsPage() {
                     onChange={(e) => setName(e.target.value)}
                     maxLength={80}
                     required
-                    className="settings-input w-full h-[38px] py-0 px-[14px] rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none [transition:border-color_150ms_ease]"
+                    className="settings-input w-full h-[38px] border border-surface-raised focus:border-[var(--color-info)] py-0 px-[14px] rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none [transition:border-color_150ms_ease]"
                     placeholder="e.g. Acme Corp"
                   />
                   <p className="text-[11px] text-zinc-400 mt-1.5">
@@ -397,7 +401,7 @@ export default function SettingsPage() {
         </section>
 
         {/* SECTION 2: Plan & Entitlements */}
-        <section className="settings-card" aria-labelledby="plan-settings-heading">
+        <section className="settings-card bg-surface border border-surface-raised rounded-panel overflow-hidden" aria-labelledby="plan-settings-heading">
           <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
             <div className="flex items-center gap-2.5">
               <CreditCard className="w-4 h-4 text-cyan-400" />
@@ -461,7 +465,7 @@ export default function SettingsPage() {
 
         {/* SECTION 3: Danger Zone */}
         {isOwner ? (
-          <section className="settings-card is-danger" aria-labelledby="danger-heading">
+          <section className="settings-card bg-[#161215] border border-[rgba(244,63,94,0.25)] rounded-panel overflow-hidden" aria-labelledby="danger-heading">
             <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
               <div className="flex items-center gap-2.5 text-rose-400">
                 <AlertTriangle className="w-4 h-4" />
@@ -498,7 +502,7 @@ export default function SettingsPage() {
                     autoComplete="off"
                     spellCheck="false"
                     required
-                    className="settings-input w-full h-[38px] py-0 px-[14px] rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none [transition:border-color_150ms_ease] border-rose-900/50 focus:border-rose-500"
+                    className="settings-input w-full h-[38px] border border-surface-raised focus:border-[var(--color-info)] py-0 px-[14px] rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none [transition:border-color_150ms_ease]"
                   />
                 </div>
 
@@ -525,7 +529,7 @@ export default function SettingsPage() {
             </div>
           </section>
         ) : (
-          <section className="settings-card is-danger" aria-labelledby="leave-heading">
+          <section className="settings-card bg-[#161215] border border-[rgba(244,63,94,0.25)] rounded-panel overflow-hidden" aria-labelledby="leave-heading">
             <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
               <div className="flex items-center gap-2.5 text-rose-400">
                 <LogOut className="w-4 h-4" />
