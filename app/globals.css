@@ -159,19 +159,7 @@ a:hover {
   clip-path: inset(50%);
 }
 
-/* ===== AUTH ===== */
-
-.login-content {
-  width: min(100%, 364px);
-  margin: auto;
-}
-.brand-mark img {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-}
-
-h1 {
+/* ===== AUTH ===== */h1 {
   margin: 0;
   color: var(--color-ink);
   font-size: 24px;
@@ -208,14 +196,7 @@ h1 {
   color: #f3c96b;
   font-size: 12.5px;
   line-height: 16px;
-}
-.divider span {
-  height: 1px;
-  flex: 1;
-  background: #26262b;
-}
-
-form label {
+}form label {
   display: block;
   margin-bottom: 6px;
   color: var(--color-ink);
@@ -1353,14 +1334,7 @@ body {
 }
 
 /* Legacy admin panel classes — still referenced by the findings, abuse
- * report, and host metric panels that stay reachable below the Forge nav. */
-.admin-panel {
-  border: 1px solid var(--projects-border);
-  background: var(--projects-card-bg);
-  border-radius: var(--radius-card);
-}
-
-.admin-table thead tr {
+ * report, and host metric panels that stay reachable below the Forge nav. */.admin-table thead tr {
   background: var(--projects-control);
 }
 

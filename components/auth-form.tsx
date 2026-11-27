@@ -200,9 +200,9 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
         Skip to content
       </a>
 
-      <div id="login-content" className="login-content">
+      <div id="login-content" className="login-content w-[min(100%,364px)] m-auto">
         <div className="brand-mark flex justify-center h-[56px] w-[56px] mt-0 mb-[24px] mx-auto">
-          <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority />
+          <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority className="w-[56px] h-[56px] object-contain" />
         </div>
 
         <h1>{isSignUp ? "Sign up" : "Sign in to Stealth"}</h1>
@@ -245,9 +245,9 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
         </p>
 
         <div className="divider flex items-center gap-[12px] my-[20px] mx-0 text-[#8b8b92] text-[11px] font-medium tracking-[0.08em]" aria-hidden="true">
-          <span />
+          <span className="h-[1px] flex-1 bg-[#26262b]" />
           OR
-          <span />
+          <span className="h-[1px] flex-1 bg-[#26262b]" />
         </div>
 
         <form className="auth-fields grid gap-[18px]" onSubmit={handleSubmit} noValidate>

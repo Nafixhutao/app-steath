@@ -14,7 +14,7 @@ function BrandHeading({ title }: { title: string }) {
   return (
     <>
       <div className="brand-mark flex justify-center h-[56px] w-[56px] mt-0 mb-[24px] mx-auto">
-        <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority />
+        <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority className="w-[56px] h-[56px] object-contain" />
       </div>
       <h1>{title}</h1>
     </>
@@ -60,7 +60,7 @@ export function ForgotPasswordForm() {
         Skip to content
       </a>
 
-      <div id="reset-content" className="login-content">
+      <div id="reset-content" className="login-content w-[min(100%,364px)] m-auto">
         <BrandHeading title="Reset your password" />
         <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#a5a1ad] text-[13.5px] leading-[1.6]">
           Enter the email you registered with and a one-hour reset link will be generated for that
@@ -125,7 +125,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
   if (!token) {
     return (
       <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
-        <div className="login-content">
+        <div className="login-content w-[min(100%,364px)] m-auto">
           <BrandHeading title="Reset link invalid" />
           <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#a5a1ad] text-[13.5px] leading-[1.6]">
             This reset link is missing its token or it has expired. Request a fresh one and try
@@ -170,7 +170,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
         Skip to content
       </a>
 
-      <div id="reset-content" className="login-content">
+      <div id="reset-content" className="login-content w-[min(100%,364px)] m-auto">
         <BrandHeading title="Set a new password" />
         <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#a5a1ad] text-[13.5px] leading-[1.6]">Choose a password of at least 8 characters for this account.</p>
 
