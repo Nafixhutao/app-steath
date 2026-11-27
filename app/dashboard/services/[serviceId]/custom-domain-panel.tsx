@@ -167,7 +167,7 @@ export function CustomDomainPanel({
         </div>
       ) : (
         <div className="custom-domain-details">
-          <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0">
+          <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0 grid-cols-[repeat(3,minmax(0,1fr))] [@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))] [&>div]:block [&>div]:min-w-0 [&_dt]:mt-0 [&_dt]:mb-[5px] [&_dt]:mx-0 [&_dt]:text-[#71717a] [&_dt]:text-[12px] [&_dt]:font-medium [&_dd]:m-0 [&_dd]:text-[#ededf2] [&_dd]:text-[13px] [&_dd]:[overflow-wrap:anywhere]">
             <div>
               <dt>Hostname</dt>
               <dd>{domainData.hostname}</dd>
@@ -201,8 +201,8 @@ export function CustomDomainPanel({
           ) : null}
 
           <div className="custom-domain-records mt-[20px]">
-            <h3>DNS records</h3>
-            <p>
+            <h3 className="mt-0 mx-0 mb-[4px] text-[#d4d4d8] text-[13px] font-semibold">DNS records</h3>
+            <p className="mt-0 mx-0 mb-[12px] text-[#71717a] text-[12.5px]">
               Add these records at your DNS provider, then verify. DNS changes can take a while.
             </p>
             <table className="organization-table w-full text-left tabular-nums svc-table-records m-0 text-[13px]">

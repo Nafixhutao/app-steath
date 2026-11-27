@@ -127,7 +127,7 @@ export function RuntimePanel({
         </p>
       ) : null}
 
-      <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0">
+      <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0 grid-cols-[repeat(3,minmax(0,1fr))] [@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))] [&>div]:block [&>div]:min-w-0 [&_dt]:mt-0 [&_dt]:mb-[5px] [&_dt]:mx-0 [&_dt]:text-[#71717a] [&_dt]:text-[12px] [&_dt]:font-medium [&_dd]:m-0 [&_dd]:text-[#ededf2] [&_dd]:text-[13px] [&_dd]:[overflow-wrap:anywhere]">
         <div>
           <dt>Container</dt>
           <dd>{runtime.loading ? "Checking..." : serviceRuntimeLabel(status)}</dd>

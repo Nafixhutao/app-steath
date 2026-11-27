@@ -213,7 +213,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         </p>
       ) : null}
 
-      <nav className="svc-tabbar [@media(max-width:640px)]:gap-[0] [@media(max-width:640px)]:mb-[20px] items-center gap-[4px] border-b border-b-[#27272a] mb-[24px] overflow-x-auto" aria-label="Service sections" ref={tabbarRef}>
+      <nav className="svc-tabbar flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(max-width:640px)]:gap-[0] [@media(max-width:640px)]:mb-[20px] items-center gap-[4px] border-b border-b-[#27272a] mb-[24px] overflow-x-auto" aria-label="Service sections" ref={tabbarRef}>
         {TABS.map((entry) => {
           // Read-only Members do not get the management tabs.
           const hidden = (entry.id === "environment" || entry.id === "settings") && !canManage;
@@ -222,7 +222,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
             <button
               key={entry.id}
               type="button"
-              className={`svc-tab${tab === entry.id ? " is-active" : ""}`}
+              className={`svc-tab relative pt-[10px] pr-[14px] pb-[12px] pl-[14px] border-0 bg-transparent text-[var(--color-ink-muted)] text-[14px] font-medium whitespace-nowrap cursor-pointer [transition:color_0.15s_ease] hover:text-[#ededf2] focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[-2px]${tab === entry.id ? " is-active" : ""}`}
               aria-current={tab === entry.id ? "page" : undefined}
               onClick={() => setTab(entry.id)}
             >
@@ -268,7 +268,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
               <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
                 <h2 id="configuration-heading">Configuration</h2>
               </div>
-              <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0">
+              <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0 grid-cols-[repeat(3,minmax(0,1fr))] [@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))] [&>div]:block [&>div]:min-w-0 [&_dt]:mt-0 [&_dt]:mb-[5px] [&_dt]:mx-0 [&_dt]:text-[#71717a] [&_dt]:text-[12px] [&_dt]:font-medium [&_dd]:m-0 [&_dd]:text-[#ededf2] [&_dd]:text-[13px] [&_dd]:[overflow-wrap:anywhere]">
                 <div>
                   <dt>Repository</dt>
                   <dd>

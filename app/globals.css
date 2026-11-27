@@ -583,23 +583,7 @@ form input[type="text"]:focus {
 .mobile-sidebar-overlay,
 .mobile-sidebar-sheet {
   display: none;
-}
-.service-meta > div {
-  display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
-  gap: 12px;
-}
-.service-meta dt {
-  color: #8a8791;
-  font-size: 12px;
-}
-.service-meta dd {
-  margin: 0;
-  color: #d6d3da;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-.deployment-node.is-healthy {
+}.deployment-node.is-healthy {
   color: #7bd8a4;
 }
 .deployment-node.is-unhealthy,
@@ -681,12 +665,6 @@ form input[type="text"]:focus {
   }
   
   
-}
-@media (max-width: 760px) {
-  .service-meta > div {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2px;
-  }
 }
 .search-dialog-input input {
   min-width: 0;
@@ -2209,31 +2187,10 @@ a.usage-row-name:hover {
 }
 
 /* --- Tab bar (Vercel-style underline tabs) ----------------------------- */
-.svc-tabbar {
-  display: flex;
-  scrollbar-width: none;
-}
-.svc-tabbar::-webkit-scrollbar {
-  display: none;
-}
-.svc-tab {
-  position: relative;
-  padding: 10px 14px 12px;
-  border: 0;
-  background: none;
-  color: var(--color-ink-muted);
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-.svc-tab:hover {
-  color: #ededf2;
-}
 .svc-tab.is-active {
   color: #fafafa;
 }
+
 .svc-tab.is-active::after {
   content: "";
   position: absolute;
@@ -2243,14 +2200,7 @@ a.usage-row-name:hover {
   height: 2px;
   border-radius: 2px 2px 0 0;
   background: #fafafa;
-}
-.svc-tab:focus-visible {
-  outline: 2px solid #fafafa;
-  outline-offset: -2px;
-  border-radius: var(--radius-control);
-}
-
-/* --- Sections: flat cards, Vercel neutral ------------------------------ */
+}/* --- Sections: flat cards, Vercel neutral ------------------------------ */
 .supabase-service-page .dashboard-section-heading {
   display: flex;
   align-items: center;
@@ -2273,28 +2223,7 @@ a.usage-row-name:hover {
   font-size: 13px;
 }
 
-/* --- Definition list meta --------------------------------------------- */
-.supabase-service-page .service-meta {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.supabase-service-page .service-meta > div {
-  display: block;
-  min-width: 0;
-}
-.supabase-service-page .service-meta dt {
-  margin-bottom: 5px;
-  color: #71717a;
-  font-size: 12px;
-  font-weight: 500;
-}
-.supabase-service-page .service-meta dd {
-  margin: 0;
-  color: #ededf2;
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-/* --- Empty states ------------------------------------------------------ */
+/* --- Definition list meta --------------------------------------------- *//* --- Empty states ------------------------------------------------------ */
 .supabase-service-page .dashboard-empty-state h3 {
   font-size: 14px;
 }
@@ -2415,19 +2344,7 @@ a.usage-row-name:hover {
 }
 
 /* DNS instructions sit directly under the Custom Domain meta list; browser
-   default heading and paragraph margins were the only spacing they had. */
-.supabase-service-page .custom-domain-records h3 {
-  margin: 0 0 4px;
-  color: #d4d4d8;
-  font-size: 13px;
-  font-weight: 600;
-}
-.supabase-service-page .custom-domain-records p {
-  margin: 0 0 12px;
-  color: #71717a;
-  font-size: 12.5px;
-}
-@keyframes svc-spin {
+   default heading and paragraph margins were the only spacing they had. */@keyframes svc-spin {
   to {
     transform: rotate(360deg);
   }
@@ -2445,11 +2362,7 @@ a.usage-row-name:hover {
 @media (max-width: 860px) {
   .dashboard-content.supabase-service-page {
     padding: 20px 20px 56px;
-  }
-  .supabase-service-page .service-meta {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+  }}
 
 /* Environment Variables and Volumes keep their wide tables on desktop and need
    a phone layout. Below 720px each row becomes a two-column card with a label
