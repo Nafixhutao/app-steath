@@ -40,6 +40,20 @@ const STATUS_FILTERS: Array<{ value: DatabaseStatus | "all"; label: string }> = 
   { value: "failed", label: "Failed" },
 ];
 
+const STATUS_PILL: Record<DatabaseStatus, string> = {
+  running: "bg-[rgba(62,207,142,0.1)] border border-[rgba(62,207,142,0.25)] text-[var(--color-accent)]",
+  provisioning: "bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.25)] text-[#f59e0b]",
+  stopped: "bg-[rgba(156,163,175,0.1)] border border-[rgba(156,163,175,0.25)] text-[#9ca3af]",
+  failed: "bg-[rgba(244,63,94,0.1)] border border-[rgba(244,63,94,0.25)] text-[var(--color-danger)]",
+};
+
+const STATUS_DOT_TONE: Record<DatabaseStatus, string> = {
+  running: "bg-[var(--color-accent)] shadow-[0_0_6px_rgba(62,207,142,0.6)]",
+  provisioning: "bg-[#f59e0b]",
+  stopped: "bg-[#8b8792]",
+  failed: "bg-[var(--color-danger)]",
+};
+
 const STATUS_DOT: Record<DatabaseStatus, string> = {
   running: "is-running",
   provisioning: "is-provisioning",
@@ -58,10 +72,12 @@ function diskPercent(database: OrganizationDatabaseSummary): number | null {
 
 function diskFillClass(percent: number): string {
   if (percent >= 95) {
-    return "is-red";
+    return "[background:linear-gradient(90deg,#ef4444_0%,#f87171_100%)]";
   }
 
-  return percent >= 80 ? "is-amber" : "is-healthy";
+  return percent >= 80
+    ? "[background:linear-gradient(90deg,#f59e0b_0%,var(--color-warning)_100%)]"
+    : "[background:linear-gradient(90deg,#10b981_0%,var(--color-accent)_100%)]";
 }
 
 function usageLabel(database: OrganizationDatabaseSummary): string {
@@ -235,7 +251,7 @@ export default function DatabasesPage() {
         <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Total Databases</span>
-            <Database className="db-metric-icon w-[16px] h-[16px] text-indigo" aria-hidden="true" />
+            <Database className="db-metric-icon w-[16px] h-[16px] text-[var(--color-accent)]" aria-hidden="true" />
           </div>
           <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">{databasesList.length}</div>
           <div className="mt-[4px] text-[12px] text-[#9e9aa7]">
@@ -248,7 +264,7 @@ export default function DatabasesPage() {
         <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Engine & Health</span>
-            <CheckCircle2 className="db-metric-icon w-[16px] h-[16px] text-emerald" aria-hidden="true" />
+            <CheckCircle2 className="db-metric-icon w-[16px] h-[16px] text-[var(--color-accent)]" aria-hidden="true" />
           </div>
           <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">{engineSummary(databasesList)}</div>
           <div className="mt-[4px] text-[12px] text-[#9e9aa7]">
@@ -263,7 +279,7 @@ export default function DatabasesPage() {
         <div className="py-[16px] px-[20px] rounded-card-lg bg-[#15141b] border border-[#272531] [box-shadow:0_2px_8px_rgba(0,0,0,0.2)] [transition:border-color_150ms_ease] hover:border-[#383546]">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-medium text-[#8a8694] uppercase tracking-[0.04em]">Allocated Storage</span>
-            <HardDrive className="db-metric-icon w-[16px] h-[16px] text-amber" aria-hidden="true" />
+            <HardDrive className="db-metric-icon w-[16px] h-[16px] text-[#f59e0b]" aria-hidden="true" />
           </div>
           <div className="mt-[8px] text-[22px] font-bold text-ink tracking-[-0.01em]">
             {totalAllocatedStorage > 0 ? `${totalUsedStorage} MB` : "0 MB"}
@@ -288,7 +304,7 @@ export default function DatabasesPage() {
                 <button
                   key={filter.value}
                   type="button"
-                  className="db-chip [@media(max-width:640px)]:shrink-0 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center gap-[8px] min-h-[40px] py-[8px] px-[14px] border border-[#282631] rounded-card bg-[#15141b] text-[#9e9aa7] cursor-pointer [transition:background-color_150ms_ease,border-color_150ms_ease,color_150ms_ease,box-shadow_150ms_ease] hover:bg-[#1b1922] hover:border-[#393645] hover:text-ink"
+                  className="db-chip aria-pressed:border-[#6366f1] aria-pressed:bg-[rgba(99,102,241,0.12)] aria-pressed:text-[var(--color-ink)] aria-pressed:[box-shadow:0_0_10px_rgba(99,102,241,0.15)] aria-pressed:[&_.db-chip-count]:bg-[rgba(99,102,241,0.25)] aria-pressed:[&_.db-chip-count]:text-[var(--color-ink)] [@media(max-width:640px)]:shrink-0 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center gap-[8px] min-h-[40px] py-[8px] px-[14px] border border-[#282631] rounded-card bg-[#15141b] text-[#9e9aa7] cursor-pointer [transition:background-color_150ms_ease,border-color_150ms_ease,color_150ms_ease,box-shadow_150ms_ease] hover:bg-[#1b1922] hover:border-[#393645] hover:text-ink"
                   aria-pressed={statusFilter === filter.value}
                   onClick={() => setStatusFilter(filter.value)}
                 >
@@ -317,6 +333,7 @@ export default function DatabasesPage() {
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search database, project, or user..."
               autoComplete="off"
+              className="w-full min-h-[40px] py-[8px] pl-[38px] pr-[36px] border border-[#282631] rounded-card bg-[#15141b] text-[var(--color-ink)] text-[13px] [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease] placeholder:text-[#757180] hover:border-[#383544] focus:border-[#6366f1] focus:[box-shadow:0_0_0_3px_rgba(99,102,241,0.2)] focus:outline-none focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px]"
             />
             {search ? (
               <button
@@ -334,7 +351,7 @@ export default function DatabasesPage() {
 
       {/* Main Content Area */}
       {databases.loading ? (
-        <div className="db-table-container mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
+        <div className="db-table-container [-webkit-overflow-scrolling:touch] mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
           <div className="flex flex-col items-center justify-center gap-[12px] py-[64px] px-[20px] text-[#9e9aa7] text-[13.5px]" role="status">
             <RefreshCw className="w-[24px] h-[24px] text-accent animate-[db-spin_1s_linear_infinite]" aria-hidden="true" />
             <p>Fetching databases in this organization...</p>
@@ -349,7 +366,7 @@ export default function DatabasesPage() {
               <Database className="w-[30px] h-[30px]" />
             </div>
           </div>
-          <h2>No databases provisioned yet</h2>
+          <h2 className="m-0 text-[20px] font-bold text-[var(--color-ink)] tracking-[-0.01em]">No databases provisioned yet</h2>
           <p className="max-w-[520px] mt-[10px] mb-[26px] mx-auto text-[#9e9aa7] text-[14px] leading-[1.6]">
             Every project in Stealth Hosting can host its own dedicated PostgreSQL 16 or MySQL 8
             database. Databases run in private container networks with persistent storage and
@@ -362,27 +379,27 @@ export default function DatabasesPage() {
           </Link>
 
           <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[16px] max-w-[820px] mt-[48px] mb-0 mx-auto text-left">
-            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f]">
+            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f] [&_h3]:m-0 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-[var(--color-ink)] [&_p]:mt-[3px] [&_p]:mb-0 [&_p]:mx-0 [&_p]:text-[12px] [&_p]:text-[#8a8694] [&_p]:leading-[1.45]">
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
-                <ShieldCheck className="db-feature-icon w-[16px] h-[16px] text-emerald" />
+                <ShieldCheck className="db-feature-icon w-[16px] h-[16px] text-[var(--color-accent)]" />
               </div>
               <div>
                 <h3>Private by Default</h3>
                 <p>Never exposed to the public internet unless you explicitly enable the proxy.</p>
               </div>
             </div>
-            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f]">
+            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f] [&_h3]:m-0 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-[var(--color-ink)] [&_p]:mt-[3px] [&_p]:mb-0 [&_p]:mx-0 [&_p]:text-[12px] [&_p]:text-[#8a8694] [&_p]:leading-[1.45]">
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
-                <HardDrive className="db-feature-icon w-[16px] h-[16px] text-indigo" />
+                <HardDrive className="db-feature-icon w-[16px] h-[16px] text-[var(--color-accent)]" />
               </div>
               <div>
                 <h3>1024 MB Storage</h3>
                 <p>High-performance NVMe storage volume tied directly to your project.</p>
               </div>
             </div>
-            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f]">
+            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f] [&_h3]:m-0 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-[var(--color-ink)] [&_p]:mt-[3px] [&_p]:mb-0 [&_p]:mx-0 [&_p]:text-[12px] [&_p]:text-[#8a8694] [&_p]:leading-[1.45]">
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
-                <RefreshCw className="db-feature-icon w-[16px] h-[16px] text-amber" />
+                <RefreshCw className="db-feature-icon w-[16px] h-[16px] text-[#f59e0b]" />
               </div>
               <div>
                 <h3>Automated Backups</h3>
@@ -397,8 +414,8 @@ export default function DatabasesPage() {
           <div className="flex items-center justify-center w-[44px] h-[44px] mt-0 mb-[14px] mx-auto rounded-card-lg bg-[#1d1b25] text-[#757180]" aria-hidden="true">
             <SlidersHorizontal className="w-6 h-6 text-muted" />
           </div>
-          <h2>No databases match the filter</h2>
-          <p>
+          <h2 className="m-0 text-[var(--color-ink)] text-[16px] font-semibold">No databases match the filter</h2>
+          <p className="max-w-[400px] mt-[8px] mb-[18px] mx-auto text-[#9e9aa7] text-[13px] leading-[1.5]">
             No databases match your current query &ldquo;{search}&rdquo; or the selected status
             filter.
           </p>
@@ -415,8 +432,8 @@ export default function DatabasesPage() {
         </div>
       ) : (
         /* Databases Table */
-        <div className="db-table-container mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
-          <table className="db-table [@media(max-width:640px)]:min-w-[620px] w-full min-w-[820px] text-left">
+        <div className="db-table-container [-webkit-overflow-scrolling:touch] mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
+          <table className="db-table [@media(max-width:640px)]:min-w-[620px] w-full min-w-[820px] text-left [&_th]:px-[18px] [&_th]:py-[13px] [&_th]:border-b [&_th]:border-[#25242f] [&_th]:bg-[#17161e] [&_th]:text-[#8a8694] [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:whitespace-nowrap [&_td]:px-[18px] [&_td]:py-[16px] [&_td]:border-b [&_td]:border-[#201f28] [&_td]:text-[#f3f2f5] [&_td]:text-[13px] [&_td]:align-middle [&_tbody_tr]:[transition:background-color_120ms_ease] [&_tbody_tr:hover]:bg-[#1b1922] [&_tbody_tr:last-child>td]:border-b-0">
             <thead>
               <tr>
                 <th scope="col">Database & User</th>
@@ -454,7 +471,7 @@ export default function DatabasesPage() {
                               aria-label={`Copy credentials for ${database.databaseName}`}
                             >
                               {isCopied ? (
-                                <Check className="db-copy-icon w-[12px] h-[12px] text-emerald" aria-hidden="true" />
+                                <Check className="db-copy-icon w-[12px] h-[12px] text-[var(--color-accent)]" aria-hidden="true" />
                               ) : (
                                 <Copy className="db-copy-icon w-[12px] h-[12px]" aria-hidden="true" />
                               )}
@@ -475,9 +492,9 @@ export default function DatabasesPage() {
                     </td>
 
                     <td>
-                      <span className={`db-status-pill inline-flex items-center gap-[8px] py-[3px] px-[10px] rounded-[14px] text-[12px] font-medium whitespace-nowrap ${STATUS_DOT[database.status]}`}>
+                      <span className={`db-status-pill inline-flex items-center gap-[8px] py-[3px] px-[10px] rounded-[14px] text-[12px] font-medium whitespace-nowrap ${STATUS_PILL[database.status]}`}>
                         <span className="relative inline-flex" aria-hidden="true">
-                          <span className={`db-dot w-[7px] h-[7px] rounded-[50%] shrink-0 ${STATUS_DOT[database.status]}`} />
+                          <span className={`db-dot w-[7px] h-[7px] rounded-[50%] shrink-0 ${STATUS_DOT_TONE[database.status]}`} />
                         </span>
                         <span className="db-status-text">
                           {databaseStatusLabel(database.status)}
@@ -494,8 +511,8 @@ export default function DatabasesPage() {
                     <td>
                       <div className="min-w-[170px]">
                         <div className="db-disk-meta flex justify-between gap-[8px] mb-[5px] [font-family:var(--font-mono)] text-[11.5px]">
-                          <span className="db-disk-used">{usageLabel(database)}</span>
-                          <span className="db-disk-cap">of {database.storageLimitMb} MB</span>
+                          <span className="db-disk-used text-[var(--color-ink)] font-medium">{usageLabel(database)}</span>
+                          <span className="db-disk-cap text-[#8a8694]">of {database.storageLimitMb} MB</span>
                         </div>
                         {percent === null ? null : (
                           <div

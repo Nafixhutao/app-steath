@@ -54,7 +54,7 @@ function QuotaMeter({
         <span className="usage-meter-numbers ml-[auto] [font-family:var(--font-console-mono)] text-[12px] tabular-nums text-ink-bright">
           {used} <span>/ {limit}</span>
         </span>
-        <span className={`usage-meter-percent [font-family:var(--font-console-mono)] text-[12px] tabular-nums text-ink-bright min-w-[36px] text-ink-muted ${tone}`}>{percent}%</span>
+        <span className={`usage-meter-percent [font-family:var(--font-console-mono)] text-[12px] tabular-nums text-ink-bright min-w-[36px] text-ink-muted text-right ${tone}`}>{percent}%</span>
       </div>
       <div
         className="bg-[#1a1922] h-[6px] w-full rounded-[9999px] overflow-hidden"
@@ -193,7 +193,7 @@ export default function UsagePage() {
         </div>
       ) : (
         <>
-          <section className="usage-totals flex items-center flex-wrap gap-[12px_0] py-[12px] px-0 mb-[24px] border-t border-t-surface-raised border-b border-b-surface-raised" aria-label="Measured resource totals">
+          <section className="usage-totals flex items-center flex-wrap gap-[12px_0] py-[12px] px-0 mb-[24px] border-t border-t-surface-raised border-b border-b-surface-raised [&>div]:flex [&>div]:items-baseline [&>div]:gap-[8px] [&>div]:px-[20px] [&>div]:py-0 [&>div]:border-r [&>div]:border-[var(--color-surface-raised)] [&>div:first-child]:pl-0 [&>div:last-child]:border-r-0 [@media(max-width:720px)]:[&>div]:px-[12px] [&_span]:text-[12px] [&_span]:text-[var(--color-ink-muted)] [&_strong]:text-[18px] [&_strong]:font-semibold [&_strong]:text-[var(--color-ink-bright)] [&_strong]:[font-family:var(--font-console-mono)] [&_strong]:tabular-nums" aria-label="Measured resource totals">
             <div>
               <span>CPU</span>
               <strong>{usageData.totals.cpu.toFixed(2)} vCPU</strong>
@@ -213,14 +213,14 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="quotas-section-heading">
-            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
+            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
               <h2 id="quotas-section-heading">Capacity &amp; quotas</h2>
               <span>Platform limits</span>
             </div>
-            <div className="usage-capacity bg-surface grid gap-[16px] p-[18px] border border-surface-raised rounded-card">
-              <div className="usage-capacity-primary [@media(max-width:860px)]:pr-[0] [@media(max-width:860px)]:pb-[14px] [@media(max-width:860px)]:border-b [@media(max-width:860px)]:border-b-surface-raised flex flex-col justify-center min-w-0 pr-[20px]">
+            <div className="usage-capacity bg-surface grid gap-[16px] p-[18px] border border-surface-raised rounded-card grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] [@media(max-width:860px)]:grid-cols-1">
+              <div className="usage-capacity-primary [@media(max-width:860px)]:pr-[0] [@media(max-width:860px)]:pb-[14px] [@media(max-width:860px)]:border-b [@media(max-width:860px)]:border-b-surface-raised flex flex-col justify-center min-w-0 pr-[20px] border-r border-r-[var(--color-surface-raised)] [@media(max-width:860px)]:border-r-0 [&>p]:mt-[10px] [&>p]:mb-0 [&>p]:mx-0 [&>p]:text-[11px] [&>p]:text-[var(--color-ink-muted)]">
                 <span className="text-[11px] uppercase tracking-[0.04em] text-ink-muted">Services in this organization</span>
-                <div className="usage-capacity-value flex items-baseline gap-[6px] mt-[4px] mb-[12px] mx-0">
+                <div className="usage-capacity-value flex items-baseline gap-[6px] mt-[4px] mb-[12px] mx-0 [&_strong]:text-[30px] [&_strong]:font-semibold [&_strong]:leading-none [&_strong]:text-[var(--color-ink-bright)] [&_strong]:[font-family:var(--font-console-mono)] [&_strong]:tabular-nums [&_span]:text-[13px] [&_span]:text-[var(--color-ink-muted)] [&_span]:[font-family:var(--font-console-mono)]">
                   <strong>{usageData.counts.services.used}</strong>
                   <span>/ {usageData.counts.services.limit}</span>
                 </div>
@@ -268,7 +268,7 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="service-health-heading">
-            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
+            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
               <h2 id="service-health-heading">Service status</h2>
               <span>{usageData.services.length} services</span>
             </div>
@@ -302,21 +302,21 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="projects-usage-heading">
-            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
+            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
               <h2 id="projects-usage-heading">Projects at a glance</h2>
               <span>{usageData.projects.length} projects</span>
             </div>
             <div className="bg-surface border border-surface-raised rounded-card overflow-hidden">
               {usageData.projects.map((project) => (
-                <div key={project.id} className="usage-project-row [@media(max-width:720px)]:gap-[8px] grid items-center gap-[20px] py-[11px] px-[16px] border-b border-b-[#1f1d25] last:border-b-0">
+                <div key={project.id} className="usage-project-row [@media(max-width:720px)]:gap-[8px] grid items-center gap-[20px] py-[11px] px-[16px] border-b border-b-[#1f1d25] last:border-b-0 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] [@media(max-width:720px)]:grid-cols-1">
                   <Link href={`/dashboard/projects/${project.id}`} className="usage-row-name text-[13px] font-semibold text-ink-bright">
                     {project.name}
                   </Link>
-                  <div className="usage-project-metric min-w-0">
+                  <div className="usage-project-metric min-w-0 [&>span]:block [&>span]:mb-[5px] [&>span]:text-[11px] [&>span]:text-[var(--color-ink-muted)] [&>span]:[font-family:var(--font-console-mono)] [&>span]:tabular-nums">
                     <span>
                       Services {project.serviceCount}/{project.serviceLimit}
                     </span>
-                    <div className="usage-mini-track bg-[#23212b] h-[4px] rounded-[9999px] overflow-hidden" aria-hidden="true">
+                    <div className="usage-mini-track bg-[#23212b] h-[4px] rounded-[9999px] overflow-hidden [&>div]:h-full [&>div]:rounded-[9999px] [&>div]:bg-[var(--color-accent)]" aria-hidden="true">
                       <div
                         style={{
                           width: `${calculatePercent(project.serviceCount, project.serviceLimit)}%`,
@@ -324,11 +324,11 @@ export default function UsagePage() {
                       />
                     </div>
                   </div>
-                  <div className="usage-project-metric min-w-0">
+                  <div className="usage-project-metric min-w-0 [&>span]:block [&>span]:mb-[5px] [&>span]:text-[11px] [&>span]:text-[var(--color-ink-muted)] [&>span]:[font-family:var(--font-console-mono)] [&>span]:tabular-nums">
                     <span>
                       Databases {project.databaseCount}/{project.databaseLimit}
                     </span>
-                    <div className="usage-mini-track bg-[#23212b] h-[4px] rounded-[9999px] overflow-hidden" aria-hidden="true">
+                    <div className="usage-mini-track bg-[#23212b] h-[4px] rounded-[9999px] overflow-hidden [&>div]:h-full [&>div]:rounded-[9999px] [&>div]:bg-[var(--color-accent)]" aria-hidden="true">
                       <div
                         style={{
                           width: `${calculatePercent(project.databaseCount, project.databaseLimit)}%`,
@@ -342,7 +342,7 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="services-usage-heading">
-            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
+            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
               <h2 id="services-usage-heading">Service resource breakdown</h2>
               <span>{usageData.services.length} services</span>
             </div>
@@ -437,7 +437,7 @@ export default function UsagePage() {
 
           {usageData.databases.length > 0 ? (
             <section className="mb-[26px]" aria-labelledby="databases-usage-heading">
-              <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
+              <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
                 <h2 id="databases-usage-heading">Database storage</h2>
                 <span>{usageData.databases.length} databases</span>
               </div>
@@ -494,11 +494,11 @@ export default function UsagePage() {
 
           {canSeeLimitDetail ? (
             <section className="mb-[26px]" aria-labelledby="limit-detail-heading">
-              <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px]">
+              <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
                 <h2 id="limit-detail-heading">Platform allocation policy</h2>
               </div>
               <div className="bg-surface border border-surface-raised rounded-card overflow-hidden">
-                <div className="usage-policy-grid grid gap-[16px_24px] p-[18px]">
+                <div className="usage-policy-grid grid gap-[16px_24px] p-[18px] grid-cols-[repeat(3,minmax(0,1fr))] [@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))] [@media(max-width:720px)]:grid-cols-1 [&>div]:flex [&>div]:flex-col [&>div]:gap-[4px] [&>div]:min-w-0 [&_span]:text-[12px] [&_span]:text-[var(--color-ink-muted)] [&_strong]:text-[13px] [&_strong]:[font-family:var(--font-console-mono)] [&_strong]:font-medium [&_strong]:text-[var(--color-ink-bright)]">
                   <div>
                     <span>CPU cap per service</span>
                     <strong>{usageData.limits.cpuPerService} vCPU</strong>
