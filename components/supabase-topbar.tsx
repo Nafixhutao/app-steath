@@ -78,7 +78,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
 
   return (
     <header className="supabase-topbar" aria-label="Global header">
-      <div className="supabase-topbar-left flex items-center gap-[12px]">
+      <div className="supabase-topbar-left [@media(max-width:1023px)]:min-w-0 [@media(max-width:1023px)]:gap-[8px] flex items-center gap-[12px]">
         <button
           type="button"
           className="supabase-mobile-menu-btn items-center justify-center w-[32px] h-[32px] ml-[-4px] border-0 rounded-control bg-transparent text-ink-console cursor-pointer hover:bg-[rgba(255,255,255,0.06)]"
@@ -112,21 +112,21 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
-              className="supabase-org-dropdown-btn flex items-center gap-[8px] py-[4px] px-[8px] rounded-control border border-transparent bg-transparent text-ink-console cursor-pointer [transition:background-color_150ms,border-color_150ms] hover:bg-[rgba(255,255,255,0.05)] hover:border-[#2b2933]"
+              className="supabase-org-dropdown-btn [@media(max-width:380px)]:gap-[6px] [@media(max-width:380px)]:p-[4px] text-[13px] font-medium flex items-center gap-[8px] py-[4px] px-[8px] rounded-control border border-transparent bg-transparent text-ink-console cursor-pointer [transition:background-color_150ms,border-color_150ms] hover:bg-[rgba(255,255,255,0.05)] hover:border-[#2b2933]"
               onClick={() => setOrgDropdownOpen((prev) => !prev)}
               aria-expanded={orgDropdownOpen}
               aria-haspopup="menu"
             >
-              <div className="supabase-org-icon-badge flex items-center justify-center w-[20px] h-[20px] rounded-control-sm text-[#a1a0aa]" aria-hidden="true">
+              <div className="supabase-org-icon-badge bg-[#23212a] flex items-center justify-center w-[20px] h-[20px] rounded-control-sm text-[#a1a0aa]" aria-hidden="true">
                 <div className="w-[8px] h-[8px] rounded-[50%] bg-current [box-shadow:-4px_5px_0_0_currentColor,4px_5px_0_0_currentColor]" />
               </div>
-              <span className="supabase-org-name max-w-[140px] overflow-hidden text-ellipsis whitespace-nowrap">{activeOrg?.name ?? "Select Org"}</span>
-              <span className="supabase-free-pill text-[10px] font-bold tracking-[0.04em] py-[1px] px-[5px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] leading-[1.2]">FREE</span>
+              <span className="supabase-org-name [@media(max-width:1023px)]:max-w-[96px] [@media(max-width:380px)]:max-w-[64px] max-w-[140px] overflow-hidden text-ellipsis whitespace-nowrap">{activeOrg?.name ?? "Select Org"}</span>
+              <span className="bg-[rgba(62,207,142,0.1)] text-[10px] font-bold tracking-[0.04em] py-[1px] px-[5px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] leading-[1.2]">FREE</span>
               <ChevronsUpDown className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
             </button>
 
             {orgDropdownOpen && (
-              <div className="supabase-dropdown-menu absolute top-[calc(100%_+_6px)] left-[0] z-[70] min-w-[220px] border border-[#2a2833] rounded-card p-[6px] [box-shadow:0_10px_25px_rgba(0,0,0,0.45)]" role="menu">
+              <div className="supabase-dropdown-menu bg-[#16151a] absolute top-[calc(100%_+_6px)] left-[0] z-[70] min-w-[220px] border border-[#2a2833] rounded-card p-[6px] [box-shadow:0_10px_25px_rgba(0,0,0,0.45)]" role="menu">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#716f7c] pt-[6px] pb-[4px] px-[8px]">Your Organizations</div>
                 <div className="flex flex-col gap-[2px]">
                   {organizations?.map((org) => {
@@ -135,11 +135,11 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                       <button
                         key={org.id}
                         type="button"
-                        className={`supabase-dropdown-item ${isActive ? "is-active" : ""}`}
+                        className={`supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)] ${isActive ? "is-active" : ""}`}
                         onClick={() => void handleSelectOrg(org.id)}
                         role="menuitem"
                       >
-                        <div className="supabase-org-icon-badge flex items-center justify-center w-[20px] h-[20px] rounded-control-sm text-[#a1a0aa] small" aria-hidden="true">
+                        <div className="supabase-org-icon-badge bg-[#23212a] flex items-center justify-center w-[20px] h-[20px] rounded-control-sm text-[#a1a0aa] small" aria-hidden="true">
                           <span className="text-[10px] font-bold">{getInitials(org.name)}</span>
                         </div>
                         <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{org.name}</span>
@@ -150,10 +150,10 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                     );
                   })}
                 </div>
-                <div className="supabase-dropdown-divider h-[1px] my-[6px] mx-0" />
+                <div className="bg-[#23222a] h-[1px] my-[6px] mx-0" />
                 <Link
                   href="/dashboard/organizations"
-                  className="supabase-dropdown-item"
+                  className="supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)]"
                   onClick={() => setOrgDropdownOpen(false)}
                 >
                   <Building className="w-4 h-4 text-zinc-400" aria-hidden="true" />
@@ -165,7 +165,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
         )}
       </div>
 
-      <div className="supabase-topbar-right flex items-center gap-[12px]">
+      <div className="supabase-topbar-right [@media(max-width:1023px)]:gap-[6px] [@media(max-width:1023px)]:shrink-0 flex items-center gap-[12px]">
         <a
           href="https://github.com/Nafixhutao/app-steath/issues"
           target="_blank"
@@ -177,20 +177,20 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
 
         <button
           type="button"
-          className="supabase-search-btn flex items-center gap-[8px] h-[30px] py-0 px-[10px] rounded-control border border-[#282631] text-[#8e8c99] cursor-pointer [transition:border-color_150ms,color_150ms] hover:border-[#383642] hover:text-ink-console"
+          className="supabase-search-btn [@media(max-width:1023px)]:w-[32px] [@media(max-width:1023px)]:h-[32px] [@media(max-width:1023px)]:p-0 [@media(max-width:1023px)]:justify-center bg-surface text-[13px] flex items-center gap-[8px] h-[30px] py-0 px-[10px] rounded-control border border-[#282631] text-[#8e8c99] cursor-pointer [transition:border-color_150ms,color_150ms] hover:border-[#383642] hover:text-ink-console"
           onClick={onOpenSearch}
           aria-label="Search or jump to (Ctrl+K)"
         >
           <Search className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
           <span className="supabase-search-label text-[12px]">Search...</span>
-          <kbd className="supabase-search-kbd text-[10px] [font-family:inherit] py-[1px] px-[5px] rounded-control-sm text-[#716f7c] border border-[#302e3a]">Ctrl K</kbd>
+          <kbd className="supabase-search-kbd bg-[#23212a] text-[10px] [font-family:inherit] py-[1px] px-[5px] rounded-control-sm text-[#716f7c] border border-[#302e3a]">Ctrl K</kbd>
         </button>
 
         <a
           href="https://docs.nazxf.my.id"
           target="_blank"
           rel="noopener noreferrer"
-          className="supabase-icon-btn flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
+          className="supabase-icon-btn cursor-pointer focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
           title="Help & Documentation"
           aria-label="Help & Documentation"
         >
@@ -199,7 +199,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
 
         <button
           type="button"
-          className="supabase-icon-btn flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
+          className="supabase-icon-btn cursor-pointer focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
           title="Notifications"
           aria-label="Notifications"
           onClick={() => {
@@ -215,7 +215,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
         <div className="relative" ref={userMenuRef}>
           <button
             type="button"
-            className="supabase-avatar-btn flex items-center justify-center relative border-0 bg-transparent p-0 cursor-pointer rounded-[50%] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px]"
+            className="supabase-avatar-btn outline-none focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative border-0 bg-transparent p-0 cursor-pointer rounded-[50%] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px]"
             onClick={() => setUserDropdownOpen((prev) => !prev)}
             aria-expanded={userDropdownOpen}
             aria-haspopup="menu"
@@ -225,7 +225,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
           </button>
 
           {userDropdownOpen && (
-            <div className="supabase-dropdown-menu absolute top-[calc(100%_+_6px)] left-[0] z-[70] min-w-[220px] border border-[#2a2833] rounded-card p-[6px] [box-shadow:0_10px_25px_rgba(0,0,0,0.45)] right-aligned" role="menu">
+            <div className="supabase-dropdown-menu bg-[#16151a] absolute top-[calc(100%_+_6px)] left-[0] z-[70] min-w-[220px] border border-[#2a2833] rounded-card p-[6px] [box-shadow:0_10px_25px_rgba(0,0,0,0.45)] right-aligned" role="menu">
               <div className="supabase-dropdown-user-header flex items-center gap-[9px] min-w-0 pt-[6px] pb-[8px] px-[8px]">
                 <UserAvatar user={user} size={36} />
                 <div className="flex flex-col gap-[1px] min-w-0">
@@ -238,10 +238,10 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                   ) : null}
                 </div>
               </div>
-              <div className="supabase-dropdown-divider h-[1px] my-[6px] mx-0" />
+              <div className="bg-[#23222a] h-[1px] my-[6px] mx-0" />
               <Link
                 href="/dashboard/settings"
-                className="supabase-dropdown-item"
+                className="supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)]"
                 role="menuitem"
                 onClick={() => setUserDropdownOpen(false)}
               >
@@ -251,7 +251,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
               <button
                 type="button"
                 role="menuitem"
-                className="supabase-dropdown-item text-rose-400"
+                className="supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)] text-rose-400"
                 onClick={async () => {
                   setUserDropdownOpen(false);
                   await signOut();

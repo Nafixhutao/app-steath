@@ -116,7 +116,7 @@ export default function OrganizationsPage() {
               placeholder="Search for an organization"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="orgs-search-input w-full h-[36px] py-0 pr-[32px] pl-[34px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
+              className="orgs-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[34px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
             />
             {search && (
               <button
@@ -147,10 +147,10 @@ export default function OrganizationsPage() {
           <div className="orgs-grid grid gap-[16px]" aria-label="Loading organizations">
             {[1, 2].map((n) => (
               <div key={n} className="flex items-center gap-[16px] py-[16px] px-[20px] rounded-card bg-surface border border-[var(--color-surface-raised)] min-h-[70px]" aria-hidden="true">
-                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-lg" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-lg" />
                 <div className="flex-1 space-y-2">
-                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 rounded w-32" />
-                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 rounded w-20" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 rounded w-32" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 rounded w-20" />
                 </div>
               </div>
             ))}
@@ -162,7 +162,7 @@ export default function OrganizationsPage() {
                 <p className="text-zinc-400">No organizations match &ldquo;{search}&rdquo;.</p>
                 <button
                   type="button"
-                  className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none mt-3"
+                  className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none mt-3"
                   onClick={() => setSearch("")}
                 >
                   Clear search
@@ -238,7 +238,7 @@ export default function OrganizationsPage() {
                 workspace.
               </p>
 
-              <label htmlFor="modal-org-name" className="supabase-modal-label">
+              <label htmlFor="modal-org-name" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                 Organization name
               </label>
               <input
@@ -249,7 +249,7 @@ export default function OrganizationsPage() {
                 maxLength={80}
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                className="supabase-modal-input"
+                className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                 autoFocus
               />
 
@@ -259,7 +259,7 @@ export default function OrganizationsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >

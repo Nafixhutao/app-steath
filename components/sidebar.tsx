@@ -197,12 +197,12 @@ function Identity({
 }) {
   return (
     <>
-      <span className="identity-initial w-[20px] items-center justify-center rounded-control" aria-hidden="true">
+      <span className="inline-flex h-[20px] flex-none bg-[#2b2930] text-[#eeedf0] text-[10px] font-semibold w-[20px] items-center justify-center rounded-control" aria-hidden="true">
         {getInitials(organization.name)}
       </span>
       {!collapsed ? (
         <>
-          <span className="identity-name max-w-[min(18ch,100%)] tracking-[-0.01em]" title={organization.name}>
+          <span className="min-w-0 overflow-hidden flex-initial text-ellipsis whitespace-nowrap text-[14px] font-semibold max-w-[min(18ch,100%)] tracking-[-0.01em]" title={organization.name}>
             {organization.name}
           </span>
           <ChevronDown size={16} strokeWidth={1.7} aria-hidden="true" />
@@ -223,7 +223,7 @@ function MobileSidebarSheet({
 
   return (
     <motion.aside
-      className="mobile-sidebar-sheet"
+      className="mobile-sidebar-sheet [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[60] [@media(max-width:1023px)]:w-[min(100%,560px)] [@media(max-width:1023px)]:h-[min(82dvh,720px)] [@media(max-width:1023px)]:my-0 [@media(max-width:1023px)]:mx-auto [@media(max-width:1023px)]:overflow-hidden [@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#302e34] [@media(max-width:1023px)]:border-b-0 [@media(max-width:1023px)]:rounded-[20px_20px_0_0] [@media(max-width:1023px)]:bg-[#232127] [@media(max-width:1023px)]:[box-shadow:0_-4px_14px_rgb(0_0_0_/_42%)]"
       role="dialog"
       aria-modal="true"
       aria-label="Main navigation"
@@ -261,7 +261,7 @@ function NavRow({
   return (
     <Link
       href={href}
-      className={`sidebar-row ${active ? "is-active" : ""} ${collapsed ? "is-collapsed" : ""} ${mobile ? "is-mobile" : ""}`}
+      className={`sidebar-row [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink-console relative flex w-[calc(100%_-_24px)] h-[36px] flex-none my-[1px] mx-[12px] items-center gap-[10px] py-0 px-[8px] [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] border-0 rounded-control text-[#9e9aa7] cursor-pointer text-[13.5px] font-medium leading-[20px] text-left hover:text-ink-console focus-visible:text-ink-console focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] ${active ? "is-active" : ""} ${collapsed ? "is-collapsed" : ""} ${mobile ? "is-mobile" : ""}`}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       title={collapsed ? label : undefined}
@@ -299,10 +299,10 @@ function SearchDialog({
   if (!open) return null;
 
   return (
-    <div className="search-overlay fixed inset-0 z-[100] bg-[rgb(0_0_0_/_45%)] [backdrop-filter:blur(3px)]" role="presentation">
+    <div className="flex items-start justify-center pt-[20vh] pb-0 px-[16px] fixed inset-0 z-[100] bg-[rgb(0_0_0_/_45%)] [backdrop-filter:blur(3px)]" role="presentation">
       <button
         type="button"
-        className="search-backdrop absolute inset-0 border-0 bg-transparent"
+        className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] absolute inset-0 border-0 bg-transparent"
         onClick={onClose}
         aria-label="Close search"
       />
@@ -326,7 +326,7 @@ function SearchDialog({
               <button
                 key={item}
                 type="button"
-                className="search-result bg-transparent hover:bg-[#2b2930] flex w-full h-[32px] items-center gap-[12px] py-0 px-[10px] border-0 rounded-[5px] text-ink-bright cursor-pointer text-[14px]! text-left"
+                className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] bg-transparent hover:bg-[#2b2930] flex w-full h-[32px] items-center gap-[12px] py-0 px-[10px] border-0 rounded-[5px] text-ink-bright cursor-pointer text-[14px]! text-left"
                 onClick={() => {
                   onSelect(item);
                   onClose();
@@ -500,12 +500,12 @@ export function Sidebar({
   };
 
   const renderContent = (mobile = false) => (
-    <div className={`sidebar-panel ${mobile ? "mobile-sidebar-panel" : ""}`}>
-      <header className={`sidebar-header ${collapsed && !mobile ? "is-collapsed" : ""}`}>
+    <div className={`sidebar-panel flex w-full min-w-0 h-full flex-col overflow-hidden bg-console ${mobile ? "mobile-sidebar-panel" : ""}`}>
+      <header className={`sidebar-header relative flex h-[48px] shrink-0 items-center gap-[8px] py-0 px-[16px] [transition:gap_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "is-collapsed" : ""}`}>
         {!collapsed || mobile ? (
           <button
             type="button"
-            className="org-switcher flex min-w-0 flex-1 items-center gap-[8px] p-0 border-0 rounded-control bg-transparent text-[#eeedf0] cursor-pointer text-left"
+            className="org-switcher focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] flex min-w-0 flex-1 items-center gap-[8px] p-0 border-0 rounded-control bg-transparent text-[#eeedf0] cursor-pointer text-left"
             onClick={() => {
               setOrganizationSwitcherOpen((value) => !value);
               setCreateOrganizationOpen(false);
@@ -522,7 +522,7 @@ export function Sidebar({
         {mobile ? (
           <button
             type="button"
-            className="sidebar-close bg-transparent hover:bg-[rgb(255_255_255_/_5%)] inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control text-[#b5b2b9] cursor-pointer hover:text-ink-console"
+            className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] bg-transparent hover:bg-[rgb(255_255_255_/_5%)] inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control text-[#b5b2b9] cursor-pointer hover:text-ink-console"
             onClick={() => setMobileOpen(false)}
             aria-label="Close sidebar"
           >
@@ -531,7 +531,7 @@ export function Sidebar({
         ) : (
           <button
             type="button"
-            className="sidebar-toggle inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control bg-transparent text-[#b5b2b9] cursor-pointer hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console"
+            className="sidebar-toggle focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control bg-transparent text-[#b5b2b9] cursor-pointer hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
@@ -558,7 +558,7 @@ export function Sidebar({
                 onClick={() => void switchOrganization(item.id)}
                 disabled={organizationBusy}
               >
-                <span className="identity-initial w-[20px] items-center justify-center rounded-control" aria-hidden="true">
+                <span className="inline-flex h-[20px] flex-none bg-[#2b2930] text-[#eeedf0] text-[10px] font-semibold w-[20px] items-center justify-center rounded-control" aria-hidden="true">
                   {getInitials(item.name)}
                 </span>
                 <span className="min-w-0 flex-1 overflow-hidden text-[13px] text-ellipsis whitespace-nowrap">{item.name}</span>
@@ -612,7 +612,7 @@ export function Sidebar({
       </header>
       <button
         type="button"
-        className={`sidebar-search ${collapsed && !mobile ? "is-collapsed" : ""}`}
+        className={`sidebar-search flex h-[32px] w-[calc(100%_-_16px)] mt-[6px] mb-0 mx-[8px] [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] items-center gap-[8px] py-0 pr-[14px] pl-[8px] border-0 rounded-control bg-[#171519] text-[#eeedf0] cursor-pointer text-left hover:bg-[#1c1a1f] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] ${collapsed && !mobile ? "is-collapsed" : ""}`}
         onClick={() => setSearchOpen(true)}
         aria-label="Search Ctrl K"
       >
@@ -669,10 +669,10 @@ export function Sidebar({
         {mobile ? (
           <>
             <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
-            <div className={`profile-area ${collapsed && !mobile ? "is-collapsed" : ""}`}>
+            <div className={`profile-area relative pt-[10px] pb-[6px] px-[12px] [transition:padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "is-collapsed" : ""}`}>
               {profileOpen && !mobile ? (
                 <div
-                  className={`profile-menu ${collapsed ? "is-collapsed" : ""}`}
+                  className={`profile-menu absolute right-[12px] bottom-[calc(100%_+_5px)] left-[12px] z-[60] p-[6px] border border-[#2d2d35] rounded-card-lg bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_50%)] ${collapsed ? "is-collapsed" : ""}`}
                   role="menu"
                   aria-label="User menu"
                 >
@@ -687,7 +687,7 @@ export function Sidebar({
 
                   <button
                     type="button"
-                    className="profile-menu-row flex w-full h-[32px] items-center gap-[10px] py-0 px-[10px] border-0 rounded-control bg-transparent text-[#b3b0ba] cursor-pointer text-left hover:bg-[#26262e] hover:text-ink-console logout-row"
+                    className="profile-menu-row text-[13px] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] flex w-full h-[32px] items-center gap-[10px] py-0 px-[10px] border-0 rounded-control bg-transparent text-[#b3b0ba] cursor-pointer text-left hover:bg-[#26262e] hover:text-ink-console logout-row"
                     onClick={async () => {
                       await signOut();
                       router.replace("/");
@@ -701,7 +701,7 @@ export function Sidebar({
               <div className="profile-controls flex items-center gap-[6px]">
                 <button
                   type="button"
-                  className="profile-button hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console flex min-w-0 flex-1 items-center gap-[8px] py-[4px] px-[6px] [transition:flex-basis_360ms_cubic-bezier(0.22,1,0.36,1),background-color_150ms_ease] border-0 rounded-card bg-transparent text-ink-console cursor-pointer text-left hover:bg-[rgba(255,255,255,0.05)]"
+                  className="profile-button focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console flex min-w-0 flex-1 items-center gap-[8px] py-[4px] px-[6px] [transition:flex-basis_360ms_cubic-bezier(0.22,1,0.36,1),background-color_150ms_ease] border-0 rounded-card bg-transparent text-ink-console cursor-pointer text-left hover:bg-[rgba(255,255,255,0.05)]"
                   onClick={() => setProfileOpen((value) => !value)}
                   aria-label={profileOpen ? "Close user menu" : "Open user menu"}
                   title={collapsed && !mobile ? "User menu" : undefined}
@@ -729,11 +729,11 @@ export function Sidebar({
 
   return (
     <>
-      <div className="user-mobile-topbar">
-        <Link href="/dashboard" className="mobile-brand focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]" aria-label="Stealth home">
+      <div className="user-mobile-topbar [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[40] [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:h-[59px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-between [@media(max-width:1023px)]:py-0 [@media(max-width:1023px)]:px-[16px] [@media(max-width:1023px)]:border-b [@media(max-width:1023px)]:border-b-[#2b2b2e] [@media(max-width:1023px)]:bg-[#1a181d]">
+        <Link href="/dashboard" className="mobile-brand [@media(max-width:1023px)]:inline-flex [@media(max-width:1023px)]:w-[44px] [@media(max-width:1023px)]:h-[44px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-center [@media(max-width:1023px)]:rounded-card focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]" aria-label="Stealth home">
           <Image src="/stealth-cat.png" alt="" width={24} height={24} priority />
         </Link>
-        <div className="mobile-topbar-actions">
+        <div className="mobile-topbar-actions [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:gap-[6px]">
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
@@ -748,7 +748,7 @@ export function Sidebar({
             aria-label="User menu"
             aria-expanded={mobileAccountOpen}
           >
-            <UserAvatar user={user} size={26} className="mobile-account-avatar" decorative />
+            <UserAvatar user={user} size={26} className="mobile-account-avatar [@media(max-width:1023px)]:inline-flex [@media(max-width:1023px)]:w-[26px] [@media(max-width:1023px)]:h-[26px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-center [@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#3d3945] [@media(max-width:1023px)]:rounded-[50%] [@media(max-width:1023px)]:bg-[#2b2930] [@media(max-width:1023px)]:text-ink-console [@media(max-width:1023px)]:text-[11px] [@media(max-width:1023px)]:font-semibold" decorative />
           </button>
           <button
             type="button"
@@ -793,7 +793,7 @@ export function Sidebar({
         {mobileOpen ? (
           <motion.button
             type="button"
-            className="mobile-sidebar-overlay"
+            className="mobile-sidebar-overlay [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:inset-0 [@media(max-width:1023px)]:z-[50] [@media(max-width:1023px)]:border-0 [@media(max-width:1023px)]:bg-[rgb(0_0_0_/_50%)]"
             onClick={() => setMobileOpen(false)}
             aria-label="Close sidebar overlay"
             initial={{ opacity: 0 }}

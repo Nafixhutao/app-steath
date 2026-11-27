@@ -76,7 +76,7 @@ export function ModalDialog({
     >
       <div
         ref={dialogRef}
-        className={`supabase-modal-dialog${className ? ` ${className}` : ""}`}
+        className={`bg-[#16151a] border border-[#282632] rounded-panel w-full max-w-[480px] overflow-hidden [box-shadow:0_20px_50px_rgba(0,0,0,0.6)] animate-[supabaseModalFadeIn_150ms_cubic-bezier(0.16,1,0.3,1)]${className ? ` ${className}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}

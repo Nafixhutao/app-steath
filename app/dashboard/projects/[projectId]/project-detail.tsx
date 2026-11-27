@@ -122,15 +122,15 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
   if (loading) {
     return (
-      <div className="project-detail-container max-w-[1300px] my-0 mx-auto w-full">
+      <div className="pt-[24px] pb-[64px] px-[32px] max-w-[1300px] my-0 mx-auto w-full">
         <div className="project-detail-header-skeleton" aria-label="Loading project">
-          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-40 rounded mb-4" />
-          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-8 w-64 rounded mb-2" />
-          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
+          <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-40 rounded mb-4" />
+          <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-8 w-64 rounded mb-2" />
+          <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
         </div>
         <div className="project-tabs-skeleton mt-6">
-          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-10 w-80 rounded-lg mb-6" />
-          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-64 w-full rounded-xl" />
+          <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-10 w-80 rounded-lg mb-6" />
+          <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-64 w-full rounded-xl" />
         </div>
       </div>
     );
@@ -138,7 +138,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
   if (!project) {
     return (
-      <div className="project-detail-container max-w-[1300px] my-0 mx-auto w-full">
+      <div className="pt-[24px] pb-[64px] px-[32px] max-w-[1300px] my-0 mx-auto w-full">
         <div className="project-empty-state">
           <Boxes className="w-12 h-12 text-zinc-600 mb-3" />
           <h2>Project not found</h2>
@@ -146,7 +146,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             This project does not exist in the active organization or you do not have permission to
             view it.
           </p>
-          <Link href="/dashboard/projects" className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none">
+          <Link href="/dashboard/projects" className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none">
             Back to Projects
           </Link>
         </div>
@@ -155,11 +155,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="project-detail-container max-w-[1300px] my-0 mx-auto w-full">
+    <div className="pt-[24px] pb-[64px] px-[32px] max-w-[1300px] my-0 mx-auto w-full">
       {/* Top Header */}
       <header className="border-b border-[#23222a] pb-0 mb-[24px]">
         <nav className="flex items-center gap-[8px] text-[13px] mb-[14px]" aria-label="Breadcrumb">
-          <Link href="/dashboard/projects" className="project-breadcrumb-link no-underline [transition:color_150ms]">
+          <Link href="/dashboard/projects" className="text-[#8e8c99] hover:text-ink-console no-underline [transition:color_150ms]">
             Projects
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-zinc-600" aria-hidden="true" />
@@ -175,11 +175,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
               <div className="flex items-center gap-3">
                 <h1 className="text-[24px] font-semibold! tracking-[-0.02em]! text-ink m-0 leading-[1.2]!">{project.name}</h1>
                 <span
-                  className={`project-status-pill ${
+                  className={`project-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-[99px] bg-[rgba(255,255,255,0.05)] border border-[#2a2835] text-[#9e9aa8] ${
                     project.status === "active" ? "is-active" : "is-idle"
                   }`}
                 >
-                  <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
+                  <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                   {project.status === "active" ? "Active" : "Empty"}
                 </span>
               </div>
@@ -203,11 +203,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           </div>
 
           <div className="flex items-center gap-[8px]">
-            <div className="project-stat-pill flex items-center gap-[6px] text-[12px] py-[4px] px-[10px] rounded-control border border-surface-raised text-[#8e8c99]">
+            <div className="bg-surface flex items-center gap-[6px] text-[12px] py-[4px] px-[10px] rounded-control border border-surface-raised text-[#8e8c99]">
               <Container className="w-3.5 h-3.5 text-zinc-400" />
               <span>{project.serviceCount} Services</span>
             </div>
-            <div className="project-stat-pill flex items-center gap-[6px] text-[12px] py-[4px] px-[10px] rounded-control border border-surface-raised text-[#8e8c99]">
+            <div className="bg-surface flex items-center gap-[6px] text-[12px] py-[4px] px-[10px] rounded-control border border-surface-raised text-[#8e8c99]">
               <Database className="w-3.5 h-3.5 text-zinc-400" />
               <span>{databaseLabel(project.databaseEngine, project.databaseCount)}</span>
             </div>
@@ -222,7 +222,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             aria-selected={activeTab === "services"}
             aria-controls="panel-services"
             id="tab-services"
-            className={`project-tab-button ${activeTab === "services" ? "is-active" : ""}`}
+            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium text-[#8e8c99] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:color_150ms,border-color_150ms] hover:text-ink-console ${activeTab === "services" ? "is-active" : ""}`}
             onClick={() => setActiveTab("services")}
           >
             <Container className="w-4 h-4" />
@@ -236,13 +236,13 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             aria-selected={activeTab === "database"}
             aria-controls="panel-database"
             id="tab-database"
-            className={`project-tab-button ${activeTab === "database" ? "is-active" : ""}`}
+            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium text-[#8e8c99] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:color_150ms,border-color_150ms] hover:text-ink-console ${activeTab === "database" ? "is-active" : ""}`}
             onClick={() => setActiveTab("database")}
           >
             <Database className="w-4 h-4" />
             <span>Database</span>
             <span
-              className={`project-tab-status-dot ${
+              className={`project-tab-status-dot w-[7px] h-[7px] rounded-[50%] ${
                 project.databaseCount > 0 ? "is-live" : "is-none"
               }`}
               title={project.databaseCount > 0 ? "Provisioned" : "None"}
@@ -255,13 +255,13 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             aria-selected={activeTab === "storage"}
             aria-controls="panel-storage"
             id="tab-storage"
-            className={`project-tab-button ${activeTab === "storage" ? "is-active" : ""}`}
+            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium text-[#8e8c99] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:color_150ms,border-color_150ms] hover:text-ink-console ${activeTab === "storage" ? "is-active" : ""}`}
             onClick={() => setActiveTab("storage")}
           >
             <HardDrive className="w-4 h-4" />
             <span>Storage</span>
             <span
-              className={`project-tab-status-dot ${
+              className={`project-tab-status-dot w-[7px] h-[7px] rounded-[50%] ${
                 storageBucketCount > 0 ? "is-live" : "is-none"
               }`}
               title={storageBucketCount > 0 ? "Provisioned" : "None"}
@@ -274,7 +274,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             aria-selected={activeTab === "settings"}
             aria-controls="panel-settings"
             id="tab-settings"
-            className={`project-tab-button ${activeTab === "settings" ? "is-active" : ""}`}
+            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium text-[#8e8c99] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:color_150ms,border-color_150ms] hover:text-ink-console ${activeTab === "settings" ? "is-active" : ""}`}
             onClick={() => setActiveTab("settings")}
           >
             <Settings className="w-4 h-4" />
@@ -327,7 +327,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             className="space-y-6"
           >
             {/* General Settings */}
-            <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+            <div className="bg-surface rounded-card border border-surface-raised overflow-hidden">
               <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
                 <div>
                   <h2 className="text-[14.5px] font-semibold text-ink m-0">General Settings</h2>
@@ -341,7 +341,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 <form onSubmit={rename} className="p-[20px]">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="edit-project-name" className="project-form-label">
+                      <label htmlFor="edit-project-name" className="block text-[12.5px] font-medium text-[#c9c7d2] mb-[6px]">
                         Project Name
                       </label>
                       <input
@@ -350,11 +350,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                         maxLength={80}
                         required
                         onChange={(e) => setDraft({ name: e.target.value, slug })}
-                        className="project-form-input w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms]"
+                        className="project-form-input bg-[#1a1920] w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms]"
                       />
                     </div>
                     <div>
-                      <label htmlFor="edit-project-slug" className="project-form-label">
+                      <label htmlFor="edit-project-slug" className="block text-[12.5px] font-medium text-[#c9c7d2] mb-[6px]">
                         Project Slug
                       </label>
                       <input
@@ -363,7 +363,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                         maxLength={40}
                         required
                         onChange={(e) => setDraft({ name, slug: e.target.value })}
-                        className="project-form-input w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] font-mono text-sm"
+                        className="project-form-input bg-[#1a1920] w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] font-mono text-sm"
                       />
                     </div>
                   </div>
@@ -399,8 +399,8 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
             {/* Danger Zone */}
             {canManage && (
-              <div className="project-danger-card rounded-card border border-[rgba(244,63,94,0.25)] overflow-hidden">
-                <div className="project-danger-card-head py-[16px] px-[20px] border-b border-b-[rgba(244,63,94,0.15)]">
+              <div className="bg-surface rounded-card border border-[rgba(244,63,94,0.25)] overflow-hidden">
+                <div className="bg-[rgba(244,63,94,0.03)] py-[16px] px-[20px] border-b border-b-[rgba(244,63,94,0.15)]">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-rose-400" />
                     <h2 className="text-[14.5px] font-semibold text-[var(--color-danger)] m-0">Delete Project</h2>
@@ -413,7 +413,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
                 <form onSubmit={remove} className="p-[20px]">
                   <div className="max-w-md">
-                    <label htmlFor="delete-confirm-input" className="project-form-label">
+                    <label htmlFor="delete-confirm-input" className="block text-[12.5px] font-medium text-[#c9c7d2] mb-[6px]">
                       Type <strong>{project.name}</strong> to confirm deletion
                     </label>
                     <input
@@ -423,14 +423,14 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                       placeholder={project.name}
                       autoComplete="off"
                       required
-                      className="project-form-input w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
+                      className="project-form-input bg-[#1a1920] w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
                     />
                   </div>
 
-                  <div className="project-danger-card-footer flex items-center justify-end py-[14px] px-[20px] border-t border-t-[rgba(244,63,94,0.15)] mt-[20px]">
+                  <div className="bg-[#141318] flex items-center justify-end py-[14px] px-[20px] border-t border-t-[rgba(244,63,94,0.15)] mt-[20px]">
                     <button
                       type="submit"
-                      className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                      className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                       disabled={busy || confirmation !== project.name}
                     >
                       {busy ? "Deleting..." : "Delete Project Permanently"}

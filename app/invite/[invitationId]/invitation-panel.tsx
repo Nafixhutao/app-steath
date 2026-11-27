@@ -68,7 +68,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
         {ready ? (
           <div className="flex gap-[10px] mt-[20px]">
             <button
-              className="create-project-button h-[36px] py-0 px-[14px] border border-[#078153] rounded-control bg-[var(--color-accent-strong)] text-[#fff] cursor-pointer hover:bg-[#087f55] [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] active:translate-y-[1px] active:scale-[0.99]"
+              className="create-project-button text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] h-[36px] py-0 px-[14px] border border-[#078153] rounded-control bg-[var(--color-accent-strong)] text-[#fff] cursor-pointer hover:bg-[#087f55] [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] active:translate-y-[1px] active:scale-[0.99]"
               type="button"
               disabled={busy}
               onClick={() => void accept()}
@@ -76,7 +76,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
               {busy ? "Please wait..." : "Accept invitation"}
             </button>
             <button
-              className="dashboard-secondary-button bg-[#1a181e] hover:bg-[#242129] min-h-[36px] py-0 px-[12px] border border-[#403c45] rounded-[7px] text-[#e8e5ed] [font:inherit] text-[12px]! cursor-pointer hover:border-[#696370] disabled:cursor-not-allowed disabled:opacity-[0.55] [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] active:translate-y-[1] active:scale-[0.99]"
+              className="focus-visible:outline-2 focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] bg-[#1a181e] hover:bg-[#242129] min-h-[36px] py-0 px-[12px] border border-[#403c45] rounded-[7px] text-[#e8e5ed] [font:inherit] text-[12px]! cursor-pointer hover:border-[#696370] disabled:cursor-not-allowed disabled:opacity-[0.55] [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] active:translate-y-[1] active:scale-[0.99]"
               type="button"
               disabled={busy}
               onClick={() => void decline()}

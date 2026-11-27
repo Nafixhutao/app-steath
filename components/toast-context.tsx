@@ -70,7 +70,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div className="fixed bottom-[20px] right-[20px] z-[150] flex flex-col gap-[10px] max-w-[380px] w-[calc(100vw_-_40px)] pointer-events-none" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast-card toast-${t.type}`} role="alert">
+          <div key={t.id} className={`toast-card flex items-start gap-[12px] py-[14px] px-[16px] rounded-card bg-[#17161c] border border-[#272532] [box-shadow:0_12px_30px_rgba(0,0,0,0.5)] toast-${t.type}`} role="alert">
             <div className="shrink-0 mt-[1px]">
               {t.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
               {t.type === "error" && <AlertCircle className="w-4 h-4 text-rose-400" />}

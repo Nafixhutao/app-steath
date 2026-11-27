@@ -147,16 +147,16 @@ export function ServicesPanel({
       {loading ? (
         <div className="grid grid-cols-1 gap-3">
           {[1, 2].map((n) => (
-            <div key={n} className="supabase-project-skeleton-card flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px] h-28" aria-hidden="true">
-              <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-36 rounded mb-2" />
-              <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded mb-4" />
-              <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-24 rounded" />
+            <div key={n} className="bg-surface flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px] h-28" aria-hidden="true">
+              <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-36 rounded mb-2" />
+              <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded mb-4" />
+              <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-24 rounded" />
             </div>
           ))}
         </div>
       ) : services.length === 0 ? (
-        <div className="project-empty-card flex flex-col items-center justify-center py-[56px] px-[24px] rounded-card border border-dashed border-[#262430] text-center">
-          <div className="project-empty-icon-wrap flex items-center justify-center w-[48px] h-[48px] rounded-card-lg" aria-hidden="true">
+        <div className="bg-surface flex flex-col items-center justify-center py-[56px] px-[24px] rounded-card border border-dashed border-[#262430] text-center">
+          <div className="bg-[#211f29] flex items-center justify-center w-[48px] h-[48px] rounded-card-lg" aria-hidden="true">
             <Container className="w-8 h-8 text-zinc-500" />
           </div>
           <h3 className="text-base font-semibold text-white mt-3">No services deployed yet</h3>
@@ -181,16 +181,16 @@ export function ServicesPanel({
           {services.map((service) => {
             const isLive = service.status === "running";
             return (
-              <div key={service.id} className="project-service-item border border-surface-raised [transition:border-color_150ms] hover:border-[#34323e]">
+              <div key={service.id} className="flex flex-col py-[16px] px-[20px] rounded-card bg-surface border border-surface-raised [transition:border-color_150ms] hover:border-[#34323e]">
                 <div className="flex items-center justify-between flex-wrap gap-[12px]">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="project-service-icon flex items-center justify-center w-[32px] h-[32px] rounded-control shrink-0" aria-hidden="true">
+                    <div className="bg-[#211f29] flex items-center justify-center w-[32px] h-[32px] rounded-control shrink-0" aria-hidden="true">
                       <Container className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div className="min-w-0">
                       <Link
                         href={`/dashboard/services/${service.id}`}
-                        className="project-service-name text-[14.5px] font-semibold! no-underline [transition:color_150ms]"
+                        className="text-ink hover:text-accent text-[14.5px] font-semibold! no-underline [transition:color_150ms]"
                       >
                         {service.name}
                       </Link>
@@ -198,7 +198,7 @@ export function ServicesPanel({
                         href={service.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="project-service-hostname inline-flex items-center gap-[4px] text-[12px] [font-family:monospace] no-underline mt-[2px]"
+                        className="text-[#716f7c] hover:text-ink-console inline-flex items-center gap-[4px] text-[12px] [font-family:monospace] no-underline mt-[2px]"
                       >
                         <span>{service.platformHostname}</span>
                         <ExternalLink className="w-3 h-3" />
@@ -208,11 +208,11 @@ export function ServicesPanel({
 
                   <div className="flex items-center gap-3">
                     <span
-                      className={`project-service-status-pill ${
+                      className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border border-[#2a2835] bg-[#1c1a22] text-[#8e8c99] ${
                         isLive ? "is-live" : "is-building"
                       }`}
                     >
-                      <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
+                      <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                       {serviceStatusLabel(service.status)}
                     </span>
 
@@ -251,7 +251,7 @@ export function ServicesPanel({
 
                   <Link
                     href={`/dashboard/services/${service.id}`}
-                    className="project-service-view-link ml-auto text-[12px] font-medium no-underline [transition:color_150ms]"
+                    className="text-[#8e8c99] hover:text-accent ml-auto text-[12px] font-medium no-underline [transition:color_150ms]"
                   >
                     Manage Service &rarr;
                   </Link>
@@ -288,7 +288,7 @@ export function ServicesPanel({
                 container with its own subdomain.
               </p>
               <div>
-                <label htmlFor="service-name-input" className="supabase-modal-label">
+                <label htmlFor="service-name-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Service Name
                 </label>
                 <input
@@ -298,13 +298,13 @@ export function ServicesPanel({
                   required
                   placeholder="e.g. web-frontend"
                   onChange={(e) => update("name", e.target.value)}
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label htmlFor="repo-url-input" className="supabase-modal-label">
+                <label htmlFor="repo-url-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Git Repository URL (public HTTPS)
                 </label>
                 <input
@@ -314,7 +314,7 @@ export function ServicesPanel({
                   required
                   placeholder="https://github.com/org/repo"
                   onChange={(e) => update("repoUrl", e.target.value)}
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                 />
                 <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
                   No Dockerfile needed: static sites and Node.js/Next.js projects are detected
@@ -324,7 +324,7 @@ export function ServicesPanel({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="branch-input" className="supabase-modal-label">
+                  <label htmlFor="branch-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                     Git Branch
                   </label>
                   <input
@@ -332,11 +332,11 @@ export function ServicesPanel({
                     value={form.branch}
                     placeholder="main"
                     onChange={(e) => update("branch", e.target.value)}
-                    className="supabase-modal-input"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   />
                 </div>
                 <div>
-                  <label htmlFor="port-input" className="supabase-modal-label">
+                  <label htmlFor="port-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                     Container Port
                   </label>
                   <input
@@ -345,14 +345,14 @@ export function ServicesPanel({
                     inputMode="numeric"
                     placeholder="3000"
                     onChange={(e) => update("containerPort", e.target.value)}
-                    className="supabase-modal-input"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="dockerfile-input" className="supabase-modal-label">
+                  <label htmlFor="dockerfile-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                     Dockerfile Path (Optional)
                   </label>
                   <input
@@ -360,11 +360,11 @@ export function ServicesPanel({
                     value={form.dockerfilePath}
                     placeholder="Dockerfile"
                     onChange={(e) => update("dockerfilePath", e.target.value)}
-                    className="supabase-modal-input font-mono text-xs"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] font-mono text-xs"
                   />
                 </div>
                 <div>
-                  <label htmlFor="health-input" className="supabase-modal-label">
+                  <label htmlFor="health-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                     Health Check Path (Optional)
                   </label>
                   <input
@@ -372,7 +372,7 @@ export function ServicesPanel({
                     value={form.healthPath}
                     placeholder="/health"
                     onChange={(e) => update("healthPath", e.target.value)}
-                    className="supabase-modal-input font-mono text-xs"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] font-mono text-xs"
                   />
                 </div>
               </div>
@@ -381,7 +381,7 @@ export function ServicesPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >
@@ -431,7 +431,7 @@ export function ServicesPanel({
                 <strong className="text-white">{deleteTarget.name}</strong>.
               </p>
               <div>
-                <label htmlFor="delete-service-confirm-input" className="supabase-modal-label">
+                <label htmlFor="delete-service-confirm-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Type <strong>{deleteTarget.name}</strong> to confirm:
                 </label>
                 <input
@@ -439,7 +439,7 @@ export function ServicesPanel({
                   value={deleteConfirm}
                   onChange={(e) => setDeleteConfirm(e.target.value)}
                   placeholder={deleteTarget.name}
-                  className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
                   autoFocus
                 />
               </div>
@@ -448,7 +448,7 @@ export function ServicesPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setDeleteTarget(null)}
                 disabled={busy}
               >
@@ -456,7 +456,7 @@ export function ServicesPanel({
               </button>
               <button
                 type="submit"
-                className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                 disabled={busy || deleteConfirm !== deleteTarget.name}
               >
                 {busy ? "Deleting..." : "Delete Service"}

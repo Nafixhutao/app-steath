@@ -13,7 +13,7 @@ import { EyeMark } from "@/components/auth-form";
 function BrandHeading({ title }: { title: string }) {
   return (
     <>
-      <div className="brand-mark w-[56px] mt-0 mb-[24px] mx-auto">
+      <div className="brand-mark flex justify-center h-[56px] w-[56px] mt-0 mb-[24px] mx-auto">
         <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority />
       </div>
       <h1>{title}</h1>
@@ -55,8 +55,8 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <main className="auth-page min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
-      <a className="skip-link fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#reset-content">
+    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+      <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#reset-content">
         Skip to content
       </a>
 
@@ -88,7 +88,7 @@ export function ForgotPasswordForm() {
               disabled={isLoading}
             />
           </div>
-          <button type="submit" className="submit-button w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
+          <button type="submit" className="submit-button disabled:cursor-not-allowed disabled:opacity-[0.65] focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] cursor-pointer text-[14px] font-semibold hover:[filter:brightness(1.1)] w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
             {isLoading ? "Generating link..." : "Send reset link"}
           </button>
         </form>
@@ -124,7 +124,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
 
   if (!token) {
     return (
-      <main className="auth-page min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+      <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
         <div className="login-content">
           <BrandHeading title="Reset link invalid" />
           <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#a5a1ad] text-[13.5px] leading-[1.6]">
@@ -165,8 +165,8 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
   }
 
   return (
-    <main className="auth-page min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
-      <a className="skip-link fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#reset-content">
+    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+      <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#reset-content">
         Skip to content
       </a>
 
@@ -197,7 +197,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
               />
               <button
                 type="button"
-                className="password-toggle absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#9a9aa2] cursor-pointer hover:text-ink"
+                className="password-toggle focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#9a9aa2] cursor-pointer hover:text-ink"
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}
@@ -207,7 +207,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
               </button>
             </div>
           </div>
-          <button type="submit" className="submit-button w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
+          <button type="submit" className="submit-button disabled:cursor-not-allowed disabled:opacity-[0.65] focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] cursor-pointer text-[14px] font-semibold hover:[filter:brightness(1.1)] w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
             {isLoading ? "Updating..." : "Update password"}
           </button>
         </form>

@@ -134,7 +134,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         <p className="supabase-service-breadcrumb flex items-center flex-wrap gap-[8px] mt-0 mb-[20px] mx-0 text-ink-muted text-[13px]">
           <Link href="/dashboard/projects">Projects</Link>
           <span aria-hidden="true">/</span>
-          <span className="supabase-service-breadcrumb-current text-[#ededf2]">Not found</span>
+          <span className="supabase-service-breadcrumb-current [@media(max-width:600px)]:min-w-0 [@media(max-width:600px)]:max-w-[100%] [@media(max-width:600px)]:overflow-hidden [@media(max-width:600px)]:text-ellipsis [@media(max-width:600px)]:whitespace-nowrap text-[#ededf2]">Not found</span>
         </p>
         <div className="py-[48px] px-[32px] border border-[#27272a] rounded-card bg-[#0c0c0d]">
           <h1 className="supabase-service-title m-0 text-[24px] text-left">Service not found</h1>
@@ -146,7 +146,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
               {error || actionError}
             </p>
           ) : null}
-          <Link className="svc-back-link inline-block mt-[16px] text-[13px] no-underline" href="/dashboard/projects">
+          <Link className="text-ink-muted hover:text-[#ededf2] inline-block mt-[16px] text-[13px] no-underline" href="/dashboard/projects">
             ← Back to Projects
           </Link>
         </div>
@@ -161,13 +161,13 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         <span aria-hidden="true">/</span>
         <Link href={`/dashboard/projects/${service.projectId}`}>{projectName || "Project"}</Link>
         <span aria-hidden="true">/</span>
-        <span className="supabase-service-breadcrumb-current text-[#ededf2]">{service.name}</span>
+        <span className="supabase-service-breadcrumb-current [@media(max-width:600px)]:min-w-0 [@media(max-width:600px)]:max-w-[100%] [@media(max-width:600px)]:overflow-hidden [@media(max-width:600px)]:text-ellipsis [@media(max-width:600px)]:whitespace-nowrap text-[#ededf2]">{service.name}</span>
       </p>
 
       <header className="grid gap-[10px] min-w-0 pb-[20px]">
         <div className="flex items-center gap-[12px] flex-wrap">
           <h1 className="supabase-service-title m-0 text-[24px] text-left">{service.name}</h1>
-          <span className={`supabase-service-status is-${service.status}`}>
+          <span className={`supabase-service-status inline-flex shrink-0 items-center gap-[7px] py-[3px] px-[10px] rounded-[999px] bg-[#27272a] text-[#d4d4d8] text-[12px] font-medium before:w-[6px] before:h-[6px] before:rounded-[50%] before:bg-current is-${service.status}`}>
             {serviceStatusLabel(service.status)}
           </span>
         </div>
@@ -213,7 +213,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         </p>
       ) : null}
 
-      <nav className="svc-tabbar items-center gap-[4px] border-b border-b-[#27272a] mb-[24px] overflow-x-auto" aria-label="Service sections" ref={tabbarRef}>
+      <nav className="svc-tabbar [@media(max-width:640px)]:gap-[0] [@media(max-width:640px)]:mb-[20px] items-center gap-[4px] border-b border-b-[#27272a] mb-[24px] overflow-x-auto" aria-label="Service sections" ref={tabbarRef}>
         {TABS.map((entry) => {
           // Read-only Members do not get the management tabs.
           const hidden = (entry.id === "environment" || entry.id === "settings") && !canManage;
@@ -301,7 +301,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
             </section>
 
             <section
-              className="dashboard-section mt-[26px] organization-danger-zone"
+              className="dashboard-section mt-[26px] organization-danger-zone p-[16px] border border-[#713a44] rounded-[9px] bg-[rgb(49_26_32_/_35%)]"
               aria-labelledby="danger-heading"
             >
               <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
@@ -311,7 +311,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
                 Deleting this Service stops its container and removes its Volume, Environment
                 Variables, and Domains.
               </p>
-              <form className="organization-settings-form flex gap-[12px] py-[18px] px-0" onSubmit={remove}>
+              <form className="organization-settings-form [@media(max-width:760px)]:flex-col flex gap-[12px] py-[18px] px-0" onSubmit={remove}>
                 <label>
                   Type <strong>{service.name}</strong> to confirm
                   <input
@@ -322,7 +322,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
                   />
                 </label>
                 <button
-                  className="supabase-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] text-ink text-[13.5px]! font-semibold! [box-shadow:0_1px_2px_rgba(0,0,0,0.25)] [transition:filter_140ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                  className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] text-ink text-[13.5px]! font-semibold! [box-shadow:0_1px_2px_rgba(0,0,0,0.25)] [transition:filter_140ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                   type="submit"
                   disabled={busy || confirmation !== service.name}
                 >

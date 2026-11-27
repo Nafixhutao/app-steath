@@ -215,7 +215,7 @@ export default function DomainsPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Domains &amp; Networking</h1>
-              <span className="supabase-plan-badge inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">EDGE PROXY</span>
+              <span className="bg-[rgba(62,207,142,0.12)] inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">EDGE PROXY</span>
             </div>
             <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage custom brand domains, SSL/TLS certificates, and platform subdomains for{" "}
@@ -227,7 +227,7 @@ export default function DomainsPage() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+            className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
             onClick={() => void handleRefresh()}
             disabled={loading}
             title="Refresh domains and routing status"
@@ -267,7 +267,7 @@ export default function DomainsPage() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
         aria-label="Domain metrics"
       >
-        <div className="domains-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Custom Domains</span>
             <Globe className="w-4 h-4 text-emerald-400" />
@@ -276,7 +276,7 @@ export default function DomainsPage() {
           <span className="text-[11px] text-zinc-500">Connected brand hostnames</span>
         </div>
 
-        <div className="domains-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Active &amp; SSL Issued</span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
@@ -285,7 +285,7 @@ export default function DomainsPage() {
           <span className="text-[11px] text-zinc-500">HTTPS live on edge proxy</span>
         </div>
 
-        <div className="domains-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Pending Verification</span>
             <RotateCw
@@ -296,7 +296,7 @@ export default function DomainsPage() {
           <span className="text-[11px] text-zinc-500">Awaiting DNS propagation</span>
         </div>
 
-        <div className="domains-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Platform Subdomains</span>
             <Server className="w-4 h-4 text-blue-400" />
@@ -310,27 +310,27 @@ export default function DomainsPage() {
       <div className="flex items-center gap-[8px] border-b border-b-[var(--color-surface-raised)] mb-[20px] overflow-x-auto">
         <button
           type="button"
-          className={`domains-tab-btn ${activeTab === "custom" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium text-[#878492] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:all_120ms_ease] whitespace-nowrap hover:text-ink-console ${activeTab === "custom" ? "is-active" : ""}`}
           onClick={() => setActiveTab("custom")}
         >
           <Globe className="w-4 h-4 mr-2" />
           <span>Custom Domains</span>
-          <span className="domains-tab-pill inline-flex items-center justify-center h-[18px] py-0 px-[6px] rounded-[9999px] text-[10px] font-semibold text-[#a19ea8] ml-[6px]">{customDomains.length}</span>
+          <span className="bg-[#22202a] inline-flex items-center justify-center h-[18px] py-0 px-[6px] rounded-[9999px] text-[10px] font-semibold text-[#a19ea8] ml-[6px]">{customDomains.length}</span>
         </button>
 
         <button
           type="button"
-          className={`domains-tab-btn ${activeTab === "platform" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium text-[#878492] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:all_120ms_ease] whitespace-nowrap hover:text-ink-console ${activeTab === "platform" ? "is-active" : ""}`}
           onClick={() => setActiveTab("platform")}
         >
           <Server className="w-4 h-4 mr-2" />
           <span>Platform Subdomains</span>
-          <span className="domains-tab-pill inline-flex items-center justify-center h-[18px] py-0 px-[6px] rounded-[9999px] text-[10px] font-semibold text-[#a19ea8] ml-[6px]">{services.length}</span>
+          <span className="bg-[#22202a] inline-flex items-center justify-center h-[18px] py-0 px-[6px] rounded-[9999px] text-[10px] font-semibold text-[#a19ea8] ml-[6px]">{services.length}</span>
         </button>
 
         <button
           type="button"
-          className={`domains-tab-btn ${activeTab === "guide" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium text-[#878492] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:all_120ms_ease] whitespace-nowrap hover:text-ink-console ${activeTab === "guide" ? "is-active" : ""}`}
           onClick={() => setActiveTab("guide")}
         >
           <HelpCircle className="w-4 h-4 mr-2" />
@@ -350,7 +350,7 @@ export default function DomainsPage() {
                 placeholder="Search domains by hostname, service, or project..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="domains-search-input w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
+                className="domains-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
               />
               {search && (
                 <button
@@ -368,7 +368,7 @@ export default function DomainsPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="supabase-filter-select h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
+                className="supabase-filter-select bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
                 aria-label="Filter domains by status"
               >
                 <option value="all">All Statuses</option>
@@ -382,17 +382,17 @@ export default function DomainsPage() {
           </div>
 
           {/* Table Card */}
-          <div className="domains-table-card border border-surface-raised rounded-panel overflow-hidden">
+          <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
             {loading && customDomains.length === 0 ? (
               <div className="p-6 space-y-4" aria-label="Loading domains">
                 {[1, 2, 3].map((n) => (
                   <div key={n} className="flex items-center gap-3">
-                    <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-8 h-8 rounded" />
+                    <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-8 h-8 rounded" />
                     <div className="flex-1 space-y-1.5">
-                      <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-48 rounded" />
-                      <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-32 rounded" />
+                      <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-48 rounded" />
+                      <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-32 rounded" />
                     </div>
-                    <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-20 rounded" />
+                    <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-20 rounded" />
                   </div>
                 ))}
               </div>
@@ -503,11 +503,11 @@ export default function DomainsPage() {
 
                         <td>
                           <span
-                            className={`domains-status-pill ${
+                            className={`domains-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                               isActive ? "is-active" : isFailed ? "is-failed" : "is-pending"
                             }`}
                           >
-                            <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
+                            <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                             <span className="capitalize">{dom.status}</span>
                           </span>
                           {dom.lastError ? (
@@ -522,7 +522,7 @@ export default function DomainsPage() {
 
                         <td>
                           <span
-                            className={`domains-cert-pill ${
+                            className={`domains-cert-pill inline-flex items-center h-[22px] py-0 px-[8px] rounded-control-sm text-[11px] font-medium ${
                               isCertIssued
                                 ? "is-issued"
                                 : dom.certificateStatus === "failed"
@@ -550,7 +550,7 @@ export default function DomainsPage() {
                             {!isActive && canManage && (
                               <button
                                 type="button"
-                                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5"
+                                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5"
                                 onClick={() => void handleVerify(dom)}
                                 disabled={isVerifying}
                                 title="Check DNS propagation and route domain"
@@ -564,7 +564,7 @@ export default function DomainsPage() {
 
                             <button
                               type="button"
-                              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2"
+                              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2"
                               onClick={() => setInstructionsDomain(dom)}
                               title="View required DNS TXT & CNAME records"
                             >
@@ -607,7 +607,7 @@ export default function DomainsPage() {
             </div>
           </div>
 
-          <div className="domains-table-card border border-surface-raised rounded-panel overflow-hidden">
+          <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
             {services.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-[56px] px-[20px] text-center">
                 <Server className="w-7 h-7 text-zinc-600 mb-2" />
@@ -673,7 +673,7 @@ export default function DomainsPage() {
                       </td>
 
                       <td>
-                        <span className="domains-cert-pill is-issued">
+                        <span className="domains-cert-pill inline-flex items-center h-[22px] py-0 px-[8px] rounded-control-sm text-[11px] font-medium is-issued">
                           <ShieldCheck className="w-3 h-3 mr-1" />
                           <span>Wildcard Edge TLS</span>
                         </span>
@@ -683,7 +683,7 @@ export default function DomainsPage() {
 
                       <td>
                         <span
-                          className={`domains-status-pill ${
+                          className={`domains-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                             srv.status === "running"
                               ? "is-active"
                               : srv.status === "failed"
@@ -691,7 +691,7 @@ export default function DomainsPage() {
                                 : "is-pending"
                           }`}
                         >
-                          <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
+                          <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                           <span className="capitalize">{srv.status}</span>
                         </span>
                       </td>
@@ -701,7 +701,7 @@ export default function DomainsPage() {
                           href={srv.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5 inline-flex items-center gap-1"
+                          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5 inline-flex items-center gap-1"
                         >
                           <span>Visit</span>
                           <ExternalLink className="w-3 h-3" />
@@ -731,8 +731,8 @@ export default function DomainsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Step 1 */}
-              <div className="domains-step-box border border-[#24222c] rounded-card p-[18px]">
-                <div className="domains-step-number w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">1</div>
+              <div className="bg-[#131217] border border-[#24222c] rounded-card p-[18px]">
+                <div className="bg-[rgba(62,207,142,0.12)] w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">1</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Add Domain to Service</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   Click <strong>&ldquo;Add Custom Domain&rdquo;</strong>, select your target
@@ -741,8 +741,8 @@ export default function DomainsPage() {
               </div>
 
               {/* Step 2 */}
-              <div className="domains-step-box border border-[#24222c] rounded-card p-[18px]">
-                <div className="domains-step-number w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">2</div>
+              <div className="bg-[#131217] border border-[#24222c] rounded-card p-[18px]">
+                <div className="bg-[rgba(62,207,142,0.12)] w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">2</div>
                 <h3 className="text-sm font-semibold text-white mb-1">
                   Publish Ownership TXT Record
                 </h3>
@@ -754,8 +754,8 @@ export default function DomainsPage() {
               </div>
 
               {/* Step 3 */}
-              <div className="domains-step-box border border-[#24222c] rounded-card p-[18px]">
-                <div className="domains-step-number w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">3</div>
+              <div className="bg-[#131217] border border-[#24222c] rounded-card p-[18px]">
+                <div className="bg-[rgba(62,207,142,0.12)] w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">3</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Point CNAME or A Record</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   For subdomains (e.g. <code>api.example.com</code>), add a <strong>CNAME</strong>{" "}
@@ -765,8 +765,8 @@ export default function DomainsPage() {
               </div>
 
               {/* Step 4 */}
-              <div className="domains-step-box border border-[#24222c] rounded-card p-[18px]">
-                <div className="domains-step-number w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">4</div>
+              <div className="bg-[#131217] border border-[#24222c] rounded-card p-[18px]">
+                <div className="bg-[rgba(62,207,142,0.12)] w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">4</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Verify &amp; Auto-SSL</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   Click <strong>&ldquo;Verify DNS&rdquo;</strong>. Once DNS resolves, the edge proxy
@@ -813,14 +813,14 @@ export default function DomainsPage() {
               ) : (
                 <>
                   <div>
-                    <label htmlFor="service-select" className="supabase-modal-label">
+                    <label htmlFor="service-select" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                       Target Service:
                     </label>
                     <select
                       id="service-select"
                       value={selectedServiceId}
                       onChange={(e) => setSelectedServiceId(e.target.value)}
-                      className="supabase-modal-input"
+                      className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                       required
                     >
                       {availableServices.map((srv) => (
@@ -835,7 +835,7 @@ export default function DomainsPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="hostname-input" className="supabase-modal-label">
+                    <label htmlFor="hostname-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                       Domain Name / Hostname:
                     </label>
                     <input
@@ -845,7 +845,7 @@ export default function DomainsPage() {
                       value={newHostname}
                       onChange={(e) => setNewHostname(e.target.value)}
                       required
-                      className="supabase-modal-input font-mono"
+                      className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] font-mono"
                       autoFocus
                     />
                     <span className="text-[11px] text-zinc-500 mt-1 block">
@@ -859,7 +859,7 @@ export default function DomainsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setAddModalOpen(false)}
                 disabled={busyAdd}
               >
@@ -915,10 +915,10 @@ export default function DomainsPage() {
             </p>
 
             {/* Record 1: TXT Record */}
-            <div className="domains-record-box p-[14px] rounded-card border border-surface-raised">
+            <div className="bg-[#131217] p-[14px] rounded-card border border-surface-raised">
               <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="domains-badge-type [font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] text-[10px] font-bold py-[2px] px-[6px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)]">TXT</span>
+                  <span className="bg-[rgba(62,207,142,0.12)] [font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] text-[10px] font-bold py-[2px] px-[6px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)]">TXT</span>
                   <span className="text-xs font-semibold text-white">Ownership Verification</span>
                 </div>
                 <span className="text-[11px] text-zinc-500">Required</span>
@@ -974,10 +974,10 @@ export default function DomainsPage() {
             </div>
 
             {/* Record 2: CNAME or A Record */}
-            <div className="domains-record-box p-[14px] rounded-card border border-surface-raised">
+            <div className="bg-[#131217] p-[14px] rounded-card border border-surface-raised">
               <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="domains-badge-type [font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] text-[10px] font-bold py-[2px] px-[6px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)]">CNAME</span>
+                  <span className="bg-[rgba(62,207,142,0.12)] [font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] text-[10px] font-bold py-[2px] px-[6px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)]">CNAME</span>
                   <span className="text-xs font-semibold text-white">Traffic Routing</span>
                 </div>
                 <span className="text-[11px] text-zinc-500">Required</span>
@@ -1055,7 +1055,7 @@ export default function DomainsPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
               onClick={() => setInstructionsDomain(null)}
             >
               Close
@@ -1119,7 +1119,7 @@ export default function DomainsPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
               onClick={() => setDeletingDomain(null)}
               disabled={busyDelete}
             >
@@ -1127,7 +1127,7 @@ export default function DomainsPage() {
             </button>
             <button
               type="button"
-              className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+              className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
               onClick={() => void handleDeleteDomain()}
               disabled={busyDelete}
             >

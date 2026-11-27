@@ -166,7 +166,7 @@ export default function SettingsPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Organization Settings</h1>
-              <span className="supabase-plan-badge inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">FREE PLAN</span>
+              <span className="bg-[rgba(62,207,142,0.12)] inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">FREE PLAN</span>
             </div>
             <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage organization details, team ownership, and preferences for{" "}
@@ -177,7 +177,7 @@ export default function SettingsPage() {
 
         <div className="flex items-center gap-2">
           <span
-            className={`settings-role-badge ${
+            className={`settings-role-badge inline-flex items-center h-[26px] py-0 px-[10px] rounded-[9999px] text-[11px] font-semibold uppercase tracking-[0.04em] ${
               isOwner ? "is-owner" : activeRoles.includes("admin") ? "is-admin" : "is-member"
             }`}
           >
@@ -300,7 +300,7 @@ export default function SettingsPage() {
       <div className="space-y-6">
         {/* SECTION 1: General Details */}
         <section className="settings-card" aria-labelledby="general-settings-heading">
-          <div className="settings-card-header flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
+          <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
             <div className="flex items-center gap-2.5">
               <Building className="w-4 h-4 text-emerald-400" />
               <h2 id="general-settings-heading" className="text-sm font-semibold text-white">
@@ -327,7 +327,7 @@ export default function SettingsPage() {
                     onChange={(e) => setName(e.target.value)}
                     maxLength={80}
                     required
-                    className="settings-input"
+                    className="settings-input w-full h-[38px] py-0 px-[14px] rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none [transition:border-color_150ms_ease]"
                     placeholder="e.g. Acme Corp"
                   />
                   <p className="text-[11px] text-zinc-400 mt-1.5">
@@ -359,7 +359,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="settings-card-footer flex items-center justify-between flex-wrap gap-[12px] py-[14px] px-[20px] border-t border-t-surface-raised">
+              <div className="bg-[#131217] flex items-center justify-between flex-wrap gap-[12px] py-[14px] px-[20px] border-t border-t-surface-raised">
                 <span className="text-xs text-zinc-400">
                   Name changes take effect immediately across all dashboard projects.
                 </span>
@@ -398,14 +398,14 @@ export default function SettingsPage() {
 
         {/* SECTION 2: Plan & Entitlements */}
         <section className="settings-card" aria-labelledby="plan-settings-heading">
-          <div className="settings-card-header flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
+          <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
             <div className="flex items-center gap-2.5">
               <CreditCard className="w-4 h-4 text-cyan-400" />
               <h2 id="plan-settings-heading" className="text-sm font-semibold text-white">
                 Subscription &amp; Entitlements
               </h2>
             </div>
-            <span className="supabase-plan-badge inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">FREE TIER</span>
+            <span className="bg-[rgba(62,207,142,0.12)] inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">FREE TIER</span>
           </div>
 
           <div className="p-[20px]">
@@ -415,43 +415,43 @@ export default function SettingsPage() {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Up to {QUOTAS.projectsPerOrganization} Projects</span>
               </div>
-              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>
                   Up to {QUOTAS.servicesPerOrganization} Docker Services (
                   {QUOTAS.servicesPerProject} per Project)
                 </span>
               </div>
-              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Managed databases</span>
               </div>
-              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Automated Daily Backups</span>
               </div>
-              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Custom Domain TLS Routing</span>
               </div>
-              <div className="settings-feature-pill flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Caddy Zero-Downtime Edge</span>
               </div>
             </div>
           </div>
 
-          <div className="settings-card-footer flex items-center justify-between flex-wrap gap-[12px] py-[14px] px-[20px] border-t border-t-surface-raised">
+          <div className="bg-[#131217] flex items-center justify-between flex-wrap gap-[12px] py-[14px] px-[20px] border-t border-t-surface-raised">
             <span className="text-xs text-zinc-400">
               Need higher limits or dedicated node clusters?
             </span>
             <Link
               href="/dashboard/usage"
-              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs inline-flex items-center gap-1.5"
+              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs inline-flex items-center gap-1.5"
             >
               <span>View Usage Meters</span>
               <ArrowRight className="w-3 h-3" />
@@ -462,7 +462,7 @@ export default function SettingsPage() {
         {/* SECTION 3: Danger Zone */}
         {isOwner ? (
           <section className="settings-card is-danger" aria-labelledby="danger-heading">
-            <div className="settings-card-header flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
+            <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
               <div className="flex items-center gap-2.5 text-rose-400">
                 <AlertTriangle className="w-4 h-4" />
                 <h2 id="danger-heading" className="text-sm font-semibold text-rose-400">
@@ -498,14 +498,14 @@ export default function SettingsPage() {
                     autoComplete="off"
                     spellCheck="false"
                     required
-                    className="settings-input border-rose-900/50 focus:border-rose-500"
+                    className="settings-input w-full h-[38px] py-0 px-[14px] rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none [transition:border-color_150ms_ease] border-rose-900/50 focus:border-rose-500"
                   />
                 </div>
 
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                    className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                     disabled={busy || confirmation.trim() !== organization?.name}
                   >
                     {busy ? (
@@ -526,7 +526,7 @@ export default function SettingsPage() {
           </section>
         ) : (
           <section className="settings-card is-danger" aria-labelledby="leave-heading">
-            <div className="settings-card-header flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
+            <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
               <div className="flex items-center gap-2.5 text-rose-400">
                 <LogOut className="w-4 h-4" />
                 <h2 id="leave-heading" className="text-sm font-semibold text-rose-400">
@@ -545,7 +545,7 @@ export default function SettingsPage() {
 
               <button
                 type="button"
-                className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                 onClick={() => void handleLeaveOrganization()}
                 disabled={busy}
               >

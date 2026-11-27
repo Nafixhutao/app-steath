@@ -284,13 +284,13 @@ export function DatabasePanel({
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="supabase-project-skeleton-card flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px] h-44" aria-hidden="true">
-          <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-5 w-48 rounded mb-4" />
+        <div className="bg-surface flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px] h-44" aria-hidden="true">
+          <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-5 w-48 rounded mb-4" />
           <div className="grid grid-cols-4 gap-4">
-            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
-            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
-            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
-            <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
           </div>
         </div>
       </div>
@@ -314,8 +314,8 @@ export function DatabasePanel({
 
       {!database ? (
         /* Empty State */
-        <div className="project-empty-card flex flex-col items-center justify-center py-[56px] px-[24px] rounded-card border border-dashed border-[#262430] text-center">
-          <div className="project-empty-icon-wrap flex items-center justify-center w-[48px] h-[48px] rounded-card-lg" aria-hidden="true">
+        <div className="bg-surface flex flex-col items-center justify-center py-[56px] px-[24px] rounded-card border border-dashed border-[#262430] text-center">
+          <div className="bg-[#211f29] flex items-center justify-center w-[48px] h-[48px] rounded-card-lg" aria-hidden="true">
             <Database className="w-8 h-8 text-emerald-400" />
           </div>
           <h3 className="text-base font-semibold text-white mt-3">No Database in this Project</h3>
@@ -338,7 +338,7 @@ export function DatabasePanel({
                       type="button"
                       role="radio"
                       aria-checked={selected}
-                      className={`db-engine-option${selected ? " is-selected" : ""}`}
+                      className={`db-engine-option flex flex-col gap-[4px] py-[12px] px-[14px] border border-[#2b2934] rounded-card bg-[#131217] text-ink-muted cursor-pointer [transition:border-color_0.15s_ease,background-color_0.15s_ease] disabled:cursor-not-allowed${selected ? " is-selected" : ""}`}
                       onClick={() => setEngine(choice.id)}
                       disabled={busy}
                     >
@@ -382,7 +382,7 @@ export function DatabasePanel({
           <div className="p-[20px] rounded-card bg-surface border border-[var(--color-surface-raised)]">
             <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[16px]">
               <div className="flex items-center gap-2.5">
-                <div className="project-service-icon flex items-center justify-center w-[32px] h-[32px] rounded-control shrink-0" aria-hidden="true">
+                <div className="bg-[#211f29] flex items-center justify-center w-[32px] h-[32px] rounded-control shrink-0" aria-hidden="true">
                   <Database className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
@@ -397,15 +397,15 @@ export function DatabasePanel({
 
               <div className="flex items-center gap-2.5">
                 <span
-                  className={`project-service-status-pill ${
+                  className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border border-[#2a2835] bg-[#1c1a22] text-[#8e8c99] ${
                     database.status === "running" ? "is-live" : "is-building"
                   }`}
                 >
-                  <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
+                  <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                   {databaseStatusLabel(database.status)}
                 </span>
                 <span
-                  className={`project-health-badge ${
+                  className={`project-health-badge text-[11px] font-semibold py-[2px] px-[7px] rounded-control-sm ${
                     database.healthy ? "is-healthy" : "is-unhealthy"
                   }`}
                 >
@@ -418,9 +418,9 @@ export function DatabasePanel({
               <div className="flex flex-col">
                 <span className="text-[11.5px] text-[#716f7c] mb-[3px]">Disk Storage</span>
                 <span className="text-[13px] font-semibold text-ink">{usageLabel(database)}</span>
-                <div className="supabase-usage-bar-track w-full h-[4px] rounded-[99px] overflow-hidden mt-1.5">
+                <div className="bg-[#211f2a] w-full h-[4px] rounded-[99px] overflow-hidden mt-1.5">
                   <div
-                    className="supabase-usage-bar-fill h-full rounded-[99px] [transition:width_300ms_ease]"
+                    className="bg-accent h-full rounded-[99px] [transition:width_300ms_ease]"
                     style={{
                       width: `${Math.min(
                         100,
@@ -453,7 +453,7 @@ export function DatabasePanel({
           </div>
 
           {/* Connection URI Card */}
-          <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+          <div className="bg-surface rounded-card border border-surface-raised overflow-hidden">
             <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
               <div>
                 <h3 className="text-[14.5px] font-semibold text-ink m-0">Private Connection String</h3>
@@ -467,7 +467,7 @@ export function DatabasePanel({
               {canManage && (
                 <button
                   type="button"
-                  className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs"
+                  className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs"
                   onClick={() => void rotate()}
                   disabled={busy}
                 >
@@ -479,7 +479,7 @@ export function DatabasePanel({
 
             <div className="p-5 space-y-4">
               {database.connectionString ? (
-                <div className="project-code-box flex items-center justify-between gap-[10px] py-[10px] px-[14px] rounded-control border border-[#232129]">
+                <div className="bg-[#141318] flex items-center justify-between gap-[10px] py-[10px] px-[14px] rounded-control border border-[#232129]">
                   <div className="flex-1 font-mono text-xs text-zinc-300 overflow-x-auto select-all">
                     {revealPrivateUri
                       ? database.connectionString
@@ -488,7 +488,7 @@ export function DatabasePanel({
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
                       type="button"
-                      className="project-code-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
+                      className="bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
                       onClick={() => setRevealPrivateUri((prev) => !prev)}
                       title={revealPrivateUri ? "Hide password" : "Show password"}
                       aria-label="Toggle password visibility"
@@ -501,7 +501,7 @@ export function DatabasePanel({
                     </button>
                     <button
                       type="button"
-                      className="project-code-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
+                      className="bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
                       onClick={() => copyText(database.connectionString ?? "", "private")}
                       title="Copy connection string"
                       aria-label="Copy connection string"
@@ -521,7 +521,7 @@ export function DatabasePanel({
               )}
 
               {database.engine === "postgres" ? (
-                <div className="db-cred-card flex flex-col rounded-card border border-[#232129] overflow-hidden">
+                <div className="bg-[#141318] flex flex-col rounded-card border border-[#232129] overflow-hidden">
                   <CredentialRow
                     label="Host"
                     value={databaseHost}
@@ -550,10 +550,10 @@ export function DatabasePanel({
                       copied={copiedCredential === "Password"}
                     />
                   ) : (
-                    <div className="db-cred-row">
+                    <div className="db-cred-row [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
                       <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Password</span>
                       <div className="flex items-start gap-[10px] min-w-0">
-                        <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] db-cred-muted [font-family:inherit]">Owner or admin only</span>
+                        <span className="db-cred-value text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] text-[#716f7c] [font-family:inherit]">Owner or admin only</span>
                       </div>
                     </div>
                   )}
@@ -571,7 +571,7 @@ export function DatabasePanel({
 
           {/* phpMyAdmin Card (MySQL only) */}
           {database.phpMyAdmin.enabled ? (
-            <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+            <div className="bg-surface rounded-card border border-surface-raised overflow-hidden">
               <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
                 <div>
                   <div className="flex items-center gap-2">
@@ -584,7 +584,7 @@ export function DatabasePanel({
                   </p>
                 </div>
                 <span
-                  className={`project-proxy-badge ${
+                  className={`project-proxy-badge inline-flex items-center text-[11px] font-semibold py-[3px] px-[8px] rounded-control-sm ${
                     database.phpMyAdmin.ready ? "is-enabled" : "is-disabled"
                   }`}
                 >
@@ -617,7 +617,7 @@ export function DatabasePanel({
                       </p>
                     ) : null}
 
-                    <div className="db-cred-card flex flex-col rounded-card border border-[#232129] overflow-hidden">
+                    <div className="bg-[#141318] flex flex-col rounded-card border border-[#232129] overflow-hidden">
                       <CredentialRow
                         label="Host"
                         value={databaseHost}
@@ -646,10 +646,10 @@ export function DatabasePanel({
                           copied={copiedCredential === "Password"}
                         />
                       ) : (
-                        <div className="db-cred-row">
+                        <div className="db-cred-row [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
                           <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Password</span>
                           <div className="flex items-start gap-[10px] min-w-0">
-                            <span className="db-cred-value min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] db-cred-muted [font-family:inherit]">
+                            <span className="db-cred-value text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] text-[#716f7c] [font-family:inherit]">
                               Owner or admin only
                             </span>
                           </div>
@@ -674,7 +674,7 @@ export function DatabasePanel({
 
           {/* Public Proxy Card (PostgreSQL only) */}
           {database.engine === "postgres" ? (
-            <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+            <div className="bg-surface rounded-card border border-surface-raised overflow-hidden">
               <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
                 <div>
                   <div className="flex items-center gap-2">
@@ -689,7 +689,7 @@ export function DatabasePanel({
                 </div>
 
                 <span
-                  className={`project-proxy-badge ${
+                  className={`project-proxy-badge inline-flex items-center text-[11px] font-semibold py-[3px] px-[8px] rounded-control-sm ${
                     database.proxy.enabled ? "is-enabled" : "is-disabled"
                   }`}
                 >
@@ -702,7 +702,7 @@ export function DatabasePanel({
                 {canManage ? (
                   <>
                     <div>
-                      <label htmlFor="proxy-cidrs-input" className="project-form-label">
+                      <label htmlFor="proxy-cidrs-input" className="block text-[12.5px] font-medium text-[#c9c7d2] mb-[6px]">
                         Allowlisted CIDRs (one per line, e.g. <code>0.0.0.0/0</code> or{" "}
                         <code>198.51.100.1/32</code>)
                       </label>
@@ -713,7 +713,7 @@ export function DatabasePanel({
                         placeholder="0.0.0.0/0"
                         rows={3}
                         spellCheck={false}
-                        className="project-form-input w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] font-mono text-xs"
+                        className="project-form-input bg-[#1a1920] w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] font-mono text-xs"
                       />
                     </div>
 
@@ -730,7 +730,7 @@ export function DatabasePanel({
                       {database.proxy.enabled && (
                         <button
                           type="button"
-                          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-rose-400 hover:text-rose-300"
+                          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-rose-400 hover:text-rose-300"
                           onClick={() => void disableProxy()}
                           disabled={busy}
                         >
@@ -741,10 +741,10 @@ export function DatabasePanel({
 
                     {database.proxy.enabled && database.proxy.connectionString && (
                       <div className="pt-2">
-                        <span className="project-form-label block mb-1.5">
+                        <span className="block text-[12.5px] font-medium text-[#c9c7d2] mb-[6px] block mb-1.5">
                           Public Connection URI
                         </span>
-                        <div className="project-code-box flex items-center justify-between gap-[10px] py-[10px] px-[14px] rounded-control border border-[#232129]">
+                        <div className="bg-[#141318] flex items-center justify-between gap-[10px] py-[10px] px-[14px] rounded-control border border-[#232129]">
                           <div className="flex-1 font-mono text-xs text-zinc-300 overflow-x-auto select-all">
                             {revealPublicUri
                               ? database.proxy.connectionString
@@ -753,7 +753,7 @@ export function DatabasePanel({
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             <button
                               type="button"
-                              className="project-code-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
+                              className="bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
                               onClick={() => setRevealPublicUri((prev) => !prev)}
                               title={revealPublicUri ? "Hide password" : "Show password"}
                               aria-label="Toggle public password visibility"
@@ -766,7 +766,7 @@ export function DatabasePanel({
                             </button>
                             <button
                               type="button"
-                              className="project-code-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
+                              className="bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
                               onClick={() =>
                                 copyText(database.proxy.connectionString ?? "", "public")
                               }
@@ -793,7 +793,7 @@ export function DatabasePanel({
               </div>
             </div>
           ) : (
-            <div className="project-settings-card rounded-card border border-surface-raised overflow-hidden">
+            <div className="bg-surface rounded-card border border-surface-raised overflow-hidden">
               <div className="flex items-center justify-between py-[16px] px-[20px] border-b border-b-[#23212a]">
                 <div>
                   <div className="flex items-center gap-2">
@@ -811,8 +811,8 @@ export function DatabasePanel({
 
           {/* Delete Database Danger Zone */}
           {canManage && (
-            <div className="project-danger-card rounded-card border border-[rgba(244,63,94,0.25)] overflow-hidden">
-              <div className="project-danger-card-head py-[16px] px-[20px] border-b border-b-[rgba(244,63,94,0.15)]">
+            <div className="bg-surface rounded-card border border-[rgba(244,63,94,0.25)] overflow-hidden">
+              <div className="bg-[rgba(244,63,94,0.03)] py-[16px] px-[20px] border-b border-b-[rgba(244,63,94,0.15)]">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-rose-400" />
                   <h3 className="text-[14.5px] font-semibold text-[var(--color-danger)] m-0">Delete Database</h3>
@@ -826,7 +826,7 @@ export function DatabasePanel({
 
               <form onSubmit={remove} className="p-[20px]">
                 <div className="max-w-md">
-                  <label htmlFor="delete-db-confirm-input" className="project-form-label">
+                  <label htmlFor="delete-db-confirm-input" className="block text-[12.5px] font-medium text-[#c9c7d2] mb-[6px]">
                     Type <strong>{projectName}</strong> to confirm deletion:
                   </label>
                   <input
@@ -836,14 +836,14 @@ export function DatabasePanel({
                     placeholder={projectName}
                     autoComplete="off"
                     required
-                    className="project-form-input w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
+                    className="project-form-input bg-[#1a1920] w-full h-[38px] py-0 px-[12px] rounded-control text-ink text-[13px]! outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
                   />
                 </div>
 
-                <div className="project-danger-card-footer flex items-center justify-end py-[14px] px-[20px] border-t border-t-[rgba(244,63,94,0.15)] mt-[20px]">
+                <div className="bg-[#141318] flex items-center justify-end py-[14px] px-[20px] border-t border-t-[rgba(244,63,94,0.15)] mt-[20px]">
                   <button
                     type="submit"
-                    className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                    className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                     disabled={busy || confirmation !== projectName}
                   >
                     {busy ? "Deleting..." : "Delete Database"}

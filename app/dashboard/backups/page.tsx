@@ -159,7 +159,7 @@ export default function BackupsPage() {
 
         <button
           type="button"
-          className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
           onClick={() => void board.refresh()}
           disabled={loading}
           title="Refresh backup records"
@@ -193,7 +193,7 @@ export default function BackupsPage() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
         aria-label="Backup metrics"
       >
-        <div className="backups-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Total Backups</span>
             <Archive className="w-4 h-4 text-emerald-400" />
@@ -202,7 +202,7 @@ export default function BackupsPage() {
           <span className="text-[11px] text-zinc-500">Retained for 7 days</span>
         </div>
 
-        <div className="backups-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Storage Backend</span>
             {list?.storageProvider === "s3" ? (
@@ -221,7 +221,7 @@ export default function BackupsPage() {
           </span>
         </div>
 
-        <div className="backups-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Backup Schedule</span>
             <Clock className="w-4 h-4 text-zinc-400" />
@@ -230,7 +230,7 @@ export default function BackupsPage() {
           <span className="text-[11px] text-zinc-500">Automated cron worker</span>
         </div>
 
-        <div className="backups-metric-card border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Restores in Flight</span>
             <RotateCcw
@@ -255,7 +255,7 @@ export default function BackupsPage() {
             placeholder="Search backups by target or project..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="backups-search-input w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
+            className="backups-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
           />
           {search ? (
             <button
@@ -273,7 +273,7 @@ export default function BackupsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="supabase-filter-select h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
+            className="supabase-filter-select bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
             aria-label="Filter by target type"
           >
             <option value="all">All Targets</option>
@@ -281,22 +281,22 @@ export default function BackupsPage() {
             <option value="volume">Volumes</option>
           </select>
 
-          <span className="backups-count-pill inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium border border-[#282632] text-[#878492]">{filteredBackups.length} Snapshots</span>
+          <span className="bg-[#1d1b22] inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium border border-[#282632] text-[#878492]">{filteredBackups.length} Snapshots</span>
         </div>
       </div>
 
       {/* Backups Table Card */}
-      <div className="backups-table-card border border-surface-raised rounded-panel overflow-hidden">
+      <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
         {loading ? (
           <div className="p-6 space-y-4" aria-label="Loading backups">
             {[1, 2, 3].map((n) => (
               <div key={n} className="flex items-center gap-3">
-                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-8 h-8 rounded flex-shrink-0" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-8 h-8 rounded flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
-                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded" />
                 </div>
-                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-16 rounded" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-16 rounded" />
               </div>
             ))}
           </div>
@@ -380,7 +380,7 @@ export default function BackupsPage() {
 
                     <td>
                       <span
-                        className={`backups-status-pill ${
+                        className={`backups-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                           isSuccess
                             ? "is-completed"
                             : backup.status === "failed"
@@ -388,7 +388,7 @@ export default function BackupsPage() {
                               : "is-pending"
                         }`}
                       >
-                        <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
+                        <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                         <span className="capitalize">{backup.status}</span>
                       </span>
                       {backup.errorMessage ? (
@@ -403,7 +403,7 @@ export default function BackupsPage() {
                         {restorable && isSuccess ? (
                           <button
                             type="button"
-                            className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5"
+                            className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5"
                             onClick={() => beginRestore(backup)}
                             disabled={Boolean(active) || Boolean(target)}
                           >
@@ -431,10 +431,10 @@ export default function BackupsPage() {
             <h2 id="recent-restores-heading" className="text-sm font-semibold text-white">
               Recent Restores
             </h2>
-            <span className="backups-count-pill inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium border border-[#282632] text-[#878492]">{restores.restores.length}</span>
+            <span className="bg-[#1d1b22] inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium border border-[#282632] text-[#878492]">{restores.restores.length}</span>
           </div>
 
-          <div className="backups-table-card border border-surface-raised rounded-panel overflow-hidden">
+          <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
             <table className="backups-table w-full text-left">
               <thead>
                 <tr>
@@ -464,11 +464,11 @@ export default function BackupsPage() {
                       </td>
                       <td>
                         <span
-                          className={`backups-status-pill ${
+                          className={`backups-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                             isDone ? "is-completed" : isFail ? "is-failed" : "is-pending"
                           }`}
                         >
-                          <span className="project-status-dot w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
+                          <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                           <span className="capitalize">{restore.status}</span>
                         </span>
                         {restore.errorMessage ? (
@@ -514,7 +514,7 @@ export default function BackupsPage() {
               </div>
 
               <div>
-                <label htmlFor="confirm-restore-input" className="supabase-modal-label">
+                <label htmlFor="confirm-restore-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Type <strong>{target.targetName}</strong> to confirm:
                 </label>
                 <input
@@ -525,7 +525,7 @@ export default function BackupsPage() {
                   autoComplete="off"
                   spellCheck="false"
                   required
-                  className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
                   autoFocus
                 />
               </div>
@@ -534,7 +534,7 @@ export default function BackupsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={cancelRestore}
                 disabled={submitting}
               >
@@ -542,7 +542,7 @@ export default function BackupsPage() {
               </button>
               <button
                 type="submit"
-                className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
                 disabled={submitting || confirmation.trim() !== target.targetName}
               >
                 {submitting ? (

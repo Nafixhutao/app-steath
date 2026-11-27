@@ -11,7 +11,7 @@ export type AuthFormMode = "signin" | "signup";
 
 function GoogleMark() {
   return (
-    <svg viewBox="0 0 24 24" className="provider-mark w-[16px] h-[16px]" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="flex-none w-[16px] h-[16px]" aria-hidden="true">
       <path
         fill="#4285F4"
         d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.57 5.57 0 0 1-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
@@ -34,7 +34,7 @@ function GoogleMark() {
 
 function GitHubMark() {
   return (
-    <svg viewBox="0 0 24 24" className="provider-mark w-[16px] h-[16px] github-mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="flex-none w-[16px] h-[16px] github-mark" aria-hidden="true">
       <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12 0 1.53-.01 2.76-.01 3.14 0 .3.2.67.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z" />
     </svg>
   );
@@ -195,13 +195,13 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
   }
 
   return (
-    <main className="auth-page min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
-      <a className="skip-link fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#login-content">
+    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+      <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#login-content">
         Skip to content
       </a>
 
       <div id="login-content" className="login-content">
-        <div className="brand-mark w-[56px] mt-0 mb-[24px] mx-auto">
+        <div className="brand-mark flex justify-center h-[56px] w-[56px] mt-0 mb-[24px] mx-auto">
           <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority />
         </div>
 
@@ -214,7 +214,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
         <div className="grid grid-cols-2 gap-[10px] mt-[24px]">
           <button
             type="button"
-            className="secondary-button flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
+            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
             disabled={!socialProviders?.google || socialBusy === "google"}
             onClick={() => socialSignIn("google")}
           >
@@ -224,7 +224,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           </button>
           <button
             type="button"
-            className="secondary-button flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
+            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
             disabled={!socialProviders?.github || socialBusy === "github"}
             onClick={() => socialSignIn("github")}
           >
@@ -234,7 +234,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           </button>
         </div>
 
-        <button type="button" className="secondary-button flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99] w-full mt-[10px]" disabled>
+        <button type="button" className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99] w-full mt-[10px]" disabled>
           <LockMark />
           Continue with SSO
           <span className="provider-soon text-[10px] font-medium text-[#8b8b92] tracking-[0.02em]">Coming soon</span>
@@ -293,7 +293,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
               />
               <button
                 type="button"
-                className="password-toggle absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#9a9aa2] cursor-pointer hover:text-ink"
+                className="password-toggle focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#9a9aa2] cursor-pointer hover:text-ink"
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}
@@ -305,7 +305,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           </div>
 
           {!isSignUp && (
-            <label className="remember-row items-center gap-[10px] mt-[24px] cursor-pointer select-none">
+            <label className="remember-row text-ink text-[13.5px] leading-[16px] items-center gap-[10px] mt-[24px] cursor-pointer select-none">
               <input
                 className="sr-only"
                 type="checkbox"
@@ -320,7 +320,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
             </label>
           )}
 
-          <button type="submit" className="submit-button w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
+          <button type="submit" className="submit-button disabled:cursor-not-allowed disabled:opacity-[0.65] focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] cursor-pointer text-[14px] font-semibold hover:[filter:brightness(1.1)] w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
             {isLoading ? "Please wait..." : isSignUp ? "Sign up" : "Sign in"}
           </button>
         </form>

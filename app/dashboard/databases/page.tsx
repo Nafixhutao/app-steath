@@ -165,7 +165,7 @@ export default function DatabasesPage() {
   return (
     <div className="dashboard-content max-w-[1200px]">
       {/* Header */}
-      <header className="db-heading flex items-start justify-between gap-[24px] flex-wrap pb-[24px] border-b border-b-[#282631]">
+      <header className="db-heading [@media(max-width:640px)]:flex-col [@media(max-width:640px)]:gap-[16px] flex items-start justify-between gap-[24px] flex-wrap pb-[24px] border-b border-b-[#282631]">
         <div className="flex-1 min-w-[280px]">
           <div className="flex items-center gap-[14px]">
             <div className="flex items-center justify-center w-[44px] h-[44px] rounded-card-lg [background:linear-gradient(135deg,rgba(99,102,241,0.16)_0%,rgba(62,207,142,0.08)_100%)] border border-[rgba(99,102,241,0.28)] text-accent shrink-0" aria-hidden="true">
@@ -181,14 +181,14 @@ export default function DatabasesPage() {
             isolation, and automated daily backups.
           </p>
         </div>
-        <div className="db-actions flex items-center gap-[10px] flex-wrap">
+        <div className="db-actions [@media(max-width:640px)]:flex-col flex items-center gap-[10px] flex-wrap">
           <span className="db-quota inline-flex items-center gap-[8px] py-[8px] px-[14px] border border-[#282631] rounded-card bg-[#15141a] text-[#9e9aa7] [font-family:var(--font-mono)] text-[12px] leading-[20px] whitespace-nowrap" title="Limit per project in this organization">
             <Server className="w-[14px] h-[14px] text-accent" aria-hidden="true" />
             <span>
               {databasesList.length} of {QUOTAS.databasesPerProject} per Project
             </span>
           </span>
-          <Link href="/dashboard/projects" className="db-btn active:translate-y-[1px] db-btn-primary border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none disabled:[box-shadow:none]">
+          <Link href="/dashboard/projects" className="db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] db-btn-primary text-ink hover:text-ink inline-flex items-center justify-center gap-[8px] py-[8px] px-[16px] rounded-card text-[13.5px] font-medium cursor-pointer whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:text-ink focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] disabled:cursor-not-allowed border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none disabled:[box-shadow:none]">
             <Plus className="w-[15px] h-[15px]" aria-hidden="true" />
             <span>New Database</span>
           </Link>
@@ -204,7 +204,7 @@ export default function DatabasesPage() {
 
       {/* Warning banner for disk usage threshold */}
       {fullDatabase ? (
-        <div className="db-banner flex items-center justify-between gap-[16px] flex-wrap mt-[20px] py-[14px] px-[18px] border border-[rgba(245,158,11,0.35)] rounded-panel [background:linear-gradient(90deg,rgba(245,158,11,0.08)_0%,rgba(21,20,26,0.95)_100%)] [box-shadow:0_4px_16px_rgba(245,158,11,0.08)]" role="region" aria-label="Storage warning">
+        <div className="db-banner [@media(max-width:640px)]:flex-col flex items-center justify-between gap-[16px] flex-wrap mt-[20px] py-[14px] px-[18px] border border-[rgba(245,158,11,0.35)] rounded-panel [background:linear-gradient(90deg,rgba(245,158,11,0.08)_0%,rgba(21,20,26,0.95)_100%)] [box-shadow:0_4px_16px_rgba(245,158,11,0.08)]" role="region" aria-label="Storage warning">
           <div className="flex items-start gap-[12px] min-w-[240px] flex-1">
             <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[rgba(245,158,11,0.15)] text-[#f59e0b] shrink-0 mt-[2px]" aria-hidden="true">
               <AlertTriangle className="w-[18px] h-[18px]" />
@@ -222,7 +222,7 @@ export default function DatabasesPage() {
           </div>
           <Link
             href={`/dashboard/projects/${fullDatabase.database.projectId}`}
-            className="db-btn-warning db-btn active:translate-y-[1px] border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.12)] hover:bg-[rgba(245,158,11,0.2)] hover:border-[rgba(245,158,11,0.6)]"
+            className="text-[#fcd34d] hover:text-ink db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.12)] hover:bg-[rgba(245,158,11,0.2)] hover:border-[rgba(245,158,11,0.6)]"
           >
             <span>Expand Storage</span>
             <ArrowUpRight className="w-[15px] h-[15px]" aria-hidden="true" />
@@ -279,7 +279,7 @@ export default function DatabasesPage() {
       {/* Search and Filters toolbar (only when databases exist) */}
       {databasesList.length > 0 && (
         <div className="flex items-center justify-between gap-[14px] flex-wrap mt-[24px]">
-          <div className="db-chip-group flex items-center gap-[8px] flex-wrap" role="group" aria-label="Filter databases by status">
+          <div className="db-chip-group [@media(max-width:640px)]:overflow-x-auto [@media(max-width:640px)]:pb-[4px] flex items-center gap-[8px] flex-wrap" role="group" aria-label="Filter databases by status">
             {STATUS_FILTERS.map((filter) => {
               const count =
                 filter.value === "all" ? databasesList.length : (counts.get(filter.value) ?? 0);
@@ -288,13 +288,13 @@ export default function DatabasesPage() {
                 <button
                   key={filter.value}
                   type="button"
-                  className="db-chip inline-flex items-center gap-[8px] min-h-[40px] py-[8px] px-[14px] border border-[#282631] rounded-card bg-[#15141b] text-[#9e9aa7] cursor-pointer [transition:background-color_150ms_ease,border-color_150ms_ease,color_150ms_ease,box-shadow_150ms_ease] hover:bg-[#1b1922] hover:border-[#393645] hover:text-ink"
+                  className="db-chip [@media(max-width:640px)]:shrink-0 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center gap-[8px] min-h-[40px] py-[8px] px-[14px] border border-[#282631] rounded-card bg-[#15141b] text-[#9e9aa7] cursor-pointer [transition:background-color_150ms_ease,border-color_150ms_ease,color_150ms_ease,box-shadow_150ms_ease] hover:bg-[#1b1922] hover:border-[#393645] hover:text-ink"
                   aria-pressed={statusFilter === filter.value}
                   onClick={() => setStatusFilter(filter.value)}
                 >
                   {filter.value !== "all" && (
                     <span
-                      className={`db-chip-dot ${STATUS_DOT[filter.value as DatabaseStatus]}`}
+                      className={`w-[7px] h-[7px] rounded-[50%] shrink-0 ${STATUS_DOT[filter.value as DatabaseStatus]}`}
                       aria-hidden="true"
                     />
                   )}
@@ -305,7 +305,7 @@ export default function DatabasesPage() {
             })}
           </div>
 
-          <div className="db-search relative flex-1 min-w-[240px] max-w-[320px]">
+          <div className="db-search [@media(max-width:640px)]:max-w-[100%] [@media(max-width:640px)]:w-full relative flex-1 min-w-[240px] max-w-[320px]">
             <label htmlFor="db-search-input" className="sr-only">
               Search databases by name, project, or user
             </label>
@@ -356,7 +356,7 @@ export default function DatabasesPage() {
             scheduled backups.
           </p>
 
-          <Link href="/dashboard/projects" className="db-btn active:translate-y-[1px] db-btn-primary border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none disabled:[box-shadow:none] mx-auto">
+          <Link href="/dashboard/projects" className="db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] db-btn-primary text-ink hover:text-ink inline-flex items-center justify-center gap-[8px] py-[8px] px-[16px] rounded-card text-[13.5px] font-medium cursor-pointer whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:text-ink focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] disabled:cursor-not-allowed border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none disabled:[box-shadow:none] mx-auto">
             <Plus className="w-[15px] h-[15px]" aria-hidden="true" />
             <span>Go to Projects to Create Database</span>
           </Link>
@@ -404,7 +404,7 @@ export default function DatabasesPage() {
           </p>
           <button
             type="button"
-            className="db-btn active:translate-y-[1px] db-btn-sm border border-[#2a2834] bg-[#181720] text-[#f3f2f5] hover:border-[#3b3749] hover:bg-[#201e2a]"
+            className="db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] min-h-[34px] py-[6px] px-[14px] text-[13px] border border-[#2a2834] bg-[#181720] text-[#f3f2f5] hover:border-[#3b3749] hover:bg-[#201e2a]"
             onClick={() => {
               setSearch("");
               setStatusFilter("all");
@@ -416,7 +416,7 @@ export default function DatabasesPage() {
       ) : (
         /* Databases Table */
         <div className="db-table-container mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
-          <table className="db-table w-full min-w-[820px] text-left">
+          <table className="db-table [@media(max-width:640px)]:min-w-[620px] w-full min-w-[820px] text-left">
             <thead>
               <tr>
                 <th scope="col">Database & User</th>
@@ -467,7 +467,7 @@ export default function DatabasesPage() {
                     <td>
                       <Link
                         href={`/dashboard/projects/${database.projectId}`}
-                        className="db-project-link inline-flex items-center gap-[7px] no-underline font-medium [transition:color_120ms_ease] hover:underline focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px]"
+                        className="text-[#a5b4fc] hover:text-[#c7d2fe] inline-flex items-center gap-[7px] no-underline font-medium [transition:color_120ms_ease] hover:underline focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px]"
                       >
                         <Layers className="w-[14px] h-[14px] text-accent" aria-hidden="true" />
                         <span>{database.projectName}</span>
@@ -475,9 +475,9 @@ export default function DatabasesPage() {
                     </td>
 
                     <td>
-                      <span className={`db-status-pill ${STATUS_DOT[database.status]}`}>
+                      <span className={`db-status-pill inline-flex items-center gap-[8px] py-[3px] px-[10px] rounded-[14px] text-[12px] font-medium whitespace-nowrap ${STATUS_DOT[database.status]}`}>
                         <span className="relative inline-flex" aria-hidden="true">
-                          <span className={`db-dot ${STATUS_DOT[database.status]}`} />
+                          <span className={`db-dot w-[7px] h-[7px] rounded-[50%] shrink-0 ${STATUS_DOT[database.status]}`} />
                         </span>
                         <span className="db-status-text">
                           {databaseStatusLabel(database.status)}
@@ -507,7 +507,7 @@ export default function DatabasesPage() {
                             aria-valuemax={100}
                           >
                             <div
-                              className={`db-disk-fill ${diskFillClass(percent)}`}
+                              className={`db-disk-fill h-full rounded-control [transition:width_200ms_ease] ${diskFillClass(percent)}`}
                               style={{ width: `${percent}%` }}
                             />
                           </div>
@@ -523,7 +523,7 @@ export default function DatabasesPage() {
                     <td className="text-right">
                       <Link
                         href={`/dashboard/projects/${database.projectId}`}
-                        className="db-btn-manage db-btn active:translate-y-[1px] bg-[#1c1a24] border border-[#2d2a3a] hover:bg-[#252230] hover:border-[#433e54]"
+                        className="inline-flex items-center gap-[5px] py-[6px] px-[12px] rounded-control text-ink text-[12.5px] font-medium no-underline [transition:background_120ms_ease,border-color_120ms_ease,color_120ms_ease] hover:text-ink focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] bg-[#1c1a24] border border-[#2d2a3a] hover:bg-[#252230] hover:border-[#433e54]"
                         title={`Manage ${database.databaseName} in ${database.projectName}`}
                       >
                         <span>Manage</span>

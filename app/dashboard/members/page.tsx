@@ -289,7 +289,7 @@ export default function MembersPage() {
           {!activeRoles.includes("owner") && (
             <button
               type="button"
-              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-rose-400 hover:text-rose-300"
+              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-rose-400 hover:text-rose-300"
               onClick={() => void leaveOrganization()}
               disabled={busy}
             >
@@ -330,7 +330,7 @@ export default function MembersPage() {
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="members-search-input w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
+            className="members-search-input bg-surface w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms]"
           />
           {search ? (
             <button
@@ -348,7 +348,7 @@ export default function MembersPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="supabase-filter-select h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
+            className="supabase-filter-select bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
             aria-label="Filter by role"
           >
             <option value="all">All Roles</option>
@@ -357,22 +357,22 @@ export default function MembersPage() {
             <option value="member">Members</option>
           </select>
 
-          <span className="members-count-pill inline-flex items-center h-[34px] py-0 px-[10px] rounded-control border border-[#282631] text-[12.5px] text-[#8e8c99]">{filteredMembers.length} Members</span>
+          <span className="bg-surface inline-flex items-center h-[34px] py-0 px-[10px] rounded-control border border-[#282631] text-[12.5px] text-[#8e8c99]">{filteredMembers.length} Members</span>
         </div>
       </div>
 
       {/* Members Table */}
-      <div className="members-table-card rounded-card border border-surface-raised overflow-x-auto">
+      <div className="bg-surface rounded-card border border-surface-raised overflow-x-auto">
         {loading ? (
           <div className="p-6 space-y-4" aria-label="Loading members">
             {[1, 2, 3].map((n) => (
               <div key={n} className="flex items-center gap-3">
-                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-full flex-shrink-0" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-full flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
-                  <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded" />
                 </div>
-                <div className="supabase-skeleton-box animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-16 rounded" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-16 rounded" />
               </div>
             ))}
           </div>
@@ -440,7 +440,7 @@ export default function MembersPage() {
                         </select>
                       ) : (
                         <span
-                          className={`members-role-badge ${
+                          className={`members-role-badge inline-flex items-center text-[11.5px] font-medium py-[2px] px-[8px] rounded-control-sm ${
                             isOwner ? "is-owner" : isAdmin ? "is-admin" : "is-member"
                           }`}
                         >
@@ -489,10 +489,10 @@ export default function MembersPage() {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-amber-400" />
             <h2 className="text-sm font-semibold text-white">Pending Invitations</h2>
-            <span className="members-count-pill inline-flex items-center h-[34px] py-0 px-[10px] rounded-control border border-[#282631] text-[12.5px] text-[#8e8c99]">{invitations.length}</span>
+            <span className="bg-surface inline-flex items-center h-[34px] py-0 px-[10px] rounded-control border border-[#282631] text-[12.5px] text-[#8e8c99]">{invitations.length}</span>
           </div>
 
-          <div className="members-table-card rounded-card border border-surface-raised overflow-x-auto">
+          <div className="bg-surface rounded-card border border-surface-raised overflow-x-auto">
             <table className="members-table w-full min-w-[640px] text-[13px] text-left">
               <thead>
                 <tr>
@@ -514,7 +514,7 @@ export default function MembersPage() {
                       </div>
                     </td>
                     <td>
-                      <span className="members-role-badge is-member">{invitation.role}</span>
+                      <span className="members-role-badge inline-flex items-center text-[11.5px] font-medium py-[2px] px-[8px] rounded-control-sm is-member">{invitation.role}</span>
                     </td>
                     <td className="text-xs text-zinc-400">
                       {new Date(invitation.expiresAt).toLocaleDateString(undefined, {
@@ -526,7 +526,7 @@ export default function MembersPage() {
                     <td className="text-right">
                       <button
                         type="button"
-                        className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs text-rose-400 hover:text-rose-300 py-1 px-2.5 h-7"
+                        className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs text-rose-400 hover:text-rose-300 py-1 px-2.5 h-7"
                         disabled={busy}
                         onClick={() => void cancelInvitation(invitation.id)}
                       >
@@ -567,7 +567,7 @@ export default function MembersPage() {
               </div>
 
               <div>
-                <label htmlFor="invitation-link-input" className="supabase-modal-label">
+                <label htmlFor="invitation-link-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Invitation URL
                 </label>
                 <div className="flex items-center gap-2">
@@ -575,7 +575,7 @@ export default function MembersPage() {
                     id="invitation-link-input"
                     readOnly
                     value={inviteUrl}
-                    className="supabase-modal-input font-mono text-xs select-all"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] font-mono text-xs select-all"
                   />
                   <button
                     type="button"
@@ -600,7 +600,7 @@ export default function MembersPage() {
               <div className="supabase-modal-footer">
                 <button
                   type="button"
-                  className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                  className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                   onClick={() => {
                     setInviteUrl("");
                     setInviteModalOpen(false);
@@ -614,7 +614,7 @@ export default function MembersPage() {
             <form onSubmit={invite}>
               <div className="supabase-modal-body space-y-4">
                 <div>
-                  <label htmlFor="invite-email-input" className="supabase-modal-label">
+                  <label htmlFor="invite-email-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                     Email address
                   </label>
                   <input
@@ -624,20 +624,20 @@ export default function MembersPage() {
                     placeholder="collaborator@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="supabase-modal-input"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="invite-role-select" className="supabase-modal-label">
+                  <label htmlFor="invite-role-select" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                     Organization Role
                   </label>
                   <select
                     id="invite-role-select"
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value as InviteRole)}
-                    className="supabase-modal-input"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   >
                     <option value="member">
                       Member - Can view resources and trigger deployments
@@ -654,7 +654,7 @@ export default function MembersPage() {
               <div className="supabase-modal-footer">
                 <button
                   type="button"
-                  className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                  className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                   onClick={() => setInviteModalOpen(false)}
                   disabled={busy}
                 >
@@ -715,7 +715,7 @@ export default function MembersPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
               onClick={() => setRemoveTarget(null)}
               disabled={busy}
             >
@@ -723,7 +723,7 @@ export default function MembersPage() {
             </button>
             <button
               type="button"
-              className="project-btn-danger inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+              className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
               disabled={busy}
               onClick={() => void handleRemoveMember()}
             >

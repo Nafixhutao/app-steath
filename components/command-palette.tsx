@@ -277,7 +277,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               setSelectedIndex(0);
             }}
             placeholder="Search projects, databases, services, or navigate..."
-            className="command-palette-input flex-1 bg-transparent border-0 text-ink outline-none placeholder:text-[#636170]"
+            className="text-[14px] flex-1 bg-transparent border-0 text-ink outline-none placeholder:text-[#636170]"
             autoComplete="off"
             spellCheck="false"
           />
@@ -313,7 +313,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   key={command.id}
                   role="option"
                   aria-selected={isSelected}
-                  className={`command-palette-item ${isSelected ? "is-selected" : ""}`}
+                  className={`command-palette-item flex items-center gap-[12px] py-[10px] px-[12px] rounded-card cursor-pointer select-none [transition:background-color_100ms] ${isSelected ? "is-selected" : ""}`}
                   onClick={command.onSelect}
                   onMouseEnter={() => setSelectedIndex(idx)}
                 >
@@ -336,13 +336,13 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
         <div className="flex items-center gap-[16px] py-[10px] px-[18px] bg-[#131217] border-t border-t-[#23212b] text-[11.5px] text-[#716f7c]">
           <span className="flex items-center gap-[5px]">
-            <kbd className="command-palette-mini-kbd text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">&uarr;&darr;</kbd> Navigate
+            <kbd className="bg-[#1d1c24] text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">&uarr;&darr;</kbd> Navigate
           </span>
           <span className="flex items-center gap-[5px]">
-            <kbd className="command-palette-mini-kbd text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">&crarr;</kbd> Select
+            <kbd className="bg-[#1d1c24] text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">&crarr;</kbd> Select
           </span>
           <span className="flex items-center gap-[5px]">
-            <kbd className="command-palette-mini-kbd text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">ESC</kbd> Close
+            <kbd className="bg-[#1d1c24] text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">ESC</kbd> Close
           </span>
         </div>
       </div>

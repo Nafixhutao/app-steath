@@ -164,7 +164,7 @@ export function DeploymentsPanel({
       </div>
 
       {node ? (
-        <p className={`deployment-node is-${node.status}`}>
+        <p className={`deployment-node mt-0 mb-[12px] mx-0 text-[#9e99a4] text-[12px] is-${node.status}`}>
           <span className="deployment-node-name">
             Node <strong>{node.name}</strong>
           </span>
@@ -178,7 +178,7 @@ export function DeploymentsPanel({
           ) : null}
         </p>
       ) : (
-        <p className="deployment-node is-unknown">
+        <p className="deployment-node mt-0 mb-[12px] mx-0 text-[#9e99a4] text-[12px] is-unknown">
           No Node Agent has reported in, so Deployments are blocked.
         </p>
       )}
@@ -218,8 +218,8 @@ export function DeploymentsPanel({
 
               return (
                 <li className="deployment-item" key={deployment.id}>
-                  <div className={`deployment-row${open ? " is-open" : ""}`}>
-                    <span className={`deployment-status is-${deployment.status}`}>
+                  <div className={`deployment-row [@media(max-width:720px)]:gap-[8px] [@media(max-width:720px)]:min-h-[52px] [@media(max-width:720px)]:py-0 [@media(max-width:720px)]:px-[12px] grid items-center gap-[12px] min-h-[44px] py-0 px-[14px] [transition:background-color_120ms_ease] hover:bg-[#111113]${open ? " is-open" : ""}`}>
+                    <span className={`deployment-status inline-flex items-center gap-[7px] text-ink-muted text-[12.5px] font-medium whitespace-nowrap is-${deployment.status}`}>
                       <span className="deployment-dot w-[7px] h-[7px] rounded-[999px] bg-current [box-shadow:0_0_0_3px_rgb(255_255_255_/_4%)]" aria-hidden="true" />
                       {deploymentStatusLabel(deployment.status)}
                     </span>
@@ -236,7 +236,7 @@ export function DeploymentsPanel({
                       {deploymentDuration(deployment) ?? "N/A"}
                     </span>
                     <button
-                      className="deployment-icon-btn inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed"
+                      className="deployment-icon-btn focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[1px] inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed"
                       type="button"
                       onClick={() => void toggleLog(deployment)}
                       aria-expanded={open}
@@ -249,7 +249,7 @@ export function DeploymentsPanel({
                     {canManage ? (
                       <div className="flex gap-[2px] justify-end">
                         <button
-                          className="deployment-icon-btn inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed"
+                          className="deployment-icon-btn focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[1px] inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed"
                           type="button"
                           onClick={() => void redeploy(deployment)}
                           disabled={redeployBlocked}
@@ -265,7 +265,7 @@ export function DeploymentsPanel({
                         </button>
                         {isDeploymentCancellable(deployment.status) ? (
                           <button
-                            className="deployment-icon-btn inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed is-danger"
+                            className="deployment-icon-btn focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[1px] inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed is-danger"
                             type="button"
                             onClick={() => void cancel(deployment)}
                             disabled={acting}
@@ -280,13 +280,13 @@ export function DeploymentsPanel({
                   </div>
 
                   {deployment.errorMessage ? (
-                    <p className="deployment-row-error m-0 pt-0 pb-[9px] px-[14px] overflow-hidden text-[#f87171] text-[12px] text-ellipsis whitespace-nowrap" title={deployment.errorMessage}>
+                    <p className="deployment-row-error [@media(max-width:720px)]:pt-0 [@media(max-width:720px)]:pb-[9px] [@media(max-width:720px)]:px-[12px] m-0 pt-0 pb-[9px] px-[14px] overflow-hidden text-[#f87171] text-[12px] text-ellipsis whitespace-nowrap" title={deployment.errorMessage}>
                       {deployment.errorMessage}
                     </p>
                   ) : null}
 
                   {open ? (
-                    <div className="deployment-detail pt-0 pb-[14px] px-[14px] border-t border-t-[#1c1c20] bg-[#111113]" id={logId}>
+                    <div className="deployment-detail [@media(max-width:720px)]:pt-0 [@media(max-width:720px)]:pb-[12px] [@media(max-width:720px)]:px-[12px] pt-0 pb-[14px] px-[14px] border-t border-t-[#1c1c20] bg-[#111113]" id={logId}>
                       <dl className="deployment-meta flex flex-wrap gap-[6px_24px] m-0 py-[10px] px-0 text-[12px]">
                         <div>
                           <dt>Started</dt>

@@ -124,12 +124,12 @@ export function VolumePanel({
                 Deployment.
               </p>
               <div className="mb-4">
-                <label htmlFor="volume-path-input" className="supabase-modal-label">
+                <label htmlFor="volume-path-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Mount path
                 </label>
                 <input
                   id="volume-path-input"
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   value={mountPath}
                   onChange={(event) => setMountPath(event.target.value)}
                   autoComplete="off"
@@ -139,12 +139,12 @@ export function VolumePanel({
                 />
               </div>
               <div>
-                <label htmlFor="volume-size-input" className="supabase-modal-label">
+                <label htmlFor="volume-size-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Size (MB)
                 </label>
                 <input
                   id="volume-size-input"
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   value={sizeMb}
                   onChange={(event) => setSizeMb(Number(event.target.value))}
                   type="number"
@@ -157,7 +157,7 @@ export function VolumePanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
                 onClick={() => setCreating(false)}
                 disabled={busy}
               >
@@ -222,7 +222,7 @@ export function VolumePanel({
                   <td data-label="Actions" className="svc-cell-actions">
                     <div className="deployment-actions">
                       <button
-                        className="dashboard-link-button p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] is-danger"
+                        className="dashboard-link-button text-[12px] focus-visible:outline-2 focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] is-danger"
                         type="button"
                         onClick={() => void remove()}
                         disabled={busy}
