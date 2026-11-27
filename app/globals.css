@@ -583,13 +583,8 @@ form input[type="text"]:focus {
 .mobile-sidebar-overlay,
 .mobile-sidebar-sheet {
   display: none;
-}.deployment-node.is-healthy {
-  color: #7bd8a4;
 }
-.deployment-node.is-unhealthy,
-.deployment-node.is-unknown {
-  color: #f0b366;
-}
+
 .dashboard-link-button {
   background: none;
 }
@@ -2325,25 +2320,7 @@ a.usage-row-name:hover {
 
 /* --- Node status & logs ------------------------------------------------- */
 /* A status strip, not a pill: the heartbeat timestamp is long, and a pill that
-   wraps splits the node name and the state across ragged lines. */
-.supabase-service-page .deployment-node strong {
-  color: #d4d4d8;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.supabase-service-page .deployment-node.is-healthy {
-  border-color: rgba(0, 176, 107, 0.35);
-  color: #00e08c;
-}
-.supabase-service-page .deployment-node.is-healthy strong {
-  color: #00e08c;
-}
-.supabase-service-page .deployment-node.is-unknown {
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #f87171;
-}
-
-/* DNS instructions sit directly under the Custom Domain meta list; browser
+   wraps splits the node name and the state across ragged lines. *//* DNS instructions sit directly under the Custom Domain meta list; browser
    default heading and paragraph margins were the only spacing they had. */@keyframes svc-spin {
   to {
     transform: rotate(360deg);

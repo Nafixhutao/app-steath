@@ -164,9 +164,9 @@ export function DeploymentsPanel({
       </div>
 
       {node ? (
-        <p className={`deployment-node mt-0 mx-0 is-${node.status} flex items-center flex-wrap gap-[4px_8px] w-[fit-content] max-w-[100%] mb-[16px] py-[7px] px-[12px] border border-[#3f3f46] rounded-card bg-transparent text-[#71717a] text-[12.5px] leading-[1.5]`}>
+        <p className={`deployment-node mt-0 mx-0 is-${node.status} flex items-center flex-wrap gap-[4px_8px] w-[fit-content] max-w-[100%] mb-[16px] py-[7px] px-[12px] border rounded-card bg-transparent text-[12.5px] leading-[1.5] ${node.status === "healthy" ? "border-[rgba(0,176,107,0.35)] text-[#00e08c] [&_strong]:text-[#00e08c]" : node.status === "unhealthy" ? "border-[#3f3f46] text-[#f0b366]" : node.status === "unknown" ? "border-[rgba(239,68,68,0.35)] text-[#f87171]" : "border-[#3f3f46] text-[#71717a]"}`}>
           <span className="deployment-node-name whitespace-nowrap">
-            Node <strong>{node.name}</strong>
+            Node <strong className="text-[#d4d4d8] font-medium whitespace-nowrap">{node.name}</strong>
           </span>
           <span className="deployment-node-state font-medium">
             {nodeHealthy ? "healthy" : "unavailable, Deployments are blocked"}
@@ -178,7 +178,7 @@ export function DeploymentsPanel({
           ) : null}
         </p>
       ) : (
-        <p className="deployment-node mt-0 mx-0 is-unknown flex items-center flex-wrap gap-[4px_8px] w-[fit-content] max-w-[100%] mb-[16px] py-[7px] px-[12px] border border-[#3f3f46] rounded-card bg-transparent text-[#71717a] text-[12.5px] leading-[1.5]">
+        <p className="deployment-node mt-0 mx-0 is-unknown flex items-center flex-wrap gap-[4px_8px] w-[fit-content] max-w-[100%] mb-[16px] py-[7px] px-[12px] border border-[rgba(239,68,68,0.35)] rounded-card bg-transparent text-[#f87171] text-[12.5px] leading-[1.5]">
           No Node Agent has reported in, so Deployments are blocked.
         </p>
       )}
