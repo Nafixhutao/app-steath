@@ -255,7 +255,7 @@ export default function BackupsPage() {
             placeholder="Search backups by target or project..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="backups-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease]"
+            className="backups-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease] focus:border-[var(--color-accent)]"
           />
           {search ? (
             <button
@@ -311,7 +311,7 @@ export default function BackupsPage() {
             </p>
           </div>
         ) : (
-          <table className="backups-table w-full text-left">
+          <table className="backups-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217] [&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px] [&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)] [&_tr:last-child>td]:border-b-0">
             <thead>
               <tr>
                 <th scope="col">Target</th>
@@ -382,10 +382,10 @@ export default function BackupsPage() {
                       <span
                         className={`backups-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                           isSuccess
-                            ? "is-completed"
+                            ? "is-completed bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
                             : backup.status === "failed"
-                              ? "is-failed"
-                              : "is-pending"
+                              ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]"
+                              : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                         }`}
                       >
                         <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
@@ -435,7 +435,7 @@ export default function BackupsPage() {
           </div>
 
           <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
-            <table className="backups-table w-full text-left">
+            <table className="backups-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217] [&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px] [&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)] [&_tr:last-child>td]:border-b-0">
               <thead>
                 <tr>
                   <th scope="col">Target</th>
@@ -465,7 +465,7 @@ export default function BackupsPage() {
                       <td>
                         <span
                           className={`backups-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
-                            isDone ? "is-completed" : isFail ? "is-failed" : "is-pending"
+                            isDone ? "is-completed bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]" : isFail ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]" : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                           }`}
                         >
                           <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />

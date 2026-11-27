@@ -2526,65 +2526,10 @@ body {
 
 /* ===== BACKUPS ===== */
 
-.backups-search-input:focus {
-  border-color: var(--color-accent);
-}
 
-.backups-table th {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #878492;
-  padding: 12px 18px;
-  border-bottom: 1px solid var(--color-surface-raised);
-  background-color: #131217;
-}
 
-.backups-table td {
-  padding: 14px 18px;
-  border-bottom: 1px solid #1f1d25;
-  font-size: 13px;
-  vertical-align: middle;
-}
 
-.backups-table tbody tr:last-child td {
-  border-bottom: none;
-}
 
-.backups-table tbody tr:hover td {
-  background-color: rgba(255, 255, 255, 0.015);
-}
-
-.backups-status-pill.is-completed {
-  background-color: #0f2e21;
-  border: 1px solid #1d4a36;
-  color: var(--color-accent);
-}
-
-.backups-status-pill.is-completed .project-status-dot {
-  background-color: var(--color-accent);
-}
-
-.backups-status-pill.is-failed {
-  background-color: #2d1419;
-  border: 1px solid #4d222a;
-  color: var(--color-danger);
-}
-
-.backups-status-pill.is-failed .project-status-dot {
-  background-color: var(--color-danger);
-}
-
-.backups-status-pill.is-pending {
-  background-color: #2a2012;
-  border: 1px solid #48381c;
-  color: var(--color-warning);
-}
-
-.backups-status-pill.is-pending .project-status-dot {
-  background-color: var(--color-warning);
-}
 
 /* ===== USAGE ===== */
 
