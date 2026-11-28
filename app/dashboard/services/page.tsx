@@ -29,6 +29,19 @@ import { listProjects, type ProjectSummary } from "@/lib/projects-client";
 import { useToast } from "@/components/toast-context";
 import { copyToClipboard } from "@/lib/clipboard";
 
+import { filterSelectClass, secondaryButtonClass } from "@/components/ui-classes";
+
+export const servicesTableClass = [
+  "services-table [@media(max-width:720px)]:min-w-[680px] w-full text-left",
+  "[&_thead_th]:px-[14px] [&_thead_th]:py-[10px] [&_thead_th]:text-[11px]",
+  "[&_thead_th]:font-medium [&_thead_th]:uppercase [&_thead_th]:tracking-[0.05em]",
+  "[&_thead_th]:text-[var(--color-ink-muted)] [&_thead_th]:border-b",
+  "[&_thead_th]:border-[var(--color-surface-raised)] [&_thead_th]:bg-[#131217]",
+  "[&_tbody_td]:px-[14px] [&_tbody_td]:py-[11px] [&_tbody_td]:border-b",
+  "[&_tbody_td]:border-[#1f1d25] [&_tbody_td]:text-[13px] [&_tbody_td]:align-middle",
+  "[&_tbody_tr:hover>td]:bg-[rgba(255,255,255,0.015)]",
+].join(" ");
+
 export default function ServicesPage() {
   const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
@@ -168,7 +181,7 @@ export default function ServicesPage() {
         <div className="flex items-center gap-[8px]">
           <button
             type="button"
-            className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+            className={secondaryButtonClass}
             onClick={() => void servicesResource.refresh()}
             disabled={loading}
           >
@@ -244,7 +257,7 @@ export default function ServicesPage() {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
+            className={filterSelectClass}
             aria-label="Filter by service status"
           >
             <option value="all">All statuses</option>
@@ -260,7 +273,7 @@ export default function ServicesPage() {
             <select
               value={projectFilter}
               onChange={(event) => setProjectFilter(event.target.value)}
-              className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
+              className={filterSelectClass}
               aria-label="Filter by project"
             >
               <option value="all">All projects</option>
@@ -323,7 +336,7 @@ export default function ServicesPage() {
           {hasFilters ? (
             <button
               type="button"
-              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+              className={secondaryButtonClass}
               onClick={() => {
                 setSearch("");
                 setStatusFilter("all");
@@ -412,7 +425,7 @@ export default function ServicesPage() {
         </div>
       ) : (
         <div className="services-table-card [@media(max-width:720px)]:overflow-x-auto bg-surface border border-surface-raised rounded-card overflow-hidden">
-          <table className="services-table [@media(max-width:720px)]:min-w-[680px] w-full text-left [&_thead_th]:px-[14px] [&_thead_th]:py-[10px] [&_thead_th]:text-[11px] [&_thead_th]:font-medium [&_thead_th]:uppercase [&_thead_th]:tracking-[0.05em] [&_thead_th]:text-[var(--color-ink-muted)] [&_thead_th]:border-b [&_thead_th]:border-[var(--color-surface-raised)] [&_thead_th]:bg-[#131217] [&_tbody_td]:px-[14px] [&_tbody_td]:py-[11px] [&_tbody_td]:border-b [&_tbody_td]:border-[#1f1d25] [&_tbody_td]:text-[13px] [&_tbody_td]:align-middle [&_tbody_tr:hover>td]:bg-[rgba(255,255,255,0.015)]">
+          <table className={servicesTableClass}>
             <thead>
               <tr>
                 <th scope="col">Service</th>
@@ -480,7 +493,7 @@ export default function ServicesPage() {
                           href={service.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none services-row-btn"
+                          className={`${secondaryButtonClass} services-row-btn`}
                           title="Visit live site"
                         >
                           <span>Visit</span>
@@ -488,7 +501,7 @@ export default function ServicesPage() {
                         </a>
                         <Link
                           href={`/dashboard/services/${service.id}`}
-                          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none services-row-btn services-row-btn-accent"
+                          className={`${secondaryButtonClass} services-row-btn services-row-btn-accent`}
                         >
                           <span>Manage</span>
                           <ArrowUpRight className="w-3 h-3" aria-hidden="true" />

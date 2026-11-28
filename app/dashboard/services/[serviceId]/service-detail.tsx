@@ -18,6 +18,35 @@ import { CustomDomainPanel } from "./custom-domain-panel";
 import { RuntimePanel } from "./runtime-panel";
 import { VolumePanel } from "./volume-panel";
 
+import { serviceMetaClass } from "@/components/ui-classes";
+
+export const serviceTabbarClass = [
+  "svc-tabbar flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+  "[@media(max-width:640px)]:gap-[0] [@media(max-width:640px)]:mb-[20px] items-center gap-[4px]",
+  "border-b border-b-[#27272a] mb-[24px] overflow-x-auto [-webkit-overflow-scrolling:touch]",
+  "[@media(max-width:640px)]:[scroll-snap-type:x_proximity]",
+  "[@media(max-width:640px)]:text-[13px]",
+].join(" ");
+
+export const deleteServiceConfirmClass = [
+  "cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)]",
+  "focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed",
+  "inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px]",
+  "rounded-card border-0 bg-[#e11d48]",
+  "[background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] text-ink",
+  "text-[13.5px]! font-semibold! [box-shadow:0_1px_2px_rgba(0,0,0,0.25)]",
+  "[transition:filter_140ms_ease,transform_100ms_ease]",
+  "[&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)]",
+  "[&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1]",
+  "disabled:transform-none disabled:[box-shadow:none]",
+].join(" ");
+
+export const breadcrumbCurrentClass = [
+  "[@media(max-width:600px)]:min-w-0 [@media(max-width:600px)]:max-w-[100%]",
+  "[@media(max-width:600px)]:overflow-hidden [@media(max-width:600px)]:text-ellipsis",
+  "[@media(max-width:600px)]:whitespace-nowrap text-[#ededf2]",
+].join(" ");
+
 const TABS = [
   { id: "deployments", label: "Deployments" },
   { id: "environment", label: "Environment" },
@@ -144,7 +173,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         <p className="supabase-service-breadcrumb flex items-center flex-wrap gap-[8px] mt-0 mb-[20px] mx-0 text-ink-muted text-[13px]">
           <Link href="/dashboard/projects">Projects</Link>
           <span aria-hidden="true">/</span>
-          <span className="supabase-service-breadcrumb-current [@media(max-width:600px)]:min-w-0 [@media(max-width:600px)]:max-w-[100%] [@media(max-width:600px)]:overflow-hidden [@media(max-width:600px)]:text-ellipsis [@media(max-width:600px)]:whitespace-nowrap text-[#ededf2]">Not found</span>
+          <span className={breadcrumbCurrentClass}>Not found</span>
         </p>
         <div className="py-[48px] px-[32px] border border-[#27272a] rounded-card bg-[#0c0c0d]">
           <h1 className="supabase-service-title m-0 text-[24px] text-left">Service not found</h1>
@@ -171,7 +200,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         <span aria-hidden="true">/</span>
         <Link href={`/dashboard/projects/${service.projectId}`}>{projectName || "Project"}</Link>
         <span aria-hidden="true">/</span>
-        <span className="supabase-service-breadcrumb-current [@media(max-width:600px)]:min-w-0 [@media(max-width:600px)]:max-w-[100%] [@media(max-width:600px)]:overflow-hidden [@media(max-width:600px)]:text-ellipsis [@media(max-width:600px)]:whitespace-nowrap text-[#ededf2]">{service.name}</span>
+        <span className={breadcrumbCurrentClass}>{service.name}</span>
       </p>
 
       <header className="grid gap-[10px] min-w-0 pb-[20px]">
@@ -223,7 +252,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
         </p>
       ) : null}
 
-      <nav className="svc-tabbar flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(max-width:640px)]:gap-[0] [@media(max-width:640px)]:mb-[20px] items-center gap-[4px] border-b border-b-[#27272a] mb-[24px] overflow-x-auto [-webkit-overflow-scrolling:touch] [@media(max-width:640px)]:[scroll-snap-type:x_proximity] [@media(max-width:640px)]:text-[13px]" aria-label="Service sections" ref={tabbarRef}>
+      <nav className={serviceTabbarClass} aria-label="Service sections" ref={tabbarRef}>
         {TABS.map((entry) => {
           // Read-only Members do not get the management tabs.
           const hidden = (entry.id === "environment" || entry.id === "settings") && !canManage;
@@ -278,7 +307,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
               <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
                 <h2 id="configuration-heading">Configuration</h2>
               </div>
-              <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0 grid-cols-[repeat(3,minmax(0,1fr))] [@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))] [&>div]:block [&>div]:min-w-0 [&_dt]:mt-0 [&_dt]:mb-[5px] [&_dt]:mx-0 [&_dt]:text-[#71717a] [&_dt]:text-[12px] [&_dt]:font-medium [&_dd]:m-0 [&_dd]:text-[#ededf2] [&_dd]:text-[13px] [&_dd]:[overflow-wrap:anywhere]">
+              <dl className={serviceMetaClass}>
                 <div>
                   <dt>Repository</dt>
                   <dd>
@@ -332,7 +361,7 @@ export function ServiceDetail({ serviceId }: { serviceId: string }) {
                   />
                 </label>
                 <button
-                  className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] text-ink text-[13.5px]! font-semibold! [box-shadow:0_1px_2px_rgba(0,0,0,0.25)] [transition:filter_140ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                  className={deleteServiceConfirmClass}
                   type="submit"
                   disabled={busy || confirmation !== service.name}
                 >

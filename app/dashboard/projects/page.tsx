@@ -23,6 +23,30 @@ import { MAX_SLUG_LENGTH, slugify } from "@/lib/slug";
 import { useToast } from "@/components/toast-context";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { filterSelectClass, modalCloseClass, secondaryButtonClass, spacedSecondaryButtonClass } from "@/components/ui-classes";
+
+export const createProjectCtaClass = [
+  "inline-flex items-center gap-[8px] min-h-[38px] py-[8px] px-[18px] rounded-card border-0",
+  "bg-[var(--color-info)]",
+  "[background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)]",
+  "[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede]",
+  "text-ink text-[13.5px]! font-medium! cursor-pointer whitespace-nowrap",
+  "[transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease]",
+  "[&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)]",
+  "[&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff]",
+  "[&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1]",
+  "disabled:opacity-[0.5] disabled:cursor-not-allowed disabled:transform-none",
+  "disabled:[box-shadow:none]",
+].join(" ");
+
+export const projectsListTableClass = [
+  "supabase-projects-list-table w-full text-[13px] text-left [&_th]:px-[16px] [&_th]:py-[10px]",
+  "[&_th]:bg-[#141318] [&_th]:text-[#716f7c] [&_th]:font-medium [&_th]:text-[12px]",
+  "[&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_td]:px-[16px]",
+  "[&_td]:py-[12px] [&_td]:border-b [&_td]:border-[#1f1e25] [&_td]:text-[#c9c7d2]",
+  "[&_tr:last-child>td]:border-b-0 [&_tr:hover>td]:bg-[rgba(255,255,255,0.02)]",
+].join(" ");
+
 export default function ProjectsPage() {
   const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
@@ -130,7 +154,7 @@ export default function ProjectsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "empty")}
-              className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
+              className={filterSelectClass}
               aria-label="Filter by project status"
             >
               <option value="all">Status: All</option>
@@ -215,7 +239,7 @@ export default function ProjectsPage() {
               <p className="text-[13px] text-[#83818e] mb-[20px]">Launch a complete backend built on Postgres.</p>
               <button
                 type="button"
-                className="inline-flex items-center gap-[8px] min-h-[38px] py-[8px] px-[18px] rounded-card border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] text-ink text-[13.5px]! font-medium! cursor-pointer whitespace-nowrap [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:opacity-[0.5] disabled:cursor-not-allowed disabled:transform-none disabled:[box-shadow:none]"
+                className={createProjectCtaClass}
                 onClick={() => setModalOpen(true)}
                 disabled={!canManage || atLimit}
               >
@@ -228,7 +252,7 @@ export default function ProjectsPage() {
               <p className="text-zinc-400">No projects match the query &ldquo;{search}&rdquo;.</p>
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none mt-3"
+                className={spacedSecondaryButtonClass}
                 onClick={() => {
                   setSearch("");
                   setStatusFilter("all");
@@ -275,7 +299,7 @@ export default function ProjectsPage() {
           ) : (
             /* List View */
             <div className="bg-surface border border-[var(--color-surface-raised)] rounded-card overflow-hidden">
-              <table className="supabase-projects-list-table w-full text-[13px] text-left [&_th]:px-[16px] [&_th]:py-[10px] [&_th]:bg-[#141318] [&_th]:text-[#716f7c] [&_th]:font-medium [&_th]:text-[12px] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_td]:px-[16px] [&_td]:py-[12px] [&_td]:border-b [&_td]:border-[#1f1e25] [&_td]:text-[#c9c7d2] [&_tr:last-child>td]:border-b-0 [&_tr:hover>td]:bg-[rgba(255,255,255,0.02)]">
+              <table className={projectsListTableClass}>
                 <thead>
                   <tr>
                     <th>Project</th>
@@ -444,7 +468,7 @@ export default function ProjectsPage() {
             <h2 id="create-project-title">Create a new project</h2>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -507,7 +531,7 @@ export default function ProjectsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >

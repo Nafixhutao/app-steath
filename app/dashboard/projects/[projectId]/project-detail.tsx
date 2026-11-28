@@ -28,6 +28,8 @@ import { ServicesPanel } from "./services-panel";
 import { DatabasePanel } from "./database-panel";
 import { StoragePanel } from "./storage-panel";
 
+import { dangerButtonClass, secondaryButtonClass } from "@/components/ui-classes";
+
 type ProjectTab = "services" | "database" | "storage" | "settings";
 
 /**
@@ -146,7 +148,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             This project does not exist in the active organization or you do not have permission to
             view it.
           </p>
-          <Link href="/dashboard/projects" className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none">
+          <Link href="/dashboard/projects" className={secondaryButtonClass}>
             Back to Projects
           </Link>
         </div>
@@ -430,7 +432,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                   <div className="bg-[#141318] flex items-center justify-end py-[14px] px-[20px] border-t border-t-[rgba(244,63,94,0.15)] mt-[20px]">
                     <button
                       type="submit"
-                      className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                      className={dangerButtonClass}
                       disabled={busy || confirmation !== project.name}
                     >
                       {busy ? "Deleting..." : "Delete Project Permanently"}

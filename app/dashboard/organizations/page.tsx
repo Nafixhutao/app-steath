@@ -8,6 +8,8 @@ import { useToast } from "@/components/toast-context";
 import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { modalCloseClass, secondaryButtonClass, spacedSecondaryButtonClass } from "@/components/ui-classes";
+
 function OrgHexIcon() {
   return (
     <div className="flex items-center justify-center w-[36px] h-[36px] rounded-card bg-[#211f27] text-[#8e8c99] shrink-0" aria-hidden="true">
@@ -162,7 +164,7 @@ export default function OrganizationsPage() {
                 <p className="text-zinc-400">No organizations match &ldquo;{search}&rdquo;.</p>
                 <button
                   type="button"
-                  className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none mt-3"
+                  className={spacedSecondaryButtonClass}
                   onClick={() => setSearch("")}
                 >
                   Clear search
@@ -223,7 +225,7 @@ export default function OrganizationsPage() {
             <h2 id="modal-title">Create a new organization</h2>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -259,7 +261,7 @@ export default function OrganizationsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >

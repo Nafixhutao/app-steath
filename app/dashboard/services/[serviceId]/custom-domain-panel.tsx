@@ -13,6 +13,8 @@ import { formatDateTime } from "@/lib/format";
 import { SupabaseModal } from "@/components/supabase-modal";
 import { recordsTableClass } from "@/components/records-table";
 
+import { dangerLinkButtonClass, secondaryButtonClass, serviceMetaClass } from "@/components/ui-classes";
+
 function statusLabel(status: CustomDomainSummary["status"]): string {
   switch (status) {
     case "active":
@@ -140,7 +142,7 @@ export function CustomDomainPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setAdding(false)}
                 disabled={busy}
               >
@@ -168,7 +170,7 @@ export function CustomDomainPanel({
         </div>
       ) : (
         <div className="custom-domain-details">
-          <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0 grid-cols-[repeat(3,minmax(0,1fr))] [@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))] [&>div]:block [&>div]:min-w-0 [&_dt]:mt-0 [&_dt]:mb-[5px] [&_dt]:mx-0 [&_dt]:text-[#71717a] [&_dt]:text-[12px] [&_dt]:font-medium [&_dd]:m-0 [&_dd]:text-[#ededf2] [&_dd]:text-[13px] [&_dd]:[overflow-wrap:anywhere]">
+          <dl className={serviceMetaClass}>
             <div>
               <dt>Hostname</dt>
               <dd>{domainData.hostname}</dd>
@@ -253,7 +255,7 @@ export function CustomDomainPanel({
           {canManage ? (
             <div className="deployment-actions">
               <button
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 type="button"
                 onClick={() => void verify()}
                 disabled={busy}
@@ -261,7 +263,7 @@ export function CustomDomainPanel({
                 {busy ? "Checking..." : "Verify DNS"}
               </button>
               <button
-                className="dashboard-link-button text-[12px] focus-visible:outline-2 focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] is-danger"
+                className={dangerLinkButtonClass}
                 type="button"
                 onClick={() => void remove()}
                 disabled={busy}

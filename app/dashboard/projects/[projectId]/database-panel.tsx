@@ -33,6 +33,14 @@ import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
 import { CredentialRow, PasswordRow } from "./database-credentials";
 
+import { dangerButtonClass, dangerSecondaryButtonClass, secondaryButtonClass } from "@/components/ui-classes";
+
+export const squareIconButtonClass = [
+  "bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px]",
+  "rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer",
+  "[transition:all_120ms] hover:text-ink",
+].join(" ");
+
 function usageLabel(database: DatabaseSummary): string {
   if (database.usageMb === null) {
     return "0 MB of " + database.storageLimitMb + " MB";
@@ -467,7 +475,7 @@ export function DatabasePanel({
               {canManage && (
                 <button
                   type="button"
-                  className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs"
+                  className={`${secondaryButtonClass} text-xs`}
                   onClick={() => void rotate()}
                   disabled={busy}
                 >
@@ -488,7 +496,7 @@ export function DatabasePanel({
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
                       type="button"
-                      className="bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
+                      className={squareIconButtonClass}
                       onClick={() => setRevealPrivateUri((prev) => !prev)}
                       title={revealPrivateUri ? "Hide password" : "Show password"}
                       aria-label="Toggle password visibility"
@@ -501,7 +509,7 @@ export function DatabasePanel({
                     </button>
                     <button
                       type="button"
-                      className="bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
+                      className={squareIconButtonClass}
                       onClick={() => copyText(database.connectionString ?? "", "private")}
                       title="Copy connection string"
                       aria-label="Copy connection string"
@@ -730,7 +738,7 @@ export function DatabasePanel({
                       {database.proxy.enabled && (
                         <button
                           type="button"
-                          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-rose-400 hover:text-rose-300"
+                          className={dangerSecondaryButtonClass}
                           onClick={() => void disableProxy()}
                           disabled={busy}
                         >
@@ -753,7 +761,7 @@ export function DatabasePanel({
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             <button
                               type="button"
-                              className="bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
+                              className={squareIconButtonClass}
                               onClick={() => setRevealPublicUri((prev) => !prev)}
                               title={revealPublicUri ? "Hide password" : "Show password"}
                               aria-label="Toggle public password visibility"
@@ -766,7 +774,7 @@ export function DatabasePanel({
                             </button>
                             <button
                               type="button"
-                              className="bg-[#1f1e26] hover:bg-[#272532] inline-flex items-center justify-center w-[28px] h-[28px] rounded-control-sm border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:all_120ms] hover:text-ink"
+                              className={squareIconButtonClass}
                               onClick={() =>
                                 copyText(database.proxy.connectionString ?? "", "public")
                               }
@@ -843,7 +851,7 @@ export function DatabasePanel({
                 <div className="bg-[#141318] flex items-center justify-end py-[14px] px-[20px] border-t border-t-[rgba(244,63,94,0.15)] mt-[20px]">
                   <button
                     type="submit"
-                    className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                    className={dangerButtonClass}
                     disabled={busy || confirmation !== projectName}
                   >
                     {busy ? "Deleting..." : "Delete Database"}

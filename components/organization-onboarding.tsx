@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
+import { createProjectButtonClass } from "@/components/ui-classes";
+
 /**
  * Shown when a signed-in User has no Organization membership left, for example
  * after deleting their last Organization. Without this gate the dashboard would
@@ -65,7 +67,7 @@ export function OrganizationOnboarding() {
               required
             />
           </label>
-          <button className="create-project-button text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] h-[36px] py-0 px-[14px] border border-[#078153] rounded-control bg-[var(--color-accent-strong)] text-[#fff] cursor-pointer hover:bg-[#087f55] [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] active:translate-y-[1px] active:scale-[0.99]" type="submit" disabled={busy}>
+          <button className={createProjectButtonClass} type="submit" disabled={busy}>
             {busy ? "Creating..." : "Create Organization"}
           </button>
         </form>

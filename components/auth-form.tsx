@@ -7,6 +7,17 @@ import { useRouter } from "next/navigation";
 import { signIn, signUp } from "@/lib/auth-client";
 import { safeReturnTo } from "@/lib/return-to";
 
+import { passwordToggleClass, skipLinkClass } from "@/components/ui-classes";
+
+export const authProviderButtonClass = [
+  "secondary-button text-[13.5px] font-medium focus-visible:outline-2",
+  "focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px]",
+  "items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a]",
+  "text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919]",
+  "disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a]",
+  "disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99]",
+].join(" ");
+
 export type AuthFormMode = "signin" | "signup";
 
 /** Shared primary-action skin for the auth pages. The font metrics stay in
@@ -202,7 +213,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
 
   return (
     <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
-      <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px]" href="#login-content">
+      <a className={skipLinkClass} href="#login-content">
         Skip to content
       </a>
 
@@ -220,7 +231,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
         <div className="grid grid-cols-2 gap-[10px] mt-[24px]">
           <button
             type="button"
-            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99]"
+            className={authProviderButtonClass}
             disabled={!socialProviders?.google || socialBusy === "google"}
             onClick={() => socialSignIn("google")}
           >
@@ -230,7 +241,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           </button>
           <button
             type="button"
-            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99]"
+            className={authProviderButtonClass}
             disabled={!socialProviders?.github || socialBusy === "github"}
             onClick={() => socialSignIn("github")}
           >
@@ -240,7 +251,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           </button>
         </div>
 
-        <button type="button" className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99] w-full mt-[10px]" disabled>
+        <button type="button" className={`${authProviderButtonClass} w-full mt-[10px]`} disabled>
           <LockMark />
           Continue with SSO
           <span className="provider-soon text-[10px] font-medium text-[#909090] tracking-[0.02em]">Coming soon</span>
@@ -299,7 +310,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
               />
               <button
                 type="button"
-                className="password-toggle focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#999999] cursor-pointer hover:text-[#eaeaea]"
+                className={passwordToggleClass}
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}

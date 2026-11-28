@@ -24,6 +24,17 @@ import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { compactSecondaryButtonClass, dangerButtonClass, filterSelectClass, modalCloseClass, secondaryButtonClass } from "@/components/ui-classes";
+
+export const backupsTableClass = [
+  "backups-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px]",
+  "[&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492]",
+  "[&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217]",
+  "[&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px]",
+  "[&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)]",
+  "[&_tr:last-child>td]:border-b-0",
+].join(" ");
+
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -159,7 +170,7 @@ export default function BackupsPage() {
 
         <button
           type="button"
-          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+          className={secondaryButtonClass}
           onClick={() => void board.refresh()}
           disabled={loading}
           title="Refresh backup records"
@@ -273,7 +284,7 @@ export default function BackupsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
+            className={filterSelectClass}
             aria-label="Filter by target type"
           >
             <option value="all">All Targets</option>
@@ -311,7 +322,7 @@ export default function BackupsPage() {
             </p>
           </div>
         ) : (
-          <table className="backups-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217] [&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px] [&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)] [&_tr:last-child>td]:border-b-0">
+          <table className={backupsTableClass}>
             <thead>
               <tr>
                 <th scope="col">Target</th>
@@ -403,7 +414,7 @@ export default function BackupsPage() {
                         {restorable && isSuccess ? (
                           <button
                             type="button"
-                            className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5"
+                            className={compactSecondaryButtonClass}
                             onClick={() => beginRestore(backup)}
                             disabled={Boolean(active) || Boolean(target)}
                           >
@@ -435,7 +446,7 @@ export default function BackupsPage() {
           </div>
 
           <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
-            <table className="backups-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217] [&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px] [&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)] [&_tr:last-child>td]:border-b-0">
+            <table className={backupsTableClass}>
               <thead>
                 <tr>
                   <th scope="col">Target</th>
@@ -496,7 +507,7 @@ export default function BackupsPage() {
             </div>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={cancelRestore}
               aria-label="Close dialog"
             >
@@ -534,7 +545,7 @@ export default function BackupsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={cancelRestore}
                 disabled={submitting}
               >
@@ -542,7 +553,7 @@ export default function BackupsPage() {
               </button>
               <button
                 type="submit"
-                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                className={dangerButtonClass}
                 disabled={submitting || confirmation.trim() !== target.targetName}
               >
                 {submitting ? (

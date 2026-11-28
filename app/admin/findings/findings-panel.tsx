@@ -12,6 +12,8 @@ import { AdminSelect } from "@/features/admin/components/admin-select";
 import { ToolbarSearch } from "@/features/admin/components/toolbar-search";
 import { PanelRowsSkeleton } from "@/features/admin/components/admin-skeletons";
 
+import { adminRefreshButtonClass } from "@/components/ui-classes";
+
 type SeverityFilter = "all" | "urgent" | "critical" | "high" | "medium" | "low";
 
 function severityTone(severity: string): "danger" | "warning" | "info" | "neutral" {
@@ -98,7 +100,7 @@ export function FindingsPanel() {
           type="button"
           onClick={() => void refresh()}
           disabled={loading}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--projects-border)] bg-[#141416] px-3 text-[12.5px] font-medium leading-none text-[var(--projects-text)] transition-colors hover:border-[var(--projects-border-hover)] hover:bg-white/[0.04] disabled:opacity-60"
+          className={adminRefreshButtonClass}
         >
           <RefreshCw
             size={14}

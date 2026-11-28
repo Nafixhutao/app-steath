@@ -20,6 +20,22 @@ import {
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime, formatRelative } from "@/lib/format";
 
+export const deploymentCancelButtonClass = [
+  "deployment-icon-btn focus-visible:outline-2 focus-visible:outline-[#fafafa]",
+  "focus-visible:outline-offset-[1px] inline-flex w-[28px] h-[28px] items-center justify-center",
+  "border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer",
+  "[&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa]",
+  "disabled:opacity-[0.4] disabled:cursor-not-allowed is-danger",
+].join(" ");
+
+export const deploymentIconButtonClass = [
+  "deployment-icon-btn focus-visible:outline-2 focus-visible:outline-[#fafafa]",
+  "focus-visible:outline-offset-[1px] inline-flex w-[28px] h-[28px] items-center justify-center",
+  "border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer",
+  "[&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa]",
+  "disabled:opacity-[0.4] disabled:cursor-not-allowed",
+].join(" ");
+
 const POLL_INTERVAL_MS = 3_000;
 
 /** How many Deployments render before "Show older" is offered. */
@@ -247,7 +263,7 @@ export function DeploymentsPanel({
                       {deploymentDuration(deployment) ?? "N/A"}
                     </span>
                     <button
-                      className="deployment-icon-btn focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[1px] inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed"
+                      className={deploymentIconButtonClass}
                       type="button"
                       onClick={() => void toggleLog(deployment)}
                       aria-expanded={open}
@@ -260,7 +276,7 @@ export function DeploymentsPanel({
                     {canManage ? (
                       <div className="flex gap-[2px] justify-end">
                         <button
-                          className="deployment-icon-btn focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[1px] inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed"
+                          className={deploymentIconButtonClass}
                           type="button"
                           onClick={() => void redeploy(deployment)}
                           disabled={redeployBlocked}
@@ -276,7 +292,7 @@ export function DeploymentsPanel({
                         </button>
                         {isDeploymentCancellable(deployment.status) ? (
                           <button
-                            className="deployment-icon-btn focus-visible:outline-2 focus-visible:outline-[#fafafa] focus-visible:outline-offset-[1px] inline-flex w-[28px] h-[28px] items-center justify-center border border-transparent rounded-control bg-transparent text-ink-muted cursor-pointer [&:hover:not(:disabled)]:bg-[#1c1c20] [&:hover:not(:disabled)]:text-[#fafafa] disabled:opacity-[0.4] disabled:cursor-not-allowed is-danger"
+                            className={deploymentCancelButtonClass}
                             type="button"
                             onClick={() => void cancel(deployment)}
                             disabled={acting}

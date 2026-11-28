@@ -25,6 +25,14 @@ import { useToast } from "@/components/toast-context";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 
+import { dangerButtonClass, secondaryButtonClass, successBadgeClass } from "@/components/ui-classes";
+
+export const settingsInputClass = [
+  "w-full h-[38px] border border-surface-raised focus:border-[var(--color-info)] py-0 px-[14px]",
+  "rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none",
+  "[transition:border-color_150ms_ease]",
+].join(" ");
+
 export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -166,7 +174,7 @@ export default function SettingsPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Organization Settings</h1>
-              <span className="bg-[rgba(62,207,142,0.12)] inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">FREE PLAN</span>
+              <span className={successBadgeClass}>FREE PLAN</span>
             </div>
             <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage organization details, team ownership, and preferences for{" "}
@@ -331,7 +339,7 @@ export default function SettingsPage() {
                     onChange={(e) => setName(e.target.value)}
                     maxLength={80}
                     required
-                    className="settings-input w-full h-[38px] border border-surface-raised focus:border-[var(--color-info)] py-0 px-[14px] rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none [transition:border-color_150ms_ease]"
+                    className={settingsInputClass}
                     placeholder="e.g. Acme Corp"
                   />
                   <p className="text-[11px] text-zinc-400 mt-1.5">
@@ -409,7 +417,7 @@ export default function SettingsPage() {
                 Subscription &amp; Entitlements
               </h2>
             </div>
-            <span className="bg-[rgba(62,207,142,0.12)] inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">FREE TIER</span>
+            <span className={successBadgeClass}>FREE TIER</span>
           </div>
 
           <div className="p-[20px]">
@@ -455,7 +463,7 @@ export default function SettingsPage() {
             </span>
             <Link
               href="/dashboard/usage"
-              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs inline-flex items-center gap-1.5"
+              className={`${secondaryButtonClass} text-xs gap-1.5`}
             >
               <span>View Usage Meters</span>
               <ArrowRight className="w-3 h-3" />
@@ -502,14 +510,14 @@ export default function SettingsPage() {
                     autoComplete="off"
                     spellCheck="false"
                     required
-                    className="settings-input w-full h-[38px] border border-surface-raised focus:border-[var(--color-info)] py-0 px-[14px] rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none [transition:border-color_150ms_ease]"
+                    className={settingsInputClass}
                   />
                 </div>
 
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                    className={dangerButtonClass}
                     disabled={busy || confirmation.trim() !== organization?.name}
                   >
                     {busy ? (
@@ -549,7 +557,7 @@ export default function SettingsPage() {
 
               <button
                 type="button"
-                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                className={dangerButtonClass}
                 onClick={() => void handleLeaveOrganization()}
                 disabled={busy}
               >

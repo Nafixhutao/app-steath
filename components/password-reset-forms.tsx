@@ -7,6 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { EyeMark, authSubmitClass } from "@/components/auth-form";
 
+import { passwordToggleClass, skipLinkClass } from "@/components/ui-classes";
+
 /** The two reset-password form states the /forgot-password flow walks through:
  * requesting the link (by email) and answering it (token from the URL). */
 
@@ -56,7 +58,7 @@ export function ForgotPasswordForm() {
 
   return (
     <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
-      <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px]" href="#reset-content">
+      <a className={skipLinkClass} href="#reset-content">
         Skip to content
       </a>
 
@@ -166,7 +168,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
 
   return (
     <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
-      <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px]" href="#reset-content">
+      <a className={skipLinkClass} href="#reset-content">
         Skip to content
       </a>
 
@@ -197,7 +199,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
               />
               <button
                 type="button"
-                className="password-toggle focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#999999] cursor-pointer hover:text-[#eaeaea]"
+                className={passwordToggleClass}
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}

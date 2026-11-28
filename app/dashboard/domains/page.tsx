@@ -37,6 +37,24 @@ import { useToast } from "@/components/toast-context";
 import { copyToClipboard } from "@/lib/clipboard";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { compactSecondaryButtonClass, dangerButtonClass, filterSelectClass, modalCloseClass, secondaryButtonClass, successBadgeClass } from "@/components/ui-classes";
+
+export const domainsTableClass = [
+  "domains-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px]",
+  "[&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492]",
+  "[&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217]",
+  "[&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px]",
+  "[&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)]",
+  "[&_tr:last-child>td]:border-b-0",
+].join(" ");
+
+export const dnsRecordTagClass = [
+  "bg-[rgba(62,207,142,0.12)]",
+  "[font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] text-[10px]",
+  "font-bold py-[2px] px-[6px] rounded-control-sm text-accent border",
+  "border-[rgba(62,207,142,0.25)]",
+].join(" ");
+
 export default function DomainsPage() {
   const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
@@ -215,7 +233,7 @@ export default function DomainsPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Domains &amp; Networking</h1>
-              <span className="bg-[rgba(62,207,142,0.12)] inline-flex items-center text-[10px] font-bold tracking-[0.06em] py-[2px] px-[7px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)] uppercase leading-[1.2]">EDGE PROXY</span>
+              <span className={successBadgeClass}>EDGE PROXY</span>
             </div>
             <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage custom brand domains, SSL/TLS certificates, and platform subdomains for{" "}
@@ -227,7 +245,7 @@ export default function DomainsPage() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+            className={secondaryButtonClass}
             onClick={() => void handleRefresh()}
             disabled={loading}
             title="Refresh domains and routing status"
@@ -368,7 +386,7 @@ export default function DomainsPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
+                className={filterSelectClass}
                 aria-label="Filter domains by status"
               >
                 <option value="all">All Statuses</option>
@@ -427,7 +445,7 @@ export default function DomainsPage() {
                 )}
               </div>
             ) : (
-              <table className="domains-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217] [&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px] [&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)] [&_tr:last-child>td]:border-b-0">
+              <table className={domainsTableClass}>
                 <thead>
                   <tr>
                     <th scope="col">Domain / Hostname</th>
@@ -550,7 +568,7 @@ export default function DomainsPage() {
                             {!isActive && canManage && (
                               <button
                                 type="button"
-                                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5"
+                                className={compactSecondaryButtonClass}
                                 onClick={() => void handleVerify(dom)}
                                 disabled={isVerifying}
                                 title="Check DNS propagation and route domain"
@@ -564,7 +582,7 @@ export default function DomainsPage() {
 
                             <button
                               type="button"
-                              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2"
+                              className={`${secondaryButtonClass} text-xs h-7 px-2`}
                               onClick={() => setInstructionsDomain(dom)}
                               title="View required DNS TXT & CNAME records"
                             >
@@ -617,7 +635,7 @@ export default function DomainsPage() {
                 </p>
               </div>
             ) : (
-              <table className="domains-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492] [&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217] [&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px] [&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)] [&_tr:last-child>td]:border-b-0">
+              <table className={domainsTableClass}>
                 <thead>
                   <tr>
                     <th scope="col">Service</th>
@@ -701,7 +719,7 @@ export default function DomainsPage() {
                           href={srv.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none text-xs h-7 px-2.5 inline-flex items-center gap-1"
+                          className={`${compactSecondaryButtonClass} gap-1`}
                         >
                           <span>Visit</span>
                           <ExternalLink className="w-3 h-3" />
@@ -789,7 +807,7 @@ export default function DomainsPage() {
             </div>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setAddModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -859,7 +877,7 @@ export default function DomainsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setAddModalOpen(false)}
                 disabled={busyAdd}
               >
@@ -900,7 +918,7 @@ export default function DomainsPage() {
             </div>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setInstructionsDomain(null)}
               aria-label="Close dialog"
             >
@@ -918,7 +936,7 @@ export default function DomainsPage() {
             <div className="bg-[#131217] p-[14px] rounded-card border border-surface-raised">
               <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="bg-[rgba(62,207,142,0.12)] [font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] text-[10px] font-bold py-[2px] px-[6px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)]">TXT</span>
+                  <span className={dnsRecordTagClass}>TXT</span>
                   <span className="text-xs font-semibold text-white">Ownership Verification</span>
                 </div>
                 <span className="text-[11px] text-zinc-500">Required</span>
@@ -977,7 +995,7 @@ export default function DomainsPage() {
             <div className="bg-[#131217] p-[14px] rounded-card border border-surface-raised">
               <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="bg-[rgba(62,207,142,0.12)] [font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] text-[10px] font-bold py-[2px] px-[6px] rounded-control-sm text-accent border border-[rgba(62,207,142,0.25)]">CNAME</span>
+                  <span className={dnsRecordTagClass}>CNAME</span>
                   <span className="text-xs font-semibold text-white">Traffic Routing</span>
                 </div>
                 <span className="text-[11px] text-zinc-500">Required</span>
@@ -1055,7 +1073,7 @@ export default function DomainsPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+              className={secondaryButtonClass}
               onClick={() => setInstructionsDomain(null)}
             >
               Close
@@ -1091,7 +1109,7 @@ export default function DomainsPage() {
             </div>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setDeletingDomain(null)}
               aria-label="Close dialog"
             >
@@ -1119,7 +1137,7 @@ export default function DomainsPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+              className={secondaryButtonClass}
               onClick={() => setDeletingDomain(null)}
               disabled={busyDelete}
             >
@@ -1127,7 +1145,7 @@ export default function DomainsPage() {
             </button>
             <button
               type="button"
-              className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+              className={dangerButtonClass}
               onClick={() => void handleDeleteDomain()}
               disabled={busyDelete}
             >

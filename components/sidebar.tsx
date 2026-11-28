@@ -54,6 +54,95 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+export const mobileSidebarSheetClass = [
+  "mobile-sidebar-sheet hidden [@media(max-width:1023px)]:block",
+  "[@media(max-width:1023px)]:inset-[auto_0_0] [@media(max-width:1023px)]:fixed",
+  "[@media(max-width:1023px)]:z-[60] [@media(max-width:1023px)]:w-[min(100%,560px)]",
+  "[@media(max-width:1023px)]:h-[min(82dvh,720px)] [@media(max-width:1023px)]:my-0",
+  "[@media(max-width:1023px)]:mx-auto [@media(max-width:1023px)]:overflow-hidden",
+  "[@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#302e34]",
+  "[@media(max-width:1023px)]:border-b-0 [@media(max-width:1023px)]:rounded-[20px_20px_0_0]",
+  "[@media(max-width:1023px)]:bg-[#232127]",
+  "[@media(max-width:1023px)]:[box-shadow:0_-4px_14px_rgb(0_0_0_/_42%)]",
+].join(" ");
+
+export const sidebarToggleClass = [
+  "sidebar-toggle",
+  "[transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1)]",
+  "focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]",
+  "inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0",
+  "rounded-control bg-transparent text-[#b5b2b9] cursor-pointer",
+  "hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console",
+].join(" ");
+
+export const profileMenuRowClass = [
+  "profile-menu-row text-[13px] focus-visible:outline-2 focus-visible:outline-[#aaa6ec]",
+  "focus-visible:outline-offset-[2px] flex w-full h-[32px] items-center gap-[10px] py-0",
+  "px-[10px] border-0 rounded-control bg-transparent text-[#b3b0ba] cursor-pointer text-left",
+  "hover:bg-[#26262e] hover:text-ink-console logout-row",
+].join(" ");
+
+export const profileButtonClass = [
+  "profile-button focus-visible:outline-2 focus-visible:outline-[#aaa6ec]",
+  "focus-visible:outline-offset-[2px] hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console",
+  "flex min-w-0 flex-1 items-center gap-[8px] py-[4px] px-[6px]",
+  "[transition:flex-basis_360ms_cubic-bezier(0.22,1,0.36,1),background-color_150ms_ease]",
+  "border-0 rounded-card bg-transparent text-ink-console cursor-pointer text-left",
+  "hover:bg-[rgba(255,255,255,0.05)]",
+].join(" ");
+
+export const userMobileTopbarClass = [
+  "user-mobile-topbar hidden [@media(max-width:1023px)]:inset-[0_0_auto]",
+  "[@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[40]",
+  "[@media(max-width:1023px)]:flex [@media(max-width:1023px)]:h-[59px]",
+  "[@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-between",
+  "[@media(max-width:1023px)]:py-0 [@media(max-width:1023px)]:px-[16px]",
+  "[@media(max-width:1023px)]:border-b [@media(max-width:1023px)]:border-b-[#2b2b2e]",
+  "[@media(max-width:1023px)]:bg-[#1a181d]",
+].join(" ");
+
+export const mobileBrandClass = [
+  "mobile-brand [@media(max-width:1023px)]:inline-flex [@media(max-width:1023px)]:w-[44px]",
+  "[@media(max-width:1023px)]:h-[44px] [@media(max-width:1023px)]:items-center",
+  "[@media(max-width:1023px)]:justify-center [@media(max-width:1023px)]:rounded-card",
+  "focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]",
+].join(" ");
+
+export const mobileTopbarActionsClass = [
+  "mobile-topbar-actions [@media(max-width:1023px)]:[&>button]:inline-flex",
+  "[@media(max-width:1023px)]:[&>button]:h-[44px]",
+  "[@media(max-width:1023px)]:[&>button]:w-[44px]",
+  "[@media(max-width:1023px)]:[&>button]:items-center",
+  "[@media(max-width:1023px)]:[&>button]:justify-center",
+  "[@media(max-width:1023px)]:[&>button]:p-0 [@media(max-width:1023px)]:[&>button]:border-0",
+  "[@media(max-width:1023px)]:[&>button]:rounded-card",
+  "[@media(max-width:1023px)]:[&>button]:bg-transparent",
+  "[@media(max-width:1023px)]:[&>button]:text-ink-bright",
+  "[@media(max-width:1023px)]:[&>button]:cursor-pointer",
+  "[@media(max-width:1023px)]:[&>button:hover]:bg-[#1b1b1e] [@media(max-width:1023px)]:flex",
+  "[@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:gap-[6px]",
+].join(" ");
+
+export const mobileAccountAvatarClass = [
+  "mobile-account-avatar [@media(max-width:1023px)]:inline-flex",
+  "[@media(max-width:1023px)]:w-[26px] [@media(max-width:1023px)]:h-[26px]",
+  "[@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-center",
+  "[@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#3d3945]",
+  "[@media(max-width:1023px)]:rounded-[50%] [@media(max-width:1023px)]:bg-[#2b2930]",
+  "[@media(max-width:1023px)]:text-ink-console [@media(max-width:1023px)]:text-[11px]",
+  "[@media(max-width:1023px)]:font-semibold",
+].join(" ");
+
+export const mobileAccountMenuClass = [
+  "mobile-account-menu [&>strong]:max-w-full [&>strong]:overflow-hidden",
+  "[&>strong]:text-ellipsis [&>strong]:whitespace-nowrap [&>strong]:text-[13px]",
+  "[&>small]:text-[#8a8791] [&>small]:text-[12px] [&>button]:h-[30px] [&>button]:border-0",
+  "[&>button]:bg-transparent [&>button]:text-[#b3b0ba] [&>button]:cursor-pointer",
+  "[&>button]:text-left absolute top-[48px] right-[12px] z-[45] flex",
+  "w-[min(248px,calc(100vw_-_24px))] min-w-0 flex-col gap-[3px] p-[10px] border",
+  "border-[#303033] rounded-card bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_40%)]",
+].join(" ");
+
 type IconName =
   | "inbox"
   | "review"
@@ -223,7 +312,7 @@ function MobileSidebarSheet({
 
   return (
     <motion.aside
-      className="mobile-sidebar-sheet hidden [@media(max-width:1023px)]:block [@media(max-width:1023px)]:inset-[auto_0_0] [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[60] [@media(max-width:1023px)]:w-[min(100%,560px)] [@media(max-width:1023px)]:h-[min(82dvh,720px)] [@media(max-width:1023px)]:my-0 [@media(max-width:1023px)]:mx-auto [@media(max-width:1023px)]:overflow-hidden [@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#302e34] [@media(max-width:1023px)]:border-b-0 [@media(max-width:1023px)]:rounded-[20px_20px_0_0] [@media(max-width:1023px)]:bg-[#232127] [@media(max-width:1023px)]:[box-shadow:0_-4px_14px_rgb(0_0_0_/_42%)]"
+      className={mobileSidebarSheetClass}
       role="dialog"
       aria-modal="true"
       aria-label="Main navigation"
@@ -532,7 +621,7 @@ export function Sidebar({
         ) : (
           <button
             type="button"
-            className="sidebar-toggle [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control bg-transparent text-[#b5b2b9] cursor-pointer hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console"
+            className={sidebarToggleClass}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
@@ -696,7 +785,7 @@ export function Sidebar({
 
                   <button
                     type="button"
-                    className="profile-menu-row text-[13px] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] flex w-full h-[32px] items-center gap-[10px] py-0 px-[10px] border-0 rounded-control bg-transparent text-[#b3b0ba] cursor-pointer text-left hover:bg-[#26262e] hover:text-ink-console logout-row"
+                    className={profileMenuRowClass}
                     onClick={async () => {
                       await signOut();
                       router.replace("/");
@@ -710,7 +799,7 @@ export function Sidebar({
               <div className="profile-controls flex items-center gap-[6px]">
                 <button
                   type="button"
-                  className="profile-button focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console flex min-w-0 flex-1 items-center gap-[8px] py-[4px] px-[6px] [transition:flex-basis_360ms_cubic-bezier(0.22,1,0.36,1),background-color_150ms_ease] border-0 rounded-card bg-transparent text-ink-console cursor-pointer text-left hover:bg-[rgba(255,255,255,0.05)]"
+                  className={profileButtonClass}
                   onClick={() => setProfileOpen((value) => !value)}
                   aria-label={profileOpen ? "Close user menu" : "Open user menu"}
                   title={collapsed && !mobile ? "User menu" : undefined}
@@ -738,11 +827,11 @@ export function Sidebar({
 
   return (
     <>
-      <div className="user-mobile-topbar hidden [@media(max-width:1023px)]:inset-[0_0_auto] [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[40] [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:h-[59px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-between [@media(max-width:1023px)]:py-0 [@media(max-width:1023px)]:px-[16px] [@media(max-width:1023px)]:border-b [@media(max-width:1023px)]:border-b-[#2b2b2e] [@media(max-width:1023px)]:bg-[#1a181d]">
-        <Link href="/dashboard" className="mobile-brand [@media(max-width:1023px)]:inline-flex [@media(max-width:1023px)]:w-[44px] [@media(max-width:1023px)]:h-[44px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-center [@media(max-width:1023px)]:rounded-card focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]" aria-label="Stealth home">
+      <div className={userMobileTopbarClass}>
+        <Link href="/dashboard" className={mobileBrandClass} aria-label="Stealth home">
           <Image src="/stealth-cat.png" alt="" width={24} height={24} className="h-[24px] w-[24px] object-contain" priority />
         </Link>
-        <div className="mobile-topbar-actions [@media(max-width:1023px)]:[&>button]:inline-flex [@media(max-width:1023px)]:[&>button]:h-[44px] [@media(max-width:1023px)]:[&>button]:w-[44px] [@media(max-width:1023px)]:[&>button]:items-center [@media(max-width:1023px)]:[&>button]:justify-center [@media(max-width:1023px)]:[&>button]:p-0 [@media(max-width:1023px)]:[&>button]:border-0 [@media(max-width:1023px)]:[&>button]:rounded-card [@media(max-width:1023px)]:[&>button]:bg-transparent [@media(max-width:1023px)]:[&>button]:text-ink-bright [@media(max-width:1023px)]:[&>button]:cursor-pointer [@media(max-width:1023px)]:[&>button:hover]:bg-[#1b1b1e] [@media(max-width:1023px)]:flex [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:gap-[6px]">
+        <div className={mobileTopbarActionsClass}>
           <button
             type="button"
             className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-2"
@@ -759,7 +848,7 @@ export function Sidebar({
             aria-label="User menu"
             aria-expanded={mobileAccountOpen}
           >
-            <UserAvatar user={user} size={26} className="mobile-account-avatar [@media(max-width:1023px)]:inline-flex [@media(max-width:1023px)]:w-[26px] [@media(max-width:1023px)]:h-[26px] [@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-center [@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#3d3945] [@media(max-width:1023px)]:rounded-[50%] [@media(max-width:1023px)]:bg-[#2b2930] [@media(max-width:1023px)]:text-ink-console [@media(max-width:1023px)]:text-[11px] [@media(max-width:1023px)]:font-semibold" decorative />
+            <UserAvatar user={user} size={26} className={mobileAccountAvatarClass} decorative />
           </button>
           <button
             type="button"
@@ -774,7 +863,7 @@ export function Sidebar({
           </button>
         </div>
         {mobileAccountOpen ? (
-          <div className="mobile-account-menu [&>strong]:max-w-full [&>strong]:overflow-hidden [&>strong]:text-ellipsis [&>strong]:whitespace-nowrap [&>strong]:text-[13px] [&>small]:text-[#8a8791] [&>small]:text-[12px] [&>button]:h-[30px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:text-[#b3b0ba] [&>button]:cursor-pointer [&>button]:text-left absolute top-[48px] right-[12px] z-[45] flex w-[min(248px,calc(100vw_-_24px))] min-w-0 flex-col gap-[3px] p-[10px] border border-[#303033] rounded-card bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_40%)]" role="menu">
+          <div className={mobileAccountMenuClass} role="menu">
             <strong title={user.name}>{user.name}</strong>
             <small>{user.role}</small>
             <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />

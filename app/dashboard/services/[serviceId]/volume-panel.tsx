@@ -12,6 +12,8 @@ import { formatDateTime } from "@/lib/format";
 import { SupabaseModal } from "@/components/supabase-modal";
 import { recordsTableClass } from "@/components/records-table";
 
+import { dangerLinkButtonClass, redeployBannerClass, secondaryButtonClass, tableWrapClass } from "@/components/ui-classes";
+
 function usageLabel(volume: VolumeSummary): string {
   if (!volume.exists) {
     return "Created on the next Deployment";
@@ -105,7 +107,7 @@ export function VolumePanel({
       </div>
 
       {redeployNeeded ? (
-        <p className="environment-redeploy-banner mx-0 px-[14px] border border-[#6b5a33] text-[#e8d49a] text-[13px] mt-0 mb-[16px] py-[10px] border-[rgba(245,158,11,0.3)] rounded-control bg-[rgba(245,158,11,0.08)] text-[#f5a623]" role="status">
+        <p className={redeployBannerClass} role="status">
           Volume changes are saved but not live yet. Redeploy this Service to apply them.
         </p>
       ) : null}
@@ -158,7 +160,7 @@ export function VolumePanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setCreating(false)}
                 disabled={busy}
               >
@@ -185,7 +187,7 @@ export function VolumePanel({
           </p>
         </div>
       ) : (
-        <div className="organization-table-wrap overflow-x-auto border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:720px)]:border-0 [@media(max-width:720px)]:rounded-[0] [@media(max-width:720px)]:bg-transparent [@media(max-width:720px)]:overflow-visible">
+        <div className={tableWrapClass}>
           <table className={recordsTableClass}>
             <thead>
               <tr>
@@ -223,7 +225,7 @@ export function VolumePanel({
                   <td data-label="Actions" className="svc-cell-actions">
                     <div className="deployment-actions">
                       <button
-                        className="dashboard-link-button text-[12px] focus-visible:outline-2 focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease] is-danger"
+                        className={dangerLinkButtonClass}
                         type="button"
                         onClick={() => void remove()}
                         disabled={busy}

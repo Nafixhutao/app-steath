@@ -15,6 +15,60 @@ import { useResource } from "@/lib/resource";
 import { getOrganizationUsage, type ServiceUsageSummary } from "@/lib/usage-client";
 import { formatDateTime } from "@/lib/format";
 
+import { secondaryButtonClass } from "@/components/ui-classes";
+
+export const usageTotalsClass = [
+  "usage-totals flex items-center flex-wrap gap-[12px_0] py-[12px] px-0 mb-[24px] border-t",
+  "border-t-surface-raised border-b border-b-surface-raised [&>div]:flex [&>div]:items-baseline",
+  "[&>div]:gap-[8px] [&>div]:px-[20px] [&>div]:py-0 [&>div]:border-r",
+  "[&>div]:border-[var(--color-surface-raised)] [&>div:first-child]:pl-0",
+  "[&>div:last-child]:border-r-0 [@media(max-width:720px)]:[&>div]:px-[12px]",
+  "[&_span]:text-[12px] [&_span]:text-[var(--color-ink-muted)] [&_strong]:text-[18px]",
+  "[&_strong]:font-semibold [&_strong]:text-[var(--color-ink-bright)]",
+  "[&_strong]:[font-family:var(--font-console-mono)] [&_strong]:tabular-nums",
+].join(" ");
+
+export const usageCapacityPrimaryClass = [
+  "usage-capacity-primary [@media(max-width:860px)]:pr-[0] [@media(max-width:860px)]:pb-[14px]",
+  "[@media(max-width:860px)]:border-b [@media(max-width:860px)]:border-b-surface-raised flex",
+  "flex-col justify-center min-w-0 pr-[20px] border-r border-r-[var(--color-surface-raised)]",
+  "[@media(max-width:860px)]:border-r-0 [&>p]:mt-[10px] [&>p]:mb-0 [&>p]:mx-0 [&>p]:text-[11px]",
+  "[&>p]:text-[var(--color-ink-muted)]",
+].join(" ");
+
+export const usageCapacityValueClass = [
+  "usage-capacity-value flex items-baseline gap-[6px] mt-[4px] mb-[12px] mx-0",
+  "[&_strong]:text-[30px] [&_strong]:font-semibold [&_strong]:leading-none",
+  "[&_strong]:text-[var(--color-ink-bright)] [&_strong]:[font-family:var(--font-console-mono)]",
+  "[&_strong]:tabular-nums [&_span]:text-[13px] [&_span]:text-[var(--color-ink-muted)]",
+  "[&_span]:[font-family:var(--font-console-mono)]",
+].join(" ");
+
+export const usagePolicyGridClass = [
+  "usage-policy-grid grid gap-[16px_24px] p-[18px] grid-cols-[repeat(3,minmax(0,1fr))]",
+  "[@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))]",
+  "[@media(max-width:720px)]:grid-cols-1 [&>div]:flex [&>div]:flex-col [&>div]:gap-[4px]",
+  "[&>div]:min-w-0 [&_span]:text-[12px] [&_span]:text-[var(--color-ink-muted)]",
+  "[&_strong]:text-[13px] [&_strong]:[font-family:var(--font-console-mono)]",
+  "[&_strong]:font-medium [&_strong]:text-[var(--color-ink-bright)]",
+].join(" ");
+
+export const usageTableClass = [
+  "usage-table w-full min-w-[640px] text-left [&_thead_th]:text-[11px] [&_thead_th]:font-medium",
+  "[&_thead_th]:uppercase [&_thead_th]:tracking-[0.05em]",
+  "[&_thead_th]:text-[var(--color-ink-muted)] [&_thead_th]:px-[14px] [&_thead_th]:py-[10px]",
+  "[&_thead_th]:border-b [&_thead_th]:border-[var(--color-surface-raised)]",
+  "[&_thead_th]:bg-[#131217] [&_tbody_td]:px-[14px] [&_tbody_td]:py-[11px]",
+  "[&_tbody_td]:border-b [&_tbody_td]:border-[#1f1d25] [&_tbody_td]:text-[13px]",
+  "[&_tbody_td]:align-middle [&_tbody_tr:hover>td]:bg-[rgba(255,255,255,0.015)]",
+].join(" ");
+
+export const usageSectionHeadClass = [
+  "flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px]",
+  "[&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px]",
+  "[&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap",
+].join(" ");
+
 function formatMb(mb: number): string {
   if (mb < 1024) return `${mb} MB`;
   return `${(mb / 1024).toFixed(2)} GB`;
@@ -161,7 +215,7 @@ export default function UsagePage() {
         </div>
         <button
           type="button"
-          className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+          className={secondaryButtonClass}
           onClick={() => void usage.refresh()}
           disabled={loading}
           aria-busy={loading}
@@ -205,7 +259,7 @@ export default function UsagePage() {
         </div>
       ) : (
         <>
-          <section className="usage-totals flex items-center flex-wrap gap-[12px_0] py-[12px] px-0 mb-[24px] border-t border-t-surface-raised border-b border-b-surface-raised [&>div]:flex [&>div]:items-baseline [&>div]:gap-[8px] [&>div]:px-[20px] [&>div]:py-0 [&>div]:border-r [&>div]:border-[var(--color-surface-raised)] [&>div:first-child]:pl-0 [&>div:last-child]:border-r-0 [@media(max-width:720px)]:[&>div]:px-[12px] [&_span]:text-[12px] [&_span]:text-[var(--color-ink-muted)] [&_strong]:text-[18px] [&_strong]:font-semibold [&_strong]:text-[var(--color-ink-bright)] [&_strong]:[font-family:var(--font-console-mono)] [&_strong]:tabular-nums" aria-label="Measured resource totals">
+          <section className={usageTotalsClass} aria-label="Measured resource totals">
             <div>
               <span>CPU</span>
               <strong>{usageData.totals.cpu.toFixed(2)} vCPU</strong>
@@ -225,14 +279,14 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="quotas-section-heading">
-            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
+            <div className={usageSectionHeadClass}>
               <h2 id="quotas-section-heading">Capacity &amp; quotas</h2>
               <span>Platform limits</span>
             </div>
             <div className="usage-capacity bg-surface grid gap-[16px] p-[18px] border border-surface-raised rounded-card grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] [@media(max-width:860px)]:grid-cols-1">
-              <div className="usage-capacity-primary [@media(max-width:860px)]:pr-[0] [@media(max-width:860px)]:pb-[14px] [@media(max-width:860px)]:border-b [@media(max-width:860px)]:border-b-surface-raised flex flex-col justify-center min-w-0 pr-[20px] border-r border-r-[var(--color-surface-raised)] [@media(max-width:860px)]:border-r-0 [&>p]:mt-[10px] [&>p]:mb-0 [&>p]:mx-0 [&>p]:text-[11px] [&>p]:text-[var(--color-ink-muted)]">
+              <div className={usageCapacityPrimaryClass}>
                 <span className="text-[11px] uppercase tracking-[0.04em] text-ink-muted">Services in this organization</span>
-                <div className="usage-capacity-value flex items-baseline gap-[6px] mt-[4px] mb-[12px] mx-0 [&_strong]:text-[30px] [&_strong]:font-semibold [&_strong]:leading-none [&_strong]:text-[var(--color-ink-bright)] [&_strong]:[font-family:var(--font-console-mono)] [&_strong]:tabular-nums [&_span]:text-[13px] [&_span]:text-[var(--color-ink-muted)] [&_span]:[font-family:var(--font-console-mono)]">
+                <div className={usageCapacityValueClass}>
                   <strong>{usageData.counts.services.used}</strong>
                   <span>/ {usageData.counts.services.limit}</span>
                 </div>
@@ -280,7 +334,7 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="service-health-heading">
-            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
+            <div className={usageSectionHeadClass}>
               <h2 id="service-health-heading">Service status</h2>
               <span>{usageData.services.length} services</span>
             </div>
@@ -314,7 +368,7 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="projects-usage-heading">
-            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
+            <div className={usageSectionHeadClass}>
               <h2 id="projects-usage-heading">Projects at a glance</h2>
               <span>{usageData.projects.length} projects</span>
             </div>
@@ -354,7 +408,7 @@ export default function UsagePage() {
           </section>
 
           <section className="mb-[26px]" aria-labelledby="services-usage-heading">
-            <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
+            <div className={usageSectionHeadClass}>
               <h2 id="services-usage-heading">Service resource breakdown</h2>
               <span>{usageData.services.length} services</span>
             </div>
@@ -370,7 +424,7 @@ export default function UsagePage() {
                   </p>
                 </div>
               ) : (
-                <table className="usage-table w-full min-w-[640px] text-left [&_thead_th]:text-[11px] [&_thead_th]:font-medium [&_thead_th]:uppercase [&_thead_th]:tracking-[0.05em] [&_thead_th]:text-[var(--color-ink-muted)] [&_thead_th]:px-[14px] [&_thead_th]:py-[10px] [&_thead_th]:border-b [&_thead_th]:border-[var(--color-surface-raised)] [&_thead_th]:bg-[#131217] [&_tbody_td]:px-[14px] [&_tbody_td]:py-[11px] [&_tbody_td]:border-b [&_tbody_td]:border-[#1f1d25] [&_tbody_td]:text-[13px] [&_tbody_td]:align-middle [&_tbody_tr:hover>td]:bg-[rgba(255,255,255,0.015)]">
+                <table className={usageTableClass}>
                   <thead>
                     <tr>
                       <th scope="col">Service</th>
@@ -449,7 +503,7 @@ export default function UsagePage() {
 
           {usageData.databases.length > 0 ? (
             <section className="mb-[26px]" aria-labelledby="databases-usage-heading">
-              <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
+              <div className={usageSectionHeadClass}>
                 <h2 id="databases-usage-heading">Database storage</h2>
                 <span>{usageData.databases.length} databases</span>
               </div>
@@ -457,7 +511,7 @@ export default function UsagePage() {
                 Measured storage used by each database in this organization.
               </p>
               <div className="bg-surface border border-surface-raised rounded-card overflow-x-auto">
-                <table className="usage-table w-full min-w-[640px] text-left [&_thead_th]:text-[11px] [&_thead_th]:font-medium [&_thead_th]:uppercase [&_thead_th]:tracking-[0.05em] [&_thead_th]:text-[var(--color-ink-muted)] [&_thead_th]:px-[14px] [&_thead_th]:py-[10px] [&_thead_th]:border-b [&_thead_th]:border-[var(--color-surface-raised)] [&_thead_th]:bg-[#131217] [&_tbody_td]:px-[14px] [&_tbody_td]:py-[11px] [&_tbody_td]:border-b [&_tbody_td]:border-[#1f1d25] [&_tbody_td]:text-[13px] [&_tbody_td]:align-middle [&_tbody_tr:hover>td]:bg-[rgba(255,255,255,0.015)]">
+                <table className={usageTableClass}>
                   <thead>
                     <tr>
                       <th scope="col">Database</th>
@@ -508,11 +562,11 @@ export default function UsagePage() {
 
           {canSeeLimitDetail ? (
             <section className="mb-[26px]" aria-labelledby="limit-detail-heading">
-              <div className="usage-section-head flex items-baseline justify-between gap-[12px] mb-[10px] [&_h2]:m-0 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-[var(--color-ink-console)] [&_span]:text-[11px] [&_span]:text-[var(--color-ink-muted)] [&_span]:whitespace-nowrap">
+              <div className={usageSectionHeadClass}>
                 <h2 id="limit-detail-heading">Platform allocation policy</h2>
               </div>
               <div className="bg-surface border border-surface-raised rounded-card overflow-hidden">
-                <div className="usage-policy-grid grid gap-[16px_24px] p-[18px] grid-cols-[repeat(3,minmax(0,1fr))] [@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))] [@media(max-width:720px)]:grid-cols-1 [&>div]:flex [&>div]:flex-col [&>div]:gap-[4px] [&>div]:min-w-0 [&_span]:text-[12px] [&_span]:text-[var(--color-ink-muted)] [&_strong]:text-[13px] [&_strong]:[font-family:var(--font-console-mono)] [&_strong]:font-medium [&_strong]:text-[var(--color-ink-bright)]">
+                <div className={usagePolicyGridClass}>
                   <div>
                     <span>CPU cap per service</span>
                     <strong>{usageData.limits.cpuPerService} vCPU</strong>

@@ -10,6 +10,15 @@ import {
 } from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 
+import { dashboardLinkButtonClass, serviceMetaClass } from "@/components/ui-classes";
+
+export const runtimeRestartButtonClass = [
+  "dashboard-link-button text-[12px] disabled:opacity-50 focus-visible:outline-2",
+  "focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] p-0 border-0",
+  "text-violet [font:inherit] cursor-pointer hover:underline",
+  "[transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]",
+].join(" ");
+
 const LOG_TAIL = 200;
 const MAX_LOG_LINES = 500;
 
@@ -110,7 +119,7 @@ export function RuntimePanel({
                     : "Start"}
             </button>
             <button
-              className="dashboard-link-button text-[12px] disabled:opacity-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]"
+              className={runtimeRestartButtonClass}
               type="button"
               onClick={() => void act("restart")}
               disabled={busy !== null || runtime.loading || !running}
@@ -127,7 +136,7 @@ export function RuntimePanel({
         </p>
       ) : null}
 
-      <dl className="service-meta grid gap-[10px] p-0 gap-[20px_24px] m-0 grid-cols-[repeat(3,minmax(0,1fr))] [@media(max-width:860px)]:grid-cols-[repeat(2,minmax(0,1fr))] [&>div]:block [&>div]:min-w-0 [&_dt]:mt-0 [&_dt]:mb-[5px] [&_dt]:mx-0 [&_dt]:text-[#71717a] [&_dt]:text-[12px] [&_dt]:font-medium [&_dd]:m-0 [&_dd]:text-[#ededf2] [&_dd]:text-[13px] [&_dd]:[overflow-wrap:anywhere]">
+      <dl className={serviceMetaClass}>
         <div>
           <dt>Container</dt>
           <dd>{runtime.loading ? "Checking..." : serviceRuntimeLabel(status)}</dd>
@@ -167,7 +176,7 @@ export function RuntimePanel({
         <div className="deployment-log-head">
           <h3>Runtime log</h3>
           <button
-            className="dashboard-link-button text-[12px] focus-visible:outline-2 focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] p-0 border-0 text-violet [font:inherit] cursor-pointer hover:underline [transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]"
+            className={dashboardLinkButtonClass}
             type="button"
             onClick={() => {
               setLogError("");

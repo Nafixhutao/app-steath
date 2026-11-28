@@ -26,6 +26,52 @@ import { getInitials } from "@/components/identity";
 import { UserAvatar } from "@/components/user-avatar";
 import { useToast } from "@/components/toast-context";
 
+export const orgDropdownButtonClass = [
+  "supabase-org-dropdown-btn [@media(max-width:380px)]:gap-[6px]",
+  "[@media(max-width:380px)]:p-[4px] text-[13px] font-medium flex items-center gap-[8px]",
+  "py-[4px] px-[8px] rounded-control border border-transparent bg-transparent text-ink-console",
+  "cursor-pointer [transition:background-color_150ms,border-color_150ms]",
+  "hover:bg-[rgba(255,255,255,0.05)] hover:border-[#2b2933]",
+].join(" ");
+
+export const searchButtonClass = [
+  "supabase-search-btn [@media(max-width:1023px)]:w-[32px] [@media(max-width:1023px)]:h-[32px]",
+  "[@media(max-width:1023px)]:p-0 [@media(max-width:1023px)]:justify-center bg-surface",
+  "text-[13px] flex items-center gap-[8px] h-[30px] py-0 px-[10px] rounded-control border",
+  "border-[#282631] text-[#8e8c99] cursor-pointer [transition:border-color_150ms,color_150ms]",
+  "hover:border-[#383642] hover:text-ink-console",
+].join(" ");
+
+export const avatarButtonClass = [
+  "supabase-avatar-btn outline-none focus-visible:outline-2 focus-visible:outline-[#818cf8]",
+  "focus-visible:outline-offset-[2px] flex items-center justify-center relative border-0",
+  "bg-transparent p-0 cursor-pointer rounded-[50%] after:absolute after:top-1/2",
+  "after:left-[50%] after:min-w-[44px] after:min-h-[44px]",
+].join(" ");
+
+export const dropdownUserHeaderClass = [
+  "supabase-dropdown-user-header flex items-center gap-[9px] min-w-0 pt-[6px] pb-[8px] px-[8px]",
+  "[&_strong]:block [&_strong]:overflow-hidden [&_strong]:text-ellipsis",
+  "[&_strong]:whitespace-nowrap [&_strong]:text-[13px]",
+  "[&_strong]:text-[var(--color-ink-console)] [&_small]:block [&_small]:overflow-hidden",
+  "[&_small]:text-ellipsis [&_small]:whitespace-nowrap [&_small]:text-[11px]",
+  "[&_small]:text-[var(--color-ink-muted)]",
+].join(" ");
+
+export const topbarIconButtonClass = [
+  "supabase-icon-btn [@media(max-width:1023px)]:hidden cursor-pointer focus-visible:outline-2",
+  "focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center",
+  "justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0",
+  "[transition:color_150ms,background-color_150ms] after:absolute after:top-1/2",
+  "after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]",
+].join(" ");
+
+export const dropdownItemClass = [
+  "supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control",
+  "bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline",
+  "[transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)]",
+].join(" ");
+
 export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -112,7 +158,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
-              className="supabase-org-dropdown-btn [@media(max-width:380px)]:gap-[6px] [@media(max-width:380px)]:p-[4px] text-[13px] font-medium flex items-center gap-[8px] py-[4px] px-[8px] rounded-control border border-transparent bg-transparent text-ink-console cursor-pointer [transition:background-color_150ms,border-color_150ms] hover:bg-[rgba(255,255,255,0.05)] hover:border-[#2b2933]"
+              className={orgDropdownButtonClass}
               onClick={() => setOrgDropdownOpen((prev) => !prev)}
               aria-expanded={orgDropdownOpen}
               aria-haspopup="menu"
@@ -153,7 +199,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
                 <div className="bg-[#23222a] h-[1px] my-[6px] mx-0" />
                 <Link
                   href="/dashboard/organizations"
-                  className="supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)]"
+                  className={dropdownItemClass}
                   onClick={() => setOrgDropdownOpen(false)}
                 >
                   <Building className="w-4 h-4 text-zinc-400" aria-hidden="true" />
@@ -177,7 +223,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
 
         <button
           type="button"
-          className="supabase-search-btn [@media(max-width:1023px)]:w-[32px] [@media(max-width:1023px)]:h-[32px] [@media(max-width:1023px)]:p-0 [@media(max-width:1023px)]:justify-center bg-surface text-[13px] flex items-center gap-[8px] h-[30px] py-0 px-[10px] rounded-control border border-[#282631] text-[#8e8c99] cursor-pointer [transition:border-color_150ms,color_150ms] hover:border-[#383642] hover:text-ink-console"
+          className={searchButtonClass}
           onClick={onOpenSearch}
           aria-label="Search or jump to (Ctrl+K)"
         >
@@ -190,7 +236,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
           href="https://docs.nazxf.my.id"
           target="_blank"
           rel="noopener noreferrer"
-          className="supabase-icon-btn [@media(max-width:1023px)]:hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
+          className={topbarIconButtonClass}
           title="Help & Documentation"
           aria-label="Help & Documentation"
         >
@@ -199,7 +245,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
 
         <button
           type="button"
-          className="supabase-icon-btn [@media(max-width:1023px)]:hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative w-[32px] h-[32px] rounded-control bg-transparent border-0 [transition:color_150ms,background-color_150ms] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px] hover:bg-[rgba(255,255,255,0.05)]"
+          className={topbarIconButtonClass}
           title="Notifications"
           aria-label="Notifications"
           onClick={() => {
@@ -215,7 +261,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
         <div className="relative" ref={userMenuRef}>
           <button
             type="button"
-            className="supabase-avatar-btn outline-none focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex items-center justify-center relative border-0 bg-transparent p-0 cursor-pointer rounded-[50%] after:absolute after:top-1/2 after:left-[50%] after:min-w-[44px] after:min-h-[44px]"
+            className={avatarButtonClass}
             onClick={() => setUserDropdownOpen((prev) => !prev)}
             aria-expanded={userDropdownOpen}
             aria-haspopup="menu"
@@ -226,7 +272,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
 
           {userDropdownOpen && (
             <div className="supabase-dropdown-menu bg-[#16151a] absolute top-[calc(100%_+_6px)] left-auto right-0 z-[70] min-w-[220px] border border-[#2a2833] rounded-card p-[6px] [box-shadow:0_10px_25px_rgba(0,0,0,0.45)] right-aligned" role="menu">
-              <div className="supabase-dropdown-user-header flex items-center gap-[9px] min-w-0 pt-[6px] pb-[8px] px-[8px] [&_strong]:block [&_strong]:overflow-hidden [&_strong]:text-ellipsis [&_strong]:whitespace-nowrap [&_strong]:text-[13px] [&_strong]:text-[var(--color-ink-console)] [&_small]:block [&_small]:overflow-hidden [&_small]:text-ellipsis [&_small]:whitespace-nowrap [&_small]:text-[11px] [&_small]:text-[var(--color-ink-muted)]">
+              <div className={dropdownUserHeaderClass}>
                 <UserAvatar user={user} size={36} />
                 <div className="flex flex-col gap-[1px] min-w-0">
                   <strong title={userName}>{userName}</strong>
@@ -241,7 +287,7 @@ export function SupabaseTopbar({ onOpenSearch }: { onOpenSearch?: () => void }) 
               <div className="bg-[#23222a] h-[1px] my-[6px] mx-0" />
               <Link
                 href="/dashboard/settings"
-                className="supabase-dropdown-item flex items-center gap-[8px] w-full py-[7px] px-[8px] rounded-control bg-transparent border-0 text-[13px] text-left cursor-pointer no-underline [transition:background-color_150ms] hover:bg-[rgba(255,255,255,0.06)]"
+                className={dropdownItemClass}
                 role="menuitem"
                 onClick={() => setUserDropdownOpen(false)}
               >

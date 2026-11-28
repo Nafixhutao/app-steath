@@ -29,6 +29,8 @@ import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { credentialActionClass, credentialRowClass, credentialToggleClass, credentialValueClass, dangerButtonClass, modalCloseClass, secondaryButtonClass, serviceDeleteButtonClass } from "@/components/ui-classes";
+
 const STATUS_LABELS: Record<StorageBucketStatus, string> = {
   provisioning: "Provisioning",
   ready: "Ready",
@@ -73,7 +75,7 @@ function CopyValue({ label, value }: { label: string; value: string }) {
   }
 
   return (
-    <div className="db-cred-row [&:not(:first-child)]:border-t [&:not(:first-child)]:border-[#232129] [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
+    <div className={credentialRowClass}>
       <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         {label}
         {copied ? (
@@ -86,7 +88,7 @@ function CopyValue({ label, value }: { label: string; value: string }) {
         <span className="db-cred-value flex-auto [word-break:break-all] [font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace] text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono">{value}</span>
         <button
           type="button"
-          className="bg-[#1f1e26] [&:hover:not(:disabled)]:bg-[#272532] focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] flex-none inline-flex items-center justify-center min-w-[44px] min-h-[44px] p-0 rounded-control border border-[#2e2c39] text-[#8e8c99] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink disabled:opacity-[0.55] disabled:cursor-not-allowed"
+          className={credentialToggleClass}
           onClick={copy}
           aria-label={`Copy ${label.toLowerCase()}`}
           title={`Copy ${label.toLowerCase()}`}
@@ -146,7 +148,7 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
   }
 
   return (
-    <div className="db-cred-row [&:not(:first-child)]:border-t [&:not(:first-child)]:border-[#232129] [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
+    <div className={credentialRowClass}>
       <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         Secret key
         {copied ? (
@@ -156,7 +158,7 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
         ) : null}
       </span>
       <div className="flex items-start gap-[10px] min-w-0">
-        <span className="db-cred-value flex-auto [word-break:break-all] [font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace] text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono min-h-[21px]" aria-live="polite">
+        <span className={credentialValueClass} aria-live="polite">
           {loading ? (
             <span className="text-[#716f7c] [font-family:inherit]">
               <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -174,7 +176,7 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
       <div className="db-cred-password-actions [@media(max-width:400px)]:w-full flex flex-wrap gap-[8px] mt-[8px]">
         <button
           type="button"
-          className="db-cred-action [@media(max-width:400px)]:flex-auto focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] bg-[#1f1e26] text-[12.5px] font-medium [&:hover:not(:disabled)]:bg-[#272532] disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
+          className={credentialActionClass}
           onClick={() => void toggle()}
           disabled={loading}
           aria-label={visible ? "Hide secret key" : "Reveal secret key"}
@@ -184,7 +186,7 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
         </button>
         <button
           type="button"
-          className="db-cred-action [@media(max-width:400px)]:flex-auto focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] bg-[#1f1e26] text-[12.5px] font-medium [&:hover:not(:disabled)]:bg-[#272532] disabled:opacity-[0.55] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[6px] min-h-[44px] py-[8px] px-[14px] rounded-control border border-[#2e2c39] text-[#d4d4d8] cursor-pointer [transition:background-color_120ms,color_120ms,border-color_120ms] [&:hover:not(:disabled)]:border-[#3a3846] [&:hover:not(:disabled)]:text-ink"
+          className={credentialActionClass}
           onClick={() => void copySecret()}
           disabled={loading}
           aria-label="Copy secret key"
@@ -258,7 +260,7 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
           {canManage ? (
             <button
               type="button"
-              className="project-service-delete-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent text-[#716f7c] cursor-pointer [transition:all_120ms] hover:border-[rgba(244,63,94,0.2)] hover:bg-[rgba(244,63,94,0.1)] hover:text-[var(--color-danger)]"
+              className={serviceDeleteButtonClass}
               onClick={() => onDelete(bucket)}
               disabled={busy}
               title={`Delete ${bucket.name}`}
@@ -301,7 +303,7 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
         {canManage ? (
           <SecretKeyRow projectId={bucket.projectId} bucketId={bucket.id} />
         ) : (
-          <div className="db-cred-row [&:not(:first-child)]:border-t [&:not(:first-child)]:border-[#232129] [@media(max-width:400px)]:py-[10px] [@media(max-width:400px)]:px-[12px] flex flex-col gap-[4px] py-[12px] px-[14px] min-w-0">
+          <div className={credentialRowClass}>
             <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Secret key</span>
             <div className="flex items-start gap-[10px] min-w-0">
               <span className="db-cred-value flex-auto [word-break:break-all] [font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace] text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] text-[#716f7c] [font-family:inherit]">Owner or admin only</span>
@@ -501,7 +503,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             <h2 id="create-bucket-title">Create a new bucket</h2>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -584,7 +586,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >
@@ -619,7 +621,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             </div>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setDeleteTarget(null)}
               aria-label="Close dialog"
             >
@@ -659,7 +661,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setDeleteTarget(null)}
                 disabled={busy}
               >
@@ -667,7 +669,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
               </button>
               <button
                 type="submit"
-                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                className={dangerButtonClass}
                 disabled={busy || deleteConfirm !== deleteTarget.name}
               >
                 {busy ? "Deleting…" : "Delete bucket"}

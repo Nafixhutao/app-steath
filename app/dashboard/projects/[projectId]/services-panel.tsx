@@ -26,6 +26,8 @@ import { getError, useResource } from "@/lib/resource";
 import { useToast } from "@/components/toast-context";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { dangerButtonClass, modalCloseClass, secondaryButtonClass, serviceDeleteButtonClass } from "@/components/ui-classes";
+
 const EMPTY_FORM = {
   name: "",
   repoUrl: "",
@@ -219,7 +221,7 @@ export function ServicesPanel({
                     {canManage && (
                       <button
                         type="button"
-                        className="project-service-delete-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent text-[#716f7c] cursor-pointer [transition:all_120ms] hover:border-[rgba(244,63,94,0.2)] hover:bg-[rgba(244,63,94,0.1)] hover:text-[var(--color-danger)]"
+                        className={serviceDeleteButtonClass}
                         onClick={() => {
                           setDeleteTarget(service);
                           setDeleteConfirm("");
@@ -273,7 +275,7 @@ export function ServicesPanel({
             <h2 id="create-service-title">Create a new service</h2>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -381,7 +383,7 @@ export function ServicesPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >
@@ -416,7 +418,7 @@ export function ServicesPanel({
             </div>
             <button
               type="button"
-              className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+              className={modalCloseClass}
               onClick={() => setDeleteTarget(null)}
               aria-label="Close dialog"
             >
@@ -448,7 +450,7 @@ export function ServicesPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center justify-center min-h-[38px] rounded-card border border-[#2a2834] bg-[#181720] [box-shadow:0_1px_2px_rgba(0,0,0,0.2)] whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,color_120ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:border-[#3b3749] [&:hover:not(:disabled)]:bg-[#201e2a] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none"
+                className={secondaryButtonClass}
                 onClick={() => setDeleteTarget(null)}
                 disabled={busy}
               >
@@ -456,7 +458,7 @@ export function ServicesPanel({
               </button>
               <button
                 type="submit"
-                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-danger)] focus-visible:outline-offset-[2px] disabled:opacity-[0.5] disabled:cursor-not-allowed inline-flex items-center justify-center gap-[8px] min-h-[38px] py-[8px] px-[16px] rounded-card border-0 bg-[#e11d48] [background-image:linear-gradient(180deg,var(--color-danger)_0%,#e11d48_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#be123c] text-ink text-[13.5px]! font-medium! whitespace-nowrap [transition:background-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#fb7185_0%,var(--color-danger)_100%)] [&:hover:not(:disabled)]:text-ink [&:active:not(:disabled)]:translate-y-[1] disabled:transform-none disabled:[box-shadow:none]"
+                className={dangerButtonClass}
                 disabled={busy || deleteConfirm !== deleteTarget.name}
               >
                 {busy ? "Deleting..." : "Delete Service"}

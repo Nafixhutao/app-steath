@@ -32,6 +32,95 @@ import {
   type OrganizationDatabaseSummary,
 } from "@/lib/databases-client";
 
+export const dbBannerClass = [
+  "db-banner [@media(max-width:640px)]:flex-col flex items-center justify-between gap-[16px]",
+  "flex-wrap mt-[20px] py-[14px] px-[18px] border border-[rgba(245,158,11,0.35)] rounded-panel",
+  "[background:linear-gradient(90deg,rgba(245,158,11,0.08)_0%,rgba(21,20,26,0.95)_100%)]",
+  "[box-shadow:0_4px_16px_rgba(245,158,11,0.08)]",
+].join(" ");
+
+export const dbWarningButtonClass = [
+  "text-[#fcd34d] hover:text-ink db-btn inline-flex items-center justify-center gap-[8px]",
+  "min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap",
+  "focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px]",
+  "active:translate-y-[1px] border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.12)]",
+  "hover:bg-[rgba(245,158,11,0.2)] hover:border-[rgba(245,158,11,0.6)]",
+].join(" ");
+
+export const dbChipClass = [
+  "db-chip aria-pressed:border-[#6366f1] aria-pressed:bg-[rgba(99,102,241,0.12)]",
+  "aria-pressed:text-[var(--color-ink)]",
+  "aria-pressed:[box-shadow:0_0_10px_rgba(99,102,241,0.15)]",
+  "aria-pressed:[&_.db-chip-count]:bg-[rgba(99,102,241,0.25)]",
+  "aria-pressed:[&_.db-chip-count]:text-[var(--color-ink)] [@media(max-width:640px)]:shrink-0",
+  "text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8]",
+  "focus-visible:outline-offset-[2px] inline-flex items-center gap-[8px] min-h-[40px] py-[8px]",
+  "px-[14px] border border-[#282631] rounded-card bg-[#15141b] text-[#9e9aa7] cursor-pointer",
+  "[transition:background-color_150ms_ease,border-color_150ms_ease,color_150ms_ease,box-shadow_150ms_ease]",
+  "hover:bg-[#1b1922] hover:border-[#393645] hover:text-ink",
+].join(" ");
+
+export const dbSearchInputClass = [
+  "w-full min-h-[40px] py-[8px] pl-[38px] pr-[36px] border border-[#282631] rounded-card",
+  "bg-[#15141b] text-[var(--color-ink)] text-[13px]",
+  "[transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease]",
+  "placeholder:text-[#757180] hover:border-[#383544] focus:border-[#6366f1]",
+  "focus:[box-shadow:0_0_0_3px_rgba(99,102,241,0.2)] focus:outline-none focus-visible:outline-2",
+  "focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px]",
+].join(" ");
+
+export const dbTableClass = [
+  "db-table [@media(max-width:640px)]:min-w-[620px] w-full min-w-[820px] text-left",
+  "[&_th]:px-[18px] [&_th]:py-[13px] [&_th]:border-b [&_th]:border-[#25242f]",
+  "[&_th]:bg-[#17161e] [&_th]:text-[#8a8694] [&_th]:text-[11.5px] [&_th]:font-semibold",
+  "[&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:whitespace-nowrap [&_td]:px-[18px]",
+  "[&_td]:py-[16px] [&_td]:border-b [&_td]:border-[#201f28] [&_td]:text-[#f3f2f5]",
+  "[&_td]:text-[13px] [&_td]:align-middle [&_tbody_tr]:[transition:background-color_120ms_ease]",
+  "[&_tbody_tr:hover]:bg-[#1b1922] [&_tbody_tr:last-child>td]:border-b-0",
+].join(" ");
+
+export const dbManageLinkClass = [
+  "inline-flex items-center gap-[5px] py-[6px] px-[12px] rounded-control text-ink text-[12.5px]",
+  "font-medium no-underline",
+  "[transition:background_120ms_ease,border-color_120ms_ease,color_120ms_ease] hover:text-ink",
+  "focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px]",
+  "db-btn justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer",
+  "whitespace-nowrap active:translate-y-[1px] bg-[#1c1a24] border border-[#2d2a3a]",
+  "hover:bg-[#252230] hover:border-[#433e54]",
+].join(" ");
+
+export const dbResetButtonClass = [
+  "db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px]",
+  "cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2",
+  "focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px]",
+  "min-h-[34px] py-[6px] px-[14px] text-[13px] border border-[#2a2834] bg-[#181720]",
+  "text-[#f3f2f5] hover:border-[#3b3749] hover:bg-[#201e2a]",
+].join(" ");
+
+export const dbPrimaryButtonClass = [
+  "db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px]",
+  "cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2",
+  "focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px]",
+  "db-btn-primary text-ink hover:text-ink rounded-card text-[13.5px]",
+  "[transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease]",
+  "[&:hover:not(:disabled)]:text-ink disabled:cursor-not-allowed border-0",
+  "bg-[var(--color-info)]",
+  "[background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)]",
+  "[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede]",
+  "hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)]",
+  "[&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)]",
+  "[&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff]",
+  "[&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none",
+  "disabled:[box-shadow:none]",
+].join(" ");
+
+export const dbFeatureItemClass = [
+  "flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f]",
+  "[&_h3]:m-0 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-[var(--color-ink)]",
+  "[&_p]:mt-[3px] [&_p]:mb-0 [&_p]:mx-0 [&_p]:text-[12px] [&_p]:text-[#8a8694]",
+  "[&_p]:leading-[1.45]",
+].join(" ");
+
 const STATUS_FILTERS: Array<{ value: DatabaseStatus | "all"; label: string }> = [
   { value: "all", label: "All" },
   { value: "running", label: "Running" },
@@ -204,7 +293,7 @@ export default function DatabasesPage() {
               {databasesList.length} of {QUOTAS.databasesPerProject} per Project
             </span>
           </span>
-          <Link href="/dashboard/projects" className="db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] db-btn-primary text-ink hover:text-ink inline-flex items-center justify-center gap-[8px] py-[8px] px-[16px] rounded-card text-[13.5px] font-medium cursor-pointer whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:text-ink focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] disabled:cursor-not-allowed border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none disabled:[box-shadow:none]">
+          <Link href="/dashboard/projects" className={dbPrimaryButtonClass}>
             <Plus className="w-[15px] h-[15px]" aria-hidden="true" />
             <span>New Database</span>
           </Link>
@@ -220,7 +309,7 @@ export default function DatabasesPage() {
 
       {/* Warning banner for disk usage threshold */}
       {fullDatabase ? (
-        <div className="db-banner [@media(max-width:640px)]:flex-col flex items-center justify-between gap-[16px] flex-wrap mt-[20px] py-[14px] px-[18px] border border-[rgba(245,158,11,0.35)] rounded-panel [background:linear-gradient(90deg,rgba(245,158,11,0.08)_0%,rgba(21,20,26,0.95)_100%)] [box-shadow:0_4px_16px_rgba(245,158,11,0.08)]" role="region" aria-label="Storage warning">
+        <div className={dbBannerClass} role="region" aria-label="Storage warning">
           <div className="flex items-start gap-[12px] min-w-[240px] flex-1">
             <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[rgba(245,158,11,0.15)] text-[#f59e0b] shrink-0 mt-[2px]" aria-hidden="true">
               <AlertTriangle className="w-[18px] h-[18px]" />
@@ -238,7 +327,7 @@ export default function DatabasesPage() {
           </div>
           <Link
             href={`/dashboard/projects/${fullDatabase.database.projectId}`}
-            className="text-[#fcd34d] hover:text-ink db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.12)] hover:bg-[rgba(245,158,11,0.2)] hover:border-[rgba(245,158,11,0.6)]"
+            className={dbWarningButtonClass}
           >
             <span>Expand Storage</span>
             <ArrowUpRight className="w-[15px] h-[15px]" aria-hidden="true" />
@@ -304,7 +393,7 @@ export default function DatabasesPage() {
                 <button
                   key={filter.value}
                   type="button"
-                  className="db-chip aria-pressed:border-[#6366f1] aria-pressed:bg-[rgba(99,102,241,0.12)] aria-pressed:text-[var(--color-ink)] aria-pressed:[box-shadow:0_0_10px_rgba(99,102,241,0.15)] aria-pressed:[&_.db-chip-count]:bg-[rgba(99,102,241,0.25)] aria-pressed:[&_.db-chip-count]:text-[var(--color-ink)] [@media(max-width:640px)]:shrink-0 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] inline-flex items-center gap-[8px] min-h-[40px] py-[8px] px-[14px] border border-[#282631] rounded-card bg-[#15141b] text-[#9e9aa7] cursor-pointer [transition:background-color_150ms_ease,border-color_150ms_ease,color_150ms_ease,box-shadow_150ms_ease] hover:bg-[#1b1922] hover:border-[#393645] hover:text-ink"
+                  className={dbChipClass}
                   aria-pressed={statusFilter === filter.value}
                   onClick={() => setStatusFilter(filter.value)}
                 >
@@ -333,7 +422,7 @@ export default function DatabasesPage() {
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search database, project, or user..."
               autoComplete="off"
-              className="w-full min-h-[40px] py-[8px] pl-[38px] pr-[36px] border border-[#282631] rounded-card bg-[#15141b] text-[var(--color-ink)] text-[13px] [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease] placeholder:text-[#757180] hover:border-[#383544] focus:border-[#6366f1] focus:[box-shadow:0_0_0_3px_rgba(99,102,241,0.2)] focus:outline-none focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px]"
+              className={dbSearchInputClass}
             />
             {search ? (
               <button
@@ -373,13 +462,13 @@ export default function DatabasesPage() {
             scheduled backups.
           </p>
 
-          <Link href="/dashboard/projects" className="db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] db-btn-primary text-ink hover:text-ink inline-flex items-center justify-center gap-[8px] py-[8px] px-[16px] rounded-card text-[13.5px] font-medium cursor-pointer whitespace-nowrap no-underline [transition:background-color_150ms_ease,border-color_150ms_ease,box-shadow_150ms_ease,transform_100ms_ease] [&:hover:not(:disabled)]:text-ink focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] disabled:cursor-not-allowed border-0 bg-[var(--color-info)] [background-image:linear-gradient(180deg,var(--color-info)_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_3px_rgba(0,0,0,0.3),0_0_0_1px_#045ede] hover:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[background-image:linear-gradient(180deg,#4d92ff_0%,#0d73ff_100%)] [&:hover:not(:disabled)]:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.35),0_0_0_1px_#056dff] [&:active:not(:disabled)]:translate-y-[1px] disabled:opacity-[0.5] disabled:transform-none disabled:[box-shadow:none] mx-auto">
+          <Link href="/dashboard/projects" className={`${dbPrimaryButtonClass} mx-auto`}>
             <Plus className="w-[15px] h-[15px]" aria-hidden="true" />
             <span>Go to Projects to Create Database</span>
           </Link>
 
           <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[16px] max-w-[820px] mt-[48px] mb-0 mx-auto text-left">
-            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f] [&_h3]:m-0 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-[var(--color-ink)] [&_p]:mt-[3px] [&_p]:mb-0 [&_p]:mx-0 [&_p]:text-[12px] [&_p]:text-[#8a8694] [&_p]:leading-[1.45]">
+            <div className={dbFeatureItemClass}>
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
                 <ShieldCheck className="db-feature-icon w-[16px] h-[16px] text-[var(--color-accent)]" />
               </div>
@@ -388,7 +477,7 @@ export default function DatabasesPage() {
                 <p>Never exposed to the public internet unless you explicitly enable the proxy.</p>
               </div>
             </div>
-            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f] [&_h3]:m-0 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-[var(--color-ink)] [&_p]:mt-[3px] [&_p]:mb-0 [&_p]:mx-0 [&_p]:text-[12px] [&_p]:text-[#8a8694] [&_p]:leading-[1.45]">
+            <div className={dbFeatureItemClass}>
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
                 <HardDrive className="db-feature-icon w-[16px] h-[16px] text-[var(--color-accent)]" />
               </div>
@@ -397,7 +486,7 @@ export default function DatabasesPage() {
                 <p>High-performance NVMe storage volume tied directly to your project.</p>
               </div>
             </div>
-            <div className="db-feature-item flex items-start gap-[12px] p-[16px] rounded-panel bg-[#17161f] border border-[#25232f] [&_h3]:m-0 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-[var(--color-ink)] [&_p]:mt-[3px] [&_p]:mb-0 [&_p]:mx-0 [&_p]:text-[12px] [&_p]:text-[#8a8694] [&_p]:leading-[1.45]">
+            <div className={dbFeatureItemClass}>
               <div className="flex items-center justify-center w-[32px] h-[32px] rounded-card bg-[#201e2a] shrink-0">
                 <RefreshCw className="db-feature-icon w-[16px] h-[16px] text-[#f59e0b]" />
               </div>
@@ -421,7 +510,7 @@ export default function DatabasesPage() {
           </p>
           <button
             type="button"
-            className="db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] min-h-[34px] py-[6px] px-[14px] text-[13px] border border-[#2a2834] bg-[#181720] text-[#f3f2f5] hover:border-[#3b3749] hover:bg-[#201e2a]"
+            className={dbResetButtonClass}
             onClick={() => {
               setSearch("");
               setStatusFilter("all");
@@ -433,7 +522,7 @@ export default function DatabasesPage() {
       ) : (
         /* Databases Table */
         <div className="db-table-container [-webkit-overflow-scrolling:touch] mt-[18px] border border-[#272530] rounded-card-lg bg-[#15141b] overflow-x-auto [box-shadow:0_4px_20px_rgba(0,0,0,0.2)]">
-          <table className="db-table [@media(max-width:640px)]:min-w-[620px] w-full min-w-[820px] text-left [&_th]:px-[18px] [&_th]:py-[13px] [&_th]:border-b [&_th]:border-[#25242f] [&_th]:bg-[#17161e] [&_th]:text-[#8a8694] [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:whitespace-nowrap [&_td]:px-[18px] [&_td]:py-[16px] [&_td]:border-b [&_td]:border-[#201f28] [&_td]:text-[#f3f2f5] [&_td]:text-[13px] [&_td]:align-middle [&_tbody_tr]:[transition:background-color_120ms_ease] [&_tbody_tr:hover]:bg-[#1b1922] [&_tbody_tr:last-child>td]:border-b-0">
+          <table className={dbTableClass}>
             <thead>
               <tr>
                 <th scope="col">Database & User</th>
@@ -540,7 +629,7 @@ export default function DatabasesPage() {
                     <td className="text-right">
                       <Link
                         href={`/dashboard/projects/${database.projectId}`}
-                        className="inline-flex items-center gap-[5px] py-[6px] px-[12px] rounded-control text-ink text-[12.5px] font-medium no-underline [transition:background_120ms_ease,border-color_120ms_ease,color_120ms_ease] hover:text-ink focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] db-btn inline-flex items-center justify-center gap-[8px] min-h-[40px] py-[8px] px-[16px] cursor-pointer font-medium no-underline whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#818cf8] focus-visible:outline-offset-[2px] active:translate-y-[1px] bg-[#1c1a24] border border-[#2d2a3a] hover:bg-[#252230] hover:border-[#433e54]"
+                        className={dbManageLinkClass}
                         title={`Manage ${database.databaseName} in ${database.projectName}`}
                       >
                         <span>Manage</span>
