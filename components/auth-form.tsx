@@ -201,7 +201,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
   }
 
   return (
-    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] [background:radial-gradient(1100px_560px_at_50%_-12%,rgb(181_168_255_/_7%),transparent_62%),#0f0f0f] text-[#d9d9d9]">
       <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px]" href="#login-content">
         Skip to content
       </a>
