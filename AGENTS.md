@@ -66,6 +66,12 @@ Five default triage roles: `needs-triage`, `needs-info`, `ready-for-agent`, `rea
 
 Single-context: `GLOSSARY.md` at the repo root and ADRs under `docs/adr/`. See `docs/agents/domain.md`.
 
+### AI SDK
+
+- Repo ini belum memakai paket `ai`. Jangan pasang kecuali ada fitur AI yang benar-benar diminta.
+- Begitu menyentuh AI (`generateText`, `streamText`, `useChat`, tool calling, embedding, agent), muat skill `ai-sdk` lebih dulu dan verifikasi tiap API ke `node_modules/ai/docs/` + `node_modules/ai/src/`. Jangan menulis dari ingatan: API dan model ID sering berubah antar versi.
+- Upgrade SDK 6 → 7 pakai skill `migrate-ai-sdk-v6-to-v7`, bukan tebakan.
+
 ## Pull Request
 
 Setiap kali saya meminta membuat, menulis, atau memperbarui PR (termasuk deskripsi/body PR), WAJIB gunakan skill `pr`. Ikuti template-nya: Summary, Evidence (before/after), dan Merge Danger (Door + Blast Radius). Jangan menulis body PR dengan format lain.

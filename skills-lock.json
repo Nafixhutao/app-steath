@@ -7,6 +7,13 @@
       "skillPath": "skills/agent-browser/SKILL.md",
       "computedHash": ""
     },
+    "ai-sdk": {
+      "source": "vercel/ai",
+      "commit": "71aa4dd03a840c9a98bc7426402a96fb9fe147c2",
+      "sourceType": "github",
+      "skillPath": "skills/ai-sdk/SKILL.md",
+      "computedHash": "59cd2dc82c5458f2819992fc3d27204ed16edfc9170870c6f8f04c44bac17772"
+    },
     "antislop": {
       "source": "miqdadbadjuber/anti-slop",
       "sourceType": "github",
@@ -135,6 +142,13 @@
       "skillPath": "skills/in-progress/loop-me/SKILL.md",
       "computedHash": "",
       "installMode": "copy"
+    },
+    "migrate-ai-sdk-v6-to-v7": {
+      "source": "vercel/ai",
+      "commit": "71aa4dd03a840c9a98bc7426402a96fb9fe147c2",
+      "sourceType": "github",
+      "skillPath": "skills/migrate-ai-sdk-v6-to-v7/SKILL.md",
+      "computedHash": "1b2e1de680feb538876987eaa8bbbb137c697a6eb841e38f8bd0d6a7dd5b19d3"
     },
     "migrate-to-shoehorn": {
       "source": "mattpocock/skills",
