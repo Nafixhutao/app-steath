@@ -217,7 +217,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
             kredensialnya di panel Settings: tombol yang terkonfigurasi
             mengalihkan lewat better-auth, yang belum tetap "Coming soon"
             supaya tidak ada kontrol setengah jalan. */}
-        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-[10px] mt-[24px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[10px] mt-[24px]">
           <button
             type="button"
             className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] px-2 border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
