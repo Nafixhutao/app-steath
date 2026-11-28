@@ -29,6 +29,16 @@ import { getInitials } from "@/components/identity";
 import { useToast } from "@/components/toast-context";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { dangerButtonClass, dangerSecondaryButtonClass, filterSelectClass, modalCloseClass, secondaryButtonClass } from "@/components/ui-classes";
+
+export const membersTableClass = [
+  "members-table w-full min-w-[640px] text-[13px] text-left [&_th]:px-[16px] [&_th]:py-[11px]",
+  "[&_th]:bg-[#141318] [&_th]:text-[#716f7c] [&_th]:font-medium [&_th]:text-[12px]",
+  "[&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_td]:px-[16px]",
+  "[&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1e25] [&_td]:text-[#c9c7d2]",
+  "[&_tr:last-child>td]:border-b-0 [&_tr:hover>td]:bg-[rgba(255,255,255,0.02)]",
+].join(" ");
+
 type MemberRow = {
   id: string;
   userId: string;
@@ -270,16 +280,16 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="members-page-container">
+    <div className="pt-[28px] pb-[64px] px-[36px] max-w-[1200px] mx-auto w-full">
       {/* Page Header */}
-      <header className="members-page-header">
+      <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
-          <div className="members-header-icon" aria-hidden="true">
+          <div className="flex items-center justify-center w-[40px] h-[40px] rounded-panel bg-[#1a1922] border border-[#282633] shrink-0" aria-hidden="true">
             <Users className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="members-page-title">Team Members</h1>
-            <p className="members-page-subtitle">
+            <h1 className="text-[24px] font-semibold! tracking-[-0.02em]! text-ink m-0 leading-[1.2]!">Team Members</h1>
+            <p className="text-[13px] text-[#8e8c99] mt-[3px]">
               Manage team access, invitations, and role-based permissions in {organizationName}.
             </p>
           </div>
@@ -289,7 +299,7 @@ export default function MembersPage() {
           {!activeRoles.includes("owner") && (
             <button
               type="button"
-              className="supabase-btn-secondary text-rose-400 hover:text-rose-300"
+              className={dangerSecondaryButtonClass}
               onClick={() => void leaveOrganization()}
               disabled={busy}
             >
@@ -316,27 +326,27 @@ export default function MembersPage() {
       </header>
 
       {error ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {error}
         </div>
       ) : null}
 
       {/* Filter Toolbar */}
-      <div className="members-toolbar">
-        <div className="members-search-box">
-          <Search className="members-search-icon" aria-hidden="true" />
+      <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[20px]">
+        <div className="relative w-[280px] max-w-full">
+          <Search className="absolute left-[10px] top-1/2 -translate-y-1/2 w-[14px] h-[14px] text-[#636170] pointer-events-none" aria-hidden="true" />
           <input
             type="search"
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="members-search-input"
+            className="members-search-input bg-surface w-full h-[34px] py-0 pr-[28px] pl-[32px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms] focus:border-[var(--color-accent)]"
           />
           {search ? (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="members-search-clear"
+              className="absolute right-[8px] top-1/2 -translate-y-1/2 bg-transparent border-0 text-[#716f7c] cursor-pointer p-[2px] flex"
               aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -348,7 +358,7 @@ export default function MembersPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="supabase-filter-select"
+            className={filterSelectClass}
             aria-label="Filter by role"
           >
             <option value="all">All Roles</option>
@@ -357,27 +367,27 @@ export default function MembersPage() {
             <option value="member">Members</option>
           </select>
 
-          <span className="members-count-pill">{filteredMembers.length} Members</span>
+          <span className="bg-surface inline-flex items-center h-[34px] py-0 px-[10px] rounded-control border border-[#282631] text-[12.5px] text-[#8e8c99]">{filteredMembers.length} Members</span>
         </div>
       </div>
 
       {/* Members Table */}
-      <div className="members-table-card">
+      <div className="bg-surface rounded-card border border-surface-raised overflow-x-auto">
         {loading ? (
           <div className="p-6 space-y-4" aria-label="Loading members">
             {[1, 2, 3].map((n) => (
               <div key={n} className="flex items-center gap-3">
-                <div className="supabase-skeleton-box w-9 h-9 rounded-full flex-shrink-0" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-full flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="supabase-skeleton-box h-4 w-32 rounded" />
-                  <div className="supabase-skeleton-box h-3 w-48 rounded" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded" />
                 </div>
-                <div className="supabase-skeleton-box h-6 w-16 rounded" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-16 rounded" />
               </div>
             ))}
           </div>
         ) : filteredMembers.length === 0 ? (
-          <div className="members-empty-box">
+          <div className="flex flex-col items-center justify-center py-[48px] px-[20px] text-center">
             <Users className="w-8 h-8 text-zinc-600 mb-2" />
             <p className="text-sm text-zinc-300 font-medium">No team members match this query</p>
             <p className="text-xs text-zinc-500 mt-1">
@@ -387,7 +397,7 @@ export default function MembersPage() {
             </p>
           </div>
         ) : (
-          <table className="members-table">
+          <table className={membersTableClass}>
             <thead>
               <tr>
                 <th scope="col">User</th>
@@ -413,15 +423,15 @@ export default function MembersPage() {
                   <tr key={member.id}>
                     <td>
                       <div className="flex items-center gap-3">
-                        <div className="members-avatar-box" aria-hidden="true">
+                        <div className="flex items-center justify-center w-[34px] h-[34px] rounded-[50%] bg-[#24222f] border border-[#322f3e] text-accent font-semibold text-[12px] shrink-0" aria-hidden="true">
                           <span>{getInitials(member.user.name || member.user.email)}</span>
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="members-user-name">{member.user.name}</span>
-                            {isCurrentUser && <span className="members-you-badge">You</span>}
+                            <span className="text-[13.5px] font-semibold text-ink">{member.user.name}</span>
+                            {isCurrentUser && <span className="text-[10px] font-semibold py-[1px] px-[5px] rounded-control-sm bg-[rgba(62,207,142,0.1)] text-accent border border-[rgba(62,207,142,0.25)]">You</span>}
                           </div>
-                          <span className="members-user-email">{member.user.email}</span>
+                          <span className="block text-[11.5px] text-[#716f7c] [font-family:monospace]">{member.user.email}</span>
                         </div>
                       </div>
                     </td>
@@ -433,15 +443,19 @@ export default function MembersPage() {
                           value={member.role}
                           disabled={busy}
                           onChange={(e) => void changeRole(member.id, e.target.value)}
-                          className="members-role-select"
+                          className="h-[28px] py-0 px-[8px] rounded-control-sm bg-[#1a1921] border border-[#2c2a38] text-ink-console text-[12px] outline-none cursor-pointer focus:border-accent"
                         >
                           <option value="member">Member</option>
                           <option value="admin">Admin</option>
                         </select>
                       ) : (
                         <span
-                          className={`members-role-badge ${
-                            isOwner ? "is-owner" : isAdmin ? "is-admin" : "is-member"
+                          className={`members-role-badge inline-flex items-center text-[11.5px] font-medium py-[2px] px-[8px] rounded-control-sm ${
+                            isOwner
+                              ? "bg-[rgba(168,85,247,0.1)] border border-[rgba(168,85,247,0.25)] text-[#c084fc] capitalize"
+                              : isAdmin
+                                ? "bg-[rgba(56,189,248,0.1)] border border-[rgba(56,189,248,0.25)] text-[#38bdf8] capitalize"
+                                : "bg-[#201e27] border border-[#2a2835] text-[#9e9aa7] capitalize"
                           }`}
                         >
                           {isOwner && <Crown className="w-3 h-3 mr-1" />}
@@ -464,7 +478,7 @@ export default function MembersPage() {
                         {!isCurrentUser && !isOwner && (
                           <button
                             type="button"
-                            className="members-action-btn text-zinc-400 hover:text-rose-400"
+                            className="text-zinc-400 hover:text-rose-400 inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent cursor-pointer [transition:all_120ms] hover:bg-[rgba(244,63,94,0.1)] hover:border-[rgba(244,63,94,0.2)]"
                             disabled={busy}
                             onClick={() => setRemoveTarget(member)}
                             title={`Remove ${member.user.name || member.user.email}`}
@@ -489,11 +503,11 @@ export default function MembersPage() {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-amber-400" />
             <h2 className="text-sm font-semibold text-white">Pending Invitations</h2>
-            <span className="members-count-pill">{invitations.length}</span>
+            <span className="bg-surface inline-flex items-center h-[34px] py-0 px-[10px] rounded-control border border-[#282631] text-[12.5px] text-[#8e8c99]">{invitations.length}</span>
           </div>
 
-          <div className="members-table-card">
-            <table className="members-table">
+          <div className="bg-surface rounded-card border border-surface-raised overflow-x-auto">
+            <table className={membersTableClass}>
               <thead>
                 <tr>
                   <th scope="col">Invited Email</th>
@@ -514,7 +528,7 @@ export default function MembersPage() {
                       </div>
                     </td>
                     <td>
-                      <span className="members-role-badge is-member">{invitation.role}</span>
+                      <span className="members-role-badge inline-flex items-center text-[11.5px] font-medium py-[2px] px-[8px] rounded-control-sm bg-[#201e27] border border-[#2a2835] text-[#9e9aa7] capitalize">{invitation.role}</span>
                     </td>
                     <td className="text-xs text-zinc-400">
                       {new Date(invitation.expiresAt).toLocaleDateString(undefined, {
@@ -526,7 +540,7 @@ export default function MembersPage() {
                     <td className="text-right">
                       <button
                         type="button"
-                        className="supabase-btn-secondary text-xs text-rose-400 hover:text-rose-300 py-1 px-2.5 h-7"
+                        className={`${secondaryButtonClass} text-xs text-rose-400 hover:text-rose-300 py-1 px-2.5 h-7`}
                         disabled={busy}
                         onClick={() => void cancelInvitation(invitation.id)}
                       >
@@ -544,14 +558,14 @@ export default function MembersPage() {
       {/* Modal: Invite Member */}
       {inviteModalOpen && (
         <ModalDialog labelledBy="invite-modal-title" onClose={() => setInviteModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-emerald-400" />
               <h2 id="invite-modal-title">Invite Team Member</h2>
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={() => setInviteModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -567,7 +581,7 @@ export default function MembersPage() {
               </div>
 
               <div>
-                <label htmlFor="invitation-link-input" className="supabase-modal-label">
+                <label htmlFor="invitation-link-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Invitation URL
                 </label>
                 <div className="flex items-center gap-2">
@@ -575,7 +589,7 @@ export default function MembersPage() {
                     id="invitation-link-input"
                     readOnly
                     value={inviteUrl}
-                    className="supabase-modal-input font-mono text-xs select-all"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] font-mono text-xs select-all"
                   />
                   <button
                     type="button"
@@ -600,7 +614,7 @@ export default function MembersPage() {
               <div className="supabase-modal-footer">
                 <button
                   type="button"
-                  className="supabase-btn-secondary"
+                  className={secondaryButtonClass}
                   onClick={() => {
                     setInviteUrl("");
                     setInviteModalOpen(false);
@@ -614,7 +628,7 @@ export default function MembersPage() {
             <form onSubmit={invite}>
               <div className="supabase-modal-body space-y-4">
                 <div>
-                  <label htmlFor="invite-email-input" className="supabase-modal-label">
+                  <label htmlFor="invite-email-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                     Email address
                   </label>
                   <input
@@ -624,20 +638,20 @@ export default function MembersPage() {
                     placeholder="collaborator@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="supabase-modal-input"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="invite-role-select" className="supabase-modal-label">
+                  <label htmlFor="invite-role-select" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                     Organization Role
                   </label>
                   <select
                     id="invite-role-select"
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value as InviteRole)}
-                    className="supabase-modal-input"
+                    className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   >
                     <option value="member">
                       Member - Can view resources and trigger deployments
@@ -654,7 +668,7 @@ export default function MembersPage() {
               <div className="supabase-modal-footer">
                 <button
                   type="button"
-                  className="supabase-btn-secondary"
+                  className={secondaryButtonClass}
                   onClick={() => setInviteModalOpen(false)}
                   disabled={busy}
                 >
@@ -683,14 +697,14 @@ export default function MembersPage() {
       {/* Modal: Remove Member Confirmation */}
       {removeTarget && (
         <ModalDialog labelledBy="remove-member-dialog-title" onClose={() => setRemoveTarget(null)}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <AlertTriangle className="w-4 h-4" />
               <h2 id="remove-member-dialog-title">Remove Member</h2>
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={() => setRemoveTarget(null)}
               aria-label="Close dialog"
             >
@@ -715,7 +729,7 @@ export default function MembersPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary"
+              className={secondaryButtonClass}
               onClick={() => setRemoveTarget(null)}
               disabled={busy}
             >
@@ -723,7 +737,7 @@ export default function MembersPage() {
             </button>
             <button
               type="button"
-              className="project-btn-danger"
+              className={dangerButtonClass}
               disabled={busy}
               onClick={() => void handleRemoveMember()}
             >

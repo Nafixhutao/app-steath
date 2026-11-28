@@ -465,7 +465,7 @@ export function EmailProvidersContent() {
           </p>
         ) : (
           <div className="admin-scrollbar overflow-x-auto">
-            <table className="admin-table w-full">
+            <table className="admin-table w-full min-w-[820px] text-left text-[13px] w-full">
               <thead>
                 <tr>
                   <th className="text-left">Recipient</th>

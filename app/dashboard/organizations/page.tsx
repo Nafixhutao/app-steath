@@ -8,9 +8,11 @@ import { useToast } from "@/components/toast-context";
 import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { modalCloseClass, secondaryButtonClass, spacedSecondaryButtonClass } from "@/components/ui-classes";
+
 function OrgHexIcon() {
   return (
-    <div className="org-card-hex-icon" aria-hidden="true">
+    <div className="flex items-center justify-center w-[36px] h-[36px] rounded-card bg-[#211f27] text-[#8e8c99] shrink-0" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor">
         <circle cx="12" cy="7" r="2.5" fill="currentColor" />
         <circle cx="7" cy="15" r="2.5" fill="currentColor" />
@@ -104,25 +106,25 @@ export default function OrganizationsPage() {
   }
 
   return (
-    <div className="orgs-page-container">
-      <div className="orgs-page-inner">
-        <h1 className="orgs-page-title">Your organizations</h1>
+    <div className="min-h-[calc(100dvh_-_48px)] bg-console text-ink-console py-[48px] px-[32px]">
+      <div className="max-w-[1100px] mx-auto">
+        <h1 className="text-[28px]! font-semibold! tracking-[-0.02em]! text-ink mt-0! mb-[24px]! mx-0!">Your organizations</h1>
 
-        <div className="orgs-page-toolbar">
-          <div className="orgs-search-box">
-            <Search className="orgs-search-icon" aria-hidden="true" />
+        <div className="flex items-center justify-between gap-[16px] mb-[24px]">
+          <div className="relative w-[280px] max-w-full">
+            <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#6a6875] pointer-events-none" aria-hidden="true" />
             <input
               type="search"
               placeholder="Search for an organization"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="orgs-search-input"
+              className="orgs-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[34px] rounded-control border border-[#282631] text-ink-console text-[13px]! outline-none [transition:border-color_150ms] focus:border-[var(--color-accent)]"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="orgs-search-clear"
+                className="absolute right-[10px] top-1/2 -translate-y-1/2 bg-transparent border-0 text-[#6a6875] cursor-pointer p-[2px] flex hover:text-ink-console"
                 aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -144,25 +146,25 @@ export default function OrganizationsPage() {
         </div>
 
         {isPending ? (
-          <div className="orgs-grid" aria-label="Loading organizations">
+          <div className="orgs-grid grid gap-[16px] grid-cols-[repeat(auto-fill,minmax(320px,1fr))]" aria-label="Loading organizations">
             {[1, 2].map((n) => (
-              <div key={n} className="org-card-skeleton" aria-hidden="true">
-                <div className="supabase-skeleton-box w-9 h-9 rounded-lg" />
+              <div key={n} className="flex items-center gap-[16px] py-[16px] px-[20px] rounded-card bg-surface border border-[var(--color-surface-raised)] min-h-[70px]" aria-hidden="true">
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-9 h-9 rounded-lg" />
                 <div className="flex-1 space-y-2">
-                  <div className="supabase-skeleton-box h-4 rounded w-32" />
-                  <div className="supabase-skeleton-box h-3 rounded w-20" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 rounded w-32" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 rounded w-20" />
                 </div>
               </div>
             ))}
           </div>
         ) : filteredOrgs.length === 0 ? (
-          <div className="orgs-empty-card">
+          <div className="flex flex-col items-center justify-center py-[60px] px-[24px] bg-surface border border-dashed border-[#26242f] rounded-card text-center">
             {search ? (
               <>
                 <p className="text-zinc-400">No organizations match &ldquo;{search}&rdquo;.</p>
                 <button
                   type="button"
-                  className="supabase-btn-secondary mt-3"
+                  className={spacedSecondaryButtonClass}
                   onClick={() => setSearch("")}
                 >
                   Clear search
@@ -189,22 +191,22 @@ export default function OrganizationsPage() {
             )}
           </div>
         ) : (
-          <div ref={gridRef} className="orgs-grid">
+          <div ref={gridRef} className="orgs-grid grid gap-[16px] grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
             {filteredOrgs.map((org) => {
               const isSwitching = switchingId === org.id;
               return (
                 <button
                   key={org.id}
                   type="button"
-                  className="org-card"
+                  className="org-card flex items-center gap-[16px] py-[16px] px-[20px] rounded-card bg-[var(--color-surface)] border border-[var(--color-surface-raised)] cursor-pointer text-left [transition:border-color_150ms,background-color_150ms] w-full hover:bg-[#1b1a20] hover:border-[#373441]"
                   onClick={() => void handleSelectOrg(org.id)}
                   disabled={Boolean(switchingId)}
                   title={`Open ${org.name}`}
                 >
                   <OrgHexIcon />
-                  <div className="org-card-content">
-                    <span className="org-card-name">{org.name}</span>
-                    <span className="org-card-plan">Free Plan</span>
+                  <div className="flex flex-col gap-[2px] min-w-0">
+                    <span className="truncate text-[15px] font-semibold text-ink">{org.name}</span>
+                    <span className="text-[13px] text-[#7a7886]">Free Plan</span>
                   </div>
                   {isSwitching && (
                     <Loader2 className="w-4 h-4 animate-spin text-emerald-400 ml-auto" />
@@ -219,11 +221,11 @@ export default function OrganizationsPage() {
       {/* Modal New Organization */}
       {modalOpen && (
         <ModalDialog labelledBy="modal-title" onClose={() => setModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <h2 id="modal-title">Create a new organization</h2>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -238,7 +240,7 @@ export default function OrganizationsPage() {
                 workspace.
               </p>
 
-              <label htmlFor="modal-org-name" className="supabase-modal-label">
+              <label htmlFor="modal-org-name" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                 Organization name
               </label>
               <input
@@ -249,7 +251,7 @@ export default function OrganizationsPage() {
                 maxLength={80}
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                className="supabase-modal-input"
+                className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                 autoFocus
               />
 
@@ -259,7 +261,7 @@ export default function OrganizationsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >

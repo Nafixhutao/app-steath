@@ -254,19 +254,19 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <div
-      className="command-palette-backdrop"
+      className="fixed inset-0 z-[120] flex items-start justify-center pt-[12vh] pb-[16px] px-[16px] bg-[rgba(0,0,0,0.7)] [backdrop-filter:blur(6px)] animate-[commandFadeIn_120ms_ease]"
       role="presentation"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
     >
       <div
-        className="command-palette-dialog"
+        className="w-full max-w-[580px] bg-[#16151b] border border-[#282633] rounded-card-lg overflow-hidden [box-shadow:0_24px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)] animate-[commandSlideIn_150ms_cubic-bezier(0.16,1,0.3,1)]"
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
       >
-        <div className="command-palette-search-row">
+        <div className="flex items-center gap-[12px] py-[14px] px-[18px] border-b border-b-[#23212b]">
           <Search className="w-4 h-4 text-zinc-500 flex-shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
@@ -277,7 +277,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               setSelectedIndex(0);
             }}
             placeholder="Search projects, databases, services, or navigate..."
-            className="command-palette-input"
+            className="text-[14px] flex-1 bg-transparent border-0 text-ink outline-none placeholder:text-[#636170]"
             autoComplete="off"
             spellCheck="false"
           />
@@ -288,18 +288,18 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 setQuery("");
                 setSelectedIndex(0);
               }}
-              className="command-palette-clear-btn"
+              className="bg-transparent border-0 text-[#716f7c] cursor-pointer p-[2px] flex hover:text-ink"
               aria-label="Clear search query"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           ) : null}
-          <kbd className="command-palette-kbd">ESC</kbd>
+          <kbd className="text-[10px] [font-family:inherit] py-[2px] px-[6px] rounded-control-sm bg-[#211f29] border border-[#322f3e] text-[#7d7a8c]">ESC</kbd>
         </div>
 
-        <div className="command-palette-list-wrap" role="listbox">
+        <div className="max-h-[340px] overflow-y-auto p-[8px]" role="listbox">
           {filteredCommands.length === 0 ? (
-            <div className="command-palette-empty">
+            <div className="py-[36px] px-[20px] text-center">
               <p className="text-zinc-400 text-sm">No results found for &ldquo;{query}&rdquo;</p>
               <p className="text-zinc-500 text-xs mt-1">
                 Try searching for Projects, Databases, Services, or Team settings.
@@ -313,18 +313,18 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   key={command.id}
                   role="option"
                   aria-selected={isSelected}
-                  className={`command-palette-item ${isSelected ? "is-selected" : ""}`}
+                  className={`command-palette-item flex items-center gap-[12px] py-[10px] px-[12px] rounded-card cursor-pointer select-none [transition:background-color_100ms] ${isSelected ? "bg-[#201e28]" : ""}`}
                   onClick={command.onSelect}
                   onMouseEnter={() => setSelectedIndex(idx)}
                 >
-                  <div className="command-palette-item-icon">{command.icon}</div>
-                  <div className="command-palette-item-text">
-                    <span className="command-palette-item-title">{command.title}</span>
+                  <div className="flex items-center justify-center w-[28px] h-[28px] rounded-control bg-[#24222f] shrink-0">{command.icon}</div>
+                  <div className="flex-1 min-w-0 flex flex-col">
+                    <span className="text-[13.5px] font-medium text-ink">{command.title}</span>
                     {command.subtitle && (
-                      <span className="command-palette-item-sub">{command.subtitle}</span>
+                      <span className="truncate text-[11.5px] text-[#787687]">{command.subtitle}</span>
                     )}
                   </div>
-                  <span className="command-palette-item-cat">{command.category}</span>
+                  <span className="text-[10.5px] font-medium uppercase tracking-[0.05em] text-[#615f6e] py-[2px] px-[6px] rounded-control-sm bg-[#1a1922]">{command.category}</span>
                   {isSelected && (
                     <ArrowRight className="w-3.5 h-3.5 text-zinc-400 ml-2" aria-hidden="true" />
                   )}
@@ -334,15 +334,15 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           )}
         </div>
 
-        <div className="command-palette-footer">
-          <span className="command-palette-footer-item">
-            <kbd className="command-palette-mini-kbd">&uarr;&darr;</kbd> Navigate
+        <div className="flex items-center gap-[16px] py-[10px] px-[18px] bg-[#131217] border-t border-t-[#23212b] text-[11.5px] text-[#716f7c]">
+          <span className="flex items-center gap-[5px]">
+            <kbd className="bg-[#1d1c24] text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">&uarr;&darr;</kbd> Navigate
           </span>
-          <span className="command-palette-footer-item">
-            <kbd className="command-palette-mini-kbd">&crarr;</kbd> Select
+          <span className="flex items-center gap-[5px]">
+            <kbd className="bg-[#1d1c24] text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">&crarr;</kbd> Select
           </span>
-          <span className="command-palette-footer-item">
-            <kbd className="command-palette-mini-kbd">ESC</kbd> Close
+          <span className="flex items-center gap-[5px]">
+            <kbd className="bg-[#1d1c24] text-[9.5px] [font-family:inherit] py-[1px] px-[4px] rounded-[3px] border border-[#2a2835] text-[#8c899c]">ESC</kbd> Close
           </span>
         </div>
       </div>

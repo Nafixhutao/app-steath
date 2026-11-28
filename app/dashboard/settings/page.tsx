@@ -25,6 +25,14 @@ import { useToast } from "@/components/toast-context";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
 
+import { dangerButtonClass, secondaryButtonClass, successBadgeClass } from "@/components/ui-classes";
+
+export const settingsInputClass = [
+  "w-full h-[38px] border border-surface-raised focus:border-[var(--color-info)] py-0 px-[14px]",
+  "rounded-control bg-[#141318] text-ink-console text-[13.5px] outline-none",
+  "[transition:border-color_150ms_ease]",
+].join(" ");
+
 export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -156,19 +164,19 @@ export default function SettingsPage() {
   }
 
   return (
-    <div ref={containerRef} className="settings-page-container">
+    <div ref={containerRef} className="pt-[28px] pb-[64px] px-[36px] max-w-[1200px] mx-auto w-full">
       {/* Header */}
-      <header className="settings-page-header">
+      <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
-          <div className="settings-header-icon" aria-hidden="true">
+          <div className="w-[40px] h-[40px] rounded-panel bg-[rgba(62,207,142,0.1)] border border-[rgba(62,207,142,0.25)] flex items-center justify-center shrink-0" aria-hidden="true">
             <Settings className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="settings-page-title">Organization Settings</h1>
-              <span className="supabase-plan-badge">FREE PLAN</span>
+              <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Organization Settings</h1>
+              <span className={successBadgeClass}>FREE PLAN</span>
             </div>
-            <p className="settings-page-subtitle">
+            <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage organization details, team ownership, and preferences for{" "}
               {organization?.name ?? "your organization"}.
             </p>
@@ -177,8 +185,12 @@ export default function SettingsPage() {
 
         <div className="flex items-center gap-2">
           <span
-            className={`settings-role-badge ${
-              isOwner ? "is-owner" : activeRoles.includes("admin") ? "is-admin" : "is-member"
+            className={`settings-role-badge inline-flex items-center h-[26px] py-0 px-[10px] rounded-[9999px] text-[11px] font-semibold uppercase tracking-[0.04em] ${
+              isOwner
+                ? "bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
+                : activeRoles.includes("admin")
+                  ? "bg-[#171c35] border border-[#2b3363] text-[#818cf8]"
+                  : "bg-[#201e27] border border-[#2a2835] text-[#9e9aa7]"
             }`}
           >
             <Shield className="w-3.5 h-3.5 mr-1" />
@@ -189,7 +201,7 @@ export default function SettingsPage() {
 
       {/* Global Alerts */}
       {error ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {error}
         </div>
       ) : null}
@@ -199,24 +211,24 @@ export default function SettingsPage() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
         aria-label="Organization identity"
       >
-        <div className="settings-metric-card is-primary">
+        <div className="settings-metric-card bg-surface border rounded-panel p-[16px_18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] border-[rgba(62,207,142,0.35)] hover:border-[rgba(62,207,142,0.55)] [background:linear-gradient(180deg,rgba(62,207,142,0.06)_0%,var(--color-surface)_100%)]">
           <div className="flex items-center justify-between">
-            <span className="settings-metric-label">Organization Name</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization Name</span>
             <Building className="w-4 h-4 text-emerald-400" />
           </div>
           {isLoading ? (
             <div className="h-6 w-3/4 bg-zinc-800/80 rounded animate-pulse my-0.5" />
           ) : (
-            <span className="settings-metric-val truncate" title={organization?.name}>
+            <span className="text-[18px] font-semibold text-ink leading-[1.3] truncate" title={organization?.name}>
               {organization?.name ?? "-"}
             </span>
           )}
           <span className="text-[11px] text-zinc-400">Active workspace title</span>
         </div>
 
-        <div className="settings-metric-card">
+        <div className="settings-metric-card bg-surface border border-surface-raised rounded-panel p-[16px_18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="settings-metric-label">Organization Slug</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization Slug</span>
             <button
               type="button"
               onClick={() => copyText(organization?.slug ?? "", "slug", "Slug")}
@@ -235,7 +247,7 @@ export default function SettingsPage() {
             <div className="h-6 w-28 bg-zinc-800/80 rounded animate-pulse my-0.5" />
           ) : (
             <span
-              className="settings-metric-val font-mono text-base truncate text-emerald-400"
+              className="text-[18px] font-semibold text-ink leading-[1.3] font-mono text-base truncate text-emerald-400"
               title={organization?.slug}
             >
               {organization?.slug ?? "-"}
@@ -244,9 +256,9 @@ export default function SettingsPage() {
           <span className="text-[11px] text-zinc-400">Unique routing identifier</span>
         </div>
 
-        <div className="settings-metric-card">
+        <div className="settings-metric-card bg-surface border border-surface-raised rounded-panel p-[16px_18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="settings-metric-label">Organization ID</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Organization ID</span>
             <button
               type="button"
               onClick={() => copyText(organization?.id ?? "", "id", "Organization ID")}
@@ -265,7 +277,7 @@ export default function SettingsPage() {
             <div className="h-6 w-36 bg-zinc-800/80 rounded animate-pulse my-0.5" />
           ) : (
             <span
-              className="settings-metric-val font-mono text-xs truncate text-zinc-300"
+              className="text-[18px] font-semibold text-ink leading-[1.3] font-mono text-xs truncate text-zinc-300"
               title={organization?.id}
             >
               {organization?.id ?? "-"}
@@ -274,15 +286,15 @@ export default function SettingsPage() {
           <span className="text-[11px] text-zinc-400">System UUID</span>
         </div>
 
-        <div className="settings-metric-card">
+        <div className="settings-metric-card bg-surface border border-surface-raised rounded-panel p-[16px_18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="settings-metric-label">Created Date</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Created Date</span>
             <Calendar className="w-4 h-4 text-zinc-400" />
           </div>
           {isLoading ? (
             <div className="h-6 w-24 bg-zinc-800/80 rounded animate-pulse my-0.5" />
           ) : (
-            <span className="settings-metric-val text-sm font-mono text-zinc-200">
+            <span className="text-[18px] font-semibold text-ink leading-[1.3] text-sm font-mono text-zinc-200">
               {organization?.createdAt
                 ? formatDateTime(
                     organization.createdAt instanceof Date
@@ -299,8 +311,8 @@ export default function SettingsPage() {
       {/* Main Settings Sections */}
       <div className="space-y-6">
         {/* SECTION 1: General Details */}
-        <section className="settings-card" aria-labelledby="general-settings-heading">
-          <div className="settings-card-header">
+        <section className="settings-card bg-surface border border-surface-raised rounded-panel overflow-hidden" aria-labelledby="general-settings-heading">
+          <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
             <div className="flex items-center gap-2.5">
               <Building className="w-4 h-4 text-emerald-400" />
               <h2 id="general-settings-heading" className="text-sm font-semibold text-white">
@@ -312,7 +324,7 @@ export default function SettingsPage() {
 
           {isOwner ? (
             <form onSubmit={handleRename}>
-              <div className="settings-card-body space-y-4">
+              <div className="p-[20px] space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label htmlFor="org-name-input" className="text-xs font-medium text-zinc-300">
@@ -327,7 +339,7 @@ export default function SettingsPage() {
                     onChange={(e) => setName(e.target.value)}
                     maxLength={80}
                     required
-                    className="settings-input"
+                    className={settingsInputClass}
                     placeholder="e.g. Acme Corp"
                   />
                   <p className="text-[11px] text-zinc-400 mt-1.5">
@@ -359,7 +371,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="settings-card-footer">
+              <div className="bg-[#131217] flex items-center justify-between flex-wrap gap-[12px] py-[14px] px-[20px] border-t border-t-surface-raised">
                 <span className="text-xs text-zinc-400">
                   Name changes take effect immediately across all dashboard projects.
                 </span>
@@ -383,8 +395,8 @@ export default function SettingsPage() {
               </div>
             </form>
           ) : (
-            <div className="settings-card-body">
-              <div className="settings-readonly-banner">
+            <div className="p-[20px]">
+              <div className="flex items-start gap-[12px] py-[12px] px-[16px] rounded-card bg-[rgba(6,182,212,0.08)] border border-[rgba(6,182,212,0.25)]">
                 <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-cyan-200 leading-relaxed">
                   You are viewing this organization as a{" "}
@@ -397,61 +409,61 @@ export default function SettingsPage() {
         </section>
 
         {/* SECTION 2: Plan & Entitlements */}
-        <section className="settings-card" aria-labelledby="plan-settings-heading">
-          <div className="settings-card-header">
+        <section className="settings-card bg-surface border border-surface-raised rounded-panel overflow-hidden" aria-labelledby="plan-settings-heading">
+          <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised">
             <div className="flex items-center gap-2.5">
               <CreditCard className="w-4 h-4 text-cyan-400" />
               <h2 id="plan-settings-heading" className="text-sm font-semibold text-white">
                 Subscription &amp; Entitlements
               </h2>
             </div>
-            <span className="supabase-plan-badge">FREE TIER</span>
+            <span className={successBadgeClass}>FREE TIER</span>
           </div>
 
-          <div className="settings-card-body">
+          <div className="p-[20px]">
             <p className="text-xs text-zinc-400 leading-relaxed mb-4">
               Your organization is currently on the <strong>Free Plan</strong>, suitable for
               self-hosted development environments, internal tools, and container workloads.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div className="settings-feature-pill">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Up to {QUOTAS.projectsPerOrganization} Projects</span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>
                   Up to {QUOTAS.servicesPerOrganization} Docker Services (
                   {QUOTAS.servicesPerProject} per Project)
                 </span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Managed databases</span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Automated Daily Backups</span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Custom Domain TLS Routing</span>
               </div>
-              <div className="settings-feature-pill">
+              <div className="bg-[#131217] flex items-center gap-[8px] py-[8px] px-[12px] rounded-control border border-[#24222c] text-[12px] text-ink-console">
                 <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                 <span>Caddy Zero-Downtime Edge</span>
               </div>
             </div>
           </div>
 
-          <div className="settings-card-footer">
+          <div className="bg-[#131217] flex items-center justify-between flex-wrap gap-[12px] py-[14px] px-[20px] border-t border-t-surface-raised">
             <span className="text-xs text-zinc-400">
               Need higher limits or dedicated node clusters?
             </span>
             <Link
               href="/dashboard/usage"
-              className="supabase-btn-secondary text-xs inline-flex items-center gap-1.5"
+              className={`${secondaryButtonClass} text-xs gap-1.5`}
             >
               <span>View Usage Meters</span>
               <ArrowRight className="w-3 h-3" />
@@ -461,8 +473,8 @@ export default function SettingsPage() {
 
         {/* SECTION 3: Danger Zone */}
         {isOwner ? (
-          <section className="settings-card is-danger" aria-labelledby="danger-heading">
-            <div className="settings-card-header border-rose-900/30">
+          <section className="settings-card bg-[#161215] border border-[rgba(244,63,94,0.25)] rounded-panel overflow-hidden" aria-labelledby="danger-heading">
+            <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
               <div className="flex items-center gap-2.5 text-rose-400">
                 <AlertTriangle className="w-4 h-4" />
                 <h2 id="danger-heading" className="text-sm font-semibold text-rose-400">
@@ -472,7 +484,7 @@ export default function SettingsPage() {
               <span className="text-xs text-rose-400/80">Irreversible actions</span>
             </div>
 
-            <div className="settings-card-body space-y-4">
+            <div className="p-[20px] space-y-4">
               <div className="p-3.5 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
                 <strong>Permanent Deletion Warning:</strong> Deleting{" "}
                 <strong>{organization?.name}</strong> will immediately terminate all running
@@ -498,14 +510,14 @@ export default function SettingsPage() {
                     autoComplete="off"
                     spellCheck="false"
                     required
-                    className="settings-input border-rose-900/50 focus:border-rose-500"
+                    className={settingsInputClass}
                   />
                 </div>
 
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="project-btn-danger"
+                    className={dangerButtonClass}
                     disabled={busy || confirmation.trim() !== organization?.name}
                   >
                     {busy ? (
@@ -525,8 +537,8 @@ export default function SettingsPage() {
             </div>
           </section>
         ) : (
-          <section className="settings-card is-danger" aria-labelledby="leave-heading">
-            <div className="settings-card-header border-rose-900/30">
+          <section className="settings-card bg-[#161215] border border-[rgba(244,63,94,0.25)] rounded-panel overflow-hidden" aria-labelledby="leave-heading">
+            <div className="bg-[#131217] flex items-center justify-between py-[16px] px-[20px] border-b border-b-surface-raised border-rose-900/30">
               <div className="flex items-center gap-2.5 text-rose-400">
                 <LogOut className="w-4 h-4" />
                 <h2 id="leave-heading" className="text-sm font-semibold text-rose-400">
@@ -536,7 +548,7 @@ export default function SettingsPage() {
               <span className="text-xs text-rose-400/80">Revoke membership</span>
             </div>
 
-            <div className="settings-card-body">
+            <div className="p-[20px]">
               <p className="text-xs text-zinc-400 leading-relaxed mb-4">
                 Revoke your membership from <strong>{organization?.name}</strong>. You will
                 immediately lose access to all projects, services, and databases until an owner
@@ -545,7 +557,7 @@ export default function SettingsPage() {
 
               <button
                 type="button"
-                className="project-btn-danger"
+                className={dangerButtonClass}
                 onClick={() => void handleLeaveOrganization()}
                 disabled={busy}
               >

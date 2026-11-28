@@ -13,7 +13,7 @@ export async function ServiceGate({ params }: { params: Promise<{ serviceId: str
 export function ServiceGateFallback() {
   return (
     <div className="dashboard-content">
-      <p className="dashboard-table-empty" role="status">
+      <p className="dashboard-table-empty py-[14px] px-0 text-[#9e99a4] text-[13px]" role="status">
         Loading Service...
       </p>
     </div>

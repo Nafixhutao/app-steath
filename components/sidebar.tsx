@@ -54,6 +54,95 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+export const mobileSidebarSheetClass = [
+  "mobile-sidebar-sheet hidden [@media(max-width:1023px)]:block",
+  "[@media(max-width:1023px)]:inset-[auto_0_0] [@media(max-width:1023px)]:fixed",
+  "[@media(max-width:1023px)]:z-[60] [@media(max-width:1023px)]:w-[min(100%,560px)]",
+  "[@media(max-width:1023px)]:h-[min(82dvh,720px)] [@media(max-width:1023px)]:my-0",
+  "[@media(max-width:1023px)]:mx-auto [@media(max-width:1023px)]:overflow-hidden",
+  "[@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#302e34]",
+  "[@media(max-width:1023px)]:border-b-0 [@media(max-width:1023px)]:rounded-[20px_20px_0_0]",
+  "[@media(max-width:1023px)]:bg-[#232127]",
+  "[@media(max-width:1023px)]:[box-shadow:0_-4px_14px_rgb(0_0_0_/_42%)]",
+].join(" ");
+
+export const sidebarToggleClass = [
+  "sidebar-toggle",
+  "[transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1)]",
+  "focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]",
+  "inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0",
+  "rounded-control bg-transparent text-[#b5b2b9] cursor-pointer",
+  "hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console",
+].join(" ");
+
+export const profileMenuRowClass = [
+  "profile-menu-row text-[13px] focus-visible:outline-2 focus-visible:outline-[#aaa6ec]",
+  "focus-visible:outline-offset-[2px] flex w-full h-[32px] items-center gap-[10px] py-0",
+  "px-[10px] border-0 rounded-control bg-transparent text-[#b3b0ba] cursor-pointer text-left",
+  "hover:bg-[#26262e] hover:text-ink-console logout-row",
+].join(" ");
+
+export const profileButtonClass = [
+  "profile-button focus-visible:outline-2 focus-visible:outline-[#aaa6ec]",
+  "focus-visible:outline-offset-[2px] hover:bg-[rgb(255_255_255_/_5%)] hover:text-ink-console",
+  "flex min-w-0 flex-1 items-center gap-[8px] py-[4px] px-[6px]",
+  "[transition:flex-basis_360ms_cubic-bezier(0.22,1,0.36,1),background-color_150ms_ease]",
+  "border-0 rounded-card bg-transparent text-ink-console cursor-pointer text-left",
+  "hover:bg-[rgba(255,255,255,0.05)]",
+].join(" ");
+
+export const userMobileTopbarClass = [
+  "user-mobile-topbar hidden [@media(max-width:1023px)]:inset-[0_0_auto]",
+  "[@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:z-[40]",
+  "[@media(max-width:1023px)]:flex [@media(max-width:1023px)]:h-[59px]",
+  "[@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-between",
+  "[@media(max-width:1023px)]:py-0 [@media(max-width:1023px)]:px-[16px]",
+  "[@media(max-width:1023px)]:border-b [@media(max-width:1023px)]:border-b-[#2b2b2e]",
+  "[@media(max-width:1023px)]:bg-[#1a181d]",
+].join(" ");
+
+export const mobileBrandClass = [
+  "mobile-brand [@media(max-width:1023px)]:inline-flex [@media(max-width:1023px)]:w-[44px]",
+  "[@media(max-width:1023px)]:h-[44px] [@media(max-width:1023px)]:items-center",
+  "[@media(max-width:1023px)]:justify-center [@media(max-width:1023px)]:rounded-card",
+  "focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px]",
+].join(" ");
+
+export const mobileTopbarActionsClass = [
+  "mobile-topbar-actions [@media(max-width:1023px)]:[&>button]:inline-flex",
+  "[@media(max-width:1023px)]:[&>button]:h-[44px]",
+  "[@media(max-width:1023px)]:[&>button]:w-[44px]",
+  "[@media(max-width:1023px)]:[&>button]:items-center",
+  "[@media(max-width:1023px)]:[&>button]:justify-center",
+  "[@media(max-width:1023px)]:[&>button]:p-0 [@media(max-width:1023px)]:[&>button]:border-0",
+  "[@media(max-width:1023px)]:[&>button]:rounded-card",
+  "[@media(max-width:1023px)]:[&>button]:bg-transparent",
+  "[@media(max-width:1023px)]:[&>button]:text-ink-bright",
+  "[@media(max-width:1023px)]:[&>button]:cursor-pointer",
+  "[@media(max-width:1023px)]:[&>button:hover]:bg-[#1b1b1e] [@media(max-width:1023px)]:flex",
+  "[@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:gap-[6px]",
+].join(" ");
+
+export const mobileAccountAvatarClass = [
+  "mobile-account-avatar [@media(max-width:1023px)]:inline-flex",
+  "[@media(max-width:1023px)]:w-[26px] [@media(max-width:1023px)]:h-[26px]",
+  "[@media(max-width:1023px)]:items-center [@media(max-width:1023px)]:justify-center",
+  "[@media(max-width:1023px)]:border [@media(max-width:1023px)]:border-[#3d3945]",
+  "[@media(max-width:1023px)]:rounded-[50%] [@media(max-width:1023px)]:bg-[#2b2930]",
+  "[@media(max-width:1023px)]:text-ink-console [@media(max-width:1023px)]:text-[11px]",
+  "[@media(max-width:1023px)]:font-semibold",
+].join(" ");
+
+export const mobileAccountMenuClass = [
+  "mobile-account-menu [&>strong]:max-w-full [&>strong]:overflow-hidden",
+  "[&>strong]:text-ellipsis [&>strong]:whitespace-nowrap [&>strong]:text-[13px]",
+  "[&>small]:text-[#8a8791] [&>small]:text-[12px] [&>button]:h-[30px] [&>button]:border-0",
+  "[&>button]:bg-transparent [&>button]:text-[#b3b0ba] [&>button]:cursor-pointer",
+  "[&>button]:text-left absolute top-[48px] right-[12px] z-[45] flex",
+  "w-[min(248px,calc(100vw_-_24px))] min-w-0 flex-col gap-[3px] p-[10px] border",
+  "border-[#303033] rounded-card bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_40%)]",
+].join(" ");
+
 type IconName =
   | "inbox"
   | "review"
@@ -155,10 +244,10 @@ const iconMap: Record<Exclude<IconName, "slack">, LucideIcon> = {
   admin: ShieldCheck,
 };
 
-function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
+function Icon({ name, size = 16, className }: { name: IconName; size?: number; className?: string }) {
   if (name === "slack") {
     return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
         <path d="M6.2 14.5a2.2 2.2 0 1 1-2.2-2.2h2.2v2.2ZM7.3 14.5a2.2 2.2 0 1 1 4.4 0V20a2.2 2.2 0 1 1-4.4 0v-5.5Z" />
         <path d="M9.5 6.2a2.2 2.2 0 1 1 2.2-2.2v2.2H9.5ZM9.5 7.3a2.2 2.2 0 1 1 0 4.4H4a2.2 2.2 0 1 1 0-4.4h5.5Z" />
         <path d="M17.8 9.5A2.2 2.2 0 1 1 20 11.7h-2.2V9.5ZM16.7 9.5a2.2 2.2 0 1 1-4.4 0V4a2.2 2.2 0 1 1 4.4 0v5.5Z" />
@@ -168,7 +257,7 @@ function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
   }
 
   const IconComponent = iconMap[name];
-  return <IconComponent size={size} strokeWidth={1.7} aria-hidden="true" />;
+  return <IconComponent size={size} strokeWidth={1.7} className={className} aria-hidden="true" />;
 }
 
 function PanelToggleIcon({ collapsed }: { collapsed: boolean }) {
@@ -197,15 +286,15 @@ function Identity({
 }) {
   return (
     <>
-      <span className="identity-initial" aria-hidden="true">
+      <span className="inline-flex h-[20px] flex-none bg-[#2b2930] text-[#eeedf0] text-[10px] font-semibold w-[20px] items-center justify-center rounded-control" aria-hidden="true">
         {getInitials(organization.name)}
       </span>
       {!collapsed ? (
         <>
-          <span className="identity-name" title={organization.name}>
+          <span className="min-w-0 overflow-hidden flex-initial text-ellipsis whitespace-nowrap text-[14px] font-semibold max-w-[min(18ch,100%)] tracking-[-0.01em]" title={organization.name}>
             {organization.name}
           </span>
-          <ChevronDown size={16} strokeWidth={1.7} aria-hidden="true" />
+          <ChevronDown size={16} strokeWidth={1.7} className="flex-none text-[#7e7a84]" aria-hidden="true" />
         </>
       ) : null}
     </>
@@ -223,7 +312,7 @@ function MobileSidebarSheet({
 
   return (
     <motion.aside
-      className="mobile-sidebar-sheet"
+      className={mobileSidebarSheetClass}
       role="dialog"
       aria-modal="true"
       aria-label="Main navigation"
@@ -261,15 +350,15 @@ function NavRow({
   return (
     <Link
       href={href}
-      className={`sidebar-row ${active ? "is-active" : ""} ${collapsed ? "is-collapsed" : ""} ${mobile ? "is-mobile" : ""}`}
+      className={`sidebar-row [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink-console relative isolate flex h-[36px] flex-none items-center gap-[10px] hover:bg-[rgb(255_255_255_/_6%)] focus-visible:bg-[rgb(255_255_255_/_6%)] [&>svg]:relative [&>svg]:z-[1] [&>svg]:flex-none [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] border-0 rounded-control text-[#9e9aa7] cursor-pointer text-[13.5px] font-medium leading-[20px] text-left hover:text-ink-console focus-visible:text-ink-console focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] ${active ? "bg-[#161418] text-ink-console" : ""} ${collapsed ? "w-[40px] mx-auto justify-center p-0" : "w-[calc(100%_-_24px)] my-[1px] mx-[12px] py-0 px-[8px] [@media(max-width:1023px)]:h-[40px] [@media(max-width:1023px)]:my-0"}`}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       title={collapsed ? label : undefined}
     >
       <Icon name={icon} />
-      {!collapsed ? <span className="sidebar-row-label">{label}</span> : null}
+      {!collapsed ? <span className="relative z-[1] min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{label}</span> : null}
       {!collapsed && accent ? (
-        <Gift size={16} strokeWidth={1.7} className="agent-gift" aria-hidden="true" />
+        <Gift size={16} strokeWidth={1.7} className="ml-auto text-[#ffa057] text-[16px] leading-[16px]" aria-hidden="true" />
       ) : null}
     </Link>
   );
@@ -299,17 +388,18 @@ function SearchDialog({
   if (!open) return null;
 
   return (
-    <div className="search-overlay" role="presentation">
+    <div className="flex items-start justify-center pt-[20vh] pb-0 px-[16px] fixed inset-0 z-[100] bg-[rgb(0_0_0_/_45%)] [backdrop-filter:blur(3px)]" role="presentation">
       <button
         type="button"
-        className="search-backdrop"
+        className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] absolute inset-0 border-0 bg-transparent"
         onClick={onClose}
         aria-label="Close search"
       />
-      <div className="search-dialog" role="dialog" aria-modal="true" aria-label="Search">
-        <div className="search-dialog-input">
+      <div className="search-dialog relative z-[1] w-[min(520px,100%)] overflow-hidden border border-[#3a373f] rounded-card bg-[#232127] [box-shadow:0_24px_80px_rgb(0_0_0_/_60%)]" role="dialog" aria-modal="true" aria-label="Search">
+        <div className="search-dialog-input flex h-[48px] items-center gap-[12px] py-0 px-[14px] border-b border-b-[#322f37] text-[14px] text-[#8a8791] [&>kbd]:flex-none [&>kbd]:text-[#b5b2b9] [&>kbd]:[font-family:inherit] [&>kbd]:text-[12px] [&>kbd]:leading-[15px]">
           <Icon name="search" />
           <input
+            className="min-w-0 flex-1 border-0 outline-none bg-transparent text-[#f4f4f5] placeholder:text-[#8a8791]"
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -319,14 +409,14 @@ function SearchDialog({
           />
           <kbd>ESC</kbd>
         </div>
-        <div className="search-results">
-          <p className="search-section-label">Navigation</p>
+        <div className="h-[304px] overflow-y-auto p-[6px]">
+          <p className="search-section-label m-0 p-[8px] text-[#96929d] text-[12px]">Navigation</p>
           {results.length ? (
             results.map((item) => (
               <button
                 key={item}
                 type="button"
-                className="search-result"
+                className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] bg-transparent hover:bg-[#2b2930] flex w-full h-[32px] items-center gap-[12px] py-0 px-[10px] border-0 rounded-[5px] text-ink-bright cursor-pointer text-[14px]! text-left"
                 onClick={() => {
                   onSelect(item);
                   onClose();
@@ -348,7 +438,7 @@ function SearchDialog({
               </button>
             ))
           ) : (
-            <p className="search-empty">No results found.</p>
+            <p className="py-[32px] px-[10px] text-[#8a8791] text-[13px] text-center">No results found.</p>
           )}
         </div>
       </div>
@@ -500,12 +590,12 @@ export function Sidebar({
   };
 
   const renderContent = (mobile = false) => (
-    <div className={`sidebar-panel ${mobile ? "mobile-sidebar-panel" : ""}`}>
-      <header className={`sidebar-header ${collapsed && !mobile ? "is-collapsed" : ""}`}>
+    <div className={`sidebar-panel flex w-full min-w-0 h-full flex-col overflow-hidden border-r border-r-[#282631] bg-console [@media(max-width:1023px)]:bg-[#232127] [@media(max-width:1023px)]:rounded-t-[20px] ${mobile ? "mobile-sidebar-panel" : ""}`}>
+      <header className={`sidebar-header relative flex h-[48px] shrink-0 items-center [transition:gap_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "justify-center gap-0 p-0" : "gap-[8px] py-0 px-[16px]"}`}>
         {!collapsed || mobile ? (
           <button
             type="button"
-            className="org-switcher"
+            className="org-switcher focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] flex min-w-0 flex-1 items-center gap-[8px] p-0 border-0 rounded-control bg-transparent text-[#eeedf0] cursor-pointer text-left"
             onClick={() => {
               setOrganizationSwitcherOpen((value) => !value);
               setCreateOrganizationOpen(false);
@@ -522,7 +612,7 @@ export function Sidebar({
         {mobile ? (
           <button
             type="button"
-            className="sidebar-close"
+            className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] bg-transparent hover:bg-[rgb(255_255_255_/_5%)] inline-flex w-[32px] h-[32px] flex-none items-center justify-center p-0 border-0 rounded-control text-[#b5b2b9] cursor-pointer hover:text-ink-console"
             onClick={() => setMobileOpen(false)}
             aria-label="Close sidebar"
           >
@@ -531,7 +621,7 @@ export function Sidebar({
         ) : (
           <button
             type="button"
-            className="sidebar-toggle"
+            className={sidebarToggleClass}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
@@ -544,53 +634,61 @@ export function Sidebar({
         )}
         {organizationSwitcherOpen && (!collapsed || mobile) ? (
           <div
-            className="organization-switcher-menu"
+            className="organization-switcher-menu overflow-y-auto absolute top-[44px] left-[12px] z-[90] w-[min(280px,calc(100vw_-_32px))] max-h-[min(70dvh,480px)] p-[8px] border border-[#39363f] rounded-control bg-[#201d23] [box-shadow:0_16px_36px_rgb(0_0_0_/_40%)]"
             role="dialog"
             aria-label="Organization switcher"
           >
-            <p className="search-section-label">Your Organizations</p>
+            <p className="search-section-label m-[4px_8px_8px] p-[8px] text-[#96929d] text-[12px]">Your Organizations</p>
             {organizations?.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                className="organization-switcher-option"
+                className="organization-switcher-option flex w-full min-h-[36px] items-center gap-[8px] py-[4px] px-[8px] border-0 rounded-control-sm bg-transparent text-[#eeedf0] cursor-pointer text-left hover:bg-[rgb(255_255_255_/_6%)]"
                 aria-pressed={item.id === activeOrganizationId}
                 onClick={() => void switchOrganization(item.id)}
                 disabled={organizationBusy}
               >
-                <span className="identity-initial" aria-hidden="true">
+                <span className="inline-flex h-[20px] flex-none bg-[#2b2930] text-[#eeedf0] text-[10px] font-semibold w-[20px] items-center justify-center rounded-control" aria-hidden="true">
                   {getInitials(item.name)}
                 </span>
-                <span className="organization-switcher-name">{item.name}</span>
-                {item.id === activeOrganizationId ? <small>Active</small> : null}
+                <span className="min-w-0 flex-1 overflow-hidden text-[13px] text-ellipsis whitespace-nowrap">{item.name}</span>
+                {item.id === activeOrganizationId ? (
+                  <small className="text-[#aaa4af] text-[11px]">Active</small>
+                ) : null}
               </button>
             ))}
             {organizationError ? (
-              <p className="organization-switcher-error" role="alert">
+              <p className="m-[8px] text-[#f39c9c] text-[12px] leading-[1.4]" role="alert">
                 {organizationError}
               </p>
             ) : null}
             {createOrganizationOpen ? (
-              <form className="organization-switcher-create" onSubmit={createOrganization}>
+              <form className="organization-switcher-create grid gap-[7px] pt-[12px] pb-[4px] px-[8px] border-t border-t-[#39363f]" onSubmit={createOrganization}>
                 <label htmlFor={mobile ? "mobile-new-organization" : "new-organization"}>
                   Organization name
                 </label>
                 <input
+                  className="w-full h-[34px] px-[8px] border border-[#49444e] rounded-control-sm bg-[#171519] text-[#eeedf0]"
                   id={mobile ? "mobile-new-organization" : "new-organization"}
                   value={organizationName}
                   onChange={(event) => setOrganizationName(event.target.value)}
                   maxLength={80}
                   required
                 />
-                <div>
+                <div className="flex justify-end gap-[6px]">
                   <button
                     type="button"
+                    className="min-h-[30px] px-[9px] border border-[#49444e] rounded-control-sm bg-transparent text-[#eeedf0] cursor-pointer"
                     onClick={() => setCreateOrganizationOpen(false)}
                     disabled={organizationBusy}
                   >
                     Cancel
                   </button>
-                  <button type="submit" disabled={organizationBusy}>
+                  <button
+                    type="submit"
+                    className="min-h-[30px] px-[9px] border border-[#d8c783] rounded-control-sm bg-[#d8c783] text-[#201d16] cursor-pointer"
+                    disabled={organizationBusy}
+                  >
                     {organizationBusy ? "Creating..." : "Create"}
                   </button>
                 </div>
@@ -598,7 +696,7 @@ export function Sidebar({
             ) : (
               <button
                 type="button"
-                className="organization-switcher-add"
+                className="bg-transparent hover:bg-[rgb(255_255_255_/_6%)] flex w-full min-h-[36px] items-center gap-[8px] py-[4px] px-[8px] border-0 rounded-[0] text-[#d8c783] cursor-pointer text-left mt-[6px] border-t border-t-[#39363f] text-[13px]!"
                 onClick={() => {
                   setOrganizationError("");
                   setCreateOrganizationOpen(true);
@@ -612,7 +710,7 @@ export function Sidebar({
       </header>
       <button
         type="button"
-        className={`sidebar-search ${collapsed && !mobile ? "is-collapsed" : ""}`}
+        className={`sidebar-search flex h-[32px] items-center gap-[8px] border-0 rounded-control text-[#eeedf0] cursor-pointer text-left [@media(max-width:1023px)]:h-[40px] [transition:width_360ms_cubic-bezier(0.22,1,0.36,1),margin_360ms_cubic-bezier(0.22,1,0.36,1),padding_360ms_cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-[2px] [&>svg]:flex-none [&>svg]:text-[#b5b2b9] [&>span]:min-w-0 [&>span]:flex-1 [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap [&>span]:text-[14px] [&>span]:font-medium [&>span]:leading-[20px] [&>kbd]:flex-none [&>kbd]:text-[#b5b2b9] [&>kbd]:[font-family:inherit] [&>kbd]:text-[12px] [&>kbd]:leading-[15px] ${collapsed && !mobile ? "w-[32px] mx-auto mt-[6px] justify-center p-0 bg-transparent" : "w-[calc(100%_-_16px)] mt-[6px] mb-0 mx-[8px] py-0 pr-[14px] pl-[8px] bg-[#171519] hover:bg-[#1c1a1f]"}`}
         onClick={() => setSearchOpen(true)}
         aria-label="Search Ctrl K"
       >
@@ -625,7 +723,7 @@ export function Sidebar({
         ) : null}
       </button>
 
-      <nav className="sidebar-nav" aria-label="Sidebar links">
+      <nav className="sidebar-nav flex min-h-[0] flex-1 flex-col gap-[2px] mt-[8px] pt-0 pb-[8px] px-0 overflow-x-hidden overflow-y-auto" aria-label="Sidebar links">
         {primaryItems.map((item) => (
           <NavRow
             key={item.label}
@@ -640,9 +738,9 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="sidebar-bottom">
-        <div className="sidebar-divider" />
-        <nav aria-label="Organization links">
+      <div className="sidebar-bottom shrink-0 mt-[auto] pb-[12px] bg-console">
+        <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
+        <nav className="flex flex-col gap-[2px] py-[8px]" aria-label="Organization links">
           {secondaryItems.map((item) => (
             <NavRow
               key={item.label}
@@ -668,26 +766,26 @@ export function Sidebar({
         </nav>
         {mobile ? (
           <>
-            <div className="sidebar-divider" />
-            <div className={`profile-area ${collapsed && !mobile ? "is-collapsed" : ""}`}>
+            <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
+            <div className={`profile-area relative pt-[10px] pb-[6px] px-[12px] [@media(max-width:1023px)]:pb-[calc(13px_+_env(safe-area-inset-bottom))] [transition:padding_360ms_cubic-bezier(0.22,1,0.36,1)] ${collapsed && !mobile ? "is-collapsed" : ""}`}>
               {profileOpen && !mobile ? (
                 <div
-                  className={`profile-menu ${collapsed ? "is-collapsed" : ""}`}
+                  className={`profile-menu absolute right-[12px] bottom-[calc(100%_+_5px)] left-[12px] z-[60] p-[6px] border border-[#2d2d35] rounded-card-lg bg-[#232127] [box-shadow:0_16px_40px_rgb(0_0_0_/_50%)] ${collapsed ? "is-collapsed" : ""}`}
                   role="menu"
                   aria-label="User menu"
                 >
-                  <div className="profile-menu-user">
-                    <UserAvatar user={user} size={36} className="profile-avatar-image large" />
+                  <div className="profile-menu-user flex items-center gap-[10px] p-[10px]">
+                    <UserAvatar user={user} size={36} className="profile-avatar-image w-[40px] h-[40px] flex-none rounded-[50%] object-cover large" />
                     <div>
                       <strong title={user.name}>{user.name}</strong>
                       <small>{user.role}</small>
                     </div>
                   </div>
-                  <div className="sidebar-divider" />
+                  <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
 
                   <button
                     type="button"
-                    className="profile-menu-row logout-row"
+                    className={profileMenuRowClass}
                     onClick={async () => {
                       await signOut();
                       router.replace("/");
@@ -698,24 +796,24 @@ export function Sidebar({
                   </button>
                 </div>
               ) : null}
-              <div className="profile-controls">
+              <div className="profile-controls flex items-center gap-[6px]">
                 <button
                   type="button"
-                  className="profile-button"
+                  className={profileButtonClass}
                   onClick={() => setProfileOpen((value) => !value)}
                   aria-label={profileOpen ? "Close user menu" : "Open user menu"}
                   title={collapsed && !mobile ? "User menu" : undefined}
                   aria-haspopup="menu"
                   aria-expanded={profileOpen}
                 >
-                  <UserAvatar user={user} size={32} className="profile-avatar" decorative />
+                  <UserAvatar user={user} size={32} className="profile-avatar inline-flex w-[32px] h-[32px] flex-none items-center justify-center rounded-[50%] bg-[#2b2930] text-ink-console text-[13px] font-semibold" decorative />
                   {!collapsed || mobile ? (
                     <>
-                      <span className="profile-copy">
+                      <span className="profile-copy min-w-0 flex-1 flex flex-col gap-[2px] [&>strong]:overflow-hidden [&>strong]:text-ellipsis [&>strong]:whitespace-nowrap [&>strong]:text-[14px] [&>strong]:font-medium [&>strong]:leading-[17px] [&>small]:text-[#7e7a84] [&>small]:text-[12px] [&>small]:leading-[15px]">
                         <strong title={user.name}>{user.name}</strong>
                         <small>{user.role}</small>
                       </span>
-                      <Icon name="chevrons" size={16} />
+                      <Icon name="chevrons" size={16} className="flex-none text-[#7e7a84]" />
                     </>
                   ) : null}
                 </button>
@@ -729,13 +827,14 @@ export function Sidebar({
 
   return (
     <>
-      <div className="user-mobile-topbar">
-        <Link href="/dashboard" className="mobile-brand" aria-label="Stealth home">
-          <Image src="/stealth-cat.png" alt="" width={24} height={24} priority />
+      <div className={userMobileTopbarClass}>
+        <Link href="/dashboard" className={mobileBrandClass} aria-label="Stealth home">
+          <Image src="/stealth-cat.png" alt="" width={24} height={24} className="h-[24px] w-[24px] object-contain" priority />
         </Link>
-        <div className="mobile-topbar-actions">
+        <div className={mobileTopbarActionsClass}>
           <button
             type="button"
+            className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-2"
             onClick={() => setSearchOpen(true)}
             aria-label="Search"
             title="Search"
@@ -744,14 +843,16 @@ export function Sidebar({
           </button>
           <button
             type="button"
+            className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-2"
             onClick={() => setMobileAccountOpen((value) => !value)}
             aria-label="User menu"
             aria-expanded={mobileAccountOpen}
           >
-            <UserAvatar user={user} size={26} className="mobile-account-avatar" decorative />
+            <UserAvatar user={user} size={26} className={mobileAccountAvatarClass} decorative />
           </button>
           <button
             type="button"
+            className="focus-visible:outline-2 focus-visible:outline-[#aaa6ec] focus-visible:outline-offset-2"
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
             aria-haspopup="dialog"
@@ -762,10 +863,10 @@ export function Sidebar({
           </button>
         </div>
         {mobileAccountOpen ? (
-          <div className="mobile-account-menu" role="menu">
+          <div className={mobileAccountMenuClass} role="menu">
             <strong title={user.name}>{user.name}</strong>
             <small>{user.role}</small>
-            <div className="sidebar-divider" />
+            <div className="h-[1px] my-0 mx-[8px] bg-[#322f37]" />
             <button
               type="button"
               onClick={async () => {
@@ -779,7 +880,7 @@ export function Sidebar({
         ) : null}
       </div>
       <motion.aside
-        className={`sidebar desktop-sidebar bg-[#121014] ${collapsed ? "is-collapsed" : ""}`}
+        className={`sidebar relative z-50 w-[264px] min-w-0 flex-none h-full flex flex-col bg-[#121014] desktop-sidebar [@media(max-width:1023px)]:hidden ${collapsed ? "overflow-hidden" : ""}`}
         aria-label="Main navigation"
         initial={false}
         animate={{
@@ -793,7 +894,7 @@ export function Sidebar({
         {mobileOpen ? (
           <motion.button
             type="button"
-            className="mobile-sidebar-overlay"
+            className="mobile-sidebar-overlay hidden [@media(max-width:1023px)]:block [@media(max-width:1023px)]:fixed [@media(max-width:1023px)]:inset-0 [@media(max-width:1023px)]:z-[50] [@media(max-width:1023px)]:border-0 [@media(max-width:1023px)]:bg-[rgb(0_0_0_/_50%)]"
             onClick={() => setMobileOpen(false)}
             aria-label="Close sidebar overlay"
             initial={{ opacity: 0 }}

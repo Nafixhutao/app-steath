@@ -12,6 +12,9 @@ import {
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 import { SupabaseModal } from "@/components/supabase-modal";
+import { recordsTableClass } from "@/components/records-table";
+
+import { dangerLinkButtonClass, dashboardLinkButtonClass, redeployBannerClass, secondaryButtonClass, tableWrapClass } from "@/components/ui-classes";
 
 type DraftState = {
   mode: "create" | "edit";
@@ -107,8 +110,8 @@ export function EnvironmentPanel({
   }
 
   return (
-    <section className="dashboard-section" aria-labelledby="environment-heading">
-      <div className="dashboard-section-heading">
+    <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="environment-heading">
+      <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="environment-heading">Environment Variables</h2>
         <button
           className="supabase-btn-green"
@@ -121,13 +124,13 @@ export function EnvironmentPanel({
       </div>
 
       {redeployNeeded ? (
-        <p className="environment-redeploy-banner" role="status">
+        <p className={redeployBannerClass} role="status">
           Environment changes are saved but not live yet. Redeploy this Service to apply them.
         </p>
       ) : null}
 
       {environment.error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {environment.error || actionError}
         </p>
       ) : null}
@@ -144,12 +147,12 @@ export function EnvironmentPanel({
                 apply changes.
               </p>
               <div className="mb-4">
-                <label htmlFor="env-key-input" className="supabase-modal-label">
+                <label htmlFor="env-key-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Key
                 </label>
                 <input
                   id="env-key-input"
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   value={draft.key}
                   onChange={(event) => setDraft({ ...draft, key: event.target.value })}
                   autoComplete="off"
@@ -159,12 +162,12 @@ export function EnvironmentPanel({
                 />
               </div>
               <div>
-                <label htmlFor="env-value-input" className="supabase-modal-label">
+                <label htmlFor="env-value-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   {draft.mode === "edit" ? "New value (leave empty to keep)" : "Value"}
                 </label>
                 <input
                   id="env-value-input"
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   value={draft.value}
                   onChange={(event) =>
                     setDraft({ ...draft, value: event.target.value, valueTouched: true })
@@ -178,7 +181,7 @@ export function EnvironmentPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 onClick={() => setDraft(null)}
                 disabled={busy}
               >
@@ -193,17 +196,17 @@ export function EnvironmentPanel({
       ) : null}
 
       {loading ? (
-        <p className="dashboard-table-empty" role="status">
+        <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center" role="status">
           Loading Environment Variables...
         </p>
       ) : variables.length === 0 ? (
-        <div className="dashboard-empty-state">
+        <div className="dashboard-empty-state px-[20px] text-center py-[32px] border border-dashed border-[#3f3f46] rounded-card bg-transparent">
           <h3>No Environment Variables</h3>
           <p>Add one to pass a secret, like an API token, into the Service container.</p>
         </div>
       ) : (
-        <div className="organization-table-wrap">
-          <table className="organization-table">
+        <div className={tableWrapClass}>
+          <table className={recordsTableClass}>
             <thead>
               <tr>
                 <th scope="col">Key</th>
@@ -219,10 +222,10 @@ export function EnvironmentPanel({
                 return (
                   <tr key={variable.id}>
                     <td data-label="Key">
-                      <code className="environment-key">{variable.key}</code>
+                      <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{variable.key}</code>
                     </td>
                     <td data-label="Value">
-                      <code className="environment-value">
+                      <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] [overflow-wrap:anywhere] tabular-nums">
                         {isRevealed ? (revealed?.value ?? "") : variable.maskedValue}
                       </code>
                     </td>
@@ -232,14 +235,14 @@ export function EnvironmentPanel({
                     <td data-label="Actions" className="svc-cell-actions">
                       <div className="deployment-actions">
                         <button
-                          className="dashboard-link-button"
+                          className={dashboardLinkButtonClass}
                           type="button"
                           onClick={() => void reveal(variable)}
                         >
                           {isRevealed ? "Hide" : "Reveal"}
                         </button>
                         <button
-                          className="dashboard-link-button"
+                          className={dashboardLinkButtonClass}
                           type="button"
                           onClick={() =>
                             setDraft({
@@ -255,7 +258,7 @@ export function EnvironmentPanel({
                           Edit
                         </button>
                         <button
-                          className="dashboard-link-button is-danger"
+                          className={dangerLinkButtonClass}
                           type="button"
                           onClick={() => void remove(variable)}
                           disabled={busy}

@@ -24,6 +24,17 @@ import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { compactSecondaryButtonClass, dangerButtonClass, filterSelectClass, modalCloseClass, secondaryButtonClass } from "@/components/ui-classes";
+
+export const backupsTableClass = [
+  "backups-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px]",
+  "[&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492]",
+  "[&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217]",
+  "[&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px]",
+  "[&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)]",
+  "[&_tr:last-child>td]:border-b-0",
+].join(" ");
+
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -141,16 +152,16 @@ export default function BackupsPage() {
   }
 
   return (
-    <div className="backups-page-container">
+    <div className="pt-[28px] pb-[64px] px-[36px] max-w-[1200px] mx-auto w-full">
       {/* Header */}
-      <header className="backups-page-header">
+      <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
-          <div className="backups-header-icon" aria-hidden="true">
+          <div className="w-[40px] h-[40px] rounded-panel bg-[rgba(62,207,142,0.1)] border border-[rgba(62,207,142,0.25)] flex items-center justify-center shrink-0" aria-hidden="true">
             <Archive className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="backups-page-title">Backups & Restores</h1>
-            <p className="backups-page-subtitle">
+            <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Backups & Restores</h1>
+            <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Automated daily disaster recovery snapshots for{" "}
               {organization?.name ?? "your organization"}.
             </p>
@@ -159,7 +170,7 @@ export default function BackupsPage() {
 
         <button
           type="button"
-          className="supabase-btn-secondary"
+          className={secondaryButtonClass}
           onClick={() => void board.refresh()}
           disabled={loading}
           title="Refresh backup records"
@@ -171,14 +182,14 @@ export default function BackupsPage() {
 
       {/* Global Alerts */}
       {error || submitError ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {error || submitError}
         </div>
       ) : null}
 
       {/* Local Storage Warning */}
       {list?.storageProvider === "local" && (
-        <div className="backups-warning-banner" role="status">
+        <div className="flex items-start gap-[12px] py-[12px] px-[16px] rounded-card bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] mb-[20px]" role="status">
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="text-xs text-amber-200">
             <strong>Local Storage Notice:</strong> S3 credentials are not configured, so backup
@@ -193,25 +204,25 @@ export default function BackupsPage() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
         aria-label="Backup metrics"
       >
-        <div className="backups-metric-card">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="backups-metric-label">Total Backups</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Total Backups</span>
             <Archive className="w-4 h-4 text-emerald-400" />
           </div>
-          <span className="backups-metric-val">{backupsList.length}</span>
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2]">{backupsList.length}</span>
           <span className="text-[11px] text-zinc-500">Retained for 7 days</span>
         </div>
 
-        <div className="backups-metric-card">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="backups-metric-label">Storage Backend</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Storage Backend</span>
             {list?.storageProvider === "s3" ? (
               <Cloud className="w-4 h-4 text-cyan-400" />
             ) : (
               <Server className="w-4 h-4 text-zinc-500" />
             )}
           </div>
-          <span className="backups-metric-val text-sm font-mono mt-1">
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2] text-sm font-mono mt-1">
             {list?.storageProvider === "s3" ? "S3 Object Storage" : "Local Node Storage"}
           </span>
           <span className="text-[11px] text-zinc-500">
@@ -221,23 +232,23 @@ export default function BackupsPage() {
           </span>
         </div>
 
-        <div className="backups-metric-card">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="backups-metric-label">Backup Schedule</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Backup Schedule</span>
             <Clock className="w-4 h-4 text-zinc-400" />
           </div>
-          <span className="backups-metric-val text-sm font-mono mt-1">Daily at 02:00 UTC</span>
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2] text-sm font-mono mt-1">Daily at 02:00 UTC</span>
           <span className="text-[11px] text-zinc-500">Automated cron worker</span>
         </div>
 
-        <div className="backups-metric-card">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="backups-metric-label">Restores in Flight</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Restores in Flight</span>
             <RotateCcw
               className={`w-4 h-4 ${restoring ? "text-amber-400 animate-spin" : "text-zinc-500"}`}
             />
           </div>
-          <span className="backups-metric-val">
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2]">
             {restores?.restores.filter((r) => isActive(r.status)).length ?? 0}
           </span>
           <span className="text-[11px] text-zinc-500">
@@ -247,21 +258,21 @@ export default function BackupsPage() {
       </section>
 
       {/* Toolbar */}
-      <div className="backups-toolbar">
-        <div className="backups-search-box">
-          <Search className="backups-search-icon" aria-hidden="true" />
+      <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[16px]">
+        <div className="relative w-full max-w-[340px]">
+          <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#706d7e] pointer-events-none" aria-hidden="true" />
           <input
             type="search"
             placeholder="Search backups by target or project..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="backups-search-input"
+            className="backups-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease] focus:border-[var(--color-accent)]"
           />
           {search ? (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="backups-search-clear"
+              className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#706d7e] bg-transparent border-0 cursor-pointer p-[2px] flex items-center justify-center hover:text-ink-console"
               aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -273,7 +284,7 @@ export default function BackupsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="supabase-filter-select"
+            className={filterSelectClass}
             aria-label="Filter by target type"
           >
             <option value="all">All Targets</option>
@@ -281,27 +292,27 @@ export default function BackupsPage() {
             <option value="volume">Volumes</option>
           </select>
 
-          <span className="backups-count-pill">{filteredBackups.length} Snapshots</span>
+          <span className="bg-[#1d1b22] inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium border border-[#282632] text-[#878492]">{filteredBackups.length} Snapshots</span>
         </div>
       </div>
 
       {/* Backups Table Card */}
-      <div className="backups-table-card">
+      <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
         {loading ? (
           <div className="p-6 space-y-4" aria-label="Loading backups">
             {[1, 2, 3].map((n) => (
               <div key={n} className="flex items-center gap-3">
-                <div className="supabase-skeleton-box w-8 h-8 rounded flex-shrink-0" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-8 h-8 rounded flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="supabase-skeleton-box h-4 w-32 rounded" />
-                  <div className="supabase-skeleton-box h-3 w-48 rounded" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-32 rounded" />
+                  <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-48 rounded" />
                 </div>
-                <div className="supabase-skeleton-box h-6 w-16 rounded" />
+                <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-16 rounded" />
               </div>
             ))}
           </div>
         ) : filteredBackups.length === 0 ? (
-          <div className="backups-empty-box">
+          <div className="flex flex-col items-center justify-center py-[48px] px-[20px] text-center">
             <Archive className="w-8 h-8 text-zinc-600 mb-2" />
             <p className="text-sm text-zinc-300 font-medium">No backups found</p>
             <p className="text-xs text-zinc-500 mt-1">
@@ -311,7 +322,7 @@ export default function BackupsPage() {
             </p>
           </div>
         ) : (
-          <table className="backups-table">
+          <table className={backupsTableClass}>
             <thead>
               <tr>
                 <th scope="col">Target</th>
@@ -339,7 +350,7 @@ export default function BackupsPage() {
                   <tr key={backup.id}>
                     <td>
                       <div className="flex items-center gap-2.5">
-                        <div className="backups-row-icon" aria-hidden="true">
+                        <div className="w-[30px] h-[30px] rounded-control bg-[#1f1d26] border border-[#2d2a37] flex items-center justify-center shrink-0" aria-hidden="true">
                           {isDb ? (
                             <Database className="w-3.5 h-3.5 text-blue-400" />
                           ) : (
@@ -373,22 +384,22 @@ export default function BackupsPage() {
                     </td>
 
                     <td>
-                      <span className="backups-storage-badge">
+                      <span className="inline-flex items-center h-[20px] py-0 px-[7px] rounded-control-sm text-[10px] [font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] font-semibold uppercase bg-[#1f1d27] border border-[#2d2b37] text-[#a6a3b0]">
                         {backup.storageProvider === "s3" ? "S3" : "Local"}
                       </span>
                     </td>
 
                     <td>
                       <span
-                        className={`backups-status-pill ${
+                        className={`backups-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                           isSuccess
-                            ? "is-completed"
+                            ? "is-completed bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
                             : backup.status === "failed"
-                              ? "is-failed"
-                              : "is-pending"
+                              ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]"
+                              : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                         }`}
                       >
-                        <span className="project-status-dot" aria-hidden="true" />
+                        <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                         <span className="capitalize">{backup.status}</span>
                       </span>
                       {backup.errorMessage ? (
@@ -403,7 +414,7 @@ export default function BackupsPage() {
                         {restorable && isSuccess ? (
                           <button
                             type="button"
-                            className="supabase-btn-secondary text-xs h-7 px-2.5"
+                            className={compactSecondaryButtonClass}
                             onClick={() => beginRestore(backup)}
                             disabled={Boolean(active) || Boolean(target)}
                           >
@@ -431,11 +442,11 @@ export default function BackupsPage() {
             <h2 id="recent-restores-heading" className="text-sm font-semibold text-white">
               Recent Restores
             </h2>
-            <span className="backups-count-pill">{restores.restores.length}</span>
+            <span className="bg-[#1d1b22] inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium border border-[#282632] text-[#878492]">{restores.restores.length}</span>
           </div>
 
-          <div className="backups-table-card">
-            <table className="backups-table">
+          <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
+            <table className={backupsTableClass}>
               <thead>
                 <tr>
                   <th scope="col">Target</th>
@@ -464,11 +475,11 @@ export default function BackupsPage() {
                       </td>
                       <td>
                         <span
-                          className={`backups-status-pill ${
-                            isDone ? "is-completed" : isFail ? "is-failed" : "is-pending"
+                          className={`backups-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
+                            isDone ? "is-completed bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]" : isFail ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]" : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                           }`}
                         >
-                          <span className="project-status-dot" aria-hidden="true" />
+                          <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                           <span className="capitalize">{restore.status}</span>
                         </span>
                         {restore.errorMessage ? (
@@ -489,14 +500,14 @@ export default function BackupsPage() {
       {/* Modal: Restore Confirmation */}
       {target && (
         <ModalDialog labelledBy="restore-modal-title" onClose={cancelRestore}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <RotateCcw className="w-4 h-4" />
               <h2 id="restore-modal-title">Restore {target.targetName}</h2>
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={cancelRestore}
               aria-label="Close dialog"
             >
@@ -514,7 +525,7 @@ export default function BackupsPage() {
               </div>
 
               <div>
-                <label htmlFor="confirm-restore-input" className="supabase-modal-label">
+                <label htmlFor="confirm-restore-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Type <strong>{target.targetName}</strong> to confirm:
                 </label>
                 <input
@@ -525,7 +536,7 @@ export default function BackupsPage() {
                   autoComplete="off"
                   spellCheck="false"
                   required
-                  className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
                   autoFocus
                 />
               </div>
@@ -534,7 +545,7 @@ export default function BackupsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 onClick={cancelRestore}
                 disabled={submitting}
               >
@@ -542,7 +553,7 @@ export default function BackupsPage() {
               </button>
               <button
                 type="submit"
-                className="project-btn-danger"
+                className={dangerButtonClass}
                 disabled={submitting || confirmation.trim() !== target.targetName}
               >
                 {submitting ? (

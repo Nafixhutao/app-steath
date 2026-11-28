@@ -11,6 +11,9 @@ import {
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 import { SupabaseModal } from "@/components/supabase-modal";
+import { recordsTableClass } from "@/components/records-table";
+
+import { dangerLinkButtonClass, secondaryButtonClass, serviceMetaClass } from "@/components/ui-classes";
 
 function statusLabel(status: CustomDomainSummary["status"]): string {
   switch (status) {
@@ -93,8 +96,8 @@ export function CustomDomainPanel({
   }
 
   return (
-    <section className="dashboard-section" aria-labelledby="custom-domain-heading">
-      <div className="dashboard-section-heading">
+    <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="custom-domain-heading">
+      <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="custom-domain-heading">Custom Domain</h2>
         {canManage && !domainData ? (
           <button
@@ -109,7 +112,7 @@ export function CustomDomainPanel({
       </div>
 
       {domain.error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {domain.error || actionError}
         </p>
       ) : null}
@@ -122,12 +125,12 @@ export function CustomDomainPanel({
                 Point the hostname at the platform IP, then verify ownership with the TXT record
                 shown after you add it.
               </p>
-              <label htmlFor="domain-hostname-input" className="supabase-modal-label">
+              <label htmlFor="domain-hostname-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                 Hostname
               </label>
               <input
                 id="domain-hostname-input"
-                className="supabase-modal-input"
+                className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                 value={hostname}
                 onChange={(event) => setHostname(event.target.value)}
                 autoComplete="off"
@@ -139,7 +142,7 @@ export function CustomDomainPanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 onClick={() => setAdding(false)}
                 disabled={busy}
               >
@@ -154,11 +157,11 @@ export function CustomDomainPanel({
       ) : null}
 
       {domain.loading ? (
-        <p className="dashboard-table-empty" role="status">
+        <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center" role="status">
           Loading Custom Domain...
         </p>
       ) : !domainData ? (
-        <div className="dashboard-empty-state">
+        <div className="dashboard-empty-state px-[20px] text-center py-[32px] border border-dashed border-[#3f3f46] rounded-card bg-transparent">
           <h3>No Custom Domain</h3>
           <p>
             A Service can serve one domain you own in addition to its Platform Subdomain. You will
@@ -167,7 +170,7 @@ export function CustomDomainPanel({
         </div>
       ) : (
         <div className="custom-domain-details">
-          <dl className="service-meta">
+          <dl className={serviceMetaClass}>
             <div>
               <dt>Hostname</dt>
               <dd>{domainData.hostname}</dd>
@@ -195,17 +198,17 @@ export function CustomDomainPanel({
           </dl>
 
           {domainData.lastError ? (
-            <p className="dashboard-alert is-error" role="alert">
+            <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
               {domainData.lastError}
             </p>
           ) : null}
 
-          <div className="custom-domain-records">
-            <h3>DNS records</h3>
-            <p>
+          <div className="custom-domain-records mt-[20px]">
+            <h3 className="mt-0 mx-0 mb-[4px] text-[#d4d4d8] text-[13px] font-semibold">DNS records</h3>
+            <p className="mt-0 mx-0 mb-[12px] text-[#71717a] text-[12.5px]">
               Add these records at your DNS provider, then verify. DNS changes can take a while.
             </p>
-            <table className="organization-table svc-table-records">
+            <table className={recordsTableClass}>
               <thead>
                 <tr>
                   <th scope="col">Type</th>
@@ -217,20 +220,20 @@ export function CustomDomainPanel({
                 <tr>
                   <td data-label="Type">TXT</td>
                   <td data-label="Name">
-                    <code className="environment-key">{domainData.instructions.txt.name}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.txt.name}</code>
                   </td>
                   <td data-label="Value" className="svc-cell-wide">
-                    <code className="environment-key">{domainData.instructions.txt.value}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.txt.value}</code>
                   </td>
                 </tr>
                 <tr>
                   <td data-label="Type">A</td>
                   <td data-label="Name">
-                    <code className="environment-key">{domainData.instructions.a.name}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.a.name}</code>
                   </td>
                   <td data-label="Value" className="svc-cell-wide">
                     {domainData.instructions.a.value ? (
-                      <code className="environment-key">{domainData.instructions.a.value}</code>
+                      <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.a.value}</code>
                     ) : (
                       <span>Not configured. Use the CNAME instead</span>
                     )}
@@ -239,10 +242,10 @@ export function CustomDomainPanel({
                 <tr>
                   <td data-label="Type">CNAME</td>
                   <td data-label="Name">
-                    <code className="environment-key">{domainData.instructions.cname.name}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.cname.name}</code>
                   </td>
                   <td data-label="Value" className="svc-cell-wide">
-                    <code className="environment-key">{domainData.instructions.cname.value}</code>
+                    <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{domainData.instructions.cname.value}</code>
                   </td>
                 </tr>
               </tbody>
@@ -252,7 +255,7 @@ export function CustomDomainPanel({
           {canManage ? (
             <div className="deployment-actions">
               <button
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 type="button"
                 onClick={() => void verify()}
                 disabled={busy}
@@ -260,7 +263,7 @@ export function CustomDomainPanel({
                 {busy ? "Checking..." : "Verify DNS"}
               </button>
               <button
-                className="dashboard-link-button is-danger"
+                className={dangerLinkButtonClass}
                 type="button"
                 onClick={() => void remove()}
                 disabled={busy}

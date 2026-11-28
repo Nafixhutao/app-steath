@@ -5,7 +5,9 @@ import Link from "next/link";
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { EyeMark } from "@/components/auth-form";
+import { EyeMark, authSubmitClass } from "@/components/auth-form";
+
+import { passwordToggleClass, skipLinkClass } from "@/components/ui-classes";
 
 /** The two reset-password form states the /forgot-password flow walks through:
  * requesting the link (by email) and answering it (token from the URL). */
@@ -13,10 +15,10 @@ import { EyeMark } from "@/components/auth-form";
 function BrandHeading({ title }: { title: string }) {
   return (
     <>
-      <div className="brand-mark">
-        <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority />
+      <div className="brand-mark flex justify-center h-[56px] w-[56px] mt-0 mb-[24px] mx-auto">
+        <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority className="w-[56px] h-[56px] object-contain" />
       </div>
-      <h1>{title}</h1>
+      <h1 className="text-center">{title}</h1>
     </>
   );
 }
@@ -55,28 +57,28 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <main className="auth-page">
-      <a className="skip-link" href="#reset-content">
+    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+      <a className={skipLinkClass} href="#reset-content">
         Skip to content
       </a>
 
-      <div id="reset-content" className="login-content">
+      <div id="reset-content" className="login-content w-[min(100%,364px)] m-auto">
         <BrandHeading title="Reset your password" />
-        <p className="auth-lead">
+        <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#999999] text-[13.5px] leading-[1.6]">
           Enter the email you registered with and a one-hour reset link will be generated for that
           account.
         </p>
 
         <p
-          className={isError ? "notice is-error" : notice ? "notice" : "sr-only"}
+          className={isError ? "mt-3 py-2 px-3 border border-[#880c02] rounded-card bg-[#3b0501] text-[#fd9087] text-[12.5px] leading-4" : notice ? "mt-3 py-2 px-3 border border-[#904506] rounded-card bg-[#2a1502] text-[#f79847] text-[12.5px] leading-4" : "sr-only"}
           role="status"
           aria-live="polite"
         >
           {notice}
         </p>
 
-        <form className="auth-fields" onSubmit={handleSubmit} noValidate>
-          <div className="auth-field">
+        <form className="auth-fields grid gap-[18px]" onSubmit={handleSubmit} noValidate>
+          <div className="auth-field grid gap-[7px]">
             <label htmlFor="email">Email</label>
             <input
               id="email"
@@ -88,12 +90,12 @@ export function ForgotPasswordForm() {
               disabled={isLoading}
             />
           </div>
-          <button type="submit" className="submit-button" disabled={isLoading}>
+          <button type="submit" className={authSubmitClass} disabled={isLoading}>
             {isLoading ? "Generating link..." : "Send reset link"}
           </button>
         </form>
 
-        <p className="support-copy">
+        <p className="support-copy mt-[20px] mb-0 mx-0 text-[#999999] text-[13.5px] leading-[20px] text-center">
           Back to <Link href="/login">Sign in</Link>
         </p>
       </div>
@@ -124,14 +126,14 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
 
   if (!token) {
     return (
-      <main className="auth-page">
-        <div className="login-content">
+      <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+        <div className="login-content w-[min(100%,364px)] m-auto">
           <BrandHeading title="Reset link invalid" />
-          <p className="auth-lead">
+          <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#999999] text-[13.5px] leading-[1.6]">
             This reset link is missing its token or it has expired. Request a fresh one and try
             again within the hour.
           </p>
-          <p className="support-copy">
+          <p className="support-copy mt-[20px] mb-0 mx-0 text-[#999999] text-[13.5px] leading-[20px] text-center">
             <Link href="/forgot-password">Request a new reset link</Link> ·{" "}
             <Link href="/login">Sign in</Link>
           </p>
@@ -165,27 +167,27 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
   }
 
   return (
-    <main className="auth-page">
-      <a className="skip-link" href="#reset-content">
+    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
+      <a className={skipLinkClass} href="#reset-content">
         Skip to content
       </a>
 
-      <div id="reset-content" className="login-content">
+      <div id="reset-content" className="login-content w-[min(100%,364px)] m-auto">
         <BrandHeading title="Set a new password" />
-        <p className="auth-lead">Choose a password of at least 8 characters for this account.</p>
+        <p className="auth-lead mt-[8px] mb-[20px] mx-0 text-[#999999] text-[13.5px] leading-[1.6]">Choose a password of at least 8 characters for this account.</p>
 
         <p
-          className={isError ? "notice is-error" : notice ? "notice" : "sr-only"}
+          className={isError ? "mt-3 py-2 px-3 border border-[#880c02] rounded-card bg-[#3b0501] text-[#fd9087] text-[12.5px] leading-4" : notice ? "mt-3 py-2 px-3 border border-[#904506] rounded-card bg-[#2a1502] text-[#f79847] text-[12.5px] leading-4" : "sr-only"}
           role="status"
           aria-live="polite"
         >
           {notice}
         </p>
 
-        <form className="auth-fields" onSubmit={handleSubmit} noValidate>
-          <div className="auth-field">
+        <form className="auth-fields grid gap-[18px]" onSubmit={handleSubmit} noValidate>
+          <div className="auth-field grid gap-[7px]">
             <label htmlFor="password">New password</label>
-            <div className="password-wrap">
+            <div className="password-wrap relative">
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -197,7 +199,7 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
               />
               <button
                 type="button"
-                className="password-toggle"
+                className={passwordToggleClass}
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}
@@ -207,12 +209,12 @@ function ResetPasswordTokenForm({ token }: { token: string }) {
               </button>
             </div>
           </div>
-          <button type="submit" className="submit-button" disabled={isLoading}>
+          <button type="submit" className={authSubmitClass} disabled={isLoading}>
             {isLoading ? "Updating..." : "Update password"}
           </button>
         </form>
 
-        <p className="support-copy">
+        <p className="support-copy mt-[20px] mb-0 mx-0 text-[#999999] text-[13.5px] leading-[20px] text-center">
           <Link href="/login">Back to Sign in</Link>
         </p>
       </div>

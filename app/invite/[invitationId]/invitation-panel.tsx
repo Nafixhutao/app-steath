@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
+import { createProjectButtonClass } from "@/components/ui-classes";
+
+export const invitationDeclineButtonClass = [
+  "focus-visible:outline-2 focus-visible:outline-[var(--color-violet)]",
+  "focus-visible:outline-offset-[2px] bg-[#1a181e] hover:bg-[#242129] min-h-[36px] py-0",
+  "px-[12px] border border-[#403c45] rounded-[7px] text-[#e8e5ed] [font:inherit] text-[12px]!",
+  "cursor-pointer hover:border-[#696370] disabled:cursor-not-allowed disabled:opacity-[0.55]",
+  "[transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]",
+  "active:translate-y-[1] active:scale-[0.99]",
+].join(" ");
+
 export function InvitationPanel({ invitationId }: { invitationId: string }) {
   const router = useRouter();
   const [status, setStatus] = useState("Checking invitation...");
@@ -55,20 +66,20 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
   }
 
   return (
-    <main className="invitation-page">
-      <section className="invitation-panel">
+    <main className="invitation-page grid place-items-center min-h-[100dvh] p-[24px] bg-console text-ink-console">
+      <section className="invitation-panel w-[min(100%,440px)] p-[28px] border border-[#322f37] rounded-card-lg bg-[#19171c]">
         <p className="auth-eyebrow">Organization invitation</p>
         <h1>Join an Organization</h1>
-        {status ? <p>{status}</p> : null}
+        {status ? <p className="text-[#aaa5b0] text-[14px] leading-[1.6]">{status}</p> : null}
         {error ? (
-          <p className="dashboard-alert is-error" role="alert">
+          <p className="dashboard-alert py-[12px] px-[14px] border border-[#8f3d48] rounded-card bg-[#321a20] text-[#ffb9c2] text-[13px]" role="alert">
             {error}
           </p>
         ) : null}
         {ready ? (
-          <div className="invitation-actions">
+          <div className="flex gap-[10px] mt-[20px]">
             <button
-              className="create-project-button"
+              className={createProjectButtonClass}
               type="button"
               disabled={busy}
               onClick={() => void accept()}
@@ -76,7 +87,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
               {busy ? "Please wait..." : "Accept invitation"}
             </button>
             <button
-              className="dashboard-secondary-button"
+              className={invitationDeclineButtonClass}
               type="button"
               disabled={busy}
               onClick={() => void decline()}
@@ -85,7 +96,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
             </button>
           </div>
         ) : null}
-        <p>
+        <p className="text-[#aaa5b0] text-[14px] leading-[1.6]">
           <Link href="/dashboard">Back to dashboard</Link>
         </p>
       </section>

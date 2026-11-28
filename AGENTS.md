@@ -45,6 +45,13 @@ sg docker -c "docker compose -f docker-compose.production.yml up -d --build cont
 - Override palet halaman auth ada di blok akhir `app/globals.css` dan seluruhnya di-scope `.auth-page`; console user dan panel admin tidak boleh ikut berubah. Token dan komentar di blok itu merujuk design system Cloudflare, bukan nilai acak.
 - `features/admin` dan console memakai token warnanya sendiri; jangan menaikkan selector auth ke level global.
 
+## Styling
+
+- Default: semua styling UI lewat utility Tailwind di JSX. Coba utility dulu, termasuk arbitrary value (`text-[13px]`, `bg-[#0a0a0a]`, `[&>svg]:…`, `max-[480px]:…`) sebelum menulis CSS.
+- `app/globals.css` hanya untuk yang tidak mungkin jadi utility: token `@theme`, `@keyframes`, selector elemen/reset global yang memang unlayered, dan plumbing `features/admin`/`[data-admin]`. Jangan tambah class CSS baru, file CSS baru, `@import` baru, `@apply`, atau `!important` baru.
+- Kalau utility kalah cascade, perbaiki rule unlayered yang menang (hapus atau scope), bukan menyalin nilainya ke CSS baru. Verifikasi dengan `npm run build` dan cek chunk CSS hasil build.
+- Pola berulang tetap utility; bila perlu dipakai ulang, ekspor string class dari TS (contoh `authSubmitClass` di `components/auth-form.tsx`), bukan membuat class CSS.
+
 ## Agent skills
 
 ### Issue tracker
@@ -58,6 +65,12 @@ Five default triage roles: `needs-triage`, `needs-info`, `ready-for-agent`, `rea
 ### Domain docs
 
 Single-context: `GLOSSARY.md` at the repo root and ADRs under `docs/adr/`. See `docs/agents/domain.md`.
+
+### AI SDK
+
+- Repo ini belum memakai paket `ai`. Jangan pasang kecuali ada fitur AI yang benar-benar diminta.
+- Begitu menyentuh AI (`generateText`, `streamText`, `useChat`, tool calling, embedding, agent), muat skill `ai-sdk` lebih dulu dan verifikasi tiap API ke `node_modules/ai/docs/` + `node_modules/ai/src/`. Jangan menulis dari ingatan: API dan model ID sering berubah antar versi.
+- Upgrade SDK 6 → 7 pakai skill `migrate-ai-sdk-v6-to-v7`, bukan tebakan.
 
 ## Pull Request
 

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
+import { createProjectButtonClass } from "@/components/ui-classes";
+
 /**
  * Shown when a signed-in User has no Organization membership left, for example
  * after deleting their last Organization. Without this gate the dashboard would
@@ -45,17 +47,17 @@ export function OrganizationOnboarding() {
 
   return (
     <div className="dashboard-content">
-      <div className="dashboard-page-heading">
+      <div className="dashboard-page-heading [@media(max-width:760px)]:min-h-[0] [@media(max-width:760px)]:pb-[18px] flex min-h-[72px] items-start justify-between gap-[20px] pb-[20px] border-b border-b-[#322f37]">
         <div>
           <h1>Create an Organization</h1>
           <p>You are not a Member of any Organization yet. Create one to continue.</p>
         </div>
       </div>
-      <section className="dashboard-section" aria-labelledby="create-organization-heading">
-        <div className="dashboard-section-heading">
+      <section className="dashboard-section mt-[26px]" aria-labelledby="create-organization-heading">
+        <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
           <h2 id="create-organization-heading">Organization details</h2>
         </div>
-        <form className="organization-settings-form" onSubmit={create}>
+        <form className="organization-settings-form [@media(max-width:760px)]:flex-col flex gap-[12px] py-[18px] px-0" onSubmit={create}>
           <label>
             Organization name
             <input
@@ -65,12 +67,12 @@ export function OrganizationOnboarding() {
               required
             />
           </label>
-          <button className="create-project-button" type="submit" disabled={busy}>
+          <button className={createProjectButtonClass} type="submit" disabled={busy}>
             {busy ? "Creating..." : "Create Organization"}
           </button>
         </form>
         {error ? (
-          <p className="dashboard-alert is-error" role="alert">
+          <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
             {error}
           </p>
         ) : null}

@@ -29,6 +29,8 @@ import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { credentialActionClass, credentialRowClass, credentialToggleClass, credentialValueClass, dangerButtonClass, modalCloseClass, secondaryButtonClass, serviceDeleteButtonClass } from "@/components/ui-classes";
+
 const STATUS_LABELS: Record<StorageBucketStatus, string> = {
   provisioning: "Provisioning",
   ready: "Ready",
@@ -73,20 +75,20 @@ function CopyValue({ label, value }: { label: string; value: string }) {
   }
 
   return (
-    <div className="db-cred-row">
-      <span className="db-cred-label">
+    <div className={credentialRowClass}>
+      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         {label}
         {copied ? (
-          <span className="db-cred-copied" role="status">
+          <span className="db-cred-copied normal-case text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
-      <div className="db-cred-value-wrap">
-        <span className="db-cred-value is-mono">{value}</span>
+      <div className="flex items-start gap-[10px] min-w-0">
+        <span className="db-cred-value flex-auto [word-break:break-all] [font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace] text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono">{value}</span>
         <button
           type="button"
-          className="db-cred-copy"
+          className={credentialToggleClass}
           onClick={copy}
           aria-label={`Copy ${label.toLowerCase()}`}
           title={`Copy ${label.toLowerCase()}`}
@@ -146,19 +148,19 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
   }
 
   return (
-    <div className="db-cred-row">
-      <span className="db-cred-label">
+    <div className={credentialRowClass}>
+      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         Secret key
         {copied ? (
-          <span className="db-cred-copied" role="status">
+          <span className="db-cred-copied normal-case text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
-      <div className="db-cred-value-wrap">
-        <span className="db-cred-value is-mono db-cred-password-value" aria-live="polite">
+      <div className="flex items-start gap-[10px] min-w-0">
+        <span className={credentialValueClass} aria-live="polite">
           {loading ? (
-            <span className="db-cred-muted">
+            <span className="text-[#716f7c] [font-family:inherit]">
               <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Loading…
             </span>
@@ -167,14 +169,14 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
           ) : secret ? (
             "••••••••••••••••"
           ) : (
-            <span className="db-cred-muted">Hidden</span>
+            <span className="text-[#716f7c] [font-family:inherit]">Hidden</span>
           )}
         </span>
       </div>
-      <div className="db-cred-password-actions">
+      <div className="db-cred-password-actions [@media(max-width:400px)]:w-full flex flex-wrap gap-[8px] mt-[8px]">
         <button
           type="button"
-          className="db-cred-action"
+          className={credentialActionClass}
           onClick={() => void toggle()}
           disabled={loading}
           aria-label={visible ? "Hide secret key" : "Reveal secret key"}
@@ -184,7 +186,7 @@ function SecretKeyRow({ projectId, bucketId }: { projectId: string; bucketId: st
         </button>
         <button
           type="button"
-          className="db-cred-action"
+          className={credentialActionClass}
           onClick={() => void copySecret()}
           disabled={loading}
           aria-label="Copy secret key"
@@ -231,34 +233,34 @@ await s3.send(new PutObjectCommand({
 ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` : ""}`;
 
   return (
-    <div className="project-service-item">
-      <div className="project-service-head">
+    <div className="flex flex-col py-[16px] px-[20px] rounded-card bg-surface border border-surface-raised [transition:border-color_150ms] hover:border-[#34323e]">
+      <div className="flex items-center justify-between flex-wrap gap-[12px]">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="project-service-icon" aria-hidden="true">
+          <div className="bg-[#211f29] flex items-center justify-center w-[32px] h-[32px] rounded-control shrink-0" aria-hidden="true">
             <HardDrive className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <h3 className="project-service-name">{bucket.name}</h3>
-            <span className="project-service-hostname">{bucket.objectName}</span>
+            <h3 className="text-ink hover:text-accent text-[14.5px] font-semibold! no-underline [transition:color_150ms]">{bucket.name}</h3>
+            <span className="text-[#716f7c] hover:text-ink-console inline-flex items-center gap-[4px] text-[12px] [font-family:monospace] no-underline mt-[2px]">{bucket.objectName}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`project-proxy-badge ${bucket.public ? "is-enabled" : "is-disabled"}`}>
+          <span className={`project-proxy-badge inline-flex items-center text-[11px] font-semibold py-[3px] px-[8px] rounded-control-sm ${bucket.public ? "border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.1)] text-[#38bdf8]" : "border border-[#282631] bg-[#1e1d25] text-[#716f7c]"}`}>
             {bucket.public ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
             {bucket.public ? "Public" : "Private"}
           </span>
-          <span className={`project-service-status-pill ${ready ? "is-live" : "is-building"}`}>
-            <span className="project-status-dot" aria-hidden="true" />
+          <span className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border ${ready ? "border-[rgba(62,207,142,0.25)] bg-[rgba(62,207,142,0.08)] text-[var(--color-accent)]" : "border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.08)] text-[#f59e0b]"}`}>
+            <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
             {STATUS_LABELS[bucket.status]}
           </span>
           {bucket.healthy ? null : (
-            <span className="project-health-badge is-unhealthy">Unavailable</span>
+            <span className="project-health-badge text-[11px] font-semibold py-[2px] px-[7px] rounded-control-sm border border-[rgba(244,63,94,0.2)] bg-[rgba(244,63,94,0.1)] text-[var(--color-danger)]">Unavailable</span>
           )}
           {canManage ? (
             <button
               type="button"
-              className="project-service-delete-btn"
+              className={serviceDeleteButtonClass}
               onClick={() => onDelete(bucket)}
               disabled={busy}
               title={`Delete ${bucket.name}`}
@@ -270,13 +272,13 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
         </div>
       </div>
 
-      <div className="project-service-footer">
-        <div className="project-db-metric-box min-w-[150px]">
-          <span className="project-db-metric-label">Storage used</span>
-          <span className="project-db-metric-value">{usageLabel(bucket)}</span>
-          <div className="supabase-usage-bar-track mt-1.5">
+      <div className="flex items-center flex-wrap gap-[16px] mt-[14px] pt-[12px] border-t border-t-[#211f27] text-[12px] text-[#8e8c99]">
+        <div className="flex flex-col min-w-[150px]">
+          <span className="text-[11.5px] text-[#716f7c] mb-[3px]">Storage used</span>
+          <span className="text-[13px] font-semibold text-ink">{usageLabel(bucket)}</span>
+          <div className="bg-[#211f2a] w-full h-[4px] rounded-[99px] overflow-hidden mt-1.5">
             <div
-              className="supabase-usage-bar-fill"
+              className="bg-accent h-full rounded-[99px] [transition:width_300ms_ease]"
               style={{
                 width: `${
                   bucket.quotaMb > 0
@@ -287,24 +289,24 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
             />
           </div>
         </div>
-        <div className="project-db-metric-box min-w-[150px]">
-          <span className="project-db-metric-label">Created At</span>
-          <span className="project-db-metric-value text-xs text-zinc-300">
+        <div className="flex flex-col min-w-[150px]">
+          <span className="text-[11.5px] text-[#716f7c] mb-[3px]">Created At</span>
+          <span className="text-[13px] font-semibold text-ink text-xs text-zinc-300">
             {formatDateTime(bucket.createdAt)}
           </span>
         </div>
       </div>
 
-      <div className="db-cred-card mt-4">
+      <div className="bg-[#141318] flex flex-col rounded-card border border-[#232129] overflow-hidden mt-4">
         <CopyValue label="Endpoint URL" value={url} />
         <CopyValue label="Access key" value={bucket.accessKey} />
         {canManage ? (
           <SecretKeyRow projectId={bucket.projectId} bucketId={bucket.id} />
         ) : (
-          <div className="db-cred-row">
-            <span className="db-cred-label">Secret key</span>
-            <div className="db-cred-value-wrap">
-              <span className="db-cred-value db-cred-muted">Owner or admin only</span>
+          <div className={credentialRowClass}>
+            <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">Secret key</span>
+            <div className="flex items-start gap-[10px] min-w-0">
+              <span className="db-cred-value flex-auto [word-break:break-all] [font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace] text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] text-[#716f7c] [font-family:inherit]">Owner or admin only</span>
             </div>
           </div>
         )}
@@ -405,11 +407,11 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
   if (panel.loading) {
     return (
       <div className="space-y-4">
-        <div className="supabase-project-skeleton-card h-44" aria-hidden="true">
-          <div className="supabase-skeleton-box h-5 w-48 rounded mb-4" />
+        <div className="bg-surface flex flex-col justify-between p-[16px] rounded-card border border-surface-raised min-h-[120px] h-44" aria-hidden="true">
+          <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-5 w-48 rounded mb-4" />
           <div className="grid grid-cols-1 gap-4">
-            <div className="supabase-skeleton-box h-12 rounded" />
-            <div className="supabase-skeleton-box h-12 rounded" />
+            <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
+            <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-12 rounded" />
           </div>
         </div>
       </div>
@@ -446,14 +448,14 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
       </div>
 
       {!modalOpen && !deleteTarget && (panel.error || actionError) ? (
-        <div className="dashboard-alert is-error" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {panel.error || actionError}
         </div>
       ) : null}
 
       {buckets.length === 0 ? (
-        <div className="project-empty-card">
-          <div className="project-empty-icon-wrap" aria-hidden="true">
+        <div className="bg-surface flex flex-col items-center justify-center py-[56px] px-[24px] rounded-card border border-dashed border-[#262430] text-center">
+          <div className="bg-[#211f29] flex items-center justify-center w-[48px] h-[48px] rounded-card-lg" aria-hidden="true">
             <HardDrive className="w-8 h-8 text-zinc-500" />
           </div>
           <h3 className="text-base font-semibold text-white mt-3">No buckets yet</h3>
@@ -497,11 +499,11 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
       {/* Modal: Create Bucket */}
       {modalOpen ? (
         <ModalDialog labelledBy="create-bucket-title" onClose={() => setModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <h2 id="create-bucket-title">Create a new bucket</h2>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={() => setModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -517,7 +519,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
               </p>
 
               <div>
-                <label htmlFor="bucket-name-input" className="supabase-modal-label">
+                <label htmlFor="bucket-name-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Bucket Name
                 </label>
                 <input
@@ -529,7 +531,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
                   required
                   placeholder="e.g. user-uploads"
                   onChange={(event) => update("name", event.target.value)}
-                  className="supabase-modal-input font-mono text-xs"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] font-mono text-xs"
                   autoFocus
                 />
                 <p className="mt-1.5 text-xs text-zinc-500">
@@ -538,14 +540,14 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
               </div>
 
               <div>
-                <label htmlFor="bucket-quota-input" className="supabase-modal-label">
+                <label htmlFor="bucket-quota-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Storage quota
                 </label>
                 <select
                   id="bucket-quota-input"
                   value={form.quotaMb}
                   onChange={(event) => update("quotaMb", event.target.value)}
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                 >
                   {QUOTA_CHOICES.map((quota) => (
                     <option key={quota} value={quota}>
@@ -574,7 +576,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
               </label>
 
               {actionError ? (
-                <p className="db-cred-error" role="alert">
+                <p className="text-[11.5px] text-[#ff7a82] mt-[6px]" role="alert">
                   <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
                   {actionError}
                 </p>
@@ -584,7 +586,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 onClick={() => setModalOpen(false)}
                 disabled={busy}
               >
@@ -612,14 +614,14 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
       {/* Modal: Delete Bucket Confirmation */}
       {deleteTarget ? (
         <ModalDialog labelledBy="delete-bucket-title" onClose={() => setDeleteTarget(null)}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <AlertTriangle className="w-4 h-4" />
               <h2 id="delete-bucket-title">Delete bucket</h2>
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={() => setDeleteTarget(null)}
               aria-label="Close dialog"
             >
@@ -634,7 +636,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
                 and every object stored in it. This action cannot be undone.
               </p>
               <div>
-                <label htmlFor="delete-bucket-confirm-input" className="supabase-modal-label">
+                <label htmlFor="delete-bucket-confirm-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Type <strong>{deleteTarget.name}</strong> to confirm:
                 </label>
                 <input
@@ -643,13 +645,13 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
                   onChange={(event) => setDeleteConfirm(event.target.value)}
                   placeholder={deleteTarget.name}
                   autoComplete="off"
-                  className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] border-rose-900/50 focus:border-rose-500"
                   autoFocus
                 />
               </div>
 
               {actionError ? (
-                <p className="db-cred-error" role="alert">
+                <p className="text-[11.5px] text-[#ff7a82] mt-[6px]" role="alert">
                   <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
                   {actionError}
                 </p>
@@ -659,7 +661,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 onClick={() => setDeleteTarget(null)}
                 disabled={busy}
               >
@@ -667,7 +669,7 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
               </button>
               <button
                 type="submit"
-                className="project-btn-danger"
+                className={dangerButtonClass}
                 disabled={busy || deleteConfirm !== deleteTarget.name}
               >
                 {busy ? "Deleting…" : "Delete bucket"}

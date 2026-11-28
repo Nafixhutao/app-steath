@@ -10,6 +10,15 @@ import {
 } from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
 
+import { dashboardLinkButtonClass, serviceMetaClass } from "@/components/ui-classes";
+
+export const runtimeRestartButtonClass = [
+  "dashboard-link-button text-[12px] disabled:opacity-50 focus-visible:outline-2",
+  "focus-visible:outline-[var(--color-violet)] focus-visible:outline-offset-[2px] p-0 border-0",
+  "text-violet [font:inherit] cursor-pointer hover:underline",
+  "[transition:background_160ms_ease,border-color_160ms_ease,color_160ms_ease,transform_120ms_ease,box-shadow_160ms_ease,filter_160ms_ease]",
+].join(" ");
+
 const LOG_TAIL = 200;
 const MAX_LOG_LINES = 500;
 
@@ -90,11 +99,11 @@ export function RuntimePanel({
   const running = status === "running";
 
   return (
-    <section className="dashboard-section" aria-labelledby="runtime-heading">
-      <div className="dashboard-section-heading">
+    <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="runtime-heading">
+      <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="runtime-heading">Runtime</h2>
         {canManage ? (
-          <div className="runtime-actions">
+          <div className="runtime-actions flex items-center gap-[8px] flex-wrap">
             <button
               className="supabase-btn-green"
               type="button"
@@ -110,7 +119,7 @@ export function RuntimePanel({
                     : "Start"}
             </button>
             <button
-              className="dashboard-link-button"
+              className={runtimeRestartButtonClass}
               type="button"
               onClick={() => void act("restart")}
               disabled={busy !== null || runtime.loading || !running}
@@ -122,12 +131,12 @@ export function RuntimePanel({
       </div>
 
       {runtime.error ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {runtime.error}
         </p>
       ) : null}
 
-      <dl className="service-meta">
+      <dl className={serviceMetaClass}>
         <div>
           <dt>Container</dt>
           <dd>{runtime.loading ? "Checking..." : serviceRuntimeLabel(status)}</dd>
@@ -137,7 +146,7 @@ export function RuntimePanel({
           <dd>
             {status === "running" ? (
               <a
-                className="service-url"
+                className="text-violet! text-[12px] no-underline [overflow-wrap:anywhere] hover:underline tabular-nums"
                 href={`https://${hostname}`}
                 target="_blank"
                 rel="noreferrer"
@@ -158,7 +167,7 @@ export function RuntimePanel({
       </dl>
 
       {status === "absent" && !runtime.loading ? (
-        <p className="dashboard-table-empty">
+        <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center">
           This Service has no container yet. Deploy it to start one.
         </p>
       ) : null}
@@ -167,7 +176,7 @@ export function RuntimePanel({
         <div className="deployment-log-head">
           <h3>Runtime log</h3>
           <button
-            className="dashboard-link-button"
+            className={dashboardLinkButtonClass}
             type="button"
             onClick={() => {
               setLogError("");
@@ -183,7 +192,7 @@ export function RuntimePanel({
           </button>
         </div>
         {logError ? (
-          <p className="dashboard-alert is-error" role="alert">
+          <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
             {logError}
           </p>
         ) : null}
@@ -192,7 +201,7 @@ export function RuntimePanel({
             {logLines.length > 0 ? logLines.join("\n") : "Waiting for output..."}
           </pre>
         ) : (
-          <p className="dashboard-table-empty">Follow the log to see what the container writes.</p>
+          <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center">Follow the log to see what the container writes.</p>
         )}
       </div>
     </section>

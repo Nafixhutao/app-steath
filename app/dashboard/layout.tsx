@@ -10,6 +10,13 @@ import { OrganizationOnboarding } from "@/components/organization-onboarding";
 import { authClient, useListOrganizations, useSession } from "@/lib/auth-client";
 import { defaultOrganization, defaultUser } from "@/components/identity";
 
+export const consoleLayoutClass = [
+  "console-layout overflow-x-hidden [@media(max-width:1023px)]:overflow-y-auto",
+  "[@media(max-width:1023px)]:h-[auto] [@media(max-width:1023px)]:min-h-[100dvh]",
+  "[@media(max-width:1023px)]:max-h-[none] [@media(max-width:1023px)]:block flex flex-col",
+  "bg-console overflow-hidden text-ink-console h-dvh max-h-dvh",
+].join(" ");
+
 /**
  * `usePathname` cannot be resolved while prerendering a route with an unknown
  * dynamic param (for example `/dashboard/projects/[projectId]`). Cache
@@ -27,9 +34,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function DashboardLayoutFallback() {
   return (
-    <div className="console-layout flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
-      <div className="dashboard-gate">
-        <div className="dashboard-loading" role="status">
+    <div className={consoleLayoutClass}>
+      <div className="dashboard-gate fixed inset-0 z-[60] bg-console">
+        <div className="dashboard-loading grid min-h-[100dvh] bg-console text-[#b5b2b9] text-[14px]" role="status">
           Loading your Organization...
         </div>
       </div>
@@ -90,7 +97,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
-      <div className="console-layout flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#121014] text-[#edecf1]">
+      <div className={consoleLayoutClass}>
         <SupabaseTopbar onOpenSearch={() => setSearchOpen(true)} />
 
         {isOrgsPage ? (
@@ -112,7 +119,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </Suspense>
             <main
               id="dashboard-content"
-              className="console-main user-console-main min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden"
+              className="[@media(max-width:1023px)]:h-[auto] [@media(max-width:1023px)]:min-h-[calc(100dvh_-_52px)] [@media(max-width:1023px)]:overflow-y-visible flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
             >
               {needsOrganization ? <OrganizationOnboarding /> : children}
             </main>
@@ -122,8 +129,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
 
         {!ready || signedOut ? (
-          <div className="dashboard-gate">
-            <div className="dashboard-loading" role="status">
+          <div className="dashboard-gate fixed inset-0 z-[60] bg-console">
+            <div className="dashboard-loading grid min-h-[100dvh] bg-console text-[#b5b2b9] text-[14px]" role="status">
               Loading your Organization...
             </div>
           </div>

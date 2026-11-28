@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, Eye, EyeOff, Loader2 } from "lucide-react";
 
+import { credentialActionClass, credentialRowClass, credentialToggleClass, credentialValueClass } from "@/components/ui-classes";
+
 /**
  * One label/value pair with its own copy button.
  *
@@ -23,22 +25,22 @@ export function CredentialRow({
   copied: boolean;
 }) {
   return (
-    <div className="db-cred-row">
-      <span className="db-cred-label">
+    <div className={credentialRowClass}>
+      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         {label}
         {/* The copied confirmation is written out, not just an icon, so it is
             readable at a glance and announced to a screen reader. */}
         {copied ? (
-          <span className="db-cred-copied" role="status">
+          <span className="db-cred-copied normal-case text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
-      <div className="db-cred-value-wrap">
-        <span className="db-cred-value is-mono">{value}</span>
+      <div className="flex items-start gap-[10px] min-w-0">
+        <span className="db-cred-value flex-auto [word-break:break-all] [font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace] text-ink min-w-0 text-[14px] leading-[1.5] [overflow-wrap:anywhere] is-mono">{value}</span>
         <button
           type="button"
-          className="db-cred-copy"
+          className={credentialToggleClass}
           onClick={() => onCopy(label, value)}
           aria-label={`Copy ${label.toLowerCase()}`}
           title={`Copy ${label.toLowerCase()}`}
@@ -149,19 +151,19 @@ export function PasswordRow({
   }
 
   return (
-    <div className="db-cred-row">
-      <span className="db-cred-label">
+    <div className={credentialRowClass}>
+      <span className="flex items-center gap-[8px] text-[10.5px] uppercase tracking-[0.04em] text-[#636170]">
         Password
         {copied ? (
-          <span className="db-cred-copied" role="status">
+          <span className="db-cred-copied normal-case text-[10px] font-semibold tracking-[0.02em] text-accent" role="status">
             Tersalin
           </span>
         ) : null}
       </span>
-      <div className="db-cred-value-wrap">
-        <span className="db-cred-value is-mono db-cred-password-value" aria-live="polite">
+      <div className="flex items-start gap-[10px] min-w-0">
+        <span className={credentialValueClass} aria-live="polite">
           {loading ? (
-            <span className="db-cred-muted">
+            <span className="text-[#716f7c] [font-family:inherit]">
               <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Loading…
             </span>
@@ -170,14 +172,14 @@ export function PasswordRow({
           ) : password ? (
             "••••••••••••••••"
           ) : (
-            <span className="db-cred-muted">Hidden</span>
+            <span className="text-[#716f7c] [font-family:inherit]">Hidden</span>
           )}
         </span>
       </div>
-      <div className="db-cred-password-actions">
+      <div className="db-cred-password-actions [@media(max-width:400px)]:w-full flex flex-wrap gap-[8px] mt-[8px]">
         <button
           type="button"
-          className="db-cred-action"
+          className={credentialActionClass}
           onClick={() => void reveal()}
           disabled={loading}
           aria-label={visible ? "Hide password" : "Reveal password"}
@@ -187,7 +189,7 @@ export function PasswordRow({
         </button>
         <button
           type="button"
-          className="db-cred-action"
+          className={credentialActionClass}
           onClick={() => void copy()}
           disabled={loading}
           aria-label="Copy password"

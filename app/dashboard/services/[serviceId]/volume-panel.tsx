@@ -10,6 +10,9 @@ import {
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 import { SupabaseModal } from "@/components/supabase-modal";
+import { recordsTableClass } from "@/components/records-table";
+
+import { dangerLinkButtonClass, redeployBannerClass, secondaryButtonClass, tableWrapClass } from "@/components/ui-classes";
 
 function usageLabel(volume: VolumeSummary): string {
   if (!volume.exists) {
@@ -88,8 +91,8 @@ export function VolumePanel({
   }
 
   return (
-    <section className="dashboard-section" aria-labelledby="volume-heading">
-      <div className="dashboard-section-heading">
+    <section className="dashboard-section mt-0 mb-[24px] mx-0 p-[20px] border border-[#27272a] rounded-card bg-[#0c0c0d] [@media(max-width:600px)]:p-[16px]" aria-labelledby="volume-heading">
+      <div className="dashboard-section-heading flex min-h-[42px] items-center justify-between border-b border-b-[#322f37]">
         <h2 id="volume-heading">Volume</h2>
         {canManage && !volume ? (
           <button
@@ -104,13 +107,13 @@ export function VolumePanel({
       </div>
 
       {redeployNeeded ? (
-        <p className="environment-redeploy-banner" role="status">
+        <p className={redeployBannerClass} role="status">
           Volume changes are saved but not live yet. Redeploy this Service to apply them.
         </p>
       ) : null}
 
       {panel.error || actionError ? (
-        <p className="dashboard-alert is-error" role="alert">
+        <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
           {panel.error || actionError}
         </p>
       ) : null}
@@ -124,12 +127,12 @@ export function VolumePanel({
                 Deployment.
               </p>
               <div className="mb-4">
-                <label htmlFor="volume-path-input" className="supabase-modal-label">
+                <label htmlFor="volume-path-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Mount path
                 </label>
                 <input
                   id="volume-path-input"
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   value={mountPath}
                   onChange={(event) => setMountPath(event.target.value)}
                   autoComplete="off"
@@ -139,12 +142,12 @@ export function VolumePanel({
                 />
               </div>
               <div>
-                <label htmlFor="volume-size-input" className="supabase-modal-label">
+                <label htmlFor="volume-size-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                   Size (MB)
                 </label>
                 <input
                   id="volume-size-input"
-                  className="supabase-modal-input"
+                  className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                   value={sizeMb}
                   onChange={(event) => setSizeMb(Number(event.target.value))}
                   type="number"
@@ -157,7 +160,7 @@ export function VolumePanel({
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 onClick={() => setCreating(false)}
                 disabled={busy}
               >
@@ -172,11 +175,11 @@ export function VolumePanel({
       ) : null}
 
       {loading ? (
-        <p className="dashboard-table-empty" role="status">
+        <p className="dashboard-table-empty text-[13px] p-[20px] text-[#71717a] text-center" role="status">
           Loading Volume...
         </p>
       ) : !volume ? (
-        <div className="dashboard-empty-state">
+        <div className="dashboard-empty-state px-[20px] text-center py-[32px] border border-dashed border-[#3f3f46] rounded-card bg-transparent">
           <h3>No Volume</h3>
           <p>
             A Volume keeps files across restarts and redeploys. Each Service can have one, up to 1
@@ -184,8 +187,8 @@ export function VolumePanel({
           </p>
         </div>
       ) : (
-        <div className="organization-table-wrap">
-          <table className="organization-table">
+        <div className={tableWrapClass}>
+          <table className={recordsTableClass}>
             <thead>
               <tr>
                 <th scope="col">Mount path</th>
@@ -198,15 +201,15 @@ export function VolumePanel({
             <tbody>
               <tr>
                 <td data-label="Mount path">
-                  <code className="environment-key">{volume.mountPath}</code>
+                  <code className="[font-family:ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] tabular-nums">{volume.mountPath}</code>
                 </td>
                 <td data-label="Size">{volume.sizeMb} MB</td>
                 <td data-label="Usage" className="svc-cell-wide">
-                  <div className="volume-usage">
+                  <div className="flex flex-col gap-[6px] min-w-[140px]">
                     <span>{usageLabel(volume)}</span>
                     {volume.exists && volume.usageMb !== null ? (
                       <span
-                        className="volume-usage-bar"
+                        className="block h-[4px] rounded-[999px] bg-violet"
                         aria-hidden="true"
                         style={{
                           width: `${Math.min(100, Math.round((volume.usageMb / volume.sizeMb) * 100))}%`,
@@ -222,7 +225,7 @@ export function VolumePanel({
                   <td data-label="Actions" className="svc-cell-actions">
                     <div className="deployment-actions">
                       <button
-                        className="dashboard-link-button is-danger"
+                        className={dangerLinkButtonClass}
                         type="button"
                         onClick={() => void remove()}
                         disabled={busy}

@@ -68,21 +68,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toast-viewport" aria-live="polite" aria-atomic="true">
+      <div className="fixed bottom-[20px] right-[20px] z-[150] flex flex-col gap-[10px] max-w-[380px] w-[calc(100vw_-_40px)] pointer-events-none" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast-card toast-${t.type}`} role="alert">
-            <div className="toast-icon-wrap">
+          <div key={t.id} className={`toast-card pointer-events-auto animate-[toastSlideUp_180ms_cubic-bezier(0.16,1,0.3,1)] flex items-start gap-[12px] py-[14px] px-[16px] rounded-card bg-[#17161c] border border-[#272532] [box-shadow:0_12px_30px_rgba(0,0,0,0.5)] toast-${t.type}`} role="alert">
+            <div className="shrink-0 mt-[1px]">
               {t.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
               {t.type === "error" && <AlertCircle className="w-4 h-4 text-rose-400" />}
               {t.type === "info" && <Info className="w-4 h-4 text-blue-400" />}
             </div>
-            <div className="toast-text-wrap">
-              <strong className="toast-title">{t.title}</strong>
-              {t.message && <p className="toast-message">{t.message}</p>}
+            <div className="flex-1 min-w-0">
+              <strong className="block text-[13px] font-semibold text-ink">{t.title}</strong>
+              {t.message && <p className="text-[12px] text-[#8c899c] mt-[2px] mb-0 mx-0 [word-break:break-word]">{t.message}</p>}
             </div>
             <button
               type="button"
-              className="toast-close-btn"
+              className="bg-transparent border-0 text-[#636170] cursor-pointer p-[2px] flex shrink-0 hover:text-ink"
               onClick={() => removeToast(t.id)}
               aria-label="Close notification"
             >

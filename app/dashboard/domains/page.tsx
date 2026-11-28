@@ -37,6 +37,24 @@ import { useToast } from "@/components/toast-context";
 import { copyToClipboard } from "@/lib/clipboard";
 import { ModalDialog } from "@/components/supabase-modal";
 
+import { compactSecondaryButtonClass, dangerButtonClass, filterSelectClass, modalCloseClass, secondaryButtonClass, successBadgeClass } from "@/components/ui-classes";
+
+export const domainsTableClass = [
+  "domains-table w-full text-left [&_th]:px-[18px] [&_th]:py-[12px] [&_th]:text-[11px]",
+  "[&_th]:font-medium [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-[#878492]",
+  "[&_th]:border-b [&_th]:border-[var(--color-surface-raised)] [&_th]:bg-[#131217]",
+  "[&_td]:px-[18px] [&_td]:py-[14px] [&_td]:border-b [&_td]:border-[#1f1d25] [&_td]:text-[13px]",
+  "[&_td]:align-middle [&_tr:hover>td]:bg-[rgba(255,255,255,0.015)]",
+  "[&_tr:last-child>td]:border-b-0",
+].join(" ");
+
+export const dnsRecordTagClass = [
+  "bg-[rgba(62,207,142,0.12)]",
+  "[font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace] text-[10px]",
+  "font-bold py-[2px] px-[6px] rounded-control-sm text-accent border",
+  "border-[rgba(62,207,142,0.25)]",
+].join(" ");
+
 export default function DomainsPage() {
   const { toast } = useToast();
   const { data: organization } = useActiveOrganization();
@@ -205,19 +223,19 @@ export default function DomainsPage() {
   }
 
   return (
-    <div className="domains-page-container">
+    <div className="pt-[28px] pb-[64px] px-[36px] max-w-[1200px] mx-auto w-full">
       {/* Header */}
-      <header className="domains-page-header">
+      <header className="flex items-center justify-between flex-wrap gap-[16px] mb-[24px]">
         <div className="flex items-center gap-3">
-          <div className="domains-header-icon" aria-hidden="true">
+          <div className="w-[40px] h-[40px] rounded-panel bg-[rgba(62,207,142,0.1)] border border-[rgba(62,207,142,0.25)] flex items-center justify-center shrink-0" aria-hidden="true">
             <Globe className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="domains-page-title">Domains &amp; Networking</h1>
-              <span className="supabase-plan-badge">EDGE PROXY</span>
+              <h1 className="text-[22px]! font-semibold! text-ink tracking-[-0.015em]! m-0">Domains &amp; Networking</h1>
+              <span className={successBadgeClass}>EDGE PROXY</span>
             </div>
-            <p className="domains-page-subtitle">
+            <p className="text-[13px] text-[#878492] mt-[4px] leading-[1.4]">
               Manage custom brand domains, SSL/TLS certificates, and platform subdomains for{" "}
               {organization?.name ?? "your organization"}.
             </p>
@@ -227,7 +245,7 @@ export default function DomainsPage() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            className="supabase-btn-secondary"
+            className={secondaryButtonClass}
             onClick={() => void handleRefresh()}
             disabled={loading}
             title="Refresh domains and routing status"
@@ -257,7 +275,7 @@ export default function DomainsPage() {
 
       {/* Global Alerts */}
       {customDomainsResource.error ? (
-        <div className="dashboard-alert is-error my-4" role="alert">
+        <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error my-4" role="alert">
           {customDomainsResource.error}
         </div>
       ) : null}
@@ -267,70 +285,70 @@ export default function DomainsPage() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
         aria-label="Domain metrics"
       >
-        <div className="domains-metric-card">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="domains-metric-label">Custom Domains</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Custom Domains</span>
             <Globe className="w-4 h-4 text-emerald-400" />
           </div>
-          <span className="domains-metric-val">{customDomains.length}</span>
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2]">{customDomains.length}</span>
           <span className="text-[11px] text-zinc-500">Connected brand hostnames</span>
         </div>
 
-        <div className="domains-metric-card">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="domains-metric-label">Active &amp; SSL Issued</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Active &amp; SSL Issued</span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
           </div>
-          <span className="domains-metric-val text-emerald-400">{activeCount}</span>
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2] text-emerald-400">{activeCount}</span>
           <span className="text-[11px] text-zinc-500">HTTPS live on edge proxy</span>
         </div>
 
-        <div className="domains-metric-card">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="domains-metric-label">Pending Verification</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Pending Verification</span>
             <RotateCw
               className={`w-4 h-4 ${pendingCount > 0 ? "text-amber-400 animate-spin" : "text-zinc-500"}`}
             />
           </div>
-          <span className="domains-metric-val text-amber-400">{pendingCount}</span>
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2] text-amber-400">{pendingCount}</span>
           <span className="text-[11px] text-zinc-500">Awaiting DNS propagation</span>
         </div>
 
-        <div className="domains-metric-card">
+        <div className="bg-surface border border-surface-raised rounded-panel py-[16px] px-[18px] flex flex-col gap-[6px] [transition:border-color_150ms_ease] hover:border-[#34313c]">
           <div className="flex items-center justify-between">
-            <span className="domains-metric-label">Platform Subdomains</span>
+            <span className="text-[11px] font-medium text-[#878492] uppercase tracking-[0.04em]">Platform Subdomains</span>
             <Server className="w-4 h-4 text-blue-400" />
           </div>
-          <span className="domains-metric-val">{services.length}</span>
+          <span className="text-[22px] font-semibold text-ink tabular-nums leading-[1.2]">{services.length}</span>
           <span className="text-[11px] text-zinc-500">Automatic *.nazxf.my.id endpoints</span>
         </div>
       </section>
 
       {/* Tabs Navigation */}
-      <div className="domains-tabs-bar">
+      <div className="flex items-center gap-[8px] border-b border-b-[var(--color-surface-raised)] mb-[20px] overflow-x-auto">
         <button
           type="button"
-          className={`domains-tab-btn ${activeTab === "custom" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:all_120ms_ease] whitespace-nowrap ${activeTab === "custom" ? "is-active text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#878492] border-b-transparent hover:text-ink-console"}`}
           onClick={() => setActiveTab("custom")}
         >
           <Globe className="w-4 h-4 mr-2" />
           <span>Custom Domains</span>
-          <span className="domains-tab-pill">{customDomains.length}</span>
+          <span className="bg-[#22202a] inline-flex items-center justify-center h-[18px] py-0 px-[6px] rounded-[9999px] text-[10px] font-semibold text-[#a19ea8] ml-[6px]">{customDomains.length}</span>
         </button>
 
         <button
           type="button"
-          className={`domains-tab-btn ${activeTab === "platform" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:all_120ms_ease] whitespace-nowrap ${activeTab === "platform" ? "is-active text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#878492] border-b-transparent hover:text-ink-console"}`}
           onClick={() => setActiveTab("platform")}
         >
           <Server className="w-4 h-4 mr-2" />
           <span>Platform Subdomains</span>
-          <span className="domains-tab-pill">{services.length}</span>
+          <span className="bg-[#22202a] inline-flex items-center justify-center h-[18px] py-0 px-[6px] rounded-[9999px] text-[10px] font-semibold text-[#a19ea8] ml-[6px]">{services.length}</span>
         </button>
 
         <button
           type="button"
-          className={`domains-tab-btn ${activeTab === "guide" ? "is-active" : ""}`}
+          className={`domains-tab-btn inline-flex items-center py-[10px] px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:all_120ms_ease] whitespace-nowrap ${activeTab === "guide" ? "is-active text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#878492] border-b-transparent hover:text-ink-console"}`}
           onClick={() => setActiveTab("guide")}
         >
           <HelpCircle className="w-4 h-4 mr-2" />
@@ -342,21 +360,21 @@ export default function DomainsPage() {
       {activeTab === "custom" && (
         <section aria-labelledby="custom-domains-heading">
           {/* Toolbar */}
-          <div className="domains-toolbar">
-            <div className="domains-search-box">
-              <Search className="domains-search-icon" aria-hidden="true" />
+          <div className="flex items-center justify-between flex-wrap gap-[12px] mb-[16px]">
+            <div className="relative w-full max-w-[380px]">
+              <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#706d7e] pointer-events-none" aria-hidden="true" />
               <input
                 type="search"
                 placeholder="Search domains by hostname, service, or project..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="domains-search-input"
+                className="domains-search-input bg-surface w-full h-[36px] py-0 pr-[32px] pl-[36px] rounded-control border border-surface-raised text-ink-console text-[13px]! outline-none [transition:border-color_150ms_ease] focus:border-[var(--color-accent)]"
               />
               {search && (
                 <button
                   type="button"
                   onClick={() => setSearch("")}
-                  className="domains-search-clear"
+                  className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#706d7e] bg-transparent border-0 cursor-pointer p-[2px] flex items-center justify-center hover:text-ink-console"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -368,7 +386,7 @@ export default function DomainsPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="supabase-filter-select"
+                className={filterSelectClass}
                 aria-label="Filter domains by status"
               >
                 <option value="all">All Statuses</option>
@@ -377,28 +395,28 @@ export default function DomainsPage() {
                 <option value="failed">Verification Failed</option>
               </select>
 
-              <span className="domains-count-pill">{filteredDomains.length} Domains</span>
+              <span className="inline-flex items-center h-[24px] py-0 px-[10px] rounded-[9999px] text-[11px] font-medium bg-[#1d1b22] border border-[#282632] text-[#878492]">{filteredDomains.length} Domains</span>
             </div>
           </div>
 
           {/* Table Card */}
-          <div className="domains-table-card">
+          <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
             {loading && customDomains.length === 0 ? (
               <div className="p-6 space-y-4" aria-label="Loading domains">
                 {[1, 2, 3].map((n) => (
                   <div key={n} className="flex items-center gap-3">
-                    <div className="supabase-skeleton-box w-8 h-8 rounded" />
+                    <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] w-8 h-8 rounded" />
                     <div className="flex-1 space-y-1.5">
-                      <div className="supabase-skeleton-box h-4 w-48 rounded" />
-                      <div className="supabase-skeleton-box h-3 w-32 rounded" />
+                      <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-4 w-48 rounded" />
+                      <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-3 w-32 rounded" />
                     </div>
-                    <div className="supabase-skeleton-box h-6 w-20 rounded" />
+                    <div className="bg-[#1f1d27] animate-[supabasePulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] h-6 w-20 rounded" />
                   </div>
                 ))}
               </div>
             ) : filteredDomains.length === 0 ? (
-              <div className="domains-empty-box">
-                <div className="domains-empty-halo" aria-hidden="true">
+              <div className="flex flex-col items-center justify-center py-[56px] px-[20px] text-center">
+                <div className="w-[52px] h-[52px] rounded-[50%] bg-[rgba(62,207,142,0.08)] border border-[rgba(62,207,142,0.2)] flex items-center justify-center" aria-hidden="true">
                   <Globe className="w-7 h-7 text-emerald-400" />
                 </div>
                 <h3 className="text-base font-semibold text-white mt-3">
@@ -427,7 +445,7 @@ export default function DomainsPage() {
                 )}
               </div>
             ) : (
-              <table className="domains-table">
+              <table className={domainsTableClass}>
                 <thead>
                   <tr>
                     <th scope="col">Domain / Hostname</th>
@@ -452,7 +470,7 @@ export default function DomainsPage() {
                       <tr key={dom.id}>
                         <td>
                           <div className="flex items-center gap-2.5">
-                            <div className="domains-row-icon" aria-hidden="true">
+                            <div className="w-[30px] h-[30px] rounded-control bg-[#1f1d26] border border-[#2d2a37] flex items-center justify-center shrink-0" aria-hidden="true">
                               <Globe
                                 className={`w-3.5 h-3.5 ${isActive ? "text-emerald-400" : "text-zinc-500"}`}
                               />
@@ -503,11 +521,11 @@ export default function DomainsPage() {
 
                         <td>
                           <span
-                            className={`domains-status-pill ${
-                              isActive ? "is-active" : isFailed ? "is-failed" : "is-pending"
+                            className={`domains-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
+                              isActive ? "is-active bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]" : isFailed ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]" : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                             }`}
                           >
-                            <span className="project-status-dot" aria-hidden="true" />
+                            <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                             <span className="capitalize">{dom.status}</span>
                           </span>
                           {dom.lastError ? (
@@ -522,12 +540,12 @@ export default function DomainsPage() {
 
                         <td>
                           <span
-                            className={`domains-cert-pill ${
+                            className={`domains-cert-pill inline-flex items-center h-[22px] py-0 px-[8px] rounded-control-sm text-[11px] font-medium ${
                               isCertIssued
-                                ? "is-issued"
+                                ? "is-issued bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
                                 : dom.certificateStatus === "failed"
-                                  ? "is-failed"
-                                  : "is-pending"
+                                  ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]"
+                                  : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                             }`}
                           >
                             <Lock className="w-3 h-3 mr-1" />
@@ -550,7 +568,7 @@ export default function DomainsPage() {
                             {!isActive && canManage && (
                               <button
                                 type="button"
-                                className="supabase-btn-secondary text-xs h-7 px-2.5"
+                                className={compactSecondaryButtonClass}
                                 onClick={() => void handleVerify(dom)}
                                 disabled={isVerifying}
                                 title="Check DNS propagation and route domain"
@@ -564,7 +582,7 @@ export default function DomainsPage() {
 
                             <button
                               type="button"
-                              className="supabase-btn-secondary text-xs h-7 px-2"
+                              className={`${secondaryButtonClass} text-xs h-7 px-2`}
                               onClick={() => setInstructionsDomain(dom)}
                               title="View required DNS TXT & CNAME records"
                             >
@@ -575,7 +593,7 @@ export default function DomainsPage() {
                             {canManage && (
                               <button
                                 type="button"
-                                className="domains-delete-btn"
+                                className="inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent cursor-pointer [transition:all_120ms_ease] hover:bg-[rgba(244,63,94,0.1)] hover:border-[rgba(244,63,94,0.2)]"
                                 onClick={() => setDeletingDomain(dom)}
                                 title="Remove custom domain"
                                 aria-label={`Delete custom domain ${dom.hostname}`}
@@ -598,7 +616,7 @@ export default function DomainsPage() {
       {/* TAB 2: Platform Subdomains */}
       {activeTab === "platform" && (
         <section aria-labelledby="platform-subdomains-heading">
-          <div className="domains-info-banner mb-4">
+          <div className="mb-4 flex items-start gap-[12px] py-[12px] px-[16px] rounded-card bg-[rgba(6,182,212,0.08)] border border-[rgba(6,182,212,0.25)]">
             <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-cyan-200">
               <strong>Automatic Platform Routing:</strong> Every service deployed on this node is
@@ -607,9 +625,9 @@ export default function DomainsPage() {
             </div>
           </div>
 
-          <div className="domains-table-card">
+          <div className="bg-surface border border-surface-raised rounded-panel overflow-hidden">
             {services.length === 0 ? (
-              <div className="domains-empty-box">
+              <div className="flex flex-col items-center justify-center py-[56px] px-[20px] text-center">
                 <Server className="w-7 h-7 text-zinc-600 mb-2" />
                 <h3 className="text-base font-semibold text-white">No services found</h3>
                 <p className="text-xs text-zinc-400 max-w-md mt-1">
@@ -617,7 +635,7 @@ export default function DomainsPage() {
                 </p>
               </div>
             ) : (
-              <table className="domains-table">
+              <table className={domainsTableClass}>
                 <thead>
                   <tr>
                     <th scope="col">Service</th>
@@ -673,7 +691,7 @@ export default function DomainsPage() {
                       </td>
 
                       <td>
-                        <span className="domains-cert-pill is-issued">
+                        <span className="domains-cert-pill inline-flex items-center h-[22px] py-0 px-[8px] rounded-control-sm text-[11px] font-medium is-issued">
                           <ShieldCheck className="w-3 h-3 mr-1" />
                           <span>Wildcard Edge TLS</span>
                         </span>
@@ -683,15 +701,15 @@ export default function DomainsPage() {
 
                       <td>
                         <span
-                          className={`domains-status-pill ${
+                          className={`domains-status-pill inline-flex items-center gap-[6px] h-[22px] py-0 px-[8px] rounded-[9999px] text-[11px] font-medium ${
                             srv.status === "running"
-                              ? "is-active"
+                              ? "is-active bg-[#0f2e21] border border-[#1d4a36] text-[var(--color-accent)]"
                               : srv.status === "failed"
-                                ? "is-failed"
-                                : "is-pending"
+                                ? "is-failed bg-[#2d1419] border border-[#4d222a] text-[var(--color-danger)]"
+                                : "is-pending bg-[#2a2012] border border-[#48381c] text-[var(--color-warning)]"
                           }`}
                         >
-                          <span className="project-status-dot" aria-hidden="true" />
+                          <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
                           <span className="capitalize">{srv.status}</span>
                         </span>
                       </td>
@@ -701,7 +719,7 @@ export default function DomainsPage() {
                           href={srv.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="supabase-btn-secondary text-xs h-7 px-2.5 inline-flex items-center gap-1"
+                          className={`${compactSecondaryButtonClass} gap-1`}
                         >
                           <span>Visit</span>
                           <ExternalLink className="w-3 h-3" />
@@ -719,7 +737,7 @@ export default function DomainsPage() {
       {/* TAB 3: DNS Setup Guide */}
       {activeTab === "guide" && (
         <section aria-labelledby="dns-guide-heading" className="space-y-6">
-          <div className="domains-guide-card">
+          <div className="bg-surface border border-[var(--color-surface-raised)] rounded-panel p-[24px]">
             <h2 id="dns-guide-heading" className="text-base font-semibold text-white mb-2">
               How Custom Domain Routing Works
             </h2>
@@ -731,8 +749,8 @@ export default function DomainsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Step 1 */}
-              <div className="domains-step-box">
-                <div className="domains-step-number">1</div>
+              <div className="bg-[#131217] border border-[#24222c] rounded-card p-[18px]">
+                <div className="bg-[rgba(62,207,142,0.12)] w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">1</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Add Domain to Service</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   Click <strong>&ldquo;Add Custom Domain&rdquo;</strong>, select your target
@@ -741,8 +759,8 @@ export default function DomainsPage() {
               </div>
 
               {/* Step 2 */}
-              <div className="domains-step-box">
-                <div className="domains-step-number">2</div>
+              <div className="bg-[#131217] border border-[#24222c] rounded-card p-[18px]">
+                <div className="bg-[rgba(62,207,142,0.12)] w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">2</div>
                 <h3 className="text-sm font-semibold text-white mb-1">
                   Publish Ownership TXT Record
                 </h3>
@@ -754,8 +772,8 @@ export default function DomainsPage() {
               </div>
 
               {/* Step 3 */}
-              <div className="domains-step-box">
-                <div className="domains-step-number">3</div>
+              <div className="bg-[#131217] border border-[#24222c] rounded-card p-[18px]">
+                <div className="bg-[rgba(62,207,142,0.12)] w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">3</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Point CNAME or A Record</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   For subdomains (e.g. <code>api.example.com</code>), add a <strong>CNAME</strong>{" "}
@@ -765,8 +783,8 @@ export default function DomainsPage() {
               </div>
 
               {/* Step 4 */}
-              <div className="domains-step-box">
-                <div className="domains-step-number">4</div>
+              <div className="bg-[#131217] border border-[#24222c] rounded-card p-[18px]">
+                <div className="bg-[rgba(62,207,142,0.12)] w-[24px] h-[24px] rounded-[50%] border border-[rgba(62,207,142,0.3)] text-accent flex items-center justify-center text-[11px] font-bold mb-[12px]">4</div>
                 <h3 className="text-sm font-semibold text-white mb-1">Verify &amp; Auto-SSL</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   Click <strong>&ldquo;Verify DNS&rdquo;</strong>. Once DNS resolves, the edge proxy
@@ -782,14 +800,14 @@ export default function DomainsPage() {
       {/* MODAL 1: Add Custom Domain */}
       {addModalOpen && (
         <ModalDialog labelledBy="add-domain-title" onClose={() => setAddModalOpen(false)}>
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-emerald-400" />
               <h2 id="add-domain-title">Add Custom Domain</h2>
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={() => setAddModalOpen(false)}
               aria-label="Close dialog"
             >
@@ -800,7 +818,7 @@ export default function DomainsPage() {
           <form onSubmit={handleAddDomain}>
             <div className="supabase-modal-body space-y-4">
               {addError && (
-                <div className="dashboard-alert is-error" role="alert">
+                <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
                   {addError}
                 </div>
               )}
@@ -813,14 +831,14 @@ export default function DomainsPage() {
               ) : (
                 <>
                   <div>
-                    <label htmlFor="service-select" className="supabase-modal-label">
+                    <label htmlFor="service-select" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                       Target Service:
                     </label>
                     <select
                       id="service-select"
                       value={selectedServiceId}
                       onChange={(e) => setSelectedServiceId(e.target.value)}
-                      className="supabase-modal-input"
+                      className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms]"
                       required
                     >
                       {availableServices.map((srv) => (
@@ -835,7 +853,7 @@ export default function DomainsPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="hostname-input" className="supabase-modal-label">
+                    <label htmlFor="hostname-input" className="block text-[13px] font-medium text-[#c9c7d2] mb-[6px]">
                       Domain Name / Hostname:
                     </label>
                     <input
@@ -845,7 +863,7 @@ export default function DomainsPage() {
                       value={newHostname}
                       onChange={(e) => setNewHostname(e.target.value)}
                       required
-                      className="supabase-modal-input font-mono"
+                      className="supabase-modal-input w-full h-[38px] py-0 px-[12px] rounded-control bg-[#1a1920] text-ink outline-none [transition:border-color_150ms] font-mono"
                       autoFocus
                     />
                     <span className="text-[11px] text-zinc-500 mt-1 block">
@@ -859,7 +877,7 @@ export default function DomainsPage() {
             <div className="supabase-modal-footer">
               <button
                 type="button"
-                className="supabase-btn-secondary"
+                className={secondaryButtonClass}
                 onClick={() => setAddModalOpen(false)}
                 disabled={busyAdd}
               >
@@ -891,7 +909,7 @@ export default function DomainsPage() {
           onClose={() => setInstructionsDomain(null)}
           className="max-w-xl"
         >
-          <div className="supabase-modal-header">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px]">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-emerald-400" />
               <h2 id="instructions-title" className="font-mono text-sm">
@@ -900,7 +918,7 @@ export default function DomainsPage() {
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={() => setInstructionsDomain(null)}
               aria-label="Close dialog"
             >
@@ -915,10 +933,10 @@ export default function DomainsPage() {
             </p>
 
             {/* Record 1: TXT Record */}
-            <div className="domains-record-box">
+            <div className="bg-[#131217] p-[14px] rounded-card border border-surface-raised">
               <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="domains-badge-type">TXT</span>
+                  <span className={dnsRecordTagClass}>TXT</span>
                   <span className="text-xs font-semibold text-white">Ownership Verification</span>
                 </div>
                 <span className="text-[11px] text-zinc-500">Required</span>
@@ -974,10 +992,10 @@ export default function DomainsPage() {
             </div>
 
             {/* Record 2: CNAME or A Record */}
-            <div className="domains-record-box">
+            <div className="bg-[#131217] p-[14px] rounded-card border border-surface-raised">
               <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="domains-badge-type">CNAME</span>
+                  <span className={dnsRecordTagClass}>CNAME</span>
                   <span className="text-xs font-semibold text-white">Traffic Routing</span>
                 </div>
                 <span className="text-[11px] text-zinc-500">Required</span>
@@ -1055,7 +1073,7 @@ export default function DomainsPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary"
+              className={secondaryButtonClass}
               onClick={() => setInstructionsDomain(null)}
             >
               Close
@@ -1084,14 +1102,14 @@ export default function DomainsPage() {
       {/* MODAL 3: Delete Domain Confirmation */}
       {deletingDomain && (
         <ModalDialog labelledBy="delete-domain-title" onClose={() => setDeletingDomain(null)}>
-          <div className="supabase-modal-header border-rose-900/40">
+          <div className="supabase-modal-header flex items-center justify-between py-[18px] px-[20px] border-rose-900/40">
             <div className="flex items-center gap-2 text-rose-400">
               <Trash2 className="w-4 h-4" />
               <h2 id="delete-domain-title">Disconnect Custom Domain</h2>
             </div>
             <button
               type="button"
-              className="supabase-modal-close"
+              className={modalCloseClass}
               onClick={() => setDeletingDomain(null)}
               aria-label="Close dialog"
             >
@@ -1101,7 +1119,7 @@ export default function DomainsPage() {
 
           <div className="supabase-modal-body space-y-3">
             {deleteError && (
-              <div className="dashboard-alert is-error" role="alert">
+              <div className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
                 {deleteError}
               </div>
             )}
@@ -1119,7 +1137,7 @@ export default function DomainsPage() {
           <div className="supabase-modal-footer">
             <button
               type="button"
-              className="supabase-btn-secondary"
+              className={secondaryButtonClass}
               onClick={() => setDeletingDomain(null)}
               disabled={busyDelete}
             >
@@ -1127,7 +1145,7 @@ export default function DomainsPage() {
             </button>
             <button
               type="button"
-              className="project-btn-danger"
+              className={dangerButtonClass}
               onClick={() => void handleDeleteDomain()}
               disabled={busyDelete}
             >
