@@ -201,7 +201,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
   }
 
   return (
-    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] [background:radial-gradient(1100px_560px_at_50%_-12%,rgb(181_168_255_/_7%),transparent_62%),#0f0f0f] text-[#d9d9d9]">
+    <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
       <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px]" href="#login-content">
         Skip to content
       </a>
@@ -217,33 +217,33 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
             kredensialnya di panel Settings: tombol yang terkonfigurasi
             mengalihkan lewat better-auth, yang belum tetap "Coming soon"
             supaya tidak ada kontrol setengah jalan. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[10px] mt-[24px]">
+        <div className="grid grid-cols-2 gap-[10px] mt-[24px]">
           <button
             type="button"
-            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] px-2 border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
+            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99]"
             disabled={!socialProviders?.google || socialBusy === "google"}
             onClick={() => socialSignIn("google")}
           >
             <GoogleMark />
             Google
-            {!socialProviders?.google ? <span className="provider-soon shrink-0 whitespace-nowrap text-[10px] font-medium text-[#8b8b92] tracking-[0.02em]">Coming soon</span> : null}
+            {!socialProviders?.google ? <span className="provider-soon text-[10px] font-medium text-[#909090] tracking-[0.02em]">Coming soon</span> : null}
           </button>
           <button
             type="button"
-            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] px-2 border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
+            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99]"
             disabled={!socialProviders?.github || socialBusy === "github"}
             onClick={() => socialSignIn("github")}
           >
             <GitHubMark />
             GitHub
-            {!socialProviders?.github ? <span className="provider-soon shrink-0 whitespace-nowrap text-[10px] font-medium text-[#8b8b92] tracking-[0.02em]">Coming soon</span> : null}
+            {!socialProviders?.github ? <span className="provider-soon text-[10px] font-medium text-[#909090] tracking-[0.02em]">Coming soon</span> : null}
           </button>
         </div>
 
-        <button type="button" className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] px-2 border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99] w-full mt-[10px]" disabled>
+        <button type="button" className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99] w-full mt-[10px]" disabled>
           <LockMark />
           Continue with SSO
-          <span className="provider-soon shrink-0 whitespace-nowrap text-[10px] font-medium text-[#8b8b92] tracking-[0.02em]">Coming soon</span>
+          <span className="provider-soon text-[10px] font-medium text-[#909090] tracking-[0.02em]">Coming soon</span>
         </button>
 
         <p className={notice ? "mt-3 py-2 px-3 border border-[#904506] rounded-card bg-[#2a1502] text-[#f79847] text-[12.5px] leading-4" : "sr-only"} role="status" aria-live="polite">
