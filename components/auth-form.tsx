@@ -211,7 +211,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority className="w-[56px] h-[56px] object-contain" />
         </div>
 
-        <h1>{isSignUp ? "Sign up" : "Sign in to Stealth"}</h1>
+        <h1 className="text-center">{isSignUp ? "Sign up" : "Sign in to Stealth"}</h1>
 
         {/* Google, GitHub, dan SSO tinggal hidup setelah admin menyimpan
             kredensialnya di panel Settings: tombol yang terkonfigurasi

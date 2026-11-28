@@ -16,7 +16,7 @@ function BrandHeading({ title }: { title: string }) {
       <div className="brand-mark flex justify-center h-[56px] w-[56px] mt-0 mb-[24px] mx-auto">
         <Image src="/stealth-cat.png" alt="Stealth" width={56} height={56} priority className="w-[56px] h-[56px] object-contain" />
       </div>
-      <h1>{title}</h1>
+      <h1 className="text-center">{title}</h1>
     </>
   );
 }
