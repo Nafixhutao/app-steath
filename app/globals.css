@@ -55,7 +55,7 @@ form input[type=email]:focus,form input[type=password]:focus,form input[type=tex
 .organization-danger-zone .dashboard-section-heading h2{color:#ffb9c2}
 .invitation-panel{border-radius:var(--radius-card-lg);background:#19171c;border:1px solid #322f37;width:min(100%,440px);padding:28px}
 .invitation-panel h1{text-align:center;margin:8px 0 12px;font-size:22px}
-.invitation-panel>p:not(.auth-eyebrow){color:#aaa5b0;font-size:14px;line-height:1.6}
+.invitation-panel>p:not(.auth-eyebrow):not(.dashboard-alert){color:#aaa5b0;font-size:14px;line-height:1.6}
 .invitation-panel a{color:var(--color-violet)}
 .dashboard-section-heading h2{color:var(--color-ink-console);margin:0;font-size:15px;font-weight:600}
 .dashboard-section-heading a{color:#bdb8c2;font-size:12px;text-decoration:none}

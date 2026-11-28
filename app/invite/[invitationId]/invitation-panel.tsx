@@ -61,7 +61,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
         <h1>Join an Organization</h1>
         {status ? <p className="text-[#aaa5b0] text-[14px] leading-[1.6]">{status}</p> : null}
         {error ? (
-          <p className="dashboard-alert py-[12px] px-[14px] border border-[#8f3d48] rounded-card bg-[#321a20] text-[#aaa5b0] text-[13px]" role="alert">
+          <p className="dashboard-alert py-[12px] px-[14px] border border-[#8f3d48] rounded-card bg-[#321a20] text-[#ffb9c2] text-[13px]" role="alert">
             {error}
           </p>
         ) : null}
