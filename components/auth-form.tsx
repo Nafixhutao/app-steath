@@ -9,6 +9,12 @@ import { safeReturnTo } from "@/lib/return-to";
 
 export type AuthFormMode = "signin" | "signup";
 
+/** Shared primary-action skin for the auth pages. The font metrics stay in
+ * `app/globals.css` because the unlayered `button, input { font: inherit }`
+ * reset outranks every utility. */
+export const authSubmitClass =
+  "submit-button flex w-full h-10 min-h-0 items-center justify-center gap-2 px-4 py-0 mt-1 border-0 rounded-card bg-[#619eff] [background-image:linear-gradient(180deg,#3c87ff_0%,#056dff_100%)] [box-shadow:inset_0_1px_0_0_#619eff,0_0_0_1px_#045ede,0_1px_2px_rgb(0_0_0_/_5%)] text-ink cursor-pointer select-none hover:[background-image:linear-gradient(180deg,#619eff_0%,#056dff_100%)] hover:text-ink hover:[filter:none] active:[background-image:linear-gradient(180deg,#619eff_0%,#056dff_100%)] disabled:bg-[#619eff] disabled:[background-image:none] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-2 active:translate-y-[1px] active:scale-[0.99]";
+
 function GoogleMark() {
   return (
     <svg viewBox="0 0 24 24" className="flex-none w-[16px] h-[16px]" aria-hidden="true">
@@ -34,7 +40,7 @@ function GoogleMark() {
 
 function GitHubMark() {
   return (
-    <svg viewBox="0 0 24 24" className="flex-none w-[16px] h-[16px] github-mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="flex-none w-[16px] h-[16px] github-mark fill-[#eaeaea]" aria-hidden="true">
       <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12 0 1.53-.01 2.76-.01 3.14 0 .3.2.67.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z" />
     </svg>
   );
@@ -42,7 +48,7 @@ function GitHubMark() {
 
 function LockMark() {
   return (
-    <svg viewBox="0 0 24 24" className="small-icon w-[14px] h-[14px]" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="small-icon w-[14px] h-[14px] fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:2]" aria-hidden="true">
       <rect x="4" y="10" width="16" height="11" rx="2" />
       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </svg>
@@ -51,7 +57,7 @@ function LockMark() {
 
 export function EyeMark({ hidden = false }: { hidden?: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" className="small-icon w-[14px] h-[14px]" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="small-icon w-[14px] h-[14px] fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:2]" aria-hidden="true">
       {hidden ? (
         <>
           <path d="m3 3 18 18" />
@@ -70,7 +76,7 @@ export function EyeMark({ hidden = false }: { hidden?: boolean }) {
 
 function CheckMark() {
   return (
-    <svg viewBox="0 0 24 24" className="check-icon w-[13px] h-[13px]" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="check-icon w-[13px] h-[13px] fill-none [stroke:#0a0a0a] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:3]" aria-hidden="true">
       <path d="m5 12 4 4L19 6" />
     </svg>
   );
@@ -196,7 +202,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
 
   return (
     <main className="auth-page [@media(max-width:480px)]:pt-[40px] [@media(max-width:480px)]:pb-[40px] min-h-[100dvh] flex flex-col items-center py-[56px] px-[16px] bg-[#0a0a0a] text-[#d9d9d9]">
-      <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-ink focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px]" href="#login-content">
+      <a className="skip-link text-[var(--color-canvas)] fixed top-[16px] left-[16px] z-[10] py-[8px] px-[12px] rounded-control bg-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px]" href="#login-content">
         Skip to content
       </a>
 
@@ -214,45 +220,45 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
         <div className="grid grid-cols-2 gap-[10px] mt-[24px]">
           <button
             type="button"
-            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
+            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99]"
             disabled={!socialProviders?.google || socialBusy === "google"}
             onClick={() => socialSignIn("google")}
           >
             <GoogleMark />
             Google
-            {!socialProviders?.google ? <span className="provider-soon text-[10px] font-medium text-[#8b8b92] tracking-[0.02em]">Coming soon</span> : null}
+            {!socialProviders?.google ? <span className="provider-soon text-[10px] font-medium text-[#909090] tracking-[0.02em]">Coming soon</span> : null}
           </button>
           <button
             type="button"
-            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99]"
+            className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99]"
             disabled={!socialProviders?.github || socialBusy === "github"}
             onClick={() => socialSignIn("github")}
           >
             <GitHubMark />
             GitHub
-            {!socialProviders?.github ? <span className="provider-soon text-[10px] font-medium text-[#8b8b92] tracking-[0.02em]">Coming soon</span> : null}
+            {!socialProviders?.github ? <span className="provider-soon text-[10px] font-medium text-[#909090] tracking-[0.02em]">Coming soon</span> : null}
           </button>
         </div>
 
-        <button type="button" className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#333338] rounded-card bg-[var(--color-canvas)] text-[#f2f2f3] cursor-pointer hover:border-[#4a4a50] hover:bg-[#1c1c1c] disabled:cursor-not-allowed disabled:border-[#2b2b30] disabled:bg-[#121214] disabled:text-[#8b8b92] active:translate-y-[1px] active:scale-[0.99] w-full mt-[10px]" disabled>
+        <button type="button" className="secondary-button text-[13.5px] font-medium focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] flex h-[40px] items-center justify-center gap-[8px] border border-[#2c2c2c] rounded-card bg-[#0a0a0a] text-[#d9d9d9] cursor-pointer hover:border-[#424242] hover:bg-[#191919] disabled:cursor-not-allowed disabled:border-[#191919] disabled:bg-[#0a0a0a] disabled:text-[#5a5a5a] active:translate-y-[1px] active:scale-[0.99] w-full mt-[10px]" disabled>
           <LockMark />
           Continue with SSO
-          <span className="provider-soon text-[10px] font-medium text-[#8b8b92] tracking-[0.02em]">Coming soon</span>
+          <span className="provider-soon text-[10px] font-medium text-[#909090] tracking-[0.02em]">Coming soon</span>
         </button>
 
-        <p className={notice ? "notice" : "sr-only"} role="status" aria-live="polite">
+        <p className={notice ? "mt-3 py-2 px-3 border border-[#904506] rounded-card bg-[#2a1502] text-[#f79847] text-[12.5px] leading-4" : "sr-only"} role="status" aria-live="polite">
           {notice}
         </p>
 
-        <div className="divider flex items-center gap-[12px] my-[20px] mx-0 text-[#8b8b92] text-[11px] font-medium tracking-[0.08em]" aria-hidden="true">
-          <span className="h-[1px] flex-1 bg-[#26262b]" />
+        <div className="divider flex items-center gap-[12px] my-[20px] mx-0 text-[#999999] text-[11px] font-medium tracking-[0.08em]" aria-hidden="true">
+          <span className="h-[1px] flex-1 bg-[#2c2c2c]" />
           OR
-          <span className="h-[1px] flex-1 bg-[#26262b]" />
+          <span className="h-[1px] flex-1 bg-[#2c2c2c]" />
         </div>
 
         <form className="auth-fields grid gap-[18px]" onSubmit={handleSubmit} noValidate>
           {isSignUp && (
-            <div className="auth-field">
+            <div className="auth-field grid gap-[7px]">
               <label htmlFor="username">Username</label>
               <input
                 id="username"
@@ -266,7 +272,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
             </div>
           )}
 
-          <div className="auth-field">
+          <div className="auth-field grid gap-[7px]">
             <label htmlFor="email">Email</label>
             <input
               id="email"
@@ -279,7 +285,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
             />
           </div>
 
-          <div className="auth-field">
+          <div className="auth-field grid gap-[7px]">
             <label htmlFor="password">Password</label>
             <div className="password-wrap relative">
               <input
@@ -293,7 +299,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
               />
               <button
                 type="button"
-                className="password-toggle focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#9a9aa2] cursor-pointer hover:text-ink"
+                className="password-toggle focus-visible:outline-2 focus-visible:outline-[#4693ff] focus-visible:outline-offset-[2px] absolute top-1/2 right-[6px] flex w-[32px] h-[32px] items-center justify-center -translate-y-1/2 border-0 rounded-control bg-transparent text-[#999999] cursor-pointer hover:text-[#eaeaea]"
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}
@@ -305,7 +311,7 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
           </div>
 
           {!isSignUp && (
-            <label className="remember-row text-ink text-[13.5px] leading-[16px] items-center gap-[10px] mt-[24px] cursor-pointer select-none">
+            <label className="remember-row text-ink text-[13.5px] leading-[16px] items-center gap-[10px] mt-[2px] cursor-pointer select-none">
               <input
                 className="sr-only"
                 type="checkbox"
@@ -313,24 +319,24 @@ export function AuthForm({ initialMode }: { initialMode: AuthFormMode }) {
                 onChange={(event) => setRememberEmail(event.target.checked)}
                 disabled={isLoading}
               />
-              <span className="checkbox-mark flex w-[18px] h-[18px] flex-none items-center justify-center border-2 border-[#186cee] rounded-[5px] bg-[#186cee]" aria-hidden="true">
+              <span className="checkbox-mark flex w-[18px] h-[18px] flex-none items-center justify-center border-2 border-[#82b6ff] rounded-[5px] bg-[#82b6ff]" aria-hidden="true">
                 {rememberEmail ? <CheckMark /> : null}
               </span>
               Keep me signed in on this device
             </label>
           )}
 
-          <button type="submit" className="submit-button disabled:cursor-not-allowed disabled:opacity-[0.65] focus-visible:outline-2 focus-visible:outline-[#186cee] focus-visible:outline-offset-[2px] cursor-pointer text-[14px] font-semibold hover:[filter:brightness(1.1)] w-full h-[40px] mt-[24px] border-0 rounded-card [background:linear-gradient(180deg,#2e83f7_0%,#186cee_48%,#0e5cd6_100%)] text-ink active:translate-y-[1px] active:scale-[0.99]" disabled={isLoading}>
+          <button type="submit" className={authSubmitClass} disabled={isLoading}>
             {isLoading ? "Please wait..." : isSignUp ? "Sign up" : "Sign in"}
           </button>
         </form>
 
-        <p className="support-copy mt-[20px] mb-0 mx-0 text-[#b3b3ba] text-[13.5px] leading-[20px] text-center">
+        <p className="support-copy mt-[20px] mb-0 mx-0 text-[#999999] text-[13.5px] leading-[20px] text-center">
           {isSignUp ? "Already signed up?" : "New to Stealth?"}{" "}
           <Link href={isSignUp ? "/login" : "/signup"}>{isSignUp ? "Sign in" : "Sign up"}</Link>
         </p>
         {!isSignUp && (
-          <p className="support-copy mt-[20px] mb-0 mx-0 text-[#b3b3ba] text-[13.5px] leading-[20px] text-center compact">
+          <p className="support-copy mt-1 mb-0 mx-0 text-[#999999] text-[13.5px] leading-[20px] text-center">
             Forgot your password? <Link href="/forgot-password">Reset it</Link>
           </p>
         )}

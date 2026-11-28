@@ -55,13 +55,13 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
   }
 
   return (
-    <main className="invitation-page grid min-h-[100dvh] p-[24px] bg-console text-ink-console">
-      <section className="invitation-panel">
+    <main className="invitation-page grid place-items-center min-h-[100dvh] p-[24px] bg-console text-ink-console">
+      <section className="invitation-panel w-[min(100%,440px)] p-[28px] border border-[#322f37] rounded-card-lg bg-[#19171c]">
         <p className="auth-eyebrow">Organization invitation</p>
         <h1>Join an Organization</h1>
-        {status ? <p>{status}</p> : null}
+        {status ? <p className="text-[#aaa5b0] text-[14px] leading-[1.6]">{status}</p> : null}
         {error ? (
-          <p className="dashboard-alert py-[12px] px-[14px] border border-[#48434d] rounded-card text-ink-console text-[13px] is-error" role="alert">
+          <p className="dashboard-alert py-[12px] px-[14px] border border-[#8f3d48] rounded-card bg-[#321a20] text-[#aaa5b0] text-[13px]" role="alert">
             {error}
           </p>
         ) : null}
@@ -85,7 +85,7 @@ export function InvitationPanel({ invitationId }: { invitationId: string }) {
             </button>
           </div>
         ) : null}
-        <p>
+        <p className="text-[#aaa5b0] text-[14px] leading-[1.6]">
           <Link href="/dashboard">Back to dashboard</Link>
         </p>
       </section>

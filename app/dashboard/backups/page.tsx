@@ -273,7 +273,7 @@ export default function BackupsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="supabase-filter-select bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
+            className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
             aria-label="Filter by target type"
           >
             <option value="all">All Targets</option>

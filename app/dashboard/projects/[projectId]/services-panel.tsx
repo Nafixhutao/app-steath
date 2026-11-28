@@ -208,8 +208,8 @@ export function ServicesPanel({
 
                   <div className="flex items-center gap-3">
                     <span
-                      className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border border-[#2a2835] bg-[#1c1a22] text-[#8e8c99] ${
-                        isLive ? "is-live" : "is-building"
+                      className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border ${
+                        isLive ? "border-[rgba(62,207,142,0.25)] bg-[rgba(62,207,142,0.08)] text-[var(--color-accent)]" : "border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.08)] text-[#f59e0b]"
                       }`}
                     >
                       <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
@@ -219,7 +219,7 @@ export function ServicesPanel({
                     {canManage && (
                       <button
                         type="button"
-                        className="project-service-delete-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent text-[#716f7c] cursor-pointer [transition:all_120ms] hover:border-[rgba(244,63,94,0.2)] hover:text-[var(--color-danger)]"
+                        className="project-service-delete-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent text-[#716f7c] cursor-pointer [transition:all_120ms] hover:border-[rgba(244,63,94,0.2)] hover:bg-[rgba(244,63,94,0.1)] hover:text-[var(--color-danger)]"
                         onClick={() => {
                           setDeleteTarget(service);
                           setDeleteConfirm("");

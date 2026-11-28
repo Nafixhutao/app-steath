@@ -329,7 +329,7 @@ export function DatabasePanel({
               <p className="text-[11px] uppercase tracking-wide text-zinc-500 mt-4 mb-2">
                 Choose an engine
               </p>
-              <div className="db-engine-choice grid gap-[10px] w-full max-w-[520px] mt-[4px] text-left" role="radiogroup" aria-label="Database engine">
+              <div className="db-engine-choice grid grid-cols-2 [@media(max-width:480px)]:grid-cols-1 gap-[10px] w-full max-w-[520px] mt-[4px] text-left" role="radiogroup" aria-label="Database engine">
                 {ENGINE_CHOICES.map((choice) => {
                   const selected = engine === choice.id;
                   return (
@@ -338,7 +338,7 @@ export function DatabasePanel({
                       type="button"
                       role="radio"
                       aria-checked={selected}
-                      className={`db-engine-option flex flex-col gap-[4px] py-[12px] px-[14px] border border-[#2b2934] rounded-card bg-[#131217] text-ink-muted cursor-pointer [transition:border-color_0.15s_ease,background-color_0.15s_ease] disabled:cursor-not-allowed${selected ? " is-selected" : ""}`}
+                      className={`db-engine-option flex flex-col gap-[4px] py-[12px] px-[14px] border rounded-card bg-[#131217] text-ink-muted cursor-pointer [transition:border-color_0.15s_ease,background-color_0.15s_ease] [&:hover:not(:disabled)]:border-[#3f3d4b] disabled:cursor-not-allowed disabled:opacity-60 ${selected ? "border-[var(--color-accent)] bg-[rgba(62,207,142,0.07)]" : "border-[#2b2934]"}`}
                       onClick={() => setEngine(choice.id)}
                       disabled={busy}
                     >
@@ -397,8 +397,8 @@ export function DatabasePanel({
 
               <div className="flex items-center gap-2.5">
                 <span
-                  className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border border-[#2a2835] bg-[#1c1a22] text-[#8e8c99] ${
-                    database.status === "running" ? "is-live" : "is-building"
+                  className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border ${
+                    database.status === "running" ? "border-[rgba(62,207,142,0.25)] bg-[rgba(62,207,142,0.08)] text-[var(--color-accent)]" : "border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.08)] text-[#f59e0b]"
                   }`}
                 >
                   <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
@@ -406,7 +406,7 @@ export function DatabasePanel({
                 </span>
                 <span
                   className={`project-health-badge text-[11px] font-semibold py-[2px] px-[7px] rounded-control-sm ${
-                    database.healthy ? "is-healthy" : "is-unhealthy"
+                    database.healthy ? "border border-[rgba(62,207,142,0.2)] bg-[rgba(62,207,142,0.1)] text-[var(--color-accent)]" : "border border-[rgba(244,63,94,0.2)] bg-[rgba(244,63,94,0.1)] text-[var(--color-danger)]"
                   }`}
                 >
                   {database.healthy ? "Healthy" : "Unavailable"}
@@ -585,7 +585,7 @@ export function DatabasePanel({
                 </div>
                 <span
                   className={`project-proxy-badge inline-flex items-center text-[11px] font-semibold py-[3px] px-[8px] rounded-control-sm ${
-                    database.phpMyAdmin.ready ? "is-enabled" : "is-disabled"
+                    database.phpMyAdmin.ready ? "border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.1)] text-[#38bdf8]" : "border border-[#282631] bg-[#1e1d25] text-[#716f7c]"
                   }`}
                 >
                   <Radio className="w-3 h-3 mr-1" />
@@ -690,7 +690,7 @@ export function DatabasePanel({
 
                 <span
                   className={`project-proxy-badge inline-flex items-center text-[11px] font-semibold py-[3px] px-[8px] rounded-control-sm ${
-                    database.proxy.enabled ? "is-enabled" : "is-disabled"
+                    database.proxy.enabled ? "border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.1)] text-[#38bdf8]" : "border border-[#282631] bg-[#1e1d25] text-[#716f7c]"
                   }`}
                 >
                   <Radio className="w-3 h-3 mr-1" />

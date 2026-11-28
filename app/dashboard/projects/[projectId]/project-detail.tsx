@@ -175,11 +175,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
               <div className="flex items-center gap-3">
                 <h1 className="text-[24px] font-semibold! tracking-[-0.02em]! text-ink m-0 leading-[1.2]!">{project.name}</h1>
                 <span
-                  className={`project-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-[99px] bg-[rgba(255,255,255,0.05)] border border-[#2a2835] text-[#9e9aa8] ${
-                    project.status === "active" ? "is-active" : "is-idle"
+                  className={`project-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-[99px] border ${
+                    project.status === "active" ? "bg-[rgba(62,207,142,0.1)] border-[rgba(62,207,142,0.25)] text-[var(--color-accent)]" : "bg-[rgba(255,255,255,0.05)] border-[#2a2835] text-[#9e9aa8]"
                   }`}
                 >
-                  <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
+                  <span className={`project-status-dot bg-current w-[6px] h-[6px] rounded-[50%] ${project.status === "active" ? "[box-shadow:0_0_8px_rgba(62,207,142,0.6)]" : ""}`} aria-hidden="true" />
                   {project.status === "active" ? "Active" : "Empty"}
                 </span>
               </div>
@@ -222,7 +222,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             aria-selected={activeTab === "services"}
             aria-controls="panel-services"
             id="tab-services"
-            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium text-[#8e8c99] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:color_150ms,border-color_150ms] hover:text-ink-console ${activeTab === "services" ? "is-active" : ""}`}
+            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:color_150ms,border-color_150ms] ${activeTab === "services" ? "text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#8e8c99] border-b-transparent hover:text-ink-console"}`}
             onClick={() => setActiveTab("services")}
           >
             <Container className="w-4 h-4" />
@@ -236,14 +236,14 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             aria-selected={activeTab === "database"}
             aria-controls="panel-database"
             id="tab-database"
-            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium text-[#8e8c99] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:color_150ms,border-color_150ms] hover:text-ink-console ${activeTab === "database" ? "is-active" : ""}`}
+            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:color_150ms,border-color_150ms] ${activeTab === "database" ? "text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#8e8c99] border-b-transparent hover:text-ink-console"}`}
             onClick={() => setActiveTab("database")}
           >
             <Database className="w-4 h-4" />
             <span>Database</span>
             <span
               className={`project-tab-status-dot w-[7px] h-[7px] rounded-[50%] ${
-                project.databaseCount > 0 ? "is-live" : "is-none"
+                project.databaseCount > 0 ? "bg-[var(--color-accent)] [box-shadow:0_0_6px_rgba(62,207,142,0.6)]" : "bg-[#555360]"
               }`}
               title={project.databaseCount > 0 ? "Provisioned" : "None"}
             />
@@ -255,14 +255,14 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             aria-selected={activeTab === "storage"}
             aria-controls="panel-storage"
             id="tab-storage"
-            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium text-[#8e8c99] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:color_150ms,border-color_150ms] hover:text-ink-console ${activeTab === "storage" ? "is-active" : ""}`}
+            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:color_150ms,border-color_150ms] ${activeTab === "storage" ? "text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#8e8c99] border-b-transparent hover:text-ink-console"}`}
             onClick={() => setActiveTab("storage")}
           >
             <HardDrive className="w-4 h-4" />
             <span>Storage</span>
             <span
               className={`project-tab-status-dot w-[7px] h-[7px] rounded-[50%] ${
-                storageBucketCount > 0 ? "is-live" : "is-none"
+                storageBucketCount > 0 ? "bg-[var(--color-accent)] [box-shadow:0_0_6px_rgba(62,207,142,0.6)]" : "bg-[#555360]"
               }`}
               title={storageBucketCount > 0 ? "Provisioned" : "None"}
             />
@@ -274,7 +274,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             aria-selected={activeTab === "settings"}
             aria-controls="panel-settings"
             id="tab-settings"
-            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium text-[#8e8c99] bg-transparent border-0 border-b-2 border-b-transparent cursor-pointer [transition:color_150ms,border-color_150ms] hover:text-ink-console ${activeTab === "settings" ? "is-active" : ""}`}
+            className={`project-tab-button inline-flex items-center gap-[8px] h-[38px] py-0 px-[14px] text-[13px] font-medium bg-transparent border-0 border-b-2 cursor-pointer [transition:color_150ms,border-color_150ms] ${activeTab === "settings" ? "text-[var(--color-ink)] border-b-[var(--color-accent)]" : "text-[#8e8c99] border-b-transparent hover:text-ink-console"}`}
             onClick={() => setActiveTab("settings")}
           >
             <Settings className="w-4 h-4" />

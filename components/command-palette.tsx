@@ -313,7 +313,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   key={command.id}
                   role="option"
                   aria-selected={isSelected}
-                  className={`command-palette-item flex items-center gap-[12px] py-[10px] px-[12px] rounded-card cursor-pointer select-none [transition:background-color_100ms] ${isSelected ? "is-selected" : ""}`}
+                  className={`command-palette-item flex items-center gap-[12px] py-[10px] px-[12px] rounded-card cursor-pointer select-none [transition:background-color_100ms] ${isSelected ? "bg-[#201e28]" : ""}`}
                   onClick={command.onSelect}
                   onMouseEnter={() => setSelectedIndex(idx)}
                 >

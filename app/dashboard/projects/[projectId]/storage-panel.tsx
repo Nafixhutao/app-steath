@@ -244,21 +244,21 @@ ${bucket.public ? `// Public buckets allow anonymous reads:\n// ${publicUrl}\n` 
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`project-proxy-badge inline-flex items-center text-[11px] font-semibold py-[3px] px-[8px] rounded-control-sm ${bucket.public ? "is-enabled" : "is-disabled"}`}>
+          <span className={`project-proxy-badge inline-flex items-center text-[11px] font-semibold py-[3px] px-[8px] rounded-control-sm ${bucket.public ? "border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.1)] text-[#38bdf8]" : "border border-[#282631] bg-[#1e1d25] text-[#716f7c]"}`}>
             {bucket.public ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
             {bucket.public ? "Public" : "Private"}
           </span>
-          <span className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border border-[#2a2835] bg-[#1c1a22] text-[#8e8c99] ${ready ? "is-live" : "is-building"}`}>
+          <span className={`project-service-status-pill inline-flex items-center gap-[6px] text-[11px] font-medium py-[2px] px-[8px] rounded-control-sm border ${ready ? "border-[rgba(62,207,142,0.25)] bg-[rgba(62,207,142,0.08)] text-[var(--color-accent)]" : "border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.08)] text-[#f59e0b]"}`}>
             <span className="project-status-dot bg-current w-[6px] h-[6px] rounded-[50%]" aria-hidden="true" />
             {STATUS_LABELS[bucket.status]}
           </span>
           {bucket.healthy ? null : (
-            <span className="project-health-badge text-[11px] font-semibold py-[2px] px-[7px] rounded-control-sm is-unhealthy">Unavailable</span>
+            <span className="project-health-badge text-[11px] font-semibold py-[2px] px-[7px] rounded-control-sm border border-[rgba(244,63,94,0.2)] bg-[rgba(244,63,94,0.1)] text-[var(--color-danger)]">Unavailable</span>
           )}
           {canManage ? (
             <button
               type="button"
-              className="project-service-delete-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent text-[#716f7c] cursor-pointer [transition:all_120ms] hover:border-[rgba(244,63,94,0.2)] hover:text-[var(--color-danger)]"
+              className="project-service-delete-btn inline-flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border border-transparent text-[#716f7c] cursor-pointer [transition:all_120ms] hover:border-[rgba(244,63,94,0.2)] hover:bg-[rgba(244,63,94,0.1)] hover:text-[var(--color-danger)]"
               onClick={() => onDelete(bucket)}
               disabled={busy}
               title={`Delete ${bucket.name}`}

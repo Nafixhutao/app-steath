@@ -130,7 +130,7 @@ export default function ProjectsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "empty")}
-              className="supabase-filter-select bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
+              className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
               aria-label="Filter by project status"
             >
               <option value="all">Status: All</option>
@@ -149,7 +149,7 @@ export default function ProjectsPage() {
           <div className="bg-surface flex items-center border border-[#282631] rounded-control p-[2px]">
             <button
               type="button"
-              className={`supabase-view-btn items-center justify-center w-[28px] h-[28px] rounded-control-sm bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console ${viewMode === "grid" ? "is-active" : ""}`}
+              className={`supabase-view-btn flex items-center justify-center w-[28px] h-[28px] rounded-control-sm bg-transparent border-0 cursor-pointer [transition:color_150ms,background-color_150ms] ${viewMode === "grid" ? "bg-[#282632] text-[var(--color-ink)]" : "text-[#716f7c] hover:text-ink-console"}`}
               onClick={() => setViewMode("grid")}
               aria-label="Grid view"
               title="Grid view"
@@ -158,7 +158,7 @@ export default function ProjectsPage() {
             </button>
             <button
               type="button"
-              className={`supabase-view-btn items-center justify-center w-[28px] h-[28px] rounded-control-sm bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console ${viewMode === "list" ? "is-active" : ""}`}
+              className={`supabase-view-btn flex items-center justify-center w-[28px] h-[28px] rounded-control-sm bg-transparent border-0 cursor-pointer [transition:color_150ms,background-color_150ms] ${viewMode === "list" ? "bg-[#282632] text-[var(--color-ink)]" : "text-[#716f7c] hover:text-ink-console"}`}
               onClick={() => setViewMode("list")}
               aria-label="List view"
               title="List view"

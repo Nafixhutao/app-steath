@@ -33,7 +33,7 @@ export default function AbuseReportPage() {
         <p>
           Report a Service that may violate platform rules. Please include enough detail for review.
         </p>
-        <form className="auth-form" onSubmit={submit}>
+        <form className="auth-form grid gap-4" onSubmit={submit}>
           <label>
             Target URL
             <input

@@ -76,7 +76,7 @@ export function ModalDialog({
     >
       <div
         ref={dialogRef}
-        className={`bg-[#16151a] border border-[#282632] rounded-panel w-full max-w-[480px] overflow-hidden [box-shadow:0_20px_50px_rgba(0,0,0,0.6)] animate-[supabaseModalFadeIn_150ms_cubic-bezier(0.16,1,0.3,1)]${className ? ` ${className}` : ""}`}
+        className={`bg-[#16151a] border border-[#282632] rounded-panel w-full max-w-[480px] overflow-hidden [box-shadow:0_20px_50px_rgba(0,0,0,0.6)] animate-[supabaseModalFadeIn_150ms_cubic-bezier(0.16,1,0.3,1)] [&_.supabase-modal-header]:border-b [&_.supabase-modal-header]:border-b-[#23212a] [&_.supabase-modal-header>h2]:m-0 [&_.supabase-modal-header>h2]:text-[16px] [&_.supabase-modal-header>h2]:font-semibold [&_.supabase-modal-header>h2]:text-ink [&_.supabase-modal-body]:p-5 [&_.supabase-modal-footer]:flex [&_.supabase-modal-footer]:items-center [&_.supabase-modal-footer]:justify-end [&_.supabase-modal-footer]:gap-[10px] [&_.supabase-modal-footer]:py-[14px] [&_.supabase-modal-footer]:px-5 [&_.supabase-modal-footer]:border-t [&_.supabase-modal-footer]:border-t-[#23212a] [&_.supabase-modal-footer]:bg-[#141318] [&_.supabase-modal-input]:border [&_.supabase-modal-input]:border-[#2b2935] [&_.supabase-modal-input:focus]:border-[var(--color-accent)]${className ? ` ${className}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
@@ -114,7 +114,7 @@ export function SupabaseModal({
         <h2 id="supabase-modal-title">{title}</h2>
         <button
           type="button"
-          className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console"
+          className="supabase-modal-close flex items-center justify-center w-[28px] h-[28px] rounded-control bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console hover:bg-[rgba(255,255,255,0.05)]"
           onClick={onClose}
           aria-label="Close dialog"
         >

@@ -244,7 +244,7 @@ export default function ServicesPage() {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="supabase-filter-select bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
+            className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
             aria-label="Filter by service status"
           >
             <option value="all">All statuses</option>
@@ -260,7 +260,7 @@ export default function ServicesPage() {
             <select
               value={projectFilter}
               onChange={(event) => setProjectFilter(event.target.value)}
-              className="supabase-filter-select bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer outline-none"
+              className="supabase-filter-select appearance-none bg-surface h-[34px] py-0 pr-[28px] pl-[10px] rounded-control border border-[#282631] text-[#c9c7d2] text-[13px] cursor-pointer focus:border-[var(--color-accent)] outline-none"
               aria-label="Filter by project"
             >
               <option value="all">All projects</option>
@@ -278,7 +278,7 @@ export default function ServicesPage() {
           <div className="bg-surface flex items-center border border-[#282631] rounded-control p-[2px]" role="group" aria-label="View mode">
             <button
               type="button"
-              className={`supabase-view-btn items-center justify-center w-[28px] h-[28px] rounded-control-sm bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console ${viewMode === "grid" ? "is-active" : ""}`}
+              className={`supabase-view-btn flex items-center justify-center w-[28px] h-[28px] rounded-control-sm bg-transparent border-0 cursor-pointer [transition:color_150ms,background-color_150ms] ${viewMode === "grid" ? "bg-[#282632] text-[var(--color-ink)]" : "text-[#716f7c] hover:text-ink-console"}`}
               onClick={() => setViewMode("grid")}
               aria-label="Grid view"
               aria-pressed={viewMode === "grid"}
@@ -288,7 +288,7 @@ export default function ServicesPage() {
             </button>
             <button
               type="button"
-              className={`supabase-view-btn items-center justify-center w-[28px] h-[28px] rounded-control-sm bg-transparent border-0 text-[#716f7c] cursor-pointer [transition:color_150ms,background-color_150ms] hover:text-ink-console ${viewMode === "list" ? "is-active" : ""}`}
+              className={`supabase-view-btn flex items-center justify-center w-[28px] h-[28px] rounded-control-sm bg-transparent border-0 cursor-pointer [transition:color_150ms,background-color_150ms] ${viewMode === "list" ? "bg-[#282632] text-[var(--color-ink)]" : "text-[#716f7c] hover:text-ink-console"}`}
               onClick={() => setViewMode("list")}
               aria-label="List view"
               aria-pressed={viewMode === "list"}
