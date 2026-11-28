@@ -22,6 +22,7 @@ import { getBackups, type BackupSummary } from "@/lib/backups-client";
 import { getRestores, requestRestore } from "@/lib/restores-client";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
+import { ModalDialog } from "@/components/supabase-modal";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -487,83 +488,75 @@ export default function BackupsPage() {
 
       {/* Modal: Restore Confirmation */}
       {target && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="restore-modal-title"
-          >
-            <div className="supabase-modal-header border-rose-900/40">
-              <div className="flex items-center gap-2 text-rose-400">
-                <RotateCcw className="w-4 h-4" />
-                <h2 id="restore-modal-title">Restore {target.targetName}</h2>
+        <ModalDialog labelledBy="restore-modal-title" onClose={cancelRestore}>
+          <div className="supabase-modal-header border-rose-900/40">
+            <div className="flex items-center gap-2 text-rose-400">
+              <RotateCcw className="w-4 h-4" />
+              <h2 id="restore-modal-title">Restore {target.targetName}</h2>
+            </div>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={cancelRestore}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={submitRestore}>
+            <div className="supabase-modal-body space-y-3.5">
+              <div className="p-3 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
+                <strong>Warning:</strong> Restoring will overwrite the current live data of{" "}
+                <strong>{target.targetName}</strong> with this snapshot. Services attached to it in{" "}
+                <strong>{target.projectName ?? "this project"}</strong> will be stopped temporarily
+                and will restart automatically once completed. This operation cannot be undone.
               </div>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={cancelRestore}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+
+              <div>
+                <label htmlFor="confirm-restore-input" className="supabase-modal-label">
+                  Type <strong>{target.targetName}</strong> to confirm:
+                </label>
+                <input
+                  id="confirm-restore-input"
+                  value={confirmation}
+                  onChange={(e) => setConfirmation(e.target.value)}
+                  placeholder={target.targetName}
+                  autoComplete="off"
+                  spellCheck="false"
+                  required
+                  className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
+                  autoFocus
+                />
+              </div>
             </div>
 
-            <form onSubmit={submitRestore}>
-              <div className="supabase-modal-body space-y-3.5">
-                <div className="p-3 rounded-lg bg-rose-950/25 border border-rose-900/50 text-rose-200 text-xs leading-relaxed">
-                  <strong>Warning:</strong> Restoring will overwrite the current live data of{" "}
-                  <strong>{target.targetName}</strong> with this snapshot. Services attached to it
-                  in <strong>{target.projectName ?? "this project"}</strong> will be stopped
-                  temporarily and will restart automatically once completed. This operation cannot
-                  be undone.
-                </div>
-
-                <div>
-                  <label htmlFor="confirm-restore-input" className="supabase-modal-label">
-                    Type <strong>{target.targetName}</strong> to confirm:
-                  </label>
-                  <input
-                    id="confirm-restore-input"
-                    value={confirmation}
-                    onChange={(e) => setConfirmation(e.target.value)}
-                    placeholder={target.targetName}
-                    autoComplete="off"
-                    spellCheck="false"
-                    required
-                    className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              <div className="supabase-modal-footer">
-                <button
-                  type="button"
-                  className="supabase-btn-secondary"
-                  onClick={cancelRestore}
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="project-btn-danger"
-                  disabled={submitting || confirmation.trim() !== target.targetName}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                      Restoring...
-                    </>
-                  ) : (
-                    "Restore Snapshot"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={cancelRestore}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="project-btn-danger"
+                disabled={submitting || confirmation.trim() !== target.targetName}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    Restoring...
+                  </>
+                ) : (
+                  "Restore Snapshot"
+                )}
+              </button>
+            </div>
+          </form>
+        </ModalDialog>
       )}
     </div>
   );

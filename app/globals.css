@@ -40,6 +40,10 @@
   --projects-accent-border: #078153;
   --projects-warning: #f59e0b;
   --projects-danger: #ff7a82;
+  /* Off-state switch track, and the pressed/hover shade of the primary button.
+     Referenced by components/motion/switch.tsx and the admin email panel. */
+  --projects-ring: #3a3a40;
+  --projects-accent-hover: #00613f;
   /* Semantic "info" — the one tone the platform palette does not define. */
   --admin-info: #6ea8fe;
   /* Pixel-sweep skeleton, ported from the stealth-forge admin console. The
@@ -124,7 +128,9 @@ h1 {
   font-weight: 700;
   line-height: 32px;
   letter-spacing: -0.01em;
-  text-align: center;
+  /* `text-align` is deliberately absent: the browser default (left) is what
+     every page title wants. Centering here leaked into the whole dashboard
+     and needed per-page overrides. The one centred heading opts in below. */
 }
 
 .provider-grid {
@@ -1472,30 +1478,6 @@ a:hover {
 .deployment-node.is-unknown {
   color: #f0b366;
 }
-.deployment-error {
-  display: block;
-  margin-top: 6px;
-  color: #ffb9c2;
-  font-size: 11px;
-}
-.role-label.is-building,
-.role-label.is-queued,
-.role-label.is-deploying {
-  border-color: #4d4380;
-  color: #c0b6ff;
-}
-.role-label.is-running {
-  border-color: #1f6b45;
-  color: #7bd8a4;
-}
-.role-label.is-failed {
-  border-color: #713a44;
-  color: #ffb9c2;
-}
-.role-label.is-cancelled {
-  border-color: #5c5142;
-  color: #d8c8a8;
-}
 .environment-redeploy-banner {
   margin: 14px 0 0;
   padding: 11px 14px;
@@ -1550,25 +1532,6 @@ a:hover {
 .dashboard-link-button:hover {
   text-decoration: underline;
 }
-.deployment-log {
-  margin-top: 16px;
-  border: 1px solid #2d2a32;
-  border-radius: 9px;
-  background: #131116;
-}
-.deployment-log-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid #2d2a32;
-}
-.deployment-log-head h3 {
-  margin: 0;
-  color: #d6d3da;
-  font-size: 12px;
-  font-weight: 600;
-}
 .runtime-actions {
   display: flex;
   gap: 10px;
@@ -1579,29 +1542,228 @@ a:hover {
   opacity: 0.5;
   cursor: not-allowed;
 }
-.deployment-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+/* --- Deployment history ------------------------------------------------ */
+/* One row per Deployment: status, commit, age, duration on one line, with the
+   log folded away until asked for. Before this every row turned into a
+   seven-row card on a phone, so three Deployments filled a screen. */
+.deployment-list {
+  overflow: hidden;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0c0c0d;
 }
-.deployment-actions .dashboard-link-button:disabled {
-  opacity: 0.5;
+.deployment-list-head {
+  display: grid;
+  grid-template-columns: 116px 92px minmax(0, 1fr) 74px 44px 68px;
+  gap: 12px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #27272a;
+  background: #111113;
+  color: #71717a;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.deployment-list-body {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.deployment-item + .deployment-item {
+  border-top: 1px solid #1c1c20;
+}
+.deployment-row {
+  display: grid;
+  grid-template-columns: 116px 92px minmax(0, 1fr) 74px 44px 68px;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  transition: background-color 120ms ease;
+}
+.deployment-row:hover,
+.deployment-row.is-open {
+  background: #111113;
+}
+.deployment-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #a1a1aa;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.deployment-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 4%);
+}
+.deployment-status.is-running {
+  color: #00e08c;
+}
+.deployment-status.is-failed {
+  color: #f87171;
+}
+.deployment-status.is-queued,
+.deployment-status.is-building,
+.deployment-status.is-deploying {
+  color: #f5a623;
+}
+.deployment-status.is-queued .deployment-dot,
+.deployment-status.is-building .deployment-dot,
+.deployment-status.is-deploying .deployment-dot {
+  animation: deployment-pulse 1.4s ease-in-out infinite;
+}
+@keyframes deployment-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.deployment-commit {
+  color: #d4d4d8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+.deployment-when {
+  min-width: 0;
+  overflow: hidden;
+  color: #a1a1aa;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deployment-duration {
+  color: #a1a1aa;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.deployment-icon-btn {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+.deployment-icon-btn:hover:not(:disabled) {
+  background: #1c1c20;
+  color: #fafafa;
+}
+.deployment-icon-btn:focus-visible {
+  outline: 2px solid #fafafa;
+  outline-offset: 1px;
+}
+.deployment-icon-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
-.deployment-actions .dashboard-link-button.is-danger {
-  color: #ff8f9d;
+.deployment-icon-btn.is-danger:hover:not(:disabled) {
+  color: #f87171;
 }
-.deployment-log pre {
+.deployment-row-actions {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+}
+.deployment-row-error {
+  margin: 0;
+  padding: 0 14px 9px;
+  overflow: hidden;
+  color: #f87171;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deployment-detail {
+  padding: 0 14px 14px;
+  border-top: 1px solid #1c1c20;
+  background: #111113;
+}
+.deployment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  margin: 0;
+  padding: 10px 0;
+  font-size: 12px;
+}
+.deployment-meta > div {
+  display: flex;
+  gap: 6px;
+}
+.deployment-meta dt {
+  color: #71717a;
+}
+.deployment-meta dd {
+  margin: 0;
+  color: #d4d4d8;
+}
+.deployment-meta code {
+  font-size: 11.5px;
+}
+.deployment-detail-log {
   max-height: 320px;
   margin: 0;
-  padding: 12px 14px;
+  padding: 12px;
   overflow: auto;
-  color: #c8c4cd;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  background: #09090b;
+  color: #c8c8ce;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
+  font-size: 11.5px;
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.deployment-show-older {
+  width: 100%;
+  padding: 11px;
+  border: 0;
+  border-top: 1px solid #27272a;
+  background: #111113;
+  color: #a1a1aa;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.deployment-show-older:hover {
+  color: #fafafa;
+}
+@media (max-width: 720px) {
+  .deployment-list-head {
+    display: none;
+  }
+  .deployment-row {
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    gap: 8px;
+    min-height: 52px;
+    padding: 0 12px;
+  }
+  .deployment-duration {
+    display: none;
+  }
+  .deployment-when {
+    text-align: right;
+  }
+  .deployment-row-error {
+    padding: 0 12px 9px;
+  }
+  .deployment-detail {
+    padding: 0 12px 12px;
+  }
 }
 .service-danger-row input:focus,
 .service-form input:focus {
@@ -2298,16 +2460,6 @@ a:hover {
   font-size: 12px;
 }
 
-.role-label {
-  display: inline-flex;
-  padding: 4px 8px;
-  border: 1px solid #403c45;
-  border-radius: 999px;
-  color: #c9c5ce;
-  font-size: 11px;
-  text-transform: capitalize;
-}
-
 .dashboard-table-empty,
 .settings-readonly,
 .organization-danger-zone > p {
@@ -2351,6 +2503,8 @@ a:hover {
 .invitation-panel h1 {
   margin: 8px 0 12px;
   font-size: 22px;
+  /* The invitation card centres its eyebrow and title. */
+  text-align: center;
 }
 
 .invitation-panel > p:not(.auth-eyebrow) {
@@ -3554,7 +3708,6 @@ body {
 }
 
 /* Data reads cleaner with aligned, non-proportional figures. */
-.role-label,
 .organization-table,
 .project-quota,
 .project-resource-counts strong,
@@ -3562,7 +3715,6 @@ body {
 .dashboard-count,
 .environment-key,
 .environment-value,
-.deployment-log pre,
 .service-url {
   font-variant-numeric: tabular-nums;
 }
@@ -7124,11 +7276,14 @@ body {
   border-radius: 8px;
   background-color: #17161b;
   border: 1px solid #25232c;
-  overflow: hidden;
+  /* Scroll, not clip: the table is wider than a phone and owns the Action
+     column, so `hidden` silently removed it at narrow widths. */
+  overflow-x: auto;
 }
 
 .members-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   font-size: 13px;
   text-align: left;
@@ -9799,7 +9954,6 @@ a.usage-row-name:hover {
   box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.08);
 }
 .supabase-service-page .environment-form-actions,
-.supabase-service-page .deployment-actions,
 .supabase-service-page .runtime-actions {
   display: flex;
   align-items: center;
@@ -9859,38 +10013,6 @@ a.usage-row-name:hover {
 .supabase-service-page .deployment-node.is-unknown {
   border-color: rgba(239, 68, 68, 0.35);
   color: #f87171;
-}
-.supabase-service-page .deployment-log {
-  margin-top: 16px;
-  border: 1px solid #27272a;
-  border-radius: 8px;
-  background: #09090b;
-  overflow: hidden;
-}
-.supabase-service-page .deployment-log-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid #27272a;
-  background: #111113;
-}
-.supabase-service-page .deployment-log-head h3 {
-  margin: 0;
-  color: #d4d4d8;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-.supabase-service-page .deployment-log pre {
-  max-height: 380px;
-  margin: 0;
-  padding: 14px;
-  overflow: auto;
-  color: #c8c8ce;
-  font-size: 12px;
-  line-height: 1.6;
 }
 
 /* DNS instructions sit directly under the Custom Domain meta list; browser
@@ -9976,9 +10098,10 @@ a.usage-row-name:hover {
   }
 }
 
-/* Seven table columns cannot fit a phone. Below 720px each row becomes a
-   two-column card with a label above every value, so status and actions stay
-   reachable without panning sideways. */
+/* Environment Variables and Volumes keep their wide tables on desktop and need
+   a phone layout. Below 720px each row becomes a two-column card with a label
+   above every value, so nothing needs sideways panning. Deployments no longer
+   use this table: they render as compact rows (see `.deployment-list`). */
 @media (max-width: 720px) {
   .supabase-service-page .organization-table-wrap {
     border: 0;
@@ -10027,43 +10150,9 @@ a.usage-row-name:hover {
     font-size: 11px;
     font-weight: 500;
   }
-  /* Full-width cells pair a label with its value on one line. A timestamp
-     contains a non-breaking space in some locales, so it cannot wrap inside a
-     half-width column and would collide with the next field. */
-  .supabase-service-page .organization-table .svc-cell-wide,
-  .supabase-service-page .organization-table .svc-cell-actions {
-    grid-column: 1 / -1;
-  }
-  .supabase-service-page .organization-table .svc-cell-wide {
-    display: grid;
-    grid-template-columns: 74px minmax(0, 1fr);
-    gap: 8px;
-    align-items: baseline;
-  }
-  .supabase-service-page .organization-table .svc-cell-wide::before {
-    margin-bottom: 0;
-  }
-  .supabase-service-page .organization-table .svc-cell-actions {
-    padding-top: 12px;
-    border-top: 1px solid #1f1f22;
-  }
   .supabase-service-page .organization-table code {
     white-space: normal;
     overflow-wrap: anywhere;
-  }
-  /* A DNS record has three long values and no short pair worth sharing a row,
-     so every field gets its own labeled line instead of breaking a hostname
-     across a half-width column. */
-  .supabase-service-page .svc-table-records td,
-  .supabase-service-page .svc-table-records td.svc-cell-wide {
-    display: block;
-    grid-column: 1 / -1;
-  }
-  .supabase-service-page .svc-table-records td.svc-cell-wide::before {
-    margin-bottom: 4px;
-  }
-  .supabase-service-page .deployment-log pre {
-    font-size: 11.5px;
   }
 }
 
@@ -10102,9 +10191,6 @@ a.usage-row-name:hover {
     min-height: 44px;
     padding: 0 14px;
     font-size: 13px;
-  }
-  .supabase-service-page .deployment-actions {
-    gap: 8px;
   }
 }
 
@@ -10312,4 +10398,154 @@ a.usage-row-name:hover {
   .db-cred-action {
     flex: 1 1 auto;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Admin Console — near-black palette (the reference dashboard design).
+ * Scoped to .cf-admin (set only by app/admin/layout.tsx) so the user console
+ * and the .auth-page block keep their own palettes. The Forge components are
+ * never edited: they consume these inherited tokens and the few chrome colors
+ * hardcoded in the shell are overridden from this call-site scope.
+ * ------------------------------------------------------------------------ */
+.cf-admin {
+  --projects-bg: #0b0b0b;
+  --projects-surface: #0b0b0b;
+  --projects-card-bg: #121212;
+  --projects-control: #181818;
+  --projects-border: #2a2a2a;
+  --projects-border-hover: #3d3d3d;
+  --projects-divider: #232323;
+  --projects-text: #f2f2f2;
+  --projects-muted: #9a9a9a;
+  --projects-accent: #3c87ff;
+  --projects-accent-strong: #1f6feb;
+  --projects-accent-border: #1a5fd0;
+  --projects-warning: #f6b73c;
+  --projects-danger: #ef6b73;
+  --admin-info: #5b9cf8;
+  --projects-ring: #2f2f2f;
+  --projects-accent-hover: #1a5fd0;
+}
+
+/* Rail and top bar: replace the Forge near-black/violet neutrals with the
+   near-black canvas and the blue active state the console design uses. */
+.cf-admin aside[aria-label="Admin navigation"],
+.cf-admin [class*="max-w-[320px]"] {
+  background-color: #0b0b0b !important;
+  border-color: #232323 !important;
+}
+
+/* Only the sticky top bar carries chrome; panel headers stay transparent. */
+.cf-admin header[class*="sticky"] {
+  background-color: rgba(11, 11, 11, 0.94) !important;
+  border-color: #232323 !important;
+}
+
+.cf-admin aside [aria-current="page"] {
+  color: #3c87ff !important;
+  background-color: rgba(60, 135, 255, 0.12) !important;
+}
+
+.cf-admin aside [aria-current="page"] svg {
+  color: #3c87ff !important;
+}
+
+.cf-admin aside span[class*="border-[#322F37]"] {
+  border-color: #2a2a2a !important;
+  background-color: #151515 !important;
+}
+
+.cf-admin aside [class*="bg-[#26242b]"] {
+  background-color: #232323 !important;
+}
+
+/* The Forge panels hardcode their own graphite surfaces. The black pass maps
+   those call-site colors onto the admin tokens instead of editing the ported
+   components (ADR-0008). */
+.cf-admin [class*="bg-[#141416]"] {
+  background-color: var(--projects-card-bg) !important;
+}
+.cf-admin [class*="bg-[#1b1b1e]"],
+.cf-admin [class*="bg-[#1B191D]"],
+.cf-admin [class*="bg-[#0F1013]"] {
+  background-color: var(--projects-control) !important;
+}
+.cf-admin [class*="bg-[#0f0f11]"] {
+  background-color: #0f0f0f !important;
+}
+.cf-admin [class*="bg-[#121014]"] {
+  background-color: #0b0b0b !important;
+}
+.cf-admin [class*="border-[#322F37]"],
+.cf-admin [class*="border-[#302E34]"] {
+  border-color: var(--projects-border) !important;
+}
+.cf-admin [class*="border-[#26242b]"] {
+  border-color: var(--projects-divider) !important;
+}
+
+/* The global auth rule centers every h1; admin page and top-bar titles are
+   left-aligned like the rest of the console. */
+.cf-admin h1 {
+  text-align: left;
+}
+
+/* Cloudflare tabs: a thin underline marks the active section. */
+.cf-tab-list {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--projects-border);
+  margin-bottom: 20px;
+}
+
+.cf-tab {
+  position: relative;
+  padding: 9px 14px 11px;
+  color: var(--projects-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 120ms ease;
+}
+
+.cf-tab:hover {
+  color: var(--projects-text);
+}
+
+.cf-tab[aria-selected="true"] {
+  color: var(--projects-accent);
+}
+
+.cf-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--projects-accent);
+}
+
+.cf-button-primary {
+  display: inline-flex;
+  height: 34px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--projects-accent-border);
+  border-radius: 6px;
+  background: var(--projects-accent-strong);
+  padding: 0 14px;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: filter 120ms ease;
+}
+
+.cf-button-primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.cf-button-primary:disabled {
+  opacity: 0.5;
 }

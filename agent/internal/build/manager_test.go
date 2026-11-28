@@ -598,3 +598,46 @@ func TestNormalizeRepoRequestTurnsGitHubPageURLsIntoCloneURLs(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveBuildSourceRejectsAMissingCustomDockerfile(t *testing.T) {
+	t.Parallel()
+
+	manager := NewManager(t.TempDir(), nil)
+	state := &buildState{
+		request: Request{DockerfilePath: "deploy/Dockerfile", ContainerPort: 8080},
+		status:  StatusRunning,
+	}
+
+	_, _, failure := manager.resolveBuildSource(state, t.TempDir(), t.TempDir(), "")
+	if !strings.Contains(failure, "Dockerfile not found") {
+		t.Fatalf("expected a missing Dockerfile failure, got %q", failure)
+	}
+}
+
+func TestResolveBuildSourceUsesACustomDockerfileThatExists(t *testing.T) {
+	t.Parallel()
+
+	checkout := t.TempDir()
+	deployDir := filepath.Join(checkout, "deploy")
+	if err := os.MkdirAll(deployDir, 0o750); err != nil {
+		t.Fatalf("create deploy directory: %v", err)
+	}
+	dockerfile := filepath.Join(deployDir, "Dockerfile")
+	if err := os.WriteFile(dockerfile, []byte("FROM busybox\n"), 0o600); err != nil {
+		t.Fatalf("write Dockerfile: %v", err)
+	}
+
+	manager := NewManager(t.TempDir(), nil)
+	state := &buildState{
+		request: Request{DockerfilePath: "deploy/Dockerfile", ContainerPort: 8080},
+		status:  StatusRunning,
+	}
+
+	path, contextDir, failure := manager.resolveBuildSource(state, t.TempDir(), checkout, "")
+	if failure != "" {
+		t.Fatalf("expected no failure, got %q", failure)
+	}
+	if path != dockerfile || contextDir != checkout {
+		t.Fatalf("resolved (%q, %q), want (%q, %q)", path, contextDir, dockerfile, checkout)
+	}
+}

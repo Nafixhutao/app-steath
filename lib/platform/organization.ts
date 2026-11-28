@@ -1,5 +1,5 @@
 import { pool } from "./db.ts";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 export class OrganizationAccessError extends Error {
   constructor(
@@ -21,7 +21,7 @@ export type ActiveOrganizationContext = {
 export async function requireActiveOrganization(
   headers: Headers,
 ): Promise<ActiveOrganizationContext> {
-  const current = await auth.api.getSession({ headers });
+  const current = await getSession(headers);
 
   if (!current) {
     throw new OrganizationAccessError(401, "Authentication required");

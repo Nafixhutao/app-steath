@@ -27,6 +27,7 @@ import { QUOTAS } from "@/lib/platform/quota-limits";
 import { getError, useResource } from "@/lib/resource";
 import { formatDateTime } from "@/lib/format";
 import { useToast } from "@/components/toast-context";
+import { ModalDialog } from "@/components/supabase-modal";
 
 const STATUS_LABELS: Record<StorageBucketStatus, string> = {
   provisioning: "Provisioning",
@@ -495,200 +496,185 @@ export function StoragePanel({ projectId, canManage }: { projectId: string; canM
 
       {/* Modal: Create Bucket */}
       {modalOpen ? (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-bucket-title"
-          >
-            <div className="supabase-modal-header">
-              <h2 id="create-bucket-title">Create a new bucket</h2>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setModalOpen(false)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <ModalDialog labelledBy="create-bucket-title" onClose={() => setModalOpen(false)}>
+          <div className="supabase-modal-header">
+            <h2 id="create-bucket-title">Create a new bucket</h2>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setModalOpen(false)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={submit}>
+            <div className="supabase-modal-body space-y-3.5">
+              <p className="text-sm text-zinc-400">
+                An S3-compatible bucket on the platform storage node, with its own access key and
+                optional anonymous read access.
+              </p>
+
+              <div>
+                <label htmlFor="bucket-name-input" className="supabase-modal-label">
+                  Bucket Name
+                </label>
+                <input
+                  id="bucket-name-input"
+                  value={form.name}
+                  minLength={3}
+                  maxLength={63}
+                  pattern="[a-z0-9][a-z0-9-]{1,61}[a-z0-9]"
+                  required
+                  placeholder="e.g. user-uploads"
+                  onChange={(event) => update("name", event.target.value)}
+                  className="supabase-modal-input font-mono text-xs"
+                  autoFocus
+                />
+                <p className="mt-1.5 text-xs text-zinc-500">
+                  3–63 lowercase letters, numbers, or dashes; it cannot start or end with a dash.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="bucket-quota-input" className="supabase-modal-label">
+                  Storage quota
+                </label>
+                <select
+                  id="bucket-quota-input"
+                  value={form.quotaMb}
+                  onChange={(event) => update("quotaMb", event.target.value)}
+                  className="supabase-modal-input"
+                >
+                  {QUOTA_CHOICES.map((quota) => (
+                    <option key={quota} value={quota}>
+                      {quota} MB
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-xs text-zinc-500">
+                  Maximum {MAX_QUOTA_MB} MB per bucket on this plan.
+                </p>
+              </div>
+
+              <label className="flex items-start gap-2.5 text-xs text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={form.public}
+                  onChange={(event) => update("public", event.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 accent-emerald-500"
+                />
+                <span>
+                  <strong className="font-medium text-white">Public bucket</strong>
+                  <span className="block text-zinc-500">
+                    Allow anonymous read access to objects.
+                  </span>
+                </span>
+              </label>
+
+              {actionError ? (
+                <p className="db-cred-error" role="alert">
+                  <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
+                  {actionError}
+                </p>
+              ) : null}
             </div>
 
-            <form onSubmit={submit}>
-              <div className="supabase-modal-body space-y-3.5">
-                <p className="text-sm text-zinc-400">
-                  An S3-compatible bucket on the platform storage node, with its own access key and
-                  optional anonymous read access.
-                </p>
-
-                <div>
-                  <label htmlFor="bucket-name-input" className="supabase-modal-label">
-                    Bucket Name
-                  </label>
-                  <input
-                    id="bucket-name-input"
-                    value={form.name}
-                    minLength={3}
-                    maxLength={63}
-                    pattern="[a-z0-9][a-z0-9-]{1,61}[a-z0-9]"
-                    required
-                    placeholder="e.g. user-uploads"
-                    onChange={(event) => update("name", event.target.value)}
-                    className="supabase-modal-input font-mono text-xs"
-                    autoFocus
-                  />
-                  <p className="mt-1.5 text-xs text-zinc-500">
-                    3–63 lowercase letters, numbers, or dashes; it cannot start or end with a dash.
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="bucket-quota-input" className="supabase-modal-label">
-                    Storage quota
-                  </label>
-                  <select
-                    id="bucket-quota-input"
-                    value={form.quotaMb}
-                    onChange={(event) => update("quotaMb", event.target.value)}
-                    className="supabase-modal-input"
-                  >
-                    {QUOTA_CHOICES.map((quota) => (
-                      <option key={quota} value={quota}>
-                        {quota} MB
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1.5 text-xs text-zinc-500">
-                    Maximum {MAX_QUOTA_MB} MB per bucket on this plan.
-                  </p>
-                </div>
-
-                <label className="flex items-start gap-2.5 text-xs text-zinc-300">
-                  <input
-                    type="checkbox"
-                    checked={form.public}
-                    onChange={(event) => update("public", event.target.checked)}
-                    className="mt-0.5 h-3.5 w-3.5 accent-emerald-500"
-                  />
-                  <span>
-                    <strong className="font-medium text-white">Public bucket</strong>
-                    <span className="block text-zinc-500">
-                      Allow anonymous read access to objects.
-                    </span>
-                  </span>
-                </label>
-
-                {actionError ? (
-                  <p className="db-cred-error" role="alert">
-                    <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
-                    {actionError}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="supabase-modal-footer">
-                <button
-                  type="button"
-                  className="supabase-btn-secondary"
-                  onClick={() => setModalOpen(false)}
-                  disabled={busy}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="supabase-btn-green"
-                  disabled={busy || !nameValid || duplicateName}
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                      Creating…
-                    </>
-                  ) : (
-                    "Create bucket"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setModalOpen(false)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="supabase-btn-green"
+                disabled={busy || !nameValid || duplicateName}
+              >
+                {busy ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    Creating…
+                  </>
+                ) : (
+                  "Create bucket"
+                )}
+              </button>
+            </div>
+          </form>
+        </ModalDialog>
       ) : null}
 
       {/* Modal: Delete Bucket Confirmation */}
       {deleteTarget ? (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-bucket-title"
-          >
-            <div className="supabase-modal-header border-rose-900/40">
-              <div className="flex items-center gap-2 text-rose-400">
-                <AlertTriangle className="w-4 h-4" />
-                <h2 id="delete-bucket-title">Delete bucket</h2>
+        <ModalDialog labelledBy="delete-bucket-title" onClose={() => setDeleteTarget(null)}>
+          <div className="supabase-modal-header border-rose-900/40">
+            <div className="flex items-center gap-2 text-rose-400">
+              <AlertTriangle className="w-4 h-4" />
+              <h2 id="delete-bucket-title">Delete bucket</h2>
+            </div>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setDeleteTarget(null)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleDelete}>
+            <div className="supabase-modal-body space-y-3">
+              <p className="text-xs text-zinc-300">
+                This permanently deletes <strong className="text-white">{deleteTarget.name}</strong>{" "}
+                and every object stored in it. This action cannot be undone.
+              </p>
+              <div>
+                <label htmlFor="delete-bucket-confirm-input" className="supabase-modal-label">
+                  Type <strong>{deleteTarget.name}</strong> to confirm:
+                </label>
+                <input
+                  id="delete-bucket-confirm-input"
+                  value={deleteConfirm}
+                  onChange={(event) => setDeleteConfirm(event.target.value)}
+                  placeholder={deleteTarget.name}
+                  autoComplete="off"
+                  className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
+                  autoFocus
+                />
               </div>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setDeleteTarget(null)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+
+              {actionError ? (
+                <p className="db-cred-error" role="alert">
+                  <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
+                  {actionError}
+                </p>
+              ) : null}
             </div>
 
-            <form onSubmit={handleDelete}>
-              <div className="supabase-modal-body space-y-3">
-                <p className="text-xs text-zinc-300">
-                  This permanently deletes{" "}
-                  <strong className="text-white">{deleteTarget.name}</strong> and every object
-                  stored in it. This action cannot be undone.
-                </p>
-                <div>
-                  <label htmlFor="delete-bucket-confirm-input" className="supabase-modal-label">
-                    Type <strong>{deleteTarget.name}</strong> to confirm:
-                  </label>
-                  <input
-                    id="delete-bucket-confirm-input"
-                    value={deleteConfirm}
-                    onChange={(event) => setDeleteConfirm(event.target.value)}
-                    placeholder={deleteTarget.name}
-                    autoComplete="off"
-                    className="supabase-modal-input border-rose-900/50 focus:border-rose-500"
-                    autoFocus
-                  />
-                </div>
-
-                {actionError ? (
-                  <p className="db-cred-error" role="alert">
-                    <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
-                    {actionError}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="supabase-modal-footer">
-                <button
-                  type="button"
-                  className="supabase-btn-secondary"
-                  onClick={() => setDeleteTarget(null)}
-                  disabled={busy}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="project-btn-danger"
-                  disabled={busy || deleteConfirm !== deleteTarget.name}
-                >
-                  {busy ? "Deleting…" : "Delete bucket"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setDeleteTarget(null)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="project-btn-danger"
+                disabled={busy || deleteConfirm !== deleteTarget.name}
+              >
+                {busy ? "Deleting…" : "Delete bucket"}
+              </button>
+            </div>
+          </form>
+        </ModalDialog>
       ) : null}
     </div>
   );

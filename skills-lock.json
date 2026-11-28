@@ -255,6 +255,13 @@
       "computedHash": "85da37a788dc4b5b63411e5681403d930b1077604a20497739fa05c8d21f01fc",
       "wellKnownDigest": "sha256:f26d607ceb3f3a6fa8c98f8dbcb2b1aeb0392de1953e826bb8893d9e49983bf9"
     },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "commit": "5a37a6329fbad3666c3207392a6a7c0110e92efb",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "7991ed4fbecdac23f47c1a40c243e00a212a9e7f3604db93959b3ae11dffe299"
+    },
     "wait-what": {
       "source": "mattpocock/skills",
       "sourceType": "github",

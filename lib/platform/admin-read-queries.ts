@@ -41,20 +41,63 @@ const RECENT_DEPLOYMENTS_LIMIT = 8;
 const NODE_STALE_MS = 120_000;
 
 export async function getAdminOverview(): Promise<AdminOverviewPayload> {
-  const healthResult = await pool.query<{
-    db_ok: boolean;
-    node_id: string | null;
-    node_name: string | null;
-    node_status: string | null;
-    node_last_seen: Date | null;
-  }>(`
+  // The three projections are independent, and the Redis probe is a network
+  // round trip with a 2s timeout: running them in sequence made the Overview
+  // pay for every one. They share the same request.
+  const [healthResult, redisReachable, operationsResult, deploymentsResult] = await Promise.all([
+    pool.query<{
+      db_ok: boolean;
+      node_id: string | null;
+      node_name: string | null;
+      node_status: string | null;
+      node_last_seen: Date | null;
+    }>(`
   SELECT
     (SELECT to_regclass('public."user"') IS NOT NULL) AS db_ok,
     n."id" AS node_id, n."name" AS node_name,
     n."status" AS node_status, n."lastSeenAt" AS node_last_seen
   FROM (SELECT 1) one
   LEFT JOIN "node" n ON n."id" = (SELECT "id" FROM "node" ORDER BY "createdAt" LIMIT 1)
-`);
+`),
+    isRedisReachable(),
+    pool.query<{
+      counts: {
+        active_deployments: number;
+        queued_jobs: number;
+        running_jobs: number;
+        failed_jobs: number;
+      };
+    }>(`
+  SELECT jsonb_build_object(
+    'active_deployments', (
+      SELECT count(*) FROM "deployment" d
+      WHERE d."status" IN ('queued', 'building', 'deploying')
+    ),
+    'queued_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'queued'),
+    'running_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'running'),
+    'failed_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'failed')
+  ) AS counts
+`),
+    pool.query<{
+      id: string;
+      app_name: string;
+      version: number;
+      status: string;
+      build_status: string;
+      created_at: Date;
+    }>(`
+  SELECT d."id",
+         s."name" AS app_name,
+         (row_number() OVER (PARTITION BY d."serviceId" ORDER BY d."createdAt"))::int AS version,
+         d."status",
+         CASE WHEN d."imageRef" IS NOT NULL THEN 'succeeded' ELSE 'pending' END AS build_status,
+         d."createdAt" AS created_at
+  FROM "deployment" d
+  JOIN "service" s ON s."id" = d."serviceId"
+  ORDER BY d."createdAt" DESC
+  LIMIT ${RECENT_DEPLOYMENTS_LIMIT}
+`),
+  ]);
 
   const health = healthResult.rows[0];
   const nodeStale =
@@ -64,7 +107,7 @@ export async function getAdminOverview(): Promise<AdminOverviewPayload> {
   const components: ComponentStatus[] = [
     { name: "api", status: "healthy" },
     { name: "postgres", status: health.db_ok ? "healthy" : "unavailable" },
-    { name: "redis", status: (await isRedisReachable()) ? "healthy" : "unavailable" },
+    { name: "redis", status: redisReachable ? "healthy" : "unavailable" },
     {
       name: "agent",
       status:
@@ -77,45 +120,6 @@ export async function getAdminOverview(): Promise<AdminOverviewPayload> {
               "unknown",
     },
   ];
-
-  const operationsResult = await pool.query<{
-    counts: {
-      active_deployments: number;
-      queued_jobs: number;
-      running_jobs: number;
-      failed_jobs: number;
-    };
-  }>(`
-  SELECT jsonb_build_object(
-    'active_deployments', (
-      SELECT count(*) FROM "deployment" d
-      WHERE d."status" IN ('queued', 'building', 'deploying')
-    ),
-    'queued_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'queued'),
-    'running_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'running'),
-    'failed_jobs', (SELECT count(*) FROM "job" j WHERE j."status" = 'failed')
-  ) AS counts
-`);
-
-  const deploymentsResult = await pool.query<{
-    id: string;
-    app_name: string;
-    version: number;
-    status: string;
-    build_status: string;
-    created_at: Date;
-  }>(`
-  SELECT d."id",
-         s."name" AS app_name,
-         (row_number() OVER (PARTITION BY d."serviceId" ORDER BY d."createdAt"))::int AS version,
-         d."status",
-         CASE WHEN d."imageRef" IS NOT NULL THEN 'succeeded' ELSE 'pending' END AS build_status,
-         d."createdAt" AS created_at
-  FROM "deployment" d
-  JOIN "service" s ON s."id" = d."serviceId"
-  ORDER BY d."createdAt" DESC
-  LIMIT ${RECENT_DEPLOYMENTS_LIMIT}
-`);
 
   return {
     instance_status: components.every((c) => c.status === "healthy") ? "healthy" : "degraded",
@@ -144,30 +148,33 @@ export type StatusPagePayload = {
 };
 
 export async function getAdminStatusPage(): Promise<StatusPagePayload> {
-  const healthResult = await pool.query<{
-    node_status: string | null;
-    node_last_seen: Date | null;
-  }>(`
+  // Same three independent reads as the Overview: one batch, not three hops.
+  const [healthResult, incidentResult, redisReachable] = await Promise.all([
+    pool.query<{
+      node_status: string | null;
+      node_last_seen: Date | null;
+    }>(`
   SELECT n."status" AS "node_status", n."lastSeenAt" AS "node_last_seen"
   FROM "node" n
   ORDER BY n."createdAt"
   LIMIT 1
-`);
-
-  const node = healthResult.rows[0];
-  const nodeStale =
-    !node?.node_last_seen || Date.now() - new Date(node.node_last_seen).getTime() > NODE_STALE_MS;
-
-  const incidentResult = await pool.query<{
-    title: string;
-    started_at: Date;
-  }>(`
+`),
+    pool.query<{
+      title: string;
+      started_at: Date;
+    }>(`
   SELECT "title", "startedAt" AS "started_at"
   FROM "admin_incident"
   WHERE "status" <> 'resolved'
   ORDER BY "startedAt" DESC
   LIMIT 20
-`);
+`),
+    isRedisReachable(),
+  ]);
+
+  const node = healthResult.rows[0];
+  const nodeStale =
+    !node?.node_last_seen || Date.now() - new Date(node.node_last_seen).getTime() > NODE_STALE_MS;
 
   const agentHealthy = node?.node_status === "healthy" && !nodeStale;
 
@@ -179,7 +186,7 @@ export async function getAdminStatusPage(): Promise<StatusPagePayload> {
     components: [
       { name: "API", status: "operational" },
       { name: "Database", status: "operational" },
-      { name: "Cache", status: (await isRedisReachable()) ? "operational" : "unavailable" },
+      { name: "Cache", status: redisReachable ? "operational" : "unavailable" },
       {
         name: "Agents",
         status: agentHealthy ? "operational" : "unavailable",

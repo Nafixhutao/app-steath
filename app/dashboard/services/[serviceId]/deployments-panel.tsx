@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { RotateCw, ScrollText, X } from "lucide-react";
 import {
   cancelDeployment,
   deploymentDuration,
@@ -17,17 +18,21 @@ import {
   type NodeSummary,
 } from "@/lib/services-client";
 import { getError, useResource } from "@/lib/resource";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatRelative } from "@/lib/format";
 
 const POLL_INTERVAL_MS = 3_000;
+
+/** How many Deployments render before "Show older" is offered. */
+const PAGE_SIZE = 10;
 
 function shortCommit(sha: string | null): string {
   return sha ? sha.slice(0, 7) : "N/A";
 }
 
 /**
- * Deployment history and Build log for one Service. A Deployment in flight is
- * polled so the status and log update without the user reloading the page.
+ * Deployment history and Build log for one Service, laid out as one compact
+ * row per Deployment. A Deployment in flight is polled so the status and log
+ * update without the user reloading the page.
  */
 export function DeploymentsPanel({
   serviceId,
@@ -38,6 +43,7 @@ export function DeploymentsPanel({
   canDeploy: boolean;
   canManage: boolean;
 }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selected, setSelected] = useState<BuildLog | null>(null);
   const selectedRef = useRef<BuildLog | null>(null);
   const updateSelected = useCallback((log: BuildLog | null) => {
@@ -48,6 +54,7 @@ export function DeploymentsPanel({
   const [actingOn, setActingOn] = useState<string | null>(null);
   // Deploy, redeploy, and cancel failures share one slot next to the load error.
   const [actionError, setActionError] = useState("");
+  const [visible, setVisible] = useState(PAGE_SIZE);
 
   const history = useResource(async () => {
     const [deployments, nodes] = await Promise.all([listDeployments(serviceId), listNodes()]);
@@ -92,7 +99,15 @@ export function DeploymentsPanel({
     }
   }
 
-  async function openLog(deployment: DeploymentSummary) {
+  async function toggleLog(deployment: DeploymentSummary) {
+    if (expandedId === deployment.id) {
+      setExpandedId(null);
+      updateSelected(null);
+      return;
+    }
+
+    setExpandedId(deployment.id);
+    updateSelected(null);
     try {
       updateSelected(await getBuildLog(deployment.id));
       setActionError("");
@@ -129,6 +144,8 @@ export function DeploymentsPanel({
 
   const nodeHealthy = node?.status === "healthy";
   const latest = deployments[0];
+  const visibleDeployments = deployments.slice(0, visible);
+  const hiddenCount = deployments.length - visibleDeployments.length;
 
   return (
     <section className="dashboard-section" aria-labelledby="deployments-heading">
@@ -182,101 +199,139 @@ export function DeploymentsPanel({
           <p>Deploy this Service to build its image from the repository.</p>
         </div>
       ) : (
-        <div className="organization-table-wrap">
-          <table className="organization-table">
-            <thead>
-              <tr>
-                <th scope="col">Status</th>
-                <th scope="col">Commit</th>
-                <th scope="col">Started</th>
-                <th scope="col">Finished</th>
-                <th scope="col">Duration</th>
-                <th scope="col">Build log</th>
-                {canManage ? <th scope="col">Actions</th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {deployments.map((deployment) => {
-                const acting = actingOn === deployment.id;
+        <div className="deployment-list">
+          <div className="deployment-list-head" aria-hidden="true">
+            <span>Status</span>
+            <span>Commit</span>
+            <span>Started</span>
+            <span>Duration</span>
+            <span>Log</span>
+            {canManage ? <span>Actions</span> : null}
+          </div>
 
-                return (
-                  <tr key={deployment.id}>
-                    <td data-label="Status">
-                      <span className={`role-label is-${deployment.status}`}>
-                        {deploymentStatusLabel(deployment.status)}
-                      </span>
-                      {deployment.errorMessage ? (
-                        <small className="deployment-error">{deployment.errorMessage}</small>
-                      ) : null}
-                    </td>
-                    <td data-label="Commit">
-                      <code>{shortCommit(deployment.commitSha)}</code>
-                    </td>
-                    <td data-label="Started" className="svc-cell-wide">
-                      {formatDateTime(deployment.startedAt)}
-                    </td>
-                    <td data-label="Finished" className="svc-cell-wide">
-                      {formatDateTime(deployment.finishedAt)}
-                    </td>
-                    <td data-label="Duration">{deploymentDuration(deployment) ?? "N/A"}</td>
-                    <td data-label="Build log">
-                      <button
-                        className="dashboard-link-button"
-                        type="button"
-                        onClick={() => void openLog(deployment)}
-                      >
-                        View log
-                      </button>
-                    </td>
+          <ul className="deployment-list-body">
+            {visibleDeployments.map((deployment) => {
+              const acting = actingOn === deployment.id;
+              const open = expandedId === deployment.id;
+              const logId = `deployment-log-${deployment.id}`;
+              const redeployBlocked = acting || isDeploymentActive(latest?.status ?? "running");
+
+              return (
+                <li className="deployment-item" key={deployment.id}>
+                  <div className={`deployment-row${open ? " is-open" : ""}`}>
+                    <span className={`deployment-status is-${deployment.status}`}>
+                      <span className="deployment-dot" aria-hidden="true" />
+                      {deploymentStatusLabel(deployment.status)}
+                    </span>
+                    <code className="deployment-commit" title={deployment.commitSha ?? "N/A"}>
+                      {shortCommit(deployment.commitSha)}
+                    </code>
+                    <span
+                      className="deployment-when"
+                      title={formatDateTime(deployment.startedAt ?? deployment.createdAt)}
+                    >
+                      {formatRelative(deployment.startedAt ?? deployment.createdAt)}
+                    </span>
+                    <span className="deployment-duration">
+                      {deploymentDuration(deployment) ?? "N/A"}
+                    </span>
+                    <button
+                      className="deployment-icon-btn"
+                      type="button"
+                      onClick={() => void toggleLog(deployment)}
+                      aria-expanded={open}
+                      aria-controls={logId}
+                      aria-label={`${open ? "Hide" : "View"} build log for ${shortCommit(deployment.commitSha)}`}
+                      title={open ? "Hide build log" : "View build log"}
+                    >
+                      <ScrollText size={15} strokeWidth={1.8} aria-hidden="true" />
+                    </button>
                     {canManage ? (
-                      <td data-label="Actions" className="svc-cell-actions">
-                        <div className="deployment-actions">
+                      <div className="deployment-row-actions">
+                        <button
+                          className="deployment-icon-btn"
+                          type="button"
+                          onClick={() => void redeploy(deployment)}
+                          disabled={redeployBlocked}
+                          aria-label={`Redeploy ${shortCommit(deployment.commitSha)}`}
+                          title="Redeploy"
+                        >
+                          <RotateCw
+                            size={15}
+                            strokeWidth={1.8}
+                            aria-hidden="true"
+                            className={acting ? "animate-spin" : undefined}
+                          />
+                        </button>
+                        {isDeploymentCancellable(deployment.status) ? (
                           <button
-                            className="dashboard-link-button"
+                            className="deployment-icon-btn is-danger"
                             type="button"
-                            onClick={() => void redeploy(deployment)}
-                            disabled={acting || isDeploymentActive(latest?.status ?? "running")}
+                            onClick={() => void cancel(deployment)}
+                            disabled={acting}
+                            aria-label={`Cancel ${shortCommit(deployment.commitSha)}`}
+                            title="Cancel"
                           >
-                            {acting ? "Working..." : "Redeploy"}
+                            <X size={15} strokeWidth={2} aria-hidden="true" />
                           </button>
-                          {isDeploymentCancellable(deployment.status) ? (
-                            <button
-                              className="dashboard-link-button is-danger"
-                              type="button"
-                              onClick={() => void cancel(deployment)}
-                              disabled={acting}
-                            >
-                              Cancel
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
+                        ) : null}
+                      </div>
                     ) : null}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  </div>
+
+                  {deployment.errorMessage ? (
+                    <p className="deployment-row-error" title={deployment.errorMessage}>
+                      {deployment.errorMessage}
+                    </p>
+                  ) : null}
+
+                  {open ? (
+                    <div className="deployment-detail" id={logId}>
+                      <dl className="deployment-meta">
+                        <div>
+                          <dt>Started</dt>
+                          <dd>{formatDateTime(deployment.startedAt)}</dd>
+                        </div>
+                        <div>
+                          <dt>Finished</dt>
+                          <dd>{formatDateTime(deployment.finishedAt)}</dd>
+                        </div>
+                        <div>
+                          <dt>Duration</dt>
+                          <dd>{deploymentDuration(deployment) ?? "N/A"}</dd>
+                        </div>
+                        <div>
+                          <dt>Commit</dt>
+                          <dd>
+                            <code>{deployment.commitSha ?? "N/A"}</code>
+                          </dd>
+                        </div>
+                      </dl>
+                      <pre className="deployment-detail-log">
+                        {selected
+                          ? selected.lines.length > 0
+                            ? selected.lines.join("\n")
+                            : "No Build output yet."
+                          : "Loading build log..."}
+                      </pre>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+
+          {hiddenCount > 0 ? (
+            <button
+              className="deployment-show-older"
+              type="button"
+              onClick={() => setVisible((count) => count + PAGE_SIZE)}
+            >
+              Show older deployments ({hiddenCount})
+            </button>
+          ) : null}
         </div>
       )}
-
-      {selected ? (
-        <div className="deployment-log" aria-live="polite">
-          <div className="deployment-log-head">
-            <h3>Build log</h3>
-            <button
-              className="dashboard-link-button"
-              type="button"
-              onClick={() => updateSelected(null)}
-            >
-              Close
-            </button>
-          </div>
-          <pre>
-            {selected.lines.length > 0 ? selected.lines.join("\n") : "No Build output yet."}
-          </pre>
-        </div>
-      ) : null}
     </section>
   );
 }

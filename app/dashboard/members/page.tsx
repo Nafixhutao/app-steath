@@ -27,6 +27,7 @@ import {
 import { getError } from "@/lib/resource";
 import { getInitials } from "@/components/identity";
 import { useToast } from "@/components/toast-context";
+import { ModalDialog } from "@/components/supabase-modal";
 
 type MemberRow = {
   id: string;
@@ -542,208 +543,194 @@ export default function MembersPage() {
 
       {/* Modal: Invite Member */}
       {inviteModalOpen && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="invite-modal-title"
-          >
-            <div className="supabase-modal-header">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-emerald-400" />
-                <h2 id="invite-modal-title">Invite Team Member</h2>
-              </div>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setInviteModalOpen(false)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <ModalDialog labelledBy="invite-modal-title" onClose={() => setInviteModalOpen(false)}>
+          <div className="supabase-modal-header">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-emerald-400" />
+              <h2 id="invite-modal-title">Invite Team Member</h2>
             </div>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setInviteModalOpen(false)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            {inviteUrl ? (
-              <div className="supabase-modal-body space-y-4">
-                <div className="p-3.5 rounded-lg bg-emerald-950/20 border border-emerald-800/40 text-emerald-300 text-xs">
-                  Invitation link created! Send this link to your team member to let them join{" "}
-                  {organizationName}.
-                </div>
-
-                <div>
-                  <label htmlFor="invitation-link-input" className="supabase-modal-label">
-                    Invitation URL
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="invitation-link-input"
-                      readOnly
-                      value={inviteUrl}
-                      className="supabase-modal-input font-mono text-xs select-all"
-                    />
-                    <button
-                      type="button"
-                      className="supabase-btn-green flex-shrink-0"
-                      onClick={copyInvite}
-                    >
-                      {copiedInvite ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 mr-1" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5 mr-1" />
-                          Copy
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="supabase-modal-footer">
-                  <button
-                    type="button"
-                    className="supabase-btn-secondary"
-                    onClick={() => {
-                      setInviteUrl("");
-                      setInviteModalOpen(false);
-                    }}
-                  >
-                    Done
-                  </button>
-                </div>
+          {inviteUrl ? (
+            <div className="supabase-modal-body space-y-4">
+              <div className="p-3.5 rounded-lg bg-emerald-950/20 border border-emerald-800/40 text-emerald-300 text-xs">
+                Invitation link created! Send this link to your team member to let them join{" "}
+                {organizationName}.
               </div>
-            ) : (
-              <form onSubmit={invite}>
-                <div className="supabase-modal-body space-y-4">
-                  <div>
-                    <label htmlFor="invite-email-input" className="supabase-modal-label">
-                      Email address
-                    </label>
-                    <input
-                      id="invite-email-input"
-                      type="email"
-                      required
-                      placeholder="collaborator@company.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="supabase-modal-input"
-                      autoFocus
-                    />
-                  </div>
 
-                  <div>
-                    <label htmlFor="invite-role-select" className="supabase-modal-label">
-                      Organization Role
-                    </label>
-                    <select
-                      id="invite-role-select"
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value as InviteRole)}
-                      className="supabase-modal-input"
-                    >
-                      <option value="member">
-                        Member - Can view resources and trigger deployments
-                      </option>
-                      {activeRoles.includes("owner") && (
-                        <option value="admin">
-                          Admin - Full access to manage resources and invite members
-                        </option>
-                      )}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="supabase-modal-footer">
+              <div>
+                <label htmlFor="invitation-link-input" className="supabase-modal-label">
+                  Invitation URL
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="invitation-link-input"
+                    readOnly
+                    value={inviteUrl}
+                    className="supabase-modal-input font-mono text-xs select-all"
+                  />
                   <button
                     type="button"
-                    className="supabase-btn-secondary"
-                    onClick={() => setInviteModalOpen(false)}
-                    disabled={busy}
+                    className="supabase-btn-green flex-shrink-0"
+                    onClick={copyInvite}
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="supabase-btn-green"
-                    disabled={busy || !email.trim()}
-                  >
-                    {busy ? (
+                    {copiedInvite ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                        Generating...
+                        <Check className="w-3.5 h-3.5 mr-1" />
+                        Copied
                       </>
                     ) : (
-                      "Generate Invitation Link"
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1" />
+                        Copy
+                      </>
                     )}
                   </button>
                 </div>
-              </form>
-            )}
-          </div>
-        </div>
+              </div>
+
+              <div className="supabase-modal-footer">
+                <button
+                  type="button"
+                  className="supabase-btn-secondary"
+                  onClick={() => {
+                    setInviteUrl("");
+                    setInviteModalOpen(false);
+                  }}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={invite}>
+              <div className="supabase-modal-body space-y-4">
+                <div>
+                  <label htmlFor="invite-email-input" className="supabase-modal-label">
+                    Email address
+                  </label>
+                  <input
+                    id="invite-email-input"
+                    type="email"
+                    required
+                    placeholder="collaborator@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="supabase-modal-input"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="invite-role-select" className="supabase-modal-label">
+                    Organization Role
+                  </label>
+                  <select
+                    id="invite-role-select"
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value as InviteRole)}
+                    className="supabase-modal-input"
+                  >
+                    <option value="member">
+                      Member - Can view resources and trigger deployments
+                    </option>
+                    {activeRoles.includes("owner") && (
+                      <option value="admin">
+                        Admin - Full access to manage resources and invite members
+                      </option>
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              <div className="supabase-modal-footer">
+                <button
+                  type="button"
+                  className="supabase-btn-secondary"
+                  onClick={() => setInviteModalOpen(false)}
+                  disabled={busy}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="supabase-btn-green"
+                  disabled={busy || !email.trim()}
+                >
+                  {busy ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                      Generating...
+                    </>
+                  ) : (
+                    "Generate Invitation Link"
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </ModalDialog>
       )}
 
       {/* Modal: Remove Member Confirmation */}
       {removeTarget && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="remove-member-dialog-title"
-          >
-            <div className="supabase-modal-header border-rose-900/40">
-              <div className="flex items-center gap-2 text-rose-400">
-                <AlertTriangle className="w-4 h-4" />
-                <h2 id="remove-member-dialog-title">Remove Member</h2>
-              </div>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setRemoveTarget(null)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <ModalDialog labelledBy="remove-member-dialog-title" onClose={() => setRemoveTarget(null)}>
+          <div className="supabase-modal-header border-rose-900/40">
+            <div className="flex items-center gap-2 text-rose-400">
+              <AlertTriangle className="w-4 h-4" />
+              <h2 id="remove-member-dialog-title">Remove Member</h2>
             </div>
-
-            <div className="supabase-modal-body space-y-3">
-              <p className="text-xs text-zinc-300">
-                Are you sure you want to remove{" "}
-                <strong className="text-white">
-                  {removeTarget.user.name || removeTarget.user.email}
-                </strong>{" "}
-                from <strong className="text-white">{organizationName}</strong>?
-              </p>
-              <p className="text-xs text-zinc-500">
-                They will immediately lose access to all projects, services, databases, and
-                environments inside this organization.
-              </p>
-            </div>
-
-            <div className="supabase-modal-footer">
-              <button
-                type="button"
-                className="supabase-btn-secondary"
-                onClick={() => setRemoveTarget(null)}
-                disabled={busy}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="project-btn-danger"
-                disabled={busy}
-                onClick={() => void handleRemoveMember()}
-              >
-                {busy ? "Removing..." : "Remove Member"}
-              </button>
-            </div>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setRemoveTarget(null)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        </div>
+
+          <div className="supabase-modal-body space-y-3">
+            <p className="text-xs text-zinc-300">
+              Are you sure you want to remove{" "}
+              <strong className="text-white">
+                {removeTarget.user.name || removeTarget.user.email}
+              </strong>{" "}
+              from <strong className="text-white">{organizationName}</strong>?
+            </p>
+            <p className="text-xs text-zinc-500">
+              They will immediately lose access to all projects, services, databases, and
+              environments inside this organization.
+            </p>
+          </div>
+
+          <div className="supabase-modal-footer">
+            <button
+              type="button"
+              className="supabase-btn-secondary"
+              onClick={() => setRemoveTarget(null)}
+              disabled={busy}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="project-btn-danger"
+              disabled={busy}
+              onClick={() => void handleRemoveMember()}
+            >
+              {busy ? "Removing..." : "Remove Member"}
+            </button>
+          </div>
+        </ModalDialog>
       )}
     </div>
   );

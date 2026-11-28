@@ -26,6 +26,7 @@ import {
   recordAdminRedisMetrics,
 } from "../lib/platform/admin-metrics.ts";
 import { RESTORE_JOB_TYPE, recoverStaleRestores, runRestoreJob } from "../lib/platform/restores.ts";
+import { processOutboxBatch } from "../lib/platform/mailer.ts";
 import { SCAN_JOB_TYPE, runScanJob } from "../lib/platform/scans.ts";
 import {
   createDailyTask,
@@ -64,6 +65,13 @@ const USAGE_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
  * 1440 rows per node.
  */
 const HOST_METRICS_INTERVAL_MS = 60 * 1_000;
+
+/**
+ * How often queued email is delivered. A short interval keeps password-reset
+ * messages prompt; the outbox claim uses SKIP LOCKED, so another worker can
+ * safely run the same pass.
+ */
+const EMAIL_OUTBOX_INTERVAL_MS = 30 * 1_000;
 
 /** The worker's log line helper, mirroring workerLogger but multi-arg. */
 const log = (message: string, extra?: string) => console.log(`[worker] ${message}`, extra ?? "");
@@ -140,6 +148,15 @@ JOB_HANDLERS[BUILD_JOB_TYPE] = BUILD_HANDLER;
  */
 function backgroundTasks(): ScheduledTask[] {
   return [
+    createIntervalTask("email outbox", EMAIL_OUTBOX_INTERVAL_MS, async () => {
+      const delivered = await processOutboxBatch(10);
+      if (delivered.sent > 0 || delivered.failed > 0) {
+        workerLogger.log(
+          `email outbox: ${delivered.sent} sent, ${delivered.retried} retried, ${delivered.failed} failed`,
+        );
+      }
+    }),
+
     createIntervalTask("usage snapshots", USAGE_REFRESH_INTERVAL_MS, async () => {
       const refreshed = await refreshAllOrganizationsUsage();
       if (refreshed.snapshots > 0) {

@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { OrganizationAccessError } from "./organization";
 
 /**
@@ -35,7 +35,7 @@ export function isPlatformAdminEmail(email: string | null | undefined): boolean 
  * Organization: a Platform Admin may have no Membership at all.
  */
 export async function requirePlatformAdmin(headers: Headers): Promise<PlatformAdminContext> {
-  const current = await auth.api.getSession({ headers });
+  const current = await getSession(headers);
 
   if (!current) {
     throw new OrganizationAccessError(401, "Authentication required");
@@ -49,7 +49,7 @@ export async function requirePlatformAdmin(headers: Headers): Promise<PlatformAd
 
 /** Whether the signed-in user is a Platform Admin, for the dashboard navigation. */
 export async function getPlatformAdminStatus(headers: Headers): Promise<boolean> {
-  const current = await auth.api.getSession({ headers });
+  const current = await getSession(headers);
 
   return Boolean(current && isPlatformAdminEmail(current.user.email));
 }

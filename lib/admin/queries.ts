@@ -62,15 +62,17 @@ export function usePolledQuery<T>(
     error: Error | null;
     loading: boolean;
   }>({ data: undefined, error: null, loading: true });
-  const keepRef = useRef<T | undefined>(undefined);
   const ticketRef = useRef(0);
 
   const load = useCallback(async () => {
     const ticket = ++ticketRef.current;
+    // Mark the fetch in flight so `isFetching` (and any Refresh button bound to
+    // it) reports the truth during a poll or a manual refetch, not only on the
+    // first load.
+    setState((current) => (current.loading ? current : { ...current, loading: true }));
     try {
       const data = await adminGet<T>(path);
       if (ticketRef.current !== ticket) return;
-      keepRef.current = data;
       setState({ data, error: null, loading: false });
     } catch (error) {
       if (ticketRef.current !== ticket) return;
@@ -85,8 +87,40 @@ export function usePolledQuery<T>(
   useEffect(() => {
     void load();
     if (typeof intervalMs !== "number" || intervalMs <= 0) return;
-    const timer = window.setInterval(() => void load(), intervalMs);
-    return () => window.clearInterval(timer);
+
+    let timer: number | undefined;
+    const start = () => {
+      if (timer === undefined) {
+        timer = window.setInterval(() => void load(), intervalMs);
+      }
+    };
+    const stop = () => {
+      if (timer !== undefined) {
+        window.clearInterval(timer);
+        timer = undefined;
+      }
+    };
+
+    // A background tab keeps the console mounted, so an unconditional interval
+    // would have every panel keep polling the control plane while nobody is
+    // looking. Pause when hidden and fetch once on return, so the first paint
+    // back is not stale.
+    const sync = () => {
+      if (document.visibilityState === "hidden") {
+        stop();
+        return;
+      }
+      void load();
+      start();
+    };
+
+    if (document.visibilityState !== "hidden") start();
+    document.addEventListener("visibilitychange", sync);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", sync);
+    };
   }, [load, intervalMs]);
 
   return {

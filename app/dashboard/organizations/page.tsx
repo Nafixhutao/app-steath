@@ -6,6 +6,7 @@ import { Plus, Search, X, Loader2 } from "lucide-react";
 import { authClient, useListOrganizations } from "@/lib/auth-client";
 import { useToast } from "@/components/toast-context";
 import { useGsapEntrance } from "@/lib/animation/use-gsap-entrance";
+import { ModalDialog } from "@/components/supabase-modal";
 
 function OrgHexIcon() {
   return (
@@ -217,70 +218,63 @@ export default function OrganizationsPage() {
 
       {/* Modal New Organization */}
       {modalOpen && (
-        <div className="supabase-modal-backdrop" role="presentation">
-          <div
-            className="supabase-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-title"
-          >
-            <div className="supabase-modal-header">
-              <h2 id="modal-title">Create a new organization</h2>
-              <button
-                type="button"
-                className="supabase-modal-close"
-                onClick={() => setModalOpen(false)}
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <ModalDialog labelledBy="modal-title" onClose={() => setModalOpen(false)}>
+          <div className="supabase-modal-header">
+            <h2 id="modal-title">Create a new organization</h2>
+            <button
+              type="button"
+              className="supabase-modal-close"
+              onClick={() => setModalOpen(false)}
+              aria-label="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleCreateOrg}>
+            <div className="supabase-modal-body">
+              <p className="text-sm text-zinc-400 mb-4">
+                Organizations group your projects, team members, and databases under a unified
+                workspace.
+              </p>
+
+              <label htmlFor="modal-org-name" className="supabase-modal-label">
+                Organization name
+              </label>
+              <input
+                id="modal-org-name"
+                type="text"
+                required
+                placeholder="e.g. Acme Corp"
+                maxLength={80}
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                className="supabase-modal-input"
+                autoFocus
+              />
+
+              {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
             </div>
 
-            <form onSubmit={handleCreateOrg}>
-              <div className="supabase-modal-body">
-                <p className="text-sm text-zinc-400 mb-4">
-                  Organizations group your projects, team members, and databases under a unified
-                  workspace.
-                </p>
-
-                <label htmlFor="modal-org-name" className="supabase-modal-label">
-                  Organization name
-                </label>
-                <input
-                  id="modal-org-name"
-                  type="text"
-                  required
-                  placeholder="e.g. Acme Corp"
-                  maxLength={80}
-                  value={orgName}
-                  onChange={(e) => setOrgName(e.target.value)}
-                  className="supabase-modal-input"
-                  autoFocus
-                />
-
-                {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
-              </div>
-
-              <div className="supabase-modal-footer">
-                <button
-                  type="button"
-                  className="supabase-btn-secondary"
-                  onClick={() => setModalOpen(false)}
-                  disabled={busy}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="supabase-btn-green"
-                  disabled={busy || !orgName.trim()}
-                >
-                  {busy ? "Creating..." : "Create organization"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="supabase-modal-footer">
+              <button
+                type="button"
+                className="supabase-btn-secondary"
+                onClick={() => setModalOpen(false)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="supabase-btn-green"
+                disabled={busy || !orgName.trim()}
+              >
+                {busy ? "Creating..." : "Create organization"}
+              </button>
+            </div>
+          </form>
+        </ModalDialog>
       )}
     </div>
   );
